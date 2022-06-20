@@ -49,6 +49,22 @@ class Repository
     ];
 
     /**
+     * create software package
+     */
+    $softwarePackage = new SoftwarePackage();
+    $softwarePackage->name = "LDS software windows";
+    $softwarePackage->platform = "windows";
+    $softwarePackage->version = "5.0.1";
+    $softwarePackage->description = "";
+    $softwarePackage->version_type = "stable";
+    $softwarePackage->released_date = "2022-06-19";
+    $softwarePackage->release_notes = "https://www.google.com";
+    $softwarePackage->filename = "package.zip";
+    $softwarePackage->is_latest = true;
+    $softwarePackage->url = "";
+    $this->createSoftwarePackage($softwarePackage);
+
+    /**
      * create default plan
      */
     $price = new PriceWithCurrency();
