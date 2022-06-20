@@ -1,7 +1,11 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\TokenController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+include __DIR__ . "/apiX.php";
 
 /*
 |--------------------------------------------------------------------------
@@ -14,6 +18,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+// public routes
+Route::get('/auth/me', [AuthController::class, 'me']);
+
+// authenticated routes
+Route::middleware('auth:sanctum')->group(function () {
+  Route::post('/token/create', [TokenController::class, 'create']);
 });
+
+
+Route::get('/{any}', function () {
+  return response()->json(['message' => 'Not found'], 404);
+})->where('any', '.*');
