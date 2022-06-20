@@ -18,14 +18,15 @@ include __DIR__ . "/apiX.php";
 |
 */
 
-// public routes
-Route::get('/auth/me', [AuthController::class, 'me']);
+Route::prefix('v1')->group(function () {
+  // public routes
+  Route::get('/auth/me', [AuthController::class, 'me']);
 
-// authenticated routes
-Route::middleware('auth:sanctum')->group(function () {
-  Route::post('/token/create', [TokenController::class, 'create']);
+  // authenticated routes
+  Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/token/create', [TokenController::class, 'create']);
+  });
 });
-
 
 Route::get('/{any}', function () {
   return response()->json(['message' => 'Not found'], 404);
