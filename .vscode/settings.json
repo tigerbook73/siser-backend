@@ -1,0 +1,9 @@
+{
+  "editor.detectIndentation": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.wordWrapColumn": 120,
+  "[php]": {
+    "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+  }
+}
