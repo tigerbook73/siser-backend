@@ -44,6 +44,7 @@ return [
   */
 
   'dont_alias' => [
+    'App\Mockup',
     'App\Models\Base',
   ],
 
