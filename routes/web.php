@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/auth/login', [AuthController::class, 'login'])->name('login');
 Route::get('/auth/logout', [AuthController::class, 'logout']);
 
+Route::get('/admin/auth/reset-password', function () {
+  return view('index');
+})->name('password.reset');
+
 /**
  * 
  */

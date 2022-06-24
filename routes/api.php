@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\TokenController;
 use Illuminate\Http\Request;
@@ -18,7 +19,18 @@ include __DIR__ . "/apiX.php";
 |
 */
 
+
 Route::prefix('v1')->group(function () {
+  // admin authentication
+  Route::post('/auth/admin/login', [AdminAuthController::class, 'login']);
+  Route::post('/auth/admin/forgot-password', [AdminAuthController::class, 'forgotPassword'])->name('password.email');
+  Route::post('/auth/admin/reset-password', [AdminAuthController::class, 'resetPassword']);
+
+  Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/auth/admin/logout', [AdminAuthController::class, 'logout']);
+    Route::post('/auth/admin/update-password', [AdminAuthController::class, 'updatePassword']);
+  });
+
   // public routes
   Route::get('/auth/me', [AuthController::class, 'me']);
 
