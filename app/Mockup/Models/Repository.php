@@ -52,16 +52,21 @@ class Repository
      * create software package
      */
     $softwarePackage = new SoftwarePackage();
-    $softwarePackage->name = "LDS software windows";
-    $softwarePackage->platform = "windows";
+    $softwarePackage->name = "LDS software";
+    $softwarePackage->platform = "Windows";
     $softwarePackage->version = "5.0.1";
     $softwarePackage->description = "";
     $softwarePackage->version_type = "stable";
     $softwarePackage->released_date = "2022-06-19";
     $softwarePackage->release_notes = "https://www.google.com";
-    $softwarePackage->filename = "package.zip";
+    $softwarePackage->filename = "lds-software-win-5.0.1.zip";
     $softwarePackage->is_latest = true;
-    $softwarePackage->url = "";
+    $softwarePackage->url = "/favicon.ico";
+    $this->createSoftwarePackage($softwarePackage);
+
+    $softwarePackage->platform = "Windows";
+    $softwarePackage->version = "5.0.1";
+    $softwarePackage->filename = "lds-software-mac-5.0.1.zip";
     $this->createSoftwarePackage($softwarePackage);
 
     /**
