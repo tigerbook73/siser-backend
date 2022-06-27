@@ -6,6 +6,7 @@
 
 namespace App\Mockup\Models;
 
+use Carbon\Carbon;
 use Faker\Generator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -57,7 +58,7 @@ class Repository
     $softwarePackage->version = "5.0.1";
     $softwarePackage->description = "";
     $softwarePackage->version_type = "stable";
-    $softwarePackage->released_date = "2022-06-19";
+    $softwarePackage->released_date = now();
     $softwarePackage->release_notes = "https://www.google.com";
     $softwarePackage->filename = "lds-software-win-5.0.1.zip";
     $softwarePackage->is_latest = true;
