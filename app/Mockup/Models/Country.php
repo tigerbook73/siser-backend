@@ -1,9 +1,7 @@
 <?php
-
 /**
  * Country
  */
-
 namespace App\Mockup\Models;
 
 /**
@@ -11,22 +9,22 @@ namespace App\Mockup\Models;
  */
 class Country
 {
-  /**
-   * Possible values of this enum
-   */
-  const AUSTRALIA = 'Australia';
+    /**
+     * Possible values of this enum
+     */
+    const AUSTRALIA = 'Australia';
 
-  const USA = 'USA';
+    const USA = 'USA';
 
-  /**
-   * Gets allowable values of the enum
-   * @return string[]
-   */
-  public static function getAllowableEnumValues()
-  {
-    return [
-      self::AUSTRALIA,
-      self::USA
-    ];
-  }
+    /**
+     * Gets allowable values of the enum
+     * @return string[]
+     */
+    public static function getAllowableEnumValues()
+    {
+        return [
+            self::AUSTRALIA,
+            self::USA
+        ];
+    }
 }

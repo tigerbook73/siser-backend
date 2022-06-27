@@ -1,9 +1,7 @@
 <?php
-
 /**
  * Role
  */
-
 namespace App\Mockup\Models;
 
 /**
@@ -11,28 +9,28 @@ namespace App\Mockup\Models;
  */
 class Role
 {
-  /**
-   * Possible values of this enum
-   */
-  const CUSTOMER = 'customer';
+    /**
+     * Possible values of this enum
+     */
+    const CUSTOMER = 'customer';
 
-  const ADMIN = 'admin';
+    const ADMIN = 'admin';
 
-  const LDS = 'lds';
+    const LDS = 'lds';
 
-  const SISER_BACKEND = 'siser-backend';
+    const SISER_BACKEND = 'siser-backend';
 
-  /**
-   * Gets allowable values of the enum
-   * @return string[]
-   */
-  public static function getAllowableEnumValues()
-  {
-    return [
-      self::CUSTOMER,
-      self::ADMIN,
-      self::LDS,
-      self::SISER_BACKEND
-    ];
-  }
+    /**
+     * Gets allowable values of the enum
+     * @return string[]
+     */
+    public static function getAllowableEnumValues()
+    {
+        return [
+            self::CUSTOMER,
+            self::ADMIN,
+            self::LDS,
+            self::SISER_BACKEND
+        ];
+    }
 }

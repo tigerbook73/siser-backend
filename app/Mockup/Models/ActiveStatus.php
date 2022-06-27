@@ -1,9 +1,7 @@
 <?php
-
 /**
  * ActiveStatus
  */
-
 namespace App\Mockup\Models;
 
 /**
@@ -11,22 +9,22 @@ namespace App\Mockup\Models;
  */
 class ActiveStatus
 {
-  /**
-   * Possible values of this enum
-   */
-  const ACTIVE = 'active';
+    /**
+     * Possible values of this enum
+     */
+    const ACTIVE = 'active';
 
-  const INACTIVE = 'inactive';
+    const INACTIVE = 'inactive';
 
-  /**
-   * Gets allowable values of the enum
-   * @return string[]
-   */
-  public static function getAllowableEnumValues()
-  {
-    return [
-      self::ACTIVE,
-      self::INACTIVE
-    ];
-  }
+    /**
+     * Gets allowable values of the enum
+     * @return string[]
+     */
+    public static function getAllowableEnumValues()
+    {
+        return [
+            self::ACTIVE,
+            self::INACTIVE
+        ];
+    }
 }

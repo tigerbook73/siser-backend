@@ -1,9 +1,7 @@
 <?php
-
 /**
  * Platform
  */
-
 namespace App\Mockup\Models;
 
 /**
@@ -11,22 +9,22 @@ namespace App\Mockup\Models;
  */
 class Platform
 {
-  /**
-   * Possible values of this enum
-   */
-  const WINDOWS = 'Windows';
+    /**
+     * Possible values of this enum
+     */
+    const WINDOWS = 'Windows';
 
-  const MAC = 'Mac';
+    const MAC = 'Mac';
 
-  /**
-   * Gets allowable values of the enum
-   * @return string[]
-   */
-  public static function getAllowableEnumValues()
-  {
-    return [
-      self::WINDOWS,
-      self::MAC
-    ];
-  }
+    /**
+     * Gets allowable values of the enum
+     * @return string[]
+     */
+    public static function getAllowableEnumValues()
+    {
+        return [
+            self::WINDOWS,
+            self::MAC
+        ];
+    }
 }

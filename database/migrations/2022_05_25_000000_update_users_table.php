@@ -14,7 +14,12 @@ return new class extends Migration
   public function up()
   {
     Schema::table('users', function (Blueprint $table) {
-      $table->string("cognito_id")->after('email');
+      $table->string("cognito_id");
+      $table->string("full_name");
+      $table->string("country");
+      $table->string("language")->default('en');
+      $table->unsignedInteger("subscription_level");
+      $table->json("roles")->comment('e.g ["admin", "customer", "lds", "siser-backend"]');
     });
   }
 

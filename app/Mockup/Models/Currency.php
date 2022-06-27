@@ -1,9 +1,7 @@
 <?php
-
 /**
  * Currency
  */
-
 namespace App\Mockup\Models;
 
 /**
@@ -11,25 +9,25 @@ namespace App\Mockup\Models;
  */
 class Currency
 {
-  /**
-   * Possible values of this enum
-   */
-  const USD = 'USD';
+    /**
+     * Possible values of this enum
+     */
+    const USD = 'USD';
 
-  const AUD = 'AUD';
+    const AUD = 'AUD';
 
-  const GBP = 'GBP';
+    const GBP = 'GBP';
 
-  /**
-   * Gets allowable values of the enum
-   * @return string[]
-   */
-  public static function getAllowableEnumValues()
-  {
-    return [
-      self::USD,
-      self::AUD,
-      self::GBP
-    ];
-  }
+    /**
+     * Gets allowable values of the enum
+     * @return string[]
+     */
+    public static function getAllowableEnumValues()
+    {
+        return [
+            self::USD,
+            self::AUD,
+            self::GBP
+        ];
+    }
 }

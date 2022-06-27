@@ -1,20 +1,18 @@
 <?php
-
 /**
  * ErrorResult
  */
-
 namespace App\Mockup\Models;
 
 /**
  * ErrorResult
  */
-class ErrorResult
-{
+class ErrorResult {
 
-  /** @var string $message */
-  public $message = "";
+    /** @var string $message */
+    public $message = "";
 
-  /** @var array<string,string[]> $errors */
-  public $errors;
+    /** @var array<string,string[]> $errors */
+    public $errors;
+
 }

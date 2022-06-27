@@ -1,17 +1,15 @@
 <?php
-
 /**
  * InvoiceList
  */
-
 namespace App\Mockup\Models;
 
 /**
  * InvoiceList
  */
-class InvoiceList
-{
+class InvoiceList {
 
-  /** @var \App\Mockup\Models\Invoice[] $data */
-  public $data = [];
+    /** @var \App\Mockup\Models\Invoice[] $data */
+    public $data = [];
+
 }

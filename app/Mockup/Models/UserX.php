@@ -1,38 +1,39 @@
 <?php
-
 /**
  * User
  */
-
 namespace App\Mockup\Models;
 
 /**
  * User
  */
-class UserX
-{
+class UserX {
 
-  /** @var int $id */
-  public $id = 0;
+    /** @var int $id */
+    public $id = 0;
 
-  /** @var string $name same as the username field in coginto*/
-  public $name = "";
+    /** @var string $name same as the username field in coginto*/
+    public $name = "";
 
-  /** @var string $email */
-  public $email = "";
+    /** @var string $full_name */
+    public $full_name = "";
 
-  /** @var string $country */
-  public $country = "";
+    /** @var string $email */
+    public $email = "";
 
-  /** @var string $language */
-  public $language = "";
+    /** @var string $country */
+    public $country = "";
 
-  /** @var string $cognito_id cognito sub*/
-  public $cognito_id = "";
+    /** @var string $language */
+    public $language = "";
 
-  /** @var int $subscription_level */
-  public $subscription_level = \App\Mockup\Models\SubscriptionLevel::NUMBER_0;
+    /** @var string $cognito_id cognito sub*/
+    public $cognito_id = "";
 
-  /** @var string[] $roles */
-  public $roles = [];
+    /** @var int $subscription_level */
+    public $subscription_level = \App\Mockup\Models\SubscriptionLevel::NUMBER_0;
+
+    /** @var string[] $roles */
+    public $roles = [];
+
 }

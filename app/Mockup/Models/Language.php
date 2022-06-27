@@ -1,9 +1,7 @@
 <?php
-
 /**
  * Language
  */
-
 namespace App\Mockup\Models;
 
 /**
@@ -11,31 +9,31 @@ namespace App\Mockup\Models;
  */
 class Language
 {
-  /**
-   * Possible values of this enum
-   */
-  const ENGLISH = 'English';
+    /**
+     * Possible values of this enum
+     */
+    const ENGLISH = 'English';
 
-  const FRENCH = 'French';
+    const FRENCH = 'French';
 
-  const GERMAN = 'German';
+    const GERMAN = 'German';
 
-  const ITALIAN = 'Italian';
+    const ITALIAN = 'Italian';
 
-  const SPANISH = 'Spanish';
+    const SPANISH = 'Spanish';
 
-  /**
-   * Gets allowable values of the enum
-   * @return string[]
-   */
-  public static function getAllowableEnumValues()
-  {
-    return [
-      self::ENGLISH,
-      self::FRENCH,
-      self::GERMAN,
-      self::ITALIAN,
-      self::SPANISH
-    ];
-  }
+    /**
+     * Gets allowable values of the enum
+     * @return string[]
+     */
+    public static function getAllowableEnumValues()
+    {
+        return [
+            self::ENGLISH,
+            self::FRENCH,
+            self::GERMAN,
+            self::ITALIAN,
+            self::SPANISH
+        ];
+    }
 }
