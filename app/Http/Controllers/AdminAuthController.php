@@ -114,68 +114,6 @@ class AdminAuthController extends Controller
     return response('', 204);
   }
 
-  /**
-   * Login
-   */
-  public function login1(Request $request)
-  {
-    // if redirect query present, override the intended
-    $redirect = $request->input('redirect');
-    if ($redirect) {
-      redirect()->setIntendedUrl($redirect);
-    }
-
-    // already login
-    if (Auth::check()) {
-      return redirect()->intended('/'); // TODO: to sign-in home
-    }
-
-    // domain-token
-    $accessToken = $request->cookie('siser')['sandbox']['accessToken'] ?? null;
-
-    // check domain login
-    if (!$accessToken) {
-      return $this->getLoginRedirect();
-    }
-
-    $client = new Provider($accessToken);
-    $cognitoUser = $client->getCognitoUser();
-    if (!$cognitoUser) {
-      return $this->getLoginRedirect();
-    }
-
-    // create software user
-    $user = User::where('name', $cognitoUser->username)->first();
-    if (!$user) {
-      $user = User::updateOrCreate([
-        'cognito_id' => $cognitoUser->id,
-      ], [
-        'name' => $cognitoUser->username,
-        'email' => $cognitoUser->email,
-        'password' => 'not allowed',
-        // ...
-      ]);
-    }
-
-    // login user
-    Auth::login($user);
-    $request->session()->regenerateToken();
-    return redirect()->intended('/');
-  }
-
-  /**
-   * logout
-   */
-  public function logout1(Request $request)
-  {
-    if (Auth::check()) {
-      Auth::guard('web')->logout();
-      $request->session()->invalidate();
-      $request->session()->regenerateToken();
-    }
-
-    return $this->getLogoutRedirect();
-  }
 
   public function me()
   {
