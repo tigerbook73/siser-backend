@@ -1,12 +1,20 @@
 <?php
 
 use App\Http\Controllers\AdminAuthController;
+use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GeneralConfigurationController;
+use App\Http\Controllers\MachineController;
+use App\Http\Controllers\PlanController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SoftwarePackageController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\TokenController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-include __DIR__ . "/apiX.php";
 
 /*
 |--------------------------------------------------------------------------
@@ -29,26 +37,18 @@ Route::post('/auth/admin/reset-password', [AdminAuthController::class, 'resetPas
 
 Route::middleware('auth:sanctum')->group(function () {
   Route::post('/auth/admin/logout', [AdminAuthController::class, 'logout']);
-  Route::post('/auth/admin/update-password', [AdminAuthController::class, 'updatePassword']);
+  Route::post('/auth/admin/password', [AdminAuthController::class, 'updatePassword']);
 });
-
-
-//
-// customer ??
-//
-Route::get('/auth/me', [AuthController::class, 'me']);
-Route::middleware('auth:sanctum')->group(function () {
-  Route::post('/token/create', [TokenController::class, 'create']);
-});
+Route::post('/auth/admin/token', [AdminAuthController::class, 'token']);
 
 
 // 
 // public
 // 
-Route::get('/plans', [App\Mockup\Controllers\PublicController::class, 'listPlan']);
-Route::get('/plans/{id}', [App\Mockup\Controllers\PublicController::class, 'getPlan']);
-Route::get('/software-packages', [App\Mockup\Controllers\PublicController::class, 'listSoftwarePackages']);
-Route::get('/software-packages/{id}', [App\Mockup\Controllers\PublicController::class, 'getSoftwarePackage']);
+Route::get('/plans', [PlanController::class, 'list']);
+Route::get('/plans/{id}', [PlanController::class, 'index']);
+Route::get('/software-packages', [SoftwarePackageController::class, 'list']);
+Route::get('/software-packages/{id}', [SoftwarePackageController::class, 'index']);
 
 
 //
@@ -62,40 +62,41 @@ Route::middleware('auth:sanctum')->group(function () {
 */
 
 // configure
-Route::get('/config/general', [App\Mockup\Controllers\AdminPortalController::class, 'getConfigGeneral']);
-Route::patch('/config/general', [App\Mockup\Controllers\AdminPortalController::class, 'updateConfigGeneral']);
+Route::get('/config/general', [GeneralConfigurationController::class, 'get']);
+Route::patch('/config/general', [GeneralConfigurationController::class, 'set']);
 
 // machine
-Route::get('/machines', [App\Mockup\Controllers\AdminPortalController::class, 'listMachine']);
-Route::get('/machines/{id}', [App\Mockup\Controllers\AdminPortalController::class, 'getMachine']);
+Route::get('/machines', [MachineController::class, 'list']);
+Route::get('/machines/{id}', [MachineController::class, 'index']);
 // 
-Route::post('/machines', [App\Mockup\Controllers\SiserBackendController::class, 'createMachine']);
-Route::delete('/machines/{id}', [App\Mockup\Controllers\SiserBackendController::class, 'deleteMachine']);
-Route::post('/machines/{id}/transfer', [App\Mockup\Controllers\SiserBackendController::class, 'transferMachine']);
+Route::post('/machines', [MachineController::class, 'create']);
+Route::delete('/machines/{id}', [MachineController::class, 'destroy']);
 
 // plan
-Route::post('/plans', [App\Mockup\Controllers\AdminPortalController::class, 'createPlan']);
-Route::delete('/plans/{id}', [App\Mockup\Controllers\AdminPortalController::class, 'deletePlan']);
-Route::patch('/plans/{id}', [App\Mockup\Controllers\AdminPortalController::class, 'updatePlan']);
-Route::post('/plans/{id}/deactivate', [App\Mockup\Controllers\AdminPortalController::class, 'deactivatePlan']);
+Route::patch('/plans/{id}', [PlanController::class, 'update']);
 
 // software package
-Route::post('/software-packages', [App\Mockup\Controllers\AdminPortalController::class, 'createSoftwarePackage']);
-Route::patch('/software-packages/{id}', [App\Mockup\Controllers\AdminPortalController::class, 'updateSoftwarePackage']);
+Route::post('/software-packages', [SoftwarePackageController::class, 'create']);
+Route::patch('/software-packages/{id}', [SoftwarePackageController::class, 'update']);
 
 // user
-Route::post('/users', [App\Mockup\Controllers\AdminPortalController::class, 'createUser']);
-Route::get('/users', [App\Mockup\Controllers\AdminPortalController::class, 'listUser']);
-Route::get('/users/{id}', [App\Mockup\Controllers\AdminPortalController::class, 'getUser']);
-Route::post('/users/{id}', [App\Mockup\Controllers\AdminPortalController::class, 'updateUser']);
-Route::post('/users/{id}/invoice-details', [App\Mockup\Controllers\AdminPortalController::class, 'createUserDetails']);
-Route::get('/users/{id}/invoice-details', [App\Mockup\Controllers\AdminPortalController::class, 'getUserDetail']);
-Route::patch('/users/{id}/invoice-details', [App\Mockup\Controllers\AdminPortalController::class, 'updateUserDetails']);
-Route::get('/users/{id}/machines', [App\Mockup\Controllers\AdminPortalController::class, 'userGetMachines']);
-Route::get('/users/{id}/subscription', [App\Mockup\Controllers\AdminPortalController::class, 'getUserSubscription']);
+Route::get('/users', [UserController::class, 'list']);
+Route::get('/users/{id}', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'create']);
+Route::post('/users/{id}', [UserController::class, 'refresh']);
+
+Route::get('/users/{id}/full', [UserController::class, 'fullByUser']);
+Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
+Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
+
+// admin users
+Route::get('/admin-users', [AdminUserController::class, 'list']);
+Route::get('/admin-users/{id}', [AdminUserController::class, 'index']);
+Route::post('/admin-users', [AdminUserController::class, 'create']);
+Route::patch('/admin-users/{id}', [AdminUserController::class, 'update']);
 
 // report
-Route::post('/report/subscriptions', [App\Mockup\Controllers\SiserBackendController::class, 'createSubscriptionReport']);
+Route::post('/report/subscriptions', [ReportController::class, 'subscriptions']);
 
 // TODO: temp disable auth
 /*
@@ -103,15 +104,12 @@ Route::post('/report/subscriptions', [App\Mockup\Controllers\SiserBackendControl
 
   if (config('app.role') == 'customer') {
 */
-Route::post('/account/invoice-details', [App\Mockup\Controllers\CustomerPortalController::class, 'accountCreateDetail']);
-Route::get('/account/invoice-details', [App\Mockup\Controllers\CustomerPortalController::class, 'accountGetDetail']);
-Route::patch('/account/invoice-details', [App\Mockup\Controllers\CustomerPortalController::class, 'accountUpdateDetail']);
-Route::get('/account/invoices', [App\Mockup\Controllers\CustomerPortalController::class, 'accountListInvoices']);
-Route::get('/account/invoices/{id}', [App\Mockup\Controllers\CustomerPortalController::class, 'accountGetInvoice']);
-Route::get('/account/machines', [App\Mockup\Controllers\CustomerPortalController::class, 'accountGetMachines']);
-Route::post('/account/payment-method', [App\Mockup\Controllers\CustomerPortalController::class, 'accountCreatePaymentMethod']);
-Route::get('/account/payment-method', [App\Mockup\Controllers\CustomerPortalController::class, 'accountGetPaymentMethod']);
-Route::get('/account/subscription', [App\Mockup\Controllers\CustomerPortalController::class, 'accountGetSubscription']);
+
+Route::get('/account/me', [AuthController::class, 'me']);
+
+Route::get('/account/full', [UserController::class, 'fullByLoginUser']);
+Route::get('/account/machines', [MachineController::class, 'listByLoginUser']);
+Route::get('/account/subscriptions', [SubscriptionController::class, 'listByLoginUser']);
 
 // TODO: temp disable auth
 /*
@@ -120,6 +118,7 @@ Route::get('/account/subscription', [App\Mockup\Controllers\CustomerPortalContro
 */
 
 
+Route::post('test/reset-data', [TestController::class, 'resetData']);
 
 Route::get('/{any}', function () {
   return response()->json(['message' => 'Not found'], 404);

@@ -6,5 +6,5 @@ set -x
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
 php $BASEDIR/../artisan migrate:fresh
-php $BASEDIR/../artisan code:model
+php $BASEDIR/../artisan code:models
 php $BASEDIR/../artisan db:seed

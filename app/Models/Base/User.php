@@ -10,8 +10,10 @@ use App\Models\LdsInstance;
 use App\Models\LicensePool;
 use App\Models\Machine;
 use App\Models\Subscription;
+use App\Models\TraitModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * Class User
@@ -19,10 +21,15 @@ use Illuminate\Database\Eloquent\Collection;
  * @property int $id
  * @property string $name
  * @property string $email
- * @property string $cognito_id
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $remember_token
+ * @property string|null $cognito_id
+ * @property string $full_name
+ * @property string|null $country
+ * @property string|null $language
+ * @property int|null $subscription_level
+ * @property array|null $roles
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
@@ -35,7 +42,14 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class User extends \Illuminate\Foundation\Auth\User
 {
+  use HasFactory;
+  use TraitModel;
   protected $table = 'users';
+
+  protected $casts = [
+    'subscription_level' => 'int',
+    'roles' => 'json'
+  ];
 
   protected $dates = [
     'email_verified_at'
@@ -44,8 +58,13 @@ class User extends \Illuminate\Foundation\Auth\User
   protected $fillable = [
     'name',
     'email',
+    'password',
     'cognito_id',
-    'password'
+    'full_name',
+    'country',
+    'language',
+    'subscription_level',
+    'roles'
   ];
 
   public function lds_instances()

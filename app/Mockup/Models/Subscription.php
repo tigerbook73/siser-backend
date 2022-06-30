@@ -24,6 +24,12 @@ class Subscription {
     /** @var \DateTime|null $end_date */
     public $end_date;
 
+    /** @var string $currency */
+    public $currency = "";
+
+    /** @var float $price */
+    public $price = 0;
+
     /** @var string $status */
     public $status = "";
 

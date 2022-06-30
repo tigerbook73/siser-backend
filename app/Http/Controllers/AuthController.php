@@ -31,7 +31,7 @@ class AuthController extends Controller
     }
 
     // already login
-    if (Auth::check()) {
+    if (auth('web')->check()) {
       return redirect()->intended('/'); // TODO: to sign-in home
     }
 
@@ -63,7 +63,7 @@ class AuthController extends Controller
     }
 
     // login user
-    Auth::login($user);
+    auth('web')->login($user);
     $request->session()->regenerateToken();
     return redirect()->intended('/');
   }
@@ -73,8 +73,8 @@ class AuthController extends Controller
    */
   public function logout(Request $request)
   {
-    if (Auth::check()) {
-      Auth::guard('web')->logout();
+    if (auth('web')->check()) {
+      auth('web')->logout();
       $request->session()->invalidate();
       $request->session()->regenerateToken();
     }
@@ -84,13 +84,10 @@ class AuthController extends Controller
 
   public function me()
   {
-    $user = Auth::user();
+    auth('web')->login(\App\Models\User::first()); // TODO: temp test only
 
-    return $user ? [
-      'username' => $user->name,
-      'name' => $user->name,
-      'email' => $user->email,
-      'roles' => ['customer'],
-    ] : null;
+    /** @var User $user */
+    $user = auth('web')->user();
+    return $user->toResource('customer');
   }
 }

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -26,6 +27,23 @@ return new class extends Migration
       $table->string('status')->comment('active|inactive');
       $table->timestamps();
     });
+
+    DB::table('plans')->insert([
+      [
+        'id'                  => config('siser.plan.default_machine_plan'),
+        'name'                => 'Machine Basic Plan (free)',
+        'catagory'            => 'machine',
+        'description'         => 'Machine Basic Plan (free)',
+        'subscription_level'  => 1,
+        'contract_term'       => 'permanent',
+        'price'               => json_encode([
+          ['currency' => 'USD', 'price' => '0.0']
+        ]),
+        'auto_renew'          => true,
+        'url'                 => '',
+        'status'              => 'active',
+      ]
+    ]);
   }
 
   /**

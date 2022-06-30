@@ -1,13 +1,13 @@
 <?php
 /**
- * User
+ * UserFull
  */
 namespace App\Mockup\Models;
 
 /**
- * User
+ * UserFull
  */
-class UserX {
+class UserFull {
 
     /** @var int $id */
     public $id = 0;
@@ -32,5 +32,11 @@ class UserX {
 
     /** @var int $subscription_level */
     public $subscription_level = \App\Mockup\Models\SubscriptionLevel::NUMBER_0;
+
+    /** @var \App\Mockup\Models\Machine[] $machines */
+    public $machines = [];
+
+    /** @var \App\Mockup\Models\Subscription[] $subscriptions */
+    public $subscriptions = [];
 
 }

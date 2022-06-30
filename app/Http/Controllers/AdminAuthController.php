@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\AdminUser;
 use App\Services\Cognito\Provider;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
@@ -23,12 +22,8 @@ class AdminAuthController extends Controller
       'password' => ['required'],
     ]);
 
-    // admin users
-    $credentials['cognito_id'] = null;
-
-    if (Auth::attempt($credentials, $request->input('remember'))) {
+    if (auth('admin')->attempt($credentials, $request->input('remember'))) {
       $request->session()->regenerate();
-
       return $this->me();
     }
 
@@ -37,7 +32,7 @@ class AdminAuthController extends Controller
 
   public function logout(Request $request)
   {
-    Auth::guard('web')->logout();
+    auth('admin')->logout();
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
@@ -90,40 +85,43 @@ class AdminAuthController extends Controller
 
   public function updatePassword(Request $request)
   {
-    /** @var User $user */
-    $user = Auth::user();
-    if ($user->cognito_id !== null) {
-      abort(401);
-    }
+    /** @var AdminUser $adminUser */
+    $adminUser = auth('admin')->user();
 
     $input = $request->all();
     $validator = Validator::make($input, [
       'current_password' => ['required', 'string'],
       'password' => ['required', RulesPassword::min(8)],
-    ])->after(function ($validator) use ($user, $input) {
-      if (!isset($input['current_password']) || !Hash::check($input['current_password'], $user->password)) {
+    ])->after(function ($validator) use ($adminUser, $input) {
+      if (!isset($input['current_password']) || !Hash::check($input['current_password'], $adminUser->password)) {
         $validator->errors()->add('current_password', __('The provided password does not match your current password.'));
       }
     });
 
     $validator->validate();
 
-    $user->password = Hash::make($input['password']);
-    $user->save();
+    $adminUser->password = Hash::make($input['password']);
+    $adminUser->save();
 
     return response('', 204);
   }
 
+  public function token()
+  {
+    // TODO: JWT token
+    return [
+      'token' => "xxxxxxxxxxxx",
+      'expires_in' => 1231312311
+    ];
+  }
 
   public function me()
   {
-    $user = Auth::user();
+    auth('admin')->login(\App\Models\AdminUser::first()); // TODO: temp test only
 
-    return $user ? [
-      'username' => $user->name,
-      'name' => $user->name,
-      'email' => $user->email,
-      'roles' => ['customer'],
-    ] : null;
+    /** @var AdminUser $user */
+    $user = auth('admin')->user();
+
+    $user->toResource('admin');
   }
 }

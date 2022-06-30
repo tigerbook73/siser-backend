@@ -6,7 +6,9 @@
 
 namespace App\Models\Base;
 
+use App\Models\TraitModel;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -18,7 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $version
  * @property string|null $description
  * @property string $version_type
- * @property Carbon $release_date
+ * @property Carbon $released_date
  * @property string|null $release_notes
  * @property string $filename
  * @property string $url
@@ -29,10 +31,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SoftwarePackage extends Model
 {
+  use HasFactory;
+  use TraitModel;
   protected $table = 'software_packages';
 
   protected $dates = [
-    'release_date'
+    'released_date'
   ];
 
   protected $fillable = [
@@ -41,7 +45,7 @@ class SoftwarePackage extends Model
     'version',
     'description',
     'version_type',
-    'release_date',
+    'released_date',
     'release_notes',
     'filename',
     'url'

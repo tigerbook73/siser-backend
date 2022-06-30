@@ -7,45 +7,31 @@
 namespace App\Models\Base;
 
 use App\Models\TraitModel;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class Machine
+ * Class GeneralConfiguration
  * 
  * @property int $id
- * @property string $serial_no
- * @property string $model
- * @property string|null $manufacture
- * @property int $user_id
+ * @property int $machine_license_unit
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * 
- * @property User $user
  *
  * @package App\Models\Base
  */
-class Machine extends Model
+class GeneralConfiguration extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'machines';
+  protected $table = 'general_configuration';
 
   protected $casts = [
-    'user_id' => 'int'
+    'machine_license_unit' => 'int'
   ];
 
   protected $fillable = [
-    'serial_no',
-    'model',
-    'manufacture',
-    'user_id'
+    'machine_license_unit'
   ];
-
-  public function user()
-  {
-    return $this->belongsTo(User::class);
-  }
 }

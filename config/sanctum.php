@@ -33,7 +33,7 @@ return [
   |
   */
 
-  'guard' => [env('APP_ROLE') == 'admin' ? 'admin' : 'customer'],
+  'guard' => [env('APP_ROLE') == 'admin' ? 'admin' : 'web'],
 
   /*
   |--------------------------------------------------------------------------

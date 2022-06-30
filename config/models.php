@@ -68,8 +68,8 @@ return [
     */
 
     'use' => [
-      // Reliese\Database\Eloquent\BitBooleans::class,
-      // Reliese\Database\Eloquent\BlamableBehavior::class,
+      Illuminate\Database\Eloquent\Factories\HasFactory::class,
+      App\Models\TraitModel::class,
     ],
 
     /*

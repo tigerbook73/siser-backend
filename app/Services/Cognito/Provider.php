@@ -64,6 +64,28 @@ class Provider
     return $this->cognitoClient;
   }
 
+  /**
+   * 
+   */
+  protected function getCognitoUserFromApiResult($result)
+  {
+    $username = $result['Username'];
+    $user = [];
+    foreach ($result['UserAttributes'] as $attribute) {
+      $user[$attribute['Name']]  = $attribute['Value'];
+    };
+
+    return new CognitoUser(
+      id: $user['sub'],
+      username: $username,
+      name: trim(($user['given_name'] ?? '') . ' ' . ($user['family_name'] ?? '')),
+      email: $user['email'],
+      phone_number: $user['phone_number'] ?? null,
+      language_code: $user['custom:language_code'] ?? null,
+      country_code: $user['custom:country_code'] ?? null,
+      subscription_level: $user['custom:subscription_level'] ?? null,
+    );
+  }
 
   /**
    * 
@@ -75,22 +97,7 @@ class Provider
         'AccessToken' => $this->accessToken,
       ]);
 
-      $username = $result['Username'];
-      $user = [];
-      foreach ($result['UserAttributes'] as $attribute) {
-        $user[$attribute['Name']]  = $attribute['Value'];
-      };
-
-      return new CognitoUser(
-        id: $user['sub'],
-        username: $username,
-        name: trim(($user['given_name'] ?? '') . ' ' . ($user['family_name'] ?? '')),
-        email: $user['email'],
-        phone_number: $user['phone_number'] ?? null,
-        language_code: $user['custom:language_code'] ?? null,
-        country_code: $user['custom:country_code'] ?? null,
-        subscription_level: $user['custom:subscription_level'] ?? null,
-      );
+      return $this->getCognitoUserFromApiResult($result);
     } catch (AwsException $e) {
       // output error message if fails
       echo $e->getMessage() . "\n";
@@ -114,6 +121,23 @@ class Provider
       // output error message if fails
       echo $e->getMessage() . "\n";
       error_log($e->getMessage());
+    }
+  }
+
+  public function getUserByName(string $name): ?CognitoUser
+  {
+    try {
+      $result = $this->getCognitoClient()->adminGetUser([
+        'UserPoolId' => $this->userPoolId,
+        'Username' => $name
+      ]);
+
+      return $this->getCognitoUserFromApiResult($result);
+    } catch (AwsException $e) {
+      // output error message if fails
+      echo $e->getMessage() . "\n";
+      error_log($e->getMessage());
+      return null;
     }
   }
 }

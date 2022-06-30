@@ -17,6 +17,8 @@ return new class extends Migration
       $table->id();
       $table->foreignId('user_id')->constrained();
       $table->foreignId('plan_id')->constrained();
+      $table->string('currency');
+      $table->float('price');
       $table->date('start_date');
       $table->date('end_date')->nullable();
       $table->string('status')->comment('active|inactive|schedule_start|schedule_terminate');

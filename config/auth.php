@@ -14,7 +14,7 @@ return [
     */
 
   'defaults' => [
-    'guard' => env('APP_ROLE') == 'admin' ? 'admin' : 'customer',
+    'guard' => env('APP_ROLE') == 'admin' ? 'admin' : 'web',
     'passwords' => 'users',
   ],
 
@@ -36,9 +36,9 @@ return [
     */
 
   'guards' => [
-    'customer' => [
+    'web' => [
       'driver' => 'session',
-      'provider' => 'end-users',
+      'provider' => 'users',
     ],
     'admin' => [
       'driver' => 'session',
@@ -64,9 +64,9 @@ return [
     */
 
   'providers' => [
-    'end-users' => [
+    'users' => [
       'driver' => 'eloquent',
-      'model' => App\Models\EndUser::class,
+      'model' => App\Models\User::class,
     ],
 
     'admin-users' => [

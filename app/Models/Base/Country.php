@@ -6,6 +6,8 @@
 
 namespace App\Models\Base;
 
+use App\Models\TraitModel;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -19,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Country extends Model
 {
+  use HasFactory;
+  use TraitModel;
   protected $table = 'countries';
   public $timestamps = false;
 

@@ -20,7 +20,7 @@ return new class extends Migration
       $table->string('version');
       $table->string('description')->nullable();
       $table->string('version_type')->default('stable')->comment('stable|beta|...');
-      $table->date('release_date');
+      $table->date('released_date');
       $table->string('release_notes')->nullable()->comment('URL for release notes');
       $table->string('filename');
       $table->string('url')->comment('URL for software package download');

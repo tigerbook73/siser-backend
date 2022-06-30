@@ -7,8 +7,10 @@
 namespace App\Models\Base;
 
 use App\Models\Plan;
+use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -17,6 +19,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $user_id
  * @property int $plan_id
+ * @property string $currency
+ * @property float $price
  * @property Carbon $start_date
  * @property Carbon|null $end_date
  * @property string $status
@@ -30,11 +34,14 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Subscription extends Model
 {
+  use HasFactory;
+  use TraitModel;
   protected $table = 'subscriptions';
 
   protected $casts = [
     'user_id' => 'int',
-    'plan_id' => 'int'
+    'plan_id' => 'int',
+    'price' => 'float'
   ];
 
   protected $dates = [
@@ -45,6 +52,8 @@ class Subscription extends Model
   protected $fillable = [
     'user_id',
     'plan_id',
+    'currency',
+    'price',
     'start_date',
     'end_date',
     'status'

@@ -7,8 +7,10 @@
 namespace App\Models\Base;
 
 use App\Models\Subscription;
+use App\Models\TraitModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -33,6 +35,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Plan extends Model
 {
+  use HasFactory;
+  use TraitModel;
   protected $table = 'plans';
 
   protected $casts = [

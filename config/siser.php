@@ -21,4 +21,8 @@ return [
   'aws_region'      => env('AWS_REGION'),
   // 'aws_key_id' => null,
   // 'aws_key_secret' => null,
+
+  'plan' => [
+    'default_machine_plan' => 1,
+  ]
 ];

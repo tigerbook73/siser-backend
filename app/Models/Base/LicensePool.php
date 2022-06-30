@@ -6,8 +6,10 @@
 
 namespace App\Models\Base;
 
+use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -27,6 +29,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class LicensePool extends Model
 {
+  use HasFactory;
+  use TraitModel;
   protected $table = 'license_pool';
 
   protected $casts = [
