@@ -33,7 +33,7 @@ class DatabaseSeeder extends Seeder
       'cognito_id'          => '0000-0000-0000-0000',
       'subscription_level'  => 0,
       'roles'               => null,
-      'password'            => Hash::make('password'),
+      'password'            => 'not allowed',
     ]);
 
     /**
