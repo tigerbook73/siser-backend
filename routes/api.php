@@ -68,9 +68,9 @@ Route::patch('/config/general', [GeneralConfigurationController::class, 'set']);
 // machine
 Route::get('/machines', [MachineController::class, 'list']);
 Route::get('/machines/{id}', [MachineController::class, 'index']);
-// 
 Route::post('/machines', [MachineController::class, 'create']);
-Route::delete('/machines/{id}', [MachineController::class, 'destroy']);
+Route::patch('/machines/{id}', [MachineController::class, 'update']);
+
 
 // plan
 Route::patch('/plans/{id}', [PlanController::class, 'update']);

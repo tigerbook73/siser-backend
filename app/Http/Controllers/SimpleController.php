@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminUser;
 use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -17,7 +18,8 @@ class SimpleController extends Controller
   protected string $keyName = "";
 
   // login user information
-  protected ?User $user = null;
+  /** @var User|AdminUser $user */
+  protected $user = null;
   protected string $userType = "";
 
   // query options
@@ -97,7 +99,7 @@ class SimpleController extends Controller
     DB::transaction(
       fn () => $model->save()
     );
-    return $this->transformSingleResource($model);
+    return  response()->json($this->transformSingleResource($model), 201);
   }
 
   public function update(Request $request, int $id)

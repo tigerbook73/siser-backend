@@ -15,7 +15,7 @@ class PaymentMethod {
     /** @var string $type */
     public $type = "";
 
-    /** @var string $account_hint masked account number or username or...*/
+    /** @var string $account_hint masked account number or name or...*/
     public $account_hint = "";
 
     /** @var string $status */
