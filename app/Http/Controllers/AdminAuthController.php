@@ -122,6 +122,6 @@ class AdminAuthController extends Controller
     /** @var AdminUser $user */
     $user = auth('admin')->user();
 
-    $user->toResource('admin');
+    return $user->toResource('admin');
   }
 }
