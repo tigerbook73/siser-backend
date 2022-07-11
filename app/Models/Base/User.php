@@ -25,9 +25,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property string $password
  * @property string|null $remember_token
  * @property string|null $cognito_id
+ * @property string|null $given_name
+ * @property string|null $family_name
  * @property string $full_name
- * @property string|null $country
- * @property string|null $language
+ * @property string|null $phone_number
+ * @property string|null $country_code
+ * @property string|null $language_code
  * @property int|null $subscription_level
  * @property array|null $roles
  * @property Carbon|null $created_at
@@ -60,9 +63,12 @@ class User extends \Illuminate\Foundation\Auth\User
     'email',
     'password',
     'cognito_id',
+    'given_name',
+    'family_name',
     'full_name',
-    'country',
-    'language',
+    'phone_number',
+    'country_code',
+    'language_code',
     'subscription_level',
     'roles'
   ];

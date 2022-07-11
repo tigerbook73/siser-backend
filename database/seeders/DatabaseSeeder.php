@@ -27,12 +27,13 @@ class DatabaseSeeder extends Seeder
     $customer = User::create([
       'name'                => 'john.smith',
       'email'               => 'john.smith@gmail.com',
+      'given_name'          => 'John',
+      'family_name'         => 'Smith',
       'full_name'           => 'John Smith',
-      'country'             => 'USA',
-      'language'            => 'en',
+      'country_code'        => 'US',
+      'language_code'       => 'en',
       'cognito_id'          => '0000-0000-0000-0000',
       'subscription_level'  => 0,
-      'roles'               => null,
       'password'            => 'not allowed',
     ]);
 

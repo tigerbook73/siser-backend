@@ -14,7 +14,9 @@ class CognitoUser
   public function __construct(
     public string $id,
     public string $username,
-    public string $name,
+    public string $given_name,
+    public string $family_name,
+    public string $full_name,
     public string $email,
     public ?string $phone_number = null,
     public ?string $language_code = null,
@@ -78,7 +80,9 @@ class Provider
     return new CognitoUser(
       id: $user['sub'],
       username: $username,
-      name: trim(($user['given_name'] ?? '') . ' ' . ($user['family_name'] ?? '')),
+      given_name: $user['given_name'] ?? '',
+      family_name: $user['given_name'] ?? '',
+      full_name: trim(($user['given_name'] ?? '') . ' ' . ($user['family_name'] ?? '')),
       email: $user['email'],
       phone_number: $user['phone_number'] ?? null,
       language_code: $user['custom:language_code'] ?? null,
@@ -90,11 +94,11 @@ class Provider
   /**
    * 
    */
-  public function getCognitoUser(): ?CognitoUser
+  public function getCognitoUser(string $accessToken = null): ?CognitoUser
   {
     try {
       $result = $this->getCognitoClient()->getUser([
-        'AccessToken' => $this->accessToken,
+        'AccessToken' => $accessToken ?? $this->accessToken,
       ]);
 
       return $this->getCognitoUserFromApiResult($result);

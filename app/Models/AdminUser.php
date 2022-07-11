@@ -37,10 +37,7 @@ class AdminUser extends BaseUser
 
   protected function beforeCreate()
   {
-    $this->subscription_level = null;
-    $this->country = null;
-    $this->language = null;
-    $this->cognito_id = null;
     $this->full_name = $this->full_name ?: $this->name;
+    $this->cognito_id = null;
   }
 }

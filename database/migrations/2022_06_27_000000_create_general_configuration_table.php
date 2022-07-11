@@ -16,15 +16,16 @@ return new class extends Migration
   {
     Schema::create('general_configuration', function (Blueprint $table) {
       $table->id();
-      $table->unsignedInteger('machine_license_unit');
+      $table->string('name')->unique();
+      $table->json('value');
       $table->timestamps();
     });
 
-    // only one record is allowed
+    // 
     DB::table('general_configuration')->insert([
       [
-        'id'                    => 1,
-        'machine_license_unit'  => 2,
+        'name'  => 'machine_license_unit',
+        'value' => json_encode(2),
       ]
     ]);
   }

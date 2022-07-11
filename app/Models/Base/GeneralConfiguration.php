@@ -15,7 +15,8 @@ use Illuminate\Database\Eloquent\Model;
  * Class GeneralConfiguration
  * 
  * @property int $id
- * @property int $machine_license_unit
+ * @property string $name
+ * @property array $value
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -28,10 +29,11 @@ class GeneralConfiguration extends Model
   protected $table = 'general_configuration';
 
   protected $casts = [
-    'machine_license_unit' => 'int'
+    'value' => 'json'
   ];
 
   protected $fillable = [
-    'machine_license_unit'
+    'name',
+    'value'
   ];
 }
