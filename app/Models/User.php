@@ -2,14 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Base\User as BaseUser;
 use App\Services\Cognito\CognitoUser;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
-class User extends BaseUser
+class User extends AuthUser
 {
-  use HasApiTokens, Notifiable;
+  use Notifiable;
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -47,7 +45,7 @@ class User extends BaseUser
     $this->roles = null;
   }
 
-  static public function createFromCognitoUser(CognitoUser $cognitoUser)
+  static public function createFromCognitoUser(CognitoUser $cognitoUser): User
   {
     if (User::where('cognito_id', $cognitoUser->id)->count() > 0) {
       abort(400, 'user already exists');

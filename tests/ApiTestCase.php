@@ -44,7 +44,7 @@ abstract class ApiTestCase extends TestCase
       $this->actingAs($this->user, 'admin');
     } else if ($this->role == 'customer') {
       $this->user =  User::first();
-      $this->actingAs($this->user, 'web');
+      $this->actingAs($this->user, 'api');
     }
 
     if (!$this->faker) {

@@ -3,17 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdminUser;
-use App\Services\Cognito\Provider;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password as RulesPassword;
+use PHPOpenSourceSaver\JWTAuth\JWTGuard;
 
 class AdminAuthController extends Controller
 {
+  private function jwtAuth(): JWTGuard
+  {
+    /** @var JWTGuard */
+    $guard = auth('admin');
+    return $guard;
+  }
+
   public function login(Request $request)
   {
     // input validation
@@ -22,21 +28,17 @@ class AdminAuthController extends Controller
       'password' => ['required'],
     ]);
 
-    if (auth('admin')->attempt($credentials, $request->input('remember'))) {
-      $request->session()->regenerate();
-      return $this->me();
+    if (!$token = $this->jwtAuth()->attempt($credentials)) {
+      return response()->json(['message' => 'invalid credentials'], 400);
     }
 
-    return response()->json(['message' => 'invalid credentials', 400]);
+    return $this->respondWithToken($token);
   }
 
-  public function logout(Request $request)
+  public function logout()
   {
-    auth('admin')->logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-
-    return response()->json(['message' => 'logout successfully']);
+    $this->jwtAuth()->logout();
+    return response('', 204);
   }
 
   public function forgotPassword(Request $request)
@@ -67,11 +69,8 @@ class AdminAuthController extends Controller
 
     $status = Password::reset(
       $input,
-      function ($user, $password) {
-        $user->forceFill([
-          'password' => Hash::make($password)
-        ])->setRememberToken(Str::random(60));
-
+      function (AdminUser $user, string $password) {
+        $user->password = Hash::make($password);
         $user->save();
 
         event(new PasswordReset($user));
@@ -86,7 +85,7 @@ class AdminAuthController extends Controller
   public function updatePassword(Request $request)
   {
     /** @var AdminUser $adminUser */
-    $adminUser = auth('admin')->user();
+    $adminUser = $this->jwtAuth()->user();
 
     $input = $request->all();
     $validator = Validator::make($input, [
@@ -106,22 +105,31 @@ class AdminAuthController extends Controller
     return response('', 204);
   }
 
-  public function token()
+  public function refresh()
   {
-    // TODO: JWT token
-    return [
-      'token' => "xxxxxxxxxxxx",
-      'expires_in' => 1231312311
-    ];
+    return $this->respondWithToken($this->jwtAuth()->refresh());
   }
 
   public function me()
   {
-    auth('admin')->login(\App\Models\AdminUser::first()); // TODO: temp test only
-
     /** @var AdminUser $user */
-    $user = auth('admin')->user();
-
+    $user = $this->jwtAuth()->user();
     return $user->toResource('admin');
+  }
+
+  /**
+   * Get the token array structure.
+   *
+   * @param  string $token
+   *
+   * @return \Illuminate\Http\JsonResponse
+   */
+  protected function respondWithToken($token)
+  {
+    return response()->json([
+      'access_token' => $token,
+      'token_type' => 'bearer',
+      'expires_in' => $this->jwtAuth()->factory()->getTTL() * 60  // @phpstan-ignore-line
+    ]);
   }
 }

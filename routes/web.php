@@ -18,8 +18,7 @@ use Illuminate\Support\Facades\Route;
  * authentication
  */
 
-Route::get('/auth/login', [AuthController::class, 'login'])->name('login');
-Route::get('/auth/logout', [AuthController::class, 'logout']);
+Route::get('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/admin/auth/reset-password', function () {
   return view('index');

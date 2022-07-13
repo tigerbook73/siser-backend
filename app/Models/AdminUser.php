@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Base\User as BaseUser;
+use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
-class AdminUser extends BaseUser
+class AdminUser extends AuthUser
 {
-  use HasApiTokens, Notifiable;
+  use Notifiable;
+  use CanResetPassword;
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],

@@ -17,8 +17,6 @@ return [
 
   'name' => env('APP_NAME', 'Laravel'),
 
-  'role' => env('APP_ROLE', 'admin'),
-
   /*
   |--------------------------------------------------------------------------
   | Application Environment
@@ -187,6 +185,7 @@ return [
     /*
      * Package Service Providers...
      */
+    PHPOpenSourceSaver\JWTAuth\Providers\LaravelServiceProvider::class,
 
     /*
      * Application Service Providers...

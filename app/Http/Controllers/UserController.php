@@ -66,9 +66,9 @@ class UserController extends SimpleController
 
   protected function fullByLoginUser(Request $request)
   {
-    auth('web')->login(\App\Models\User::first()); // TODO: temp test only
+    auth('api')->login(\App\Models\User::first()); // TODO: temp test only
 
-    return $this->fullByUserId(auth('web')->user()->id);
+    return $this->fullByUserId(auth('api')->user()->id);
   }
 
   protected function fullByUser(Request $request, $id)
