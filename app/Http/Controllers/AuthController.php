@@ -62,12 +62,12 @@ class AuthController extends Controller
 
     $viewData = [
       'redirect' => Cache::pull('user_login_redirect'),
-      'token' => json_encode([
+      'token' => "'" . json_encode([
         'access_token' => $this->jwtAuth()->login($user),
         'token_type' => 'bearer',
         'expires_in' => config('jwt.ttl') * 60,
-      ]),
-      'account' => json_encode($user->toResource('customer'))
+      ]) . "'",
+      'account' => "'" . json_encode($user->toResource('customer')) . "'"
     ];
 
     // login user
@@ -95,8 +95,6 @@ class AuthController extends Controller
 
     return response('', 204);
   }
-
-
 
   /**
    * Get the authenticated User.

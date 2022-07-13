@@ -6,20 +6,21 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>Document</title>
   </head>
+
   <body>
     <script>
       const redirect = "{{ $redirect }}";
-      const token = JSON.parse('{!! $token !!}');
-      const account = JSON.parse('{!! $account !!}');
+      const token = {!! $token !!};
+      const account = {!! $account !!};
 
-      window.sessionStorage.setItem("user_token.access_token", token.access_token);
-      window.sessionStorage.setItem("user_token.expires_in", token.expires_in);
-      window.sessionStorage.setItem("user_token.token_type", token.token_type);
+      for (const prop in token) {
+        window.sessionStorage.setItem("user_token" + prop, token[prop]);
+      }
+      for (const prop in account) {
+        window.sessionStorage.setItem("user_account" + prop, account[prop]);
+      }
 
-      window.sessionStorage.setItem("user_account.name", account.name);
-      window.sessionStorage.setItem("user_account.full_name", account.full_name);
-      window.sessionStorage.setItem("user_account.email", account.email);
-      window.open(redirect);
+      window.open(redirect, "_self");
     </script>
   </body>
 </html>
