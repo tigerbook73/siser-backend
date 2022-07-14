@@ -19,12 +19,20 @@ class AuthController extends Controller
 
   protected function getLoginRedirect()
   {
-    return  redirect(config('siser.sign_in_uri') . '?' . http_build_query(['redirect' => config('siser.login_uri')]));
+    return  redirect(
+      config('siser.sign_in_uri') . '?' . http_build_query(['redirect' => config('siser.login_uri')]),
+      302,
+      ['Cache-Control' => 'no-store']
+    );
   }
 
   protected function getLogoutRedirect()
   {
-    return redirect(config('siser.sign_out_uri') . '?' . http_build_query(['redirect' => url('/')]));
+    return redirect(
+      config('siser.sign_out_uri') . '?' . http_build_query(['redirect' => url('/')]),
+      302,
+      ['Cache-Control' => 'no-store']
+    );
   }
 
   /**
@@ -62,16 +70,16 @@ class AuthController extends Controller
 
     $viewData = [
       'redirect' => Cache::pull('user_login_redirect'),
-      'token' => "'" . json_encode([
+      'token' => json_encode([
         'access_token' => $this->jwtAuth()->login($user),
         'token_type' => 'bearer',
         'expires_in' => config('jwt.ttl') * 60,
-      ]) . "'",
-      'account' => "'" . json_encode($user->toResource('customer')) . "'"
+      ]),
+      'account' => json_encode($user->toResource('customer'))
     ];
 
     // login user
-    return response()->view('user-login', $viewData);
+    return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
   }
 
   public function loginTest(Request $request)

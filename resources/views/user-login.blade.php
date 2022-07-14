@@ -10,17 +10,17 @@
   <body>
     <script>
       const redirect = "{{ $redirect }}";
-      const token = {!! $token !!};
-      const account = {!! $account !!};
+      const token = JSON.parse('{!! $token !!}');  // must be ' here 
+      const account = JSON.parse('{!! $account !!}');  // must be ' here
 
       for (const prop in token) {
-        window.sessionStorage.setItem("user_token" + prop, token[prop]);
+        window.sessionStorage.setItem("user_token." + prop, token[prop]);
       }
       for (const prop in account) {
-        window.sessionStorage.setItem("user_account" + prop, account[prop]);
+        window.sessionStorage.setItem("user_account." + prop, account[prop]);
       }
 
-      window.open(redirect, "_self");
+      window.open(redirect || "/", "_self");
     </script>
   </body>
 </html>

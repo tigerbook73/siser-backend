@@ -50,7 +50,7 @@ class UserController extends SimpleController
 
     /** @var User $user */
     $user = $this->customizeQuery($this->baseQuery(), [])->findOrFail($id);
-    $subscriptions = $user->subscriptions;
+    $subscriptions = $user->subscriptions()->with('plan')->get();
     $machines = $user->machines;
 
     $result = $this->transformSingleResource($user);
