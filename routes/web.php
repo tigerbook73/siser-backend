@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LdsController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,9 +25,14 @@ Route::get('/admin/auth/reset-password', function () {
   return view('index');
 })->name('password.reset');
 
+
 /**
- * 
+ * LDS
  */
+// Route::get('/lds/reg', [LdsController::class, 'reg']);
+Route::get('/check-in', [LdsController::class, 'checkIn']);
+Route::get('/check-out', [LdsController::class, 'checkOut']);
+
 
 /**
  * fallback 

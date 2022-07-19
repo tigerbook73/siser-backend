@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GeneralConfigurationController;
 use App\Http\Controllers\JwtAuthController;
+use App\Http\Controllers\LdsController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ReportController;
@@ -82,6 +83,14 @@ Route::middleware('auth:admin')->group(function () {
 Route::middleware('auth:admin')->group(function () {
   Route::get('/config/general', [GeneralConfigurationController::class, 'get']);
   Route::patch('/config/general', [GeneralConfigurationController::class, 'set']);
+});
+
+
+//
+// LDS
+//
+Route::middleware('auth:api')->group(function () {
+  Route::post('/lds/reg-device', [LdsController::class, 'regDevice']);
 });
 
 //
