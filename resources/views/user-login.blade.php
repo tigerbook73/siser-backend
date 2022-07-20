@@ -9,7 +9,6 @@
 
   <body>
     <script>
-      const redirect = "{{ $redirect }}";
       const token = JSON.parse('{!! $token !!}');  // must be ' here 
       const account = JSON.parse('{!! $account !!}');  // must be ' here
 
@@ -20,6 +19,8 @@
         window.sessionStorage.setItem("user_account." + prop, account[prop]);
       }
 
+      const redirect = window.sessionStorage.getItem('login_redirect') || "/";
+      window.sessionStorage.removeItem('login_redirect');
       window.open(redirect || "/", "_self");
     </script>
   </body>

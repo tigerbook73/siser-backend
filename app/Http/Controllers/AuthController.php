@@ -40,12 +40,6 @@ class AuthController extends Controller
    */
   public function login(Request $request)
   {
-    // if redirect query present, override the intended
-    $redirect = $request->input('redirect');
-    if ($redirect) {
-      Cache::put('user_login_redirect', $redirect);
-    }
-
     // domain-token
     $accessToken = $request->input('accessToken') ?? $request->cookie('siser')['sandbox']['accessToken'] ?? null;
 
@@ -69,7 +63,6 @@ class AuthController extends Controller
     }
 
     $viewData = [
-      'redirect' => Cache::pull('user_login_redirect'),
       'token' => json_encode([
         'access_token' => $this->jwtAuth()->login($user),
         'token_type' => 'bearer',
