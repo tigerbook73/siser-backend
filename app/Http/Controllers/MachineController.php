@@ -18,8 +18,6 @@ class MachineController extends SimpleController
 
   public function listByLoginUser(Request $request)
   {
-    auth('api')->login(\App\Models\User::first()); // TODO: temp test only
-
     $request->merge(['user_id' => auth('api')->user()->id]);
     return self::list($request);
   }
