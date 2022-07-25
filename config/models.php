@@ -286,6 +286,7 @@ return [
     */
 
     'except' => [
+      'jobs',
       'failed_jobs',
       'password_resets',
       'personal_access_tokens',

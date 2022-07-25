@@ -13,12 +13,12 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::create('device_registration', function (Blueprint $table) {
+    Schema::create('lds_logs', function (Blueprint $table) {
       $table->id();
-      $table->foreignId('user_id')->constrained();
-      $table->string('device_id');
-      $table->string('device_name');
-      $table->string('user_code')->comment('registration code return to LDS client');
+      $table->foreignId('lds_instance_id');
+      $table->string('action')->comment('check-in|check-out');
+      $table->string('result')->comment('ok|nok');
+      $table->string('text')->nullable();
       $table->timestamps();
     });
   }
@@ -30,6 +30,6 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::dropIfExists('device_registration');
+    Schema::dropIfExists('lds_instances');
   }
 };

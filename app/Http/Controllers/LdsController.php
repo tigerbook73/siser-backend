@@ -2,269 +2,215 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LdsRegistration;
 use App\Models\User;
 use App\Services\Lds\LdsCoding;
-use Exception;
+use App\Services\Lds\LdsException;
+use App\Services\Lds\LdsLicenseManager;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 
 class LdsController extends Controller
 {
-  public function __construct(protected LdsCoding $ldsCoding)
+  public function __construct(protected LdsCoding $ldsCoding, protected LdsLicenseManager $ldsManager)
   {
   }
 
-  protected function getCacheKey($user_code, $device_id)
+  protected function isDigitString(string $str, int $length)
   {
-    return $user_code . '|' . $device_id;
-  }
-
-  protected function beautifyCode($user_code, $total_len, $seg_len)
-  {
-    $originCode = str_pad((string)$user_code, $total_len, "0", STR_PAD_LEFT);
-    return implode(' ', str_split($originCode, $seg_len));
+    return is_string($str) && strlen($str) == $length && ctype_digit($str);
   }
 
   public function regDevice(Request $request)
   {
     // validation
     $inputs = $request->validate([
-      'version' => ['required', Rule::in([1])],
+      'version' => [Rule::in([1])],
       'device_id' => ['required', "digits:16"],
       'device_name' => ['required', 'string'],
       'online' => [Rule::in([0, 1])]
     ]);
 
-    $result = $inputs;
-    $result['online'] = $inputs['online'] ?? 1;
-
     /** @var User $user */
     $user = auth('api')->user();
-    $result['user'] = $user->toResource('customer');
-    $result['user_code'] = $this->ldsCoding->encodeUserId($user->id);
+    $user_code = $this->ldsCoding->encodeUserId($user->id);
 
+    /** @var LdsRegistration $registration */
+    $registration = LdsRegistration::where('user_code', $user_code)
+      ->where('device_id', $inputs['device_id'])
+      ->first() ?? new LdsRegistration();
+    $registration->fill([
+      'user_id' => $user->id,
+      'device_id' => $inputs['device_id'],
+      'user_code' => $user_code,
+      'device_name' => $inputs['device_name'],
+    ]);
+    $registration->save();
+
+    $result = $inputs;
+    $result['online'] = $inputs['online'] ?? 1;
+    $result['user'] = $user->toResource('customer');
+    $result['user_code'] = $user_code;
     return $result;
   }
 
-  public function reg(Request $request)
+  protected function validateCheckInputs(array $inputs): array
   {
     // validation
-    if (!$request->device_id) {
-      return response("Bad request", 400);
+    if (!$inputs['rq']) {
+      throw new LdsException(LDS_ERR_BAD_REQUEST);
     }
 
-    $device_id = $request->device_id;
-    $device_name = $request->device_name ?? $device_id;
-    $online = (int)($request->online ?? 1);
-
-    $result['title']  = 'Register new device';
-    $result['op']     = 'reg';
-    $result['online'] = $online;
-
-    try {
-      // user information
-      $user_id = 1;
-      $subscription_level = 1;
-      $user_code = str_pad($this->ldsCoding->encodeUserId($user_id), 15, "0", STR_PAD_LEFT);
-
-      $regRecord = [
-        'user_id'             => $user_id,
-        'user_code'           => $user_code,
-        'device_id'           => $device_id,
-        'subscription_level'  => $subscription_level,
-        'device_name'         => $device_name,
-      ];
-
-      // save record
-      Cache::put($this->getCacheKey($user_code, $device_id), json_encode($regRecord));
-
-      /**
-       * view data
-       */
-      // general data
-      $result['success']          = true;
-      $result['error_message']    = 'Register successfully';
-
-      // reg data
-      $result['reg_data']         = $regRecord;
-
-      // display data
-      $result['display_data']     = [
-        'user_code'  => $this->beautifyCode($user_code, 15, 5),
-        'online'           => $online,
-        'redirect_url'     => $online ? "hostapp:?action=reg&&user_code=$user_code" : "",
-      ];
-
-      return response()->view("lds", $result, 200, ['Cache-Control' => 'no-store']);
-    } catch (Exception $e) {
-      $result['success'] = false;
-      $result['error_message'] = $e->getMessage();
-      return response()->view('lds', $result, 200, ['Cache-Control' => 'no-store']);
+    $rq = $inputs['rq'];
+    if (!$input = $this->ldsCoding->decodeJsonText($rq)) {
+      throw new LdsException(LDS_ERR_BAD_REQUEST);
     }
+
+    if (!$reqData = (array)json_decode($input)) {
+      throw new LdsException(LDS_ERR_BAD_REQUEST);
+    }
+
+    // more validation
+    if (
+      $reqData['version'] != 1 ||
+      !$this->isDigitString($reqData['request_id'] ?? "",  5)  ||
+      !$this->isDigitString($reqData['device_id'] ?? "",  16)  ||
+      !$this->isDigitString($reqData['user_code'] ?? "",  15)
+    ) {
+      throw new LdsException(LDS_ERR_BAD_REQUEST);
+    }
+
+    return $reqData;
   }
 
+  protected function prepareOnlineResponse(
+    int $version             = 1,
+    string $request_id       = "00000",
+    int $error_code          = 0,
+    int $result_code         = 0,
+    int $subscription_level  = 0,
+    int $cutter_number       = 0,
+    int $bitflags            = 0,
+  ) {
+    $response = [
+      'version'             => $version,
+      'request_id'          => $request_id,
+      'error_code'          => $error_code,
+      'result_code'         => $result_code,
+      'subscription_level'  => $subscription_level,
+      'cutter_number'       => $cutter_number,
+      'bitflags'            => $bitflags,
+    ];
+    return response(
+      $this->ldsCoding->formatResultText($this->ldsCoding->encodeJsonText(json_encode($response))),
+      200,
+      ['Content-Type' => 'text/plain', 'Cache-Control' => 'no-store']
+    );
+  }
+
+  protected function prepareOfflineResponse(
+    int $version              = 1,
+    string $request_id        = "00000",
+    int $error_code           = 0,
+    int $result_code          = 0,
+    int $subscription_level   = 0,
+    int $cutter_number        = 0,
+    int $bitflags             = 0,
+    string $verification_code = "000000000000",
+    string $error_message     = ""
+  ) {
+    $response = [
+      'version'             => $version,
+      'request_id'          => $request_id,
+      'error_code'          => $error_code,
+      'result_code'         => $result_code,
+      'subscription_level'  => $subscription_level,
+      'cutter_number'       => $cutter_number,
+      'bitflags'            => $bitflags,
+      'verification_code'   => $verification_code,
+      'error_message'       => $error_message,
+    ];
+
+    return response()->view('lds', $response, 200, ['Cache-Control' => 'no-store']);
+  }
+
+  /**
+   * LDS check API
+   * 
+   * return status will always be 200
+   */
   public function checkIn(Request $request)
   {
-    // validation
-    if (!$request->rq) {
-      return response("Bad request", 400);
-    }
-
-    $rq = $request->rq;
-    $online = $request->online ?? 1;
+    $online = (int)(bool)($request->online ?? 1);
 
     try {
-      $reqData = (array)json_decode($this->ldsCoding->decodeJsonText($rq));
-
-      // more validation
-      if (
-        $reqData['version'] != 1 ||
-        !is_numeric($reqData['request_id']) ||
-        !isset($reqData['device_id']) ||
-        !isset($reqData['user_code'])
-      ) {
-        return response("Bad request", 400);
-      }
-
-      $regStore = Cache::get($reqData['user_code'] . '|' . $reqData['device_id']);
-      if (!$regStore) {
-        return response("Not registered yet", 400);
-      }
-
-      $regRecord = (array)json_decode($regStore);
+      $reqData = $this->validateCheckInputs($request->all());
+      $result = $this->ldsManager->apply($reqData['user_code'], $reqData['device_id']);
 
       if ($online) {
-        $result = [
-          'version' => (int)$reqData['version'],
-          'request_id' => $reqData['request_id'],
-          'error_code' => 0,
-          'result_code' => 0,
-          'subscription_level' => $regRecord['subscription_level'],
-          'cutter_number' => 0,
-        ];
-        return response(
-          $this->ldsCoding->formatResultText($this->ldsCoding->encodeJsonText(json_encode($result))),
-          200,
-          ['Content-Type' => 'text/plain', 'Cache-Control' => 'no-store']
+        return $this->prepareOnlineResponse(
+          request_id: $reqData['request_id'],
+          subscription_level: $result->subscription_level,
+          cutter_number: $result->cutter_number
         );
       } else {
-        $result['title']  = 'Check-in';
-        $result['op']     = 'check-in';
-        $result['online'] = $online;
-
-        $result['reg_data']  = $regRecord;
-
-        $result['display_data'] = [
-          'request_id' => $reqData['request_id'],
-          'result_code' => 0,
-          'subscription_level' => $regRecord['subscription_level'],
-          'cutter_number' => 0,
-          'bitflags' => 0,
-        ];
-        $result['display_data']['verify_code'] = $this->ldsCoding->generateVerificationCode(
-          $reqData['user_code'],
-          $reqData['device_id'],
-          $reqData['request_id'],
-          $result['display_data']['result_code'],
-          $result['display_data']['subscription_level'],
-          $result['display_data']['cutter_number'],
-          $result['display_data']['bitflags']
+        return $this->prepareOfflineResponse(
+          request_id: $reqData['request_id'],
+          subscription_level: $result->subscription_level,
+          cutter_number: $result->cutter_number,
+          verification_code: $this->ldsCoding->generateVerificationCode(
+            $reqData['user_code'],
+            $reqData['device_id'],
+            $reqData['request_id'],
+            0,
+            $result->subscription_level,
+            $result->cutter_number,
+            0
+          )
         );
-
-        // for test
-        $result['success'] = true;
-        $result['error_message'] = "Check-in successfull";
-        return response()->view('lds', $result, 200, ['Cache-Control' => 'no-store']);
       }
-    } catch (Exception $e) {
+    } catch (LdsException $e) {
+      // for bad request
+      if ($e->getCode() == LDS_ERR_BAD_REQUEST[0]) {
+        abort(400, 'Bad Request');
+      }
+
       if ($online) {
-        return response('', 400, ['Cache-Control' => 'no-store']);
+        return $this->prepareOnlineResponse(
+          request_id: $reqData['request_id'],
+          error_code: $e->getCode(),
+        );
       } else {
-        $result['success'] = false;
-        $result['error_message'] = $e->getMessage();
-        return response()->view('lds', $result, 200, ['Cache-Control' => 'no-store']);
+        abort(400, "Error: {$e->getCode()} : {$e->getMessage()}");
       }
     }
   }
 
   public function checkOut(Request $request)
   {
-    // validation
-    if (!$request->rq) {
-      return response("Bad request", 400);
-    }
-
-    $rq = $request->rq;
-    $online = $request->online ?? 1;
+    $online = (int)(bool)($request->online ?? 1);
 
     try {
-      $reqData = (array)json_decode($this->ldsCoding->decodeJsonText($rq));
-
-      // more validation
-      if (
-        $reqData['version'] != 1 ||
-        !is_numeric($reqData['request_id']) ||
-        !isset($reqData['device_id']) ||
-        !isset($reqData['user_code'])
-      ) {
-        return response("Bad request", 400);
-      }
-
-      $regStore = Cache::get($reqData['user_code'] . '|' . $reqData['device_id']);
-      if (!$regStore) {
-        return response("Not registered yet", 400);
-      }
-
-      $regRecord = (array)json_decode($regStore);
+      $reqData = $this->validateCheckInputs($request->all());
+      $this->ldsManager->release($reqData['user_code'], $reqData['device_id']);
 
       if ($online) {
-        $result = [
-          'version' => (int)$reqData['version'],
-          'request_id' => $reqData['request_id'],
-          'error_code' => 0,
-        ];
-        return response(
-          $this->ldsCoding->formatResultText($this->ldsCoding->encodeJsonText(json_encode($result))),
-          200,
-          ['Content-Type' => 'text/plain', 'Cache-Control' => 'no-store']
-        );
+        return $this->prepareOnlineResponse(request_id: $reqData['request_id']);
       } else {
-        $result['title']  = 'Check-out';
-        $result['op']     = 'check-out';
-        $result['online'] = $online;
-
-        $result['reg_data']  = $regRecord;
-
-        $result['display_data'] = [
-          'request_id' => $reqData['request_id'],
-          'result_code' => 0,
-          'subscription_level' => 0,
-          'cutter_number' => 0,
-          'bitflags' => 0,
-        ];
-        $result['display_data']['verify_code'] = $this->ldsCoding->generateVerificationCode(
-          $reqData['user_code'],
-          $reqData['device_id'],
-          $reqData['request_id'],
-          $result['display_data']['result_code'],
-          $result['display_data']['subscription_level'],
-          $result['display_data']['cutter_number'],
-          $result['display_data']['bitflags']
+        return $this->prepareOfflineResponse(
+          request_id: $reqData['request_id']
         );
-
-        // for test
-        $result['success'] = true;
-        $result['error_message'] = "Check-out successfull";
-        return response()->view('lds', $result, 200, ['Cache-Control' => 'no-store']);
       }
-    } catch (Exception $e) {
+    } catch (LdsException $e) {
+      // for bad request
+      if ($e->getCode() == LDS_ERR_BAD_REQUEST[0]) {
+        abort(400, 'Bad Request');
+      }
+
       if ($online) {
-        return response('', 400, ['Cache-Control' => 'no-store']);
+        return $this->prepareOnlineResponse(request_id: $reqData['request_id'], error_code: $e->getCode());
       } else {
-        $result['success'] = false;
-        $result['error_message'] = $e->getMessage();
-        return response()->view('lds', $result, 200, ['Cache-Control' => 'no-store']);
+        abort(400, "Error: {$e->getCode()} : {$e->getMessage()}");
       }
     }
   }

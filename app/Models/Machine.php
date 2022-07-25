@@ -15,25 +15,29 @@ class Machine extends BaseMachine
   ];
 
 
-  protected function beforeCreate()
+  protected function afterCreate()
   {
     /** @var User $user */
     $user = User::find($this->user_id);
-    if ($user->subscriptions()->count() > 0) {
-      return;
+
+    // create subscription if required and update license count for user
+    if ($user->subscriptions()->count() <= 0) {
+      Subscription::create([
+        'user_id'     => $user->id,
+        'plan_id'     => config('siser.plan.default_machine_plan'),
+        'currency'    => 'USD',
+        'price'       => 0.0,
+        'start_date'  => today(),
+        'end_date'    => null,
+        'status'      => 'active',
+      ]);
+
+      $user->subscription_level = 1;
+      $user->license_count = GeneralConfiguration::getMachineLicenseUnit();
+    } else {
+      $user->license_count += GeneralConfiguration::getMachineLicenseUnit();
     }
 
-    Subscription::create([
-      'user_id'     => $user->id,
-      'plan_id'     => config('siser.plan.default_machine_plan'),
-      'currency'    => 'USD',
-      'price'       => 0.0,
-      'start_date'  => today(),
-      'end_date'    => null,
-      'status'      => 'active',
-    ]);
-
-    $user->subscription_level = 1;
     $user->save();
   }
 }

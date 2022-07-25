@@ -28,6 +28,7 @@ return new class extends Migration
       $table->string("country_code")->nullable()->comment('only for end users');
       $table->string("language_code")->nullable()->comment('only for end users');
       $table->unsignedInteger("subscription_level")->nullable()->comment('only for end users');
+      $table->unsignedInteger("license_count")->nullable()->comment('only for end users');
       $table->json("roles")->nullable()->comment('e.g ["admin", "lds", "siser-backend"]')->comment('only for admin users');
       $table->timestamps();
     });

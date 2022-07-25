@@ -6,8 +6,7 @@
 
 namespace App\Models\Base;
 
-use App\Models\LdsInstance;
-use App\Models\LicensePool;
+use App\Models\LdsRegistration;
 use App\Models\Machine;
 use App\Models\Subscription;
 use App\Models\TraitModel;
@@ -32,12 +31,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property string|null $country_code
  * @property string|null $language_code
  * @property int|null $subscription_level
+ * @property int|null $license_count
  * @property array|null $roles
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
- * @property Collection|LdsInstance[] $lds_instances
- * @property Collection|LicensePool[] $license_pools
+ * @property Collection|LdsRegistration[] $lds_registrations
  * @property Collection|Machine[] $machines
  * @property Collection|Subscription[] $subscriptions
  *
@@ -51,6 +50,7 @@ class User extends \Illuminate\Foundation\Auth\User
 
   protected $casts = [
     'subscription_level' => 'int',
+    'license_count' => 'int',
     'roles' => 'json'
   ];
 
@@ -70,17 +70,13 @@ class User extends \Illuminate\Foundation\Auth\User
     'country_code',
     'language_code',
     'subscription_level',
+    'license_count',
     'roles'
   ];
 
-  public function lds_instances()
+  public function lds_registrations()
   {
-    return $this->hasMany(LdsInstance::class);
-  }
-
-  public function license_pools()
-  {
-    return $this->hasMany(LicensePool::class);
+    return $this->hasMany(LdsRegistration::class);
   }
 
   public function machines()

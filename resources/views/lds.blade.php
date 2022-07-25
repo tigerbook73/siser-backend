@@ -1,62 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet" type="text/css">
+    <link href="https://cdn.jsdelivr.net/npm/quasar@2.7.5/dist/quasar.prod.css" rel="stylesheet" type="text/css">
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <body>
+    <div id="q-app" class="fullscreen column justify-center bg-secondary">
+      <div class="col-6 text-white text-center">
+          <h2>Verification Code</h2>
+          <h1>@{{beautified_code}}</h4>
+      </div>
+    </div>
 
-  <script>
-    const redirect = {{$success}} && {{$online}} && {{$op == 'reg'}};
-    if (redirect){
-      const redirect_url = "{!! $display_data['redirect_url'] ?? "" !!}";
-      alert("REDIRECT TO: " + redirect_url);
-      window.open(redirect_url, "_self");
-    }
-  </script>
-
-  <style>
-    table, th, td {
-      border: 1px solid black;
-    }    
-  </style>
-</head>
-
-<body>
-  <h3>{{$title}}</h3>
-  <h4>{{$error_message}}</h4>
-  @if ($success)
-  <hr/>
-  <h4>reg record</h4>
-  <table>
-    <tr>
-      <th>Property</th>
-      <th>Value</th>
-    </tr>
-    @foreach ($reg_data as $field => $value)
-    <tr>
-      <td>{{$field}}</td>
-      <td>{{$value}}</td>
-    </tr>
-    @endforeach
-  </table>
-
-  <h4>display data</h4>
-  <table>
-    <tr>
-      <th>Property</th>
-      <th>Value</th>
-    </tr>
-    @foreach ($display_data as $field => $value)
-    <tr>
-      <td>{{$field}}</td>
-      <td>{{$value}}</td>
-    </tr>
-    @endforeach
-  </table>
-
-  @endif
-</body>
-
+    <!-- Add the following at the end of your body tag -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quasar@2.7.5/dist/quasar.umd.prod.js"></script>
+    <script>
+      const app = Vue.createApp({
+        setup () {
+          const beautified_code = ("{{$verification_code}}".match(/.{1,4}/g) || []).join("-");
+          return {beautified_code};
+        }
+      })
+      app.use(Quasar)
+      app.mount('#q-app')
+    </script>
+  </body>
 </html>

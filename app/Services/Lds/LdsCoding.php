@@ -4,9 +4,9 @@ namespace App\Services\Lds;
 
 use Exception;
 
-require __DIR__ . '/LDSAPI_Request_Encode.php';
-require __DIR__ . '/LDSAPI_UserID_Encode.php';
-require __DIR__ . '/LDSAPI_OfflineValidationCode.php';
+require __DIR__ . '/algorithm/LDSAPI_Request_Encode.php';
+require __DIR__ . '/algorithm/LDSAPI_UserID_Encode.php';
+require __DIR__ . '/algorithm/LDSAPI_OfflineValidationCode.php';
 
 
 class LdsCoding
@@ -62,7 +62,7 @@ class LdsCoding
     string $request_id,
     int $result_code,
     int $sub_level,
-    int $cutter_count,
+    int $cutter_number,
     int $bitflags
   ): ?string {
     try {
@@ -72,7 +72,7 @@ class LdsCoding
         $request_id,
         $result_code,
         $sub_level,
-        $cutter_count,
+        $cutter_number,
         $bitflags
       );
     } catch (Exception) {

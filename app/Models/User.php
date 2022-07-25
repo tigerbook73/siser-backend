@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\UserDeleted;
+use App\Events\UserSaved;
 use App\Services\Cognito\CognitoUser;
 use Illuminate\Notifications\Notifiable;
 
@@ -21,6 +23,7 @@ class User extends AuthUser
     'country_code'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'language_code'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subscription_level'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'license_count'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
   ];
 
 
@@ -34,6 +37,17 @@ class User extends AuthUser
     'remember_token',
   ];
 
+  /**
+   * The event map for the model.
+   *
+   * @var array
+   */
+  protected $dispatchesEvents = [
+    'saved' => UserSaved::class,
+    'deleted' => UserDeleted::class,
+  ];
+
+
   public function newQuery()
   {
     return parent::newQuery()->whereNotNull('cognito_id');
@@ -42,6 +56,7 @@ class User extends AuthUser
   protected function beforeCreate()
   {
     $this->subscription_level = 0;
+    $this->license_count = 0;
     $this->roles = null;
   }
 

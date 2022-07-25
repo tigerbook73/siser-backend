@@ -13,16 +13,17 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::create('lds_instances', function (Blueprint $table) {
+    Schema::create('lds_registrations', function (Blueprint $table) {
       $table->id();
-      $table->string('registration_code', 12)->comment('one to one mapping with user_id');
       $table->foreignId('user_id')->constrained();
       $table->string('device_id');
-      $table->timestamp('registration');
-      $table->timestamp('last_checkin')->nullable();
-      $table->timestamp('expires_at')->nullable();
-      $table->string('status')->comment('active|inactive');
+      $table->string('user_code')->comment('registration code return to LDS client');
+      $table->string('device_name');
       $table->timestamps();
+
+      $table->index('user_code');
+      $table->index('device_id');
+      $table->unique(['user_code', 'device_id']);
     });
   }
 
@@ -33,6 +34,6 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::dropIfExists('lds_instances');
+    Schema::dropIfExists('lds_registrations');
   }
 };
