@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
       'full_name'           => 'John Smith',
       'country_code'        => 'US',
       'language_code'       => 'en',
-      'cognito_id'          => '0000-0000-0000-0000',
+      'cognito_id'          => '191b518e-8add-427e-9da5-e22ff975af8e',
       'subscription_level'  => 0,
       'password'            => 'not allowed',
     ]);

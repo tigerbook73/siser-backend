@@ -21,7 +21,7 @@ class CognitoUser
     public ?string $phone_number = null,
     public ?string $language_code = null,
     public ?string $country_code = null,
-    public ?string $subscription_level = null,
+    public ?int $subscription_level = null,
   ) {
   }
 }
