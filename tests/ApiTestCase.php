@@ -6,11 +6,19 @@ use App\Models\AdminUser;
 use App\Models\User;
 use Faker\Generator;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 abstract class ApiTestCase extends TestCase
 {
   use CreatesApplication;
-  use DatabaseTransactions;
+  use RefreshDatabase;
+
+  /**
+   * Indicates whether the default seeder should run before each test.
+   *
+   * @var bool
+   */
+  protected $seed = true;
 
   /**
    * the following properties may redefine by extended class
@@ -54,6 +62,7 @@ abstract class ApiTestCase extends TestCase
 
   protected function tearDown(): void
   {
+    parent::tearDown();
   }
 
   /**
