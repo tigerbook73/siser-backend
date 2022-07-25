@@ -458,6 +458,9 @@ return [
     // Table Specifics Bellow:
     'users' => [
       'parent' => 'Illuminate\Foundation\Auth\User',
+      'use' => [
+        Illuminate\Database\Eloquent\Factories\HasFactory::class,
+      ],
       'guarded' => [
         'email_verified_at',
         'remember_token',

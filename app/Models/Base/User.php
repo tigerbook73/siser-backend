@@ -9,7 +9,6 @@ namespace App\Models\Base;
 use App\Models\LdsRegistration;
 use App\Models\Machine;
 use App\Models\Subscription;
-use App\Models\TraitModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -45,7 +44,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class User extends \Illuminate\Foundation\Auth\User
 {
   use HasFactory;
-  use TraitModel;
   protected $table = 'users';
 
   protected $casts = [

@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Notifications\Notifiable;
 
-class AdminUser extends AuthUser
+class AdminUser extends AdminUserWithTrait
 {
   use Notifiable;
   use CanResetPassword;

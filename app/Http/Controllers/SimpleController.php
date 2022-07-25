@@ -239,7 +239,7 @@ class SimpleController extends Controller
   protected function validateUser()
   {
     $this->user = auth()->user();
-    $this->userType = $this->user?->cognito_id ? 'admin' : 'customer';
+    $this->userType = $this->user?->cognito_id ? 'customer' : 'admin';
   }
 
   protected function getListRules()

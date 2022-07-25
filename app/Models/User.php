@@ -7,7 +7,7 @@ use App\Events\UserSaved;
 use App\Services\Cognito\CognitoUser;
 use Illuminate\Notifications\Notifiable;
 
-class User extends AuthUser
+class User extends UserWithTrait
 {
   use Notifiable;
 

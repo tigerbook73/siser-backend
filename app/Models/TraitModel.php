@@ -28,7 +28,7 @@ trait TraitModel
    */
 
   // attribute options
-  static protected $attributesOption = null;
+  static protected $attributesOption = [];
   // [
   //   'attribute_name' => [
   //      'filterable' => 0|1|nested_field,
