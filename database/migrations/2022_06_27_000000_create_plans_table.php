@@ -37,7 +37,7 @@ return new class extends Migration
         'subscription_level'  => 1,
         'contract_term'       => 'permanent',
         'price'               => json_encode([
-          ['currency' => 'USD', 'price' => '0.0']
+          ['currency' => 'USD', 'price' => 0.0]
         ]),
         'auto_renew'          => true,
         'url'                 => '',
