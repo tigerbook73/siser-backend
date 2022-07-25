@@ -30,7 +30,7 @@ class UserController extends SimpleController
 
     $user = User::createFromCognitoUser($cognitoUser);
 
-    return $user->toResource('admin');
+    return response()->json($user->toResource('admin'), 201);
   }
 
   public function refresh(Request $request, $id)

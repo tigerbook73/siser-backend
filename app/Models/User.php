@@ -59,8 +59,8 @@ class User extends AuthUser
       'family_name'   => $cognitoUser->family_name,
       'full_name'     => $cognitoUser->full_name,
       'phone_number'  => $cognitoUser->phone_number,
-      'country'       => $cognitoUser->country_code,
-      'language'      => $cognitoUser->language_code,
+      'country_code'  => $cognitoUser->country_code,
+      'language_code' => $cognitoUser->language_code,
       'password'      => 'not allowed',
     ]);
 

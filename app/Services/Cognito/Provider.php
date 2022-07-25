@@ -81,7 +81,7 @@ class Provider
       id: $user['sub'],
       username: $username,
       given_name: $user['given_name'] ?? '',
-      family_name: $user['given_name'] ?? '',
+      family_name: $user['family_name'] ?? '',
       full_name: trim(($user['given_name'] ?? '') . ' ' . ($user['family_name'] ?? '')),
       email: $user['email'],
       phone_number: $user['phone_number'] ?? null,

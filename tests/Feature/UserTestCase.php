@@ -20,18 +20,18 @@ class UserTestCase extends ApiTestCase
     $this->modelSchema = [
       "id",
       "name",
+      "given_name",
+      "family_name",
       "full_name",
       "email",
+      "phone_number",
       "cognito_id",
-      "country",
-      "language",
+      "country_code",
+      "language_code",
       "subscription_level",
     ];
 
-    $this->modelCreate = [
-      "create_from" => "username",
-      "username" => "chin.lim",
-    ];
+    $this->modelCreate = [];
 
     $this->modelUpdate = [];
 
