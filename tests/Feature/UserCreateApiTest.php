@@ -25,7 +25,8 @@ class UserCreateApiTest extends UserTestCase
       // "phone_number" => null,
       "country_code" => 'US',
       "language_code" => 'en',
-      "subscription_level" => 0
+      "subscription_level" => 0,
+      "license_count" => 0,
     ];
 
     $response = $this->postJson($this->baseUrl, $modelCreateFrom);

@@ -29,6 +29,7 @@ class UserTestCase extends ApiTestCase
       "country_code",
       "language_code",
       "subscription_level",
+      "license_count",
     ];
 
     $this->modelCreate = [];
