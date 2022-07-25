@@ -13,14 +13,12 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::create('license_pool', function (Blueprint $table) {
+    Schema::create('lds_pools', function (Blueprint $table) {
       $table->id();
-      $table->foreignId('user_id')->constrained();
+      $table->foreignId('user_id')->unique();
       $table->unsignedInteger('subscription_level');
       $table->unsignedInteger('license_count')->comment('total license count');
-
-      // 
-      $table->unsignedInteger('license_free')->comment('free licenses in the pool');
+      $table->unsignedInteger('license_free')->comment('free licenses');
       $table->timestamps();
     });
   }
@@ -32,6 +30,6 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::dropIfExists('license_pool');
+    Schema::dropIfExists('lds_pool');
   }
 };

@@ -35,13 +35,13 @@ function generateVerficationCodeTest()
   printf("%s() start.\n", __FUNCTION__);
 
   for ($i = 0; $i < 10; $i++) {
-    $user_code    = random_int(0, 999999999999999);
-    $device_id    = random_int(0, 9999999999);
-    $request_id   = random_int(0, 9999999999);
-    $result_code  = random_int(0, 99);
-    $sub_level    = random_int(0, 9);
-    $cutter_count = random_int(0, 9);
-    $bitflags     = random_int(0, 99);
+    $user_code      = random_int(0, 999999999999999);
+    $device_id      = random_int(0, 9999999999);
+    $request_id     = random_int(0, 9999999999);
+    $result_code    = random_int(0, 99);
+    $sub_level      = random_int(0, 9);
+    $cutter_number  = random_int(0, 9);
+    $bitflags       = random_int(0, 99);
 
     $verification_code = generateVerificationCode(
       (string)$user_code,
@@ -49,7 +49,7 @@ function generateVerficationCodeTest()
       (string)$request_id,
       $result_code,
       $sub_level,
-      $cutter_count,
+      $cutter_number,
       $bitflags
     );
 

@@ -13,13 +13,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class LicensePool
+ * Class LdsRegistration
  * 
  * @property int $id
  * @property int $user_id
- * @property int $subscription_level
- * @property int $license_count
- * @property int $license_free
+ * @property string $device_id
+ * @property string $user_code
+ * @property string $device_name
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
@@ -27,24 +27,21 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @package App\Models\Base
  */
-class LicensePool extends Model
+class LdsRegistration extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'license_pool';
+  protected $table = 'lds_registrations';
 
   protected $casts = [
-    'user_id' => 'int',
-    'subscription_level' => 'int',
-    'license_count' => 'int',
-    'license_free' => 'int'
+    'user_id' => 'int'
   ];
 
   protected $fillable = [
     'user_id',
-    'subscription_level',
-    'license_count',
-    'license_free'
+    'device_id',
+    'user_code',
+    'device_name'
   ];
 
   public function user()

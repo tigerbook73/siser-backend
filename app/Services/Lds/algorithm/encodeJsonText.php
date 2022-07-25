@@ -9,7 +9,7 @@ $origin = '
   "version": 1,
   "request_id": "12345",
   "device_id": "0000111122223333",
-  "user_code": "410800600201008"
+  "user_code": "110800800802890"
 }
 ';
 
