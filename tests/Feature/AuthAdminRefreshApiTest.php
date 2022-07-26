@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 
-class AuthAdminRefreshApiTest extends AuthTestCase
+class AuthAdminRefreshApiTest extends AuthAdminTestCase
 {
-  public ?string $role = 'customer';
+  public ?string $role = 'admin';
 
   public function testAdminAuthRefreshOk()
   {
@@ -16,7 +16,7 @@ class AuthAdminRefreshApiTest extends AuthTestCase
       "expires_in",
     ];
 
-    $token = auth('api')->tokenById($this->user->id);
+    $token = auth('admin')->tokenById($this->user->id);
 
     $response = $this->postJson("{$this->baseUrl}/refresh", [], ['Authorization' => "Bearer $token"]);
     $response->assertStatus(200)
