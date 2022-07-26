@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\User;
 
-class AuthMeGetApiTest extends AuthTestCase
+class AuthAdminMeGetApiTest extends AuthAdminTestCase
 {
-  public ?string $role = 'customer';
+  public ?string $role = 'admin';
 
-  public function testAuthMeGetOk()
+  public function testAuthAdminMeGetOk()
   {
     $response = $this->postJson("{$this->baseUrl}/me");
 

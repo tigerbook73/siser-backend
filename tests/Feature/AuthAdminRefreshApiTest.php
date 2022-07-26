@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\User;
 
-class AuthRefreshApiTest extends AuthTestCase
+class AuthAdminRefreshApiTest extends AuthTestCase
 {
   public ?string $role = 'customer';
 
-  public function testAuthRefreshOk()
+  public function testAdminAuthRefreshOk()
   {
     $modelSchema = [
       "access_token",
