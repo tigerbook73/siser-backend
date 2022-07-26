@@ -4,11 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\User;
 
-class AccountMachineListApiTest extends AccountTestCase
+class AccountSubscriptionListApiTest extends AccountTestCase
 {
   public ?string $role = 'customer';
 
-  public function testAccountMachineListOk()
+  public function testAccountSubscriptionListOk()
   {
     $count = $this->object->machines()->count();
 
