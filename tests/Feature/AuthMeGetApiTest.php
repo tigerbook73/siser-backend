@@ -4,13 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\User;
 
-class AccountMeGetApiTest extends AccountTestCase
+class AuthMeGetApiTest extends AuthTestCase
 {
   public ?string $role = 'customer';
 
   public function testAccountGetOk()
   {
-    $response = $this->getJson("{$this->baseUrl}/me");
+    $response = $this->postJson("{$this->baseUrl}/me");
 
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema)
