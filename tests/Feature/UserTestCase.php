@@ -9,9 +9,40 @@ class UserTestCase extends ApiTestCase
 {
   public string $baseUrl = '/api/v1/users';
   public string $model = User::class;
-
-
   public User $object;
+
+  public $machineSchema = [
+    "id",
+    "serial_no",
+    "model",
+    "manufacture",
+    "user_id",
+  ];
+  public $subscriptionSchema = [
+    "id",
+    "user_id",
+    "plan_id",
+    "plan" => [
+      "id",
+      "name",
+      "catagory",
+      "description",
+      "subscription_level",
+      "contract_term",
+      "price" => [
+        "*" => [
+          "price",
+          "currency",
+        ],
+      ],
+      "auto_renew",
+    ],
+    "currency",
+    "price",
+    "start_date",
+    "end_date",
+    "status",
+  ];
 
   protected function setUp(): void
   {
@@ -33,9 +64,7 @@ class UserTestCase extends ApiTestCase
     ];
 
     $this->modelCreate = [];
-
     $this->modelUpdate = [];
-
     $this->object = User::first();
   }
 }
