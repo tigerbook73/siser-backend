@@ -12,15 +12,15 @@ class AuthAdminForgotPasswordApiTest extends AuthAdminTestCase
 
   public function testAuthAdminForgotPasswordOk()
   {
-    Notification::fake();
+    $fake = Notification::fake();
 
     $response = $this->postJson("{$this->baseUrl}/forgot-password", [
       'email' => $this->object->email,
     ]);
     $response->assertStatus(204);
 
-    Notification::assertCount(1);
-    Notification::assertSentTo($this->object, ResetPassword::class);
+    $fake->assertCount(1);
+    $fake->assertSentTo($this->object, ResetPassword::class);
 
     return $response;
   }
