@@ -23,4 +23,12 @@ class AdminUserController extends SimpleController
     );
     return  response()->json($this->transformSingleResource($adminUser), 201);
   }
+
+  public function update(Request $request, int $id)
+  {
+    if ($request->password) {
+      $request->merge(['password' => Hash::make($request->password)]);
+    }
+    return parent::update($request, $id);
+  }
 }
