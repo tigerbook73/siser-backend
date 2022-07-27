@@ -25,14 +25,21 @@ class LdsTestCase extends ApiTestCase
     'user_code',
   ];
 
-  protected function getUserCode()
-  {
-    $response = $this->postJson('/api/v1/lds/reg-device', $this->regRequest);
-    return $response->json('user_code');
-  }
+  public $checkInRequest = [
+    'version'     => 1,
+    'request_id'  => '10101',
+    'device_id'   => '0000111100002222',
+    'user_code'   => '',
+  ];
 
   protected function encodeRequest(array $request)
   {
     return (new LdsCoding)->encodeJsonText(json_encode($request));
+  }
+
+  protected function getUserCode()
+  {
+    $response = $this->postJson('/api/v1/lds/reg-device', $this->regRequest);
+    return $response->json('user_code');
   }
 }

@@ -35,9 +35,9 @@ function generateVerficationCodeTest()
   printf("%s() start.\n", __FUNCTION__);
 
   for ($i = 0; $i < 10; $i++) {
-    $user_code      = random_int(0, 999999999999999);
-    $device_id      = random_int(0, 9999999999);
-    $request_id     = random_int(0, 9999999999);
+    $user_code      = random_int(0, 99999_99999_99999);
+    $device_id      = random_int(0, 9999_9999_9999_9999);
+    $request_id     = random_int(0, 99999);
     $result_code    = random_int(0, 99);
     $sub_level      = random_int(0, 9);
     $cutter_number  = random_int(0, 9);
@@ -52,6 +52,22 @@ function generateVerficationCodeTest()
       $cutter_number,
       $bitflags
     );
+
+    $extract_data = extractVerificationCode(
+      (string)$user_code,
+      (string)$device_id,
+      (string)$request_id,
+      (string)$verification_code
+    );
+
+    if (
+      $result_code    !== $extract_data['result_code'] ||
+      $sub_level      !== $extract_data['subscription_level'] ||
+      $cutter_number  !== $extract_data['cutter_number'] ||
+      $bitflags       !== $extract_data['bitflags']
+    ) {
+      exit("error in " . __FUNCTION__);
+    }
 
     if (strlen($verification_code) != 12) {
       exit("error in " . __FUNCTION__);

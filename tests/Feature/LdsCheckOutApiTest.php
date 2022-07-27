@@ -7,11 +7,11 @@ use App\Models\LdsPool;
 use App\Models\User;
 use App\Services\Lds\LdsCoding;
 
-class LdsCheckInApiTest extends LdsTestCase
+class LdsCheckOutApiTest extends LdsTestCase
 {
   public ?string $role = 'customer';
 
-  public function testLdsCheckInOk()
+  public function testLdsCheckOutOk()
   {
     $checkInRequest = $this->checkInRequest;
     $checkInRequest['user_code'] = $this->getUserCode();
@@ -25,8 +25,12 @@ class LdsCheckInApiTest extends LdsTestCase
     $response = $this->get("/check-in?$paramString");
     $response->assertStatus(200);
 
+    // check-out
+    $response = $this->get("/check-out?$paramString");
+    $response->assertStatus(200);
+
     /**
-     * verify check-in results
+     * verify check-out results
      */
     $content = $response->getContent();
     $this->assertTrue(strpos($content, 'BeginLDSData') !== false);
@@ -35,12 +39,12 @@ class LdsCheckInApiTest extends LdsTestCase
     $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
       ->where('device_id', $checkInRequest['device_id'])
       ->first();
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
+    $this->assertTrue($ldsInstance !== null && !$ldsInstance->online);
 
     /** @var LdsPool $ldsPool */
     $ldsPool = LdsPool::where('user_id', $this->user->id)->first();
     $this->assertTrue($ldsPool !== null);
-    $this->assertTrue($ldsPool->license_free + 1 === $ldsPool->license_count);
+    $this->assertTrue($ldsPool->license_free === $ldsPool->license_count);
 
     return $response;
   }

@@ -65,3 +65,36 @@ function generateVerificationCode(
   $result = $infostr . $s5;
   return $result;
 }
+
+function extractVerificationCode(
+  string $user_code,
+  string $device_id,
+  string $request_id,
+  string $verificationCode
+): ?array {
+  $result_code    = (int)substr($verificationCode, 1, 2);
+  $sub_level      = (int)substr($verificationCode, 3, 1);
+  $cutter_number  = (int)substr($verificationCode, 4, 1);
+  $bitflags       = (int)substr($verificationCode, 5, 2);
+
+  $tempCode = generateVerificationCode(
+    $user_code,
+    $device_id,
+    $request_id,
+    $result_code,
+    $sub_level,
+    $cutter_number,
+    $bitflags
+  );
+
+  if ($tempCode !== $verificationCode) {
+    return null;
+  }
+
+  return [
+    'result_code' => $result_code,
+    'subscription_level' => $sub_level,
+    'cutter_number' => $cutter_number,
+    'bitflags' => $bitflags,
+  ];
+}
