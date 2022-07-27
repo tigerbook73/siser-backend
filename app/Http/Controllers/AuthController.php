@@ -36,9 +36,9 @@ class AuthController extends Controller
   }
 
   /**
-   * Login
+   * Login from siser website
    */
-  public function login(Request $request)
+  public function loginWeb(Request $request)
   {
     // domain-token
     $accessToken = $request->input('accessToken') ?? $request->cookie('siser')['sandbox']['accessToken'] ?? null;
@@ -73,6 +73,14 @@ class AuthController extends Controller
 
     // login user
     return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
+  }
+
+  /**
+   * logout from siser website
+   */
+  public function logoutWeb()
+  {
+    return $this->getLogoutRedirect();
   }
 
   public function loginTest(Request $request)
