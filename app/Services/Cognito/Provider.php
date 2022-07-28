@@ -110,14 +110,14 @@ class Provider
     }
   }
 
-  public function updateUserLicenseLevel(string $username, int $licenseLevel): void
+  public function updateUserSubscriptionLevel(string $username, int $subscription_level): void
   {
     try {
       $result = $this->getCognitoClient()->adminUpdateUserAttributes([
         'UserPoolId' => $this->userPoolId,
         'Username' => $username,
         'UserAttributes' => [
-          ['Name' => 'custom:subscription_level', 'Value' => $licenseLevel]
+          ['Name' => 'custom:subscription_level', 'Value' => (string)$subscription_level]
         ],
       ]);
       // var_dump($result);

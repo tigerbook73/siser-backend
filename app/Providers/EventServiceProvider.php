@@ -30,6 +30,7 @@ class EventServiceProvider extends ServiceProvider
    */
   protected $subscribe = [
     \App\Services\Lds\LdsEventSubscriber::class,
+    \App\Services\Cognito\SiserEventSubscriber::class,
   ];
 
   /**
