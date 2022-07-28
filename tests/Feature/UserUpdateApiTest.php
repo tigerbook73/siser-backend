@@ -11,12 +11,12 @@ class UserUpdateApiTest extends UserTestCase
   public function testUserUpdateOk()
   {
     $modelUpdate = [
-      "name" => "john.smith",
-      "given_name" => "John",
-      "family_name" => "Smith",
-      "full_name" => "John Smith",
-      "email" => "john.smith@gmail.com",
-      "country_code" => 'US',
+      "name" => "user1.test",
+      "given_name" => "User1",
+      "family_name" => "Test",
+      "full_name" => "User1 Test",
+      "email" => "user1.test@iifuture.com",
+      "country_code" => 'AU',
       "language_code" => 'en',
       "subscription_level" => 1,
       "license_count" => 2,

@@ -12,18 +12,17 @@ class UserCreateApiTest extends UserTestCase
   {
     $modelCreateFrom = [
       "create_from" => "username",
-      "username" => "user.test",
+      "username" => "user2.test",
     ];
 
     $modelCreate = [
-      "name" => "user.test",
-      "cognito_id" => "d24c89f1-75ac-4a26-8cde-1979c37c11d6",
-      "given_name" => "user",
-      "family_name" => "test",
-      "full_name" => "user test",
-      "email" => "user.test@iifuture.com",
+      "name" => "user2.test",
+      "given_name" => "User2",
+      "family_name" => "Test",
+      "full_name" => "User2 Test",
+      "email" => "user2.test@iifuture.com",
       // "phone_number" => null,
-      "country_code" => 'US',
+      "country_code" => 'AU',
       "language_code" => 'en',
       "subscription_level" => 0,
       "license_count" => 0,

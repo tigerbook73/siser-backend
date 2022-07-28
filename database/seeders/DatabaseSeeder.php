@@ -25,14 +25,14 @@ class DatabaseSeeder extends Seeder
      */
     // end users
     $customer = User::create([
-      'name'                => 'john.smith',
-      'email'               => 'john.smith@gmail.com',
-      'given_name'          => 'John',
-      'family_name'         => 'Smith',
-      'full_name'           => 'John Smith',
-      'country_code'        => 'US',
+      'name'                => 'user1.test',
+      'email'               => 'user1.test@iifuture.com',
+      'given_name'          => 'User1',
+      'family_name'         => 'Test',
+      'full_name'           => 'User1 Test',
+      'country_code'        => 'AU',
       'language_code'       => 'en',
-      'cognito_id'          => '191b518e-8add-427e-9da5-e22ff975af8e',
+      'cognito_id'          => 'b0620f5c-cada-4f75-a8b1-811ea8ddf69d',
       'subscription_level'  => 0,
       'password'            => 'not allowed',
     ]);
