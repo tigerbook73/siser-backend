@@ -49,7 +49,8 @@ Route::middleware('auth:admin')->group(function () {
 //
 // user authentication
 //
-Route::post('/auth/login-test', [AuthController::class, 'loginTest']);  // TODO: login is in web route, this is for test
+// TODO: to remove in production version
+Route::post('/auth/login-test', [AuthController::class, 'loginTest']);
 
 Route::middleware('auth:api')->group(function () {
   Route::post('/auth/refresh', [AuthController::class, 'refresh']);
@@ -150,6 +151,7 @@ Route::middleware('auth:api')->group(function () {
 //
 // test
 //
+// TODO: to remove in production version
 Route::post('test/reset-data', [TestController::class, 'resetData']);
 
 //
