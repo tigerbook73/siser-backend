@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Events\UserDeleted;
 use App\Events\UserSaved;
+use App\Events\UserSubscriptionLevelChanged;
 use App\Services\Cognito\CognitoUser;
 use Illuminate\Notifications\Notifiable;
 
@@ -58,6 +59,13 @@ class User extends UserWithTrait
     $this->subscription_level = 0;
     $this->license_count = 0;
     $this->roles = null;
+  }
+
+  protected function afterSave()
+  {
+    if ($this->wasChanged('subscription_level')) {
+      UserSubscriptionLevelChanged::dispatch($this);
+    }
   }
 
   static public function createFromCognitoUser(CognitoUser $cognitoUser): User
