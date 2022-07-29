@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Services\Cognito\Provider;
+use App\Services\Cognito\CognitoProvider;
 use Illuminate\Http\Request;
 
 class UserController extends SimpleController
@@ -16,8 +16,8 @@ class UserController extends SimpleController
     $access_token = $request->access_token;
     $username = $request->username;
 
-    /** @var Provider $cognitoProvider */
-    $cognitoProvider = app()->make(Provider::class);
+    /** @var CognitoProvider $cognitoProvider */
+    $cognitoProvider = app()->make(CognitoProvider::class);
     if ($create_from == 'access_token') {
       $cognitoUser = $cognitoProvider->getCognitoUser($access_token);
     } else {
@@ -37,7 +37,7 @@ class UserController extends SimpleController
   {
     /** @var User $user */
     $user = User::find($id);
-    $cognitoProvider = app()->make(Provider::class);
+    $cognitoProvider = app()->make(CognitoProvider::class);
     $cognitoUser = $cognitoProvider->getUserByName($user->name);
     $user->updateFromCognitoUser($cognitoUser);
 

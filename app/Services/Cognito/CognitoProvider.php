@@ -9,24 +9,7 @@ use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
 use Aws\Exception\AwsException;
 
 
-class CognitoUser
-{
-  public function __construct(
-    public string $id,
-    public string $username,
-    public string $given_name,
-    public string $family_name,
-    public string $full_name,
-    public string $email,
-    public ?string $phone_number = null,
-    public ?string $language_code = null,
-    public ?string $country_code = null,
-    public ?int $subscription_level = null,
-  ) {
-  }
-}
-
-class Provider
+class CognitoProvider
 {
   public Client|null $httpClient = null;
   public CognitoIdentityProviderClient|null $cognitoClient = null;
@@ -36,21 +19,14 @@ class Provider
   public string $userPoolId;
   public string $clientId;
   public string $clientSecret;
-  public ?string $accessToken = null;
 
-  public function __construct(string $accessToken = null)
+  public function __construct()
   {
     $this->region = config('siser.aws_region');
     $this->host = config('siser.cognito.host');
     $this->userPoolId = config('siser.cognito.user_pool_id');
-    $this->accessToken = $accessToken;
     $this->clientId = config('siser.cognito.client_id');
     $this->clientSecret = config('siser.cognito.client_secret');
-  }
-
-  public function setAccessToken(string $accessToken): void
-  {
-    $this->accessToken = $accessToken;
   }
 
   protected function getCognitoClient(): CognitoIdentityProviderClient
@@ -94,11 +70,11 @@ class Provider
   /**
    * 
    */
-  public function getCognitoUser(string $accessToken = null): ?CognitoUser
+  public function getCognitoUser(string $accessToken): ?CognitoUser
   {
     try {
       $result = $this->getCognitoClient()->getUser([
-        'AccessToken' => $accessToken ?? $this->accessToken,
+        'AccessToken' => $accessToken,
       ]);
 
       return $this->getCognitoUserFromApiResult($result);

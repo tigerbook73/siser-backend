@@ -3,9 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Services\Cognito\Provider;
+use App\Services\Cognito\CognitoProvider;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use PHPOpenSourceSaver\JWTAuth\JWTGuard;
 
 class AuthController extends Controller
@@ -49,8 +48,7 @@ class AuthController extends Controller
     }
 
     // check accessToken validaty
-    $client = new Provider($accessToken);
-    $cognitoUser = $client->getCognitoUser();
+    $cognitoUser = app()->make(CognitoProvider::class)->getCognitoUser($accessToken);
     if (!$cognitoUser) {
       return $this->getLoginRedirect();
     }

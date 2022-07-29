@@ -3,7 +3,7 @@
 namespace Tests\Service;
 
 use App\Models\User;
-use App\Services\Cognito\Provider;
+use App\Services\Cognito\CognitoProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +15,7 @@ class SiserSynchronizerTest extends TestCase
 
   public function testUserSubscriptionLevel()
   {
-    $cognito = new Provider;
+    $cognito = new CognitoProvider();
 
     /** @var User $user */
     $user = User::first();

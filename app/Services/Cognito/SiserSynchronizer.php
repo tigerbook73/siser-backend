@@ -31,6 +31,6 @@ class SiserSynchronizer implements ShouldQueue
   public function handle()
   {
     // TODO: split to different routines
-    (new Provider())->updateUserSubscriptionLevel($this->user->name, $this->user->subscription_level);
+    (new CognitoProvider())->updateUserSubscriptionLevel($this->user->name, $this->user->subscription_level);
   }
 }
