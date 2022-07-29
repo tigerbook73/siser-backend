@@ -21,20 +21,20 @@ class MachineTestCase extends ApiTestCase
       'id',
       'serial_no',
       'model',
-      'manufacture',
+      'nickname',
       'user_id',
     ];
 
     $this->modelCreate = [
       'serial_no' => "5555-6666-7777-9999",
       'model' => "TEST MODEL",
-      'manufacture' => "NONE",
+      'nickname' => "NONE",
       'user_id' => 2,
     ];
 
     $this->modelUpdate = [
       'model' => "TEST MODEL",
-      'manufacture' => "NONE",
+      'nickname' => "NONE",
     ];
 
     $this->object = Machine::first();

@@ -17,7 +17,7 @@ return new class extends Migration
       $table->id();
       $table->string('serial_no')->unique();
       $table->string('model');
-      $table->string('manufacture')->nullable();
+      $table->string('nickname')->nullable();
       $table->foreignId('user_id')->constrained();
       $table->timestamps();
     });

@@ -18,7 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $serial_no
  * @property string $model
- * @property string|null $manufacture
+ * @property string|null $nickname
  * @property int $user_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -40,7 +40,7 @@ class Machine extends Model
   protected $fillable = [
     'serial_no',
     'model',
-    'manufacture',
+    'nickname',
     'user_id'
   ];
 

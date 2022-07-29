@@ -15,7 +15,7 @@ class UserTestCase extends ApiTestCase
     "id",
     "serial_no",
     "model",
-    "manufacture",
+    "nickname",
     "user_id",
   ];
   public $subscriptionSchema = [

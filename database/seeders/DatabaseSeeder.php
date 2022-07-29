@@ -69,7 +69,7 @@ class DatabaseSeeder extends Seeder
     Machine::create([
       'serial_no'     => '0000-1111-2222-3333',
       'model'         => 'Siser Cutter XY',
-      'manufacture'   => 'Siser',
+      'nickname'      => 'first machine',
       'user_id'       => $customer->id,
     ]);
   }
