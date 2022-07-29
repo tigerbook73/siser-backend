@@ -2,9 +2,7 @@
 
 namespace App\Services\Cognito;
 
-use Exception;
 use GuzzleHttp\Client;
-
 use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
 use Aws\Exception\AwsException;
 
@@ -63,7 +61,7 @@ class CognitoProvider
       phone_number: $user['phone_number'] ?? null,
       language_code: $user['custom:language_code'] ?? null,
       country_code: $user['custom:country_code'] ?? null,
-      subscription_level: $user['custom:subscription_level'] ?? null,
+      is_lds_prem_sub: $user['custom:is_lds_prem_sub'] ?? null,
     );
   }
 
@@ -93,7 +91,7 @@ class CognitoProvider
         'UserPoolId' => $this->userPoolId,
         'Username' => $username,
         'UserAttributes' => [
-          ['Name' => 'custom:subscription_level', 'Value' => (string)$subscription_level]
+          ['Name' => 'custom:is_lds_prem_sub', 'Value' => (string)($subscription_level >= 2 ? 1 : 0)]
         ],
       ]);
       // var_dump($result);

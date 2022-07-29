@@ -23,7 +23,7 @@ class CognitoProvider extends CognitoProviderBase
       phone_number: "+999999999",
       language_code: "en",
       country_code: "AU",
-      subscription_level: 0,
+      is_lds_prem_sub: 0,
     );
   }
 
@@ -42,7 +42,7 @@ class CognitoProvider extends CognitoProviderBase
         phone_number: $user->phone_number,
         language_code: $user->language_code,
         country_code: $user->country_code,
-        subscription_level: $user->subscription_level,
+        is_lds_prem_sub: $user->subscription_level >= 2 ? 1 : 0,
       );
     } else if ($name == $this->testUserName) {
       return $this->getCognitoUser();
