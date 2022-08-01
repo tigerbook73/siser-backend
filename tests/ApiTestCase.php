@@ -144,30 +144,4 @@ abstract class ApiTestCase extends TestCase
 
     return $response;
   }
-
-  public function listWithForeignAssert($status = 200, $foreign = ['model' => 9999999], $idInUrl = false, $params = [], $count = null)
-  {
-    $foreignModel = array_keys($foreign)[0];
-    $foreignKey = (new $foreignModel)->getForeignKey();
-    $foreignId = array_values($foreign)[0];
-
-    $paramString = http_build_query($params);
-    $conditions = array_merge($params, [$foreignKey => $foreignId]);
-    $count = $count ?? $this->modelCount($conditions);
-
-    $response = $this->getJson($this->baseUrl . ($idInUrl ? "/$foreignId" : "") . ($paramString ? "?$paramString" : ""));
-
-    if ($status >= 200 && $status < 300) {
-      $response->assertStatus($status)
-        ->assertJsonStructure([
-          'data' => ['*' => $this->modelSchema]
-        ]);
-
-      $this->assertEquals(count($response->json()['data']), $count);
-    } else {
-      $response->assert($status);
-    }
-
-    return $response;
-  }
 }

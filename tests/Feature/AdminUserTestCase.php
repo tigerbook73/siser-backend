@@ -28,13 +28,13 @@ class AdminUserTestCase extends ApiTestCase
       "name"      =>  "admin2",
       "full_name" =>  "admin2",
       "email"     =>  "admin2@haha.com",
-      "password"  =>  "password",
+      "password"  =>  "~Password1",
       "roles"     =>  ["admin"],
     ];
 
     $this->modelUpdate = [
       "full_name" => "On the fly",
-      "password"  => "password",
+      "password"  => "~Password1",
       "roles"     => ["admin"],
     ];
 
