@@ -31,7 +31,7 @@ class AuthAdminResetPasswordApiTest extends AuthAdminTestCase
   public function testAuthAdminResetPassworkdOk()
   {
     $token = $this->getResetToken();
-    $token['password'] = "password1";
+    $token['password'] = "~Password1";
 
     $response = $this->postJson("{$this->baseUrl}/reset-password", $token);
     $response->assertStatus(204);

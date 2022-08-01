@@ -14,7 +14,7 @@ class AuthAdminUpdatePasswordApiTest extends AuthAdminTestCase
   {
     $reqBody = [
       "current_password" => "password",
-      "password" => "password1"
+      "password" => "~Password1"
     ];
 
     $response = $this->postJson("{$this->baseUrl}/update-password", $reqBody);

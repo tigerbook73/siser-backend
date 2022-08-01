@@ -60,15 +60,15 @@ class AdminAuthController extends Controller
 
   public function resetPassword(Request $request)
   {
-    $input = $request->validate([
+    $inputs = $request->validate([
       'token' => ['required'],
       'email' => ['required', 'email'],
-      'password' => ['required', RulesPassword::min(8)],
+      'password' => ['required', RulesPassword::min(8)->mixedCase()->numbers()->symbols()],
     ]);
-    $input['cognito_id'] = null;
+    $inputs['cognito_id'] = null;
 
     $status = Password::reset(
-      $input,
+      $inputs,
       function (AdminUser $user, string $password) {
         $user->password = Hash::make($password);
         $user->save();
@@ -87,19 +87,18 @@ class AdminAuthController extends Controller
     /** @var AdminUser $adminUser */
     $adminUser = $this->jwtAuth()->user();
 
-    $input = $request->all();
-    $validator = Validator::make($input, [
+    $inputs = $request->all();
+    $validator = Validator::make($inputs, [
       'current_password' => ['required', 'string'],
-      'password' => ['required', RulesPassword::min(8)],
-    ])->after(function ($validator) use ($adminUser, $input) {
-      if (!isset($input['current_password']) || !Hash::check($input['current_password'], $adminUser->password)) {
+      'password' => ['required', RulesPassword::min(8)->mixedCase()->numbers()->symbols()],
+    ])->after(function ($validator) use ($adminUser, $inputs) {
+      if (!Hash::check($inputs['current_password'], $adminUser->password)) {
         $validator->errors()->add('current_password', __('The provided password does not match your current password.'));
       }
     });
-
     $validator->validate();
 
-    $adminUser->password = Hash::make($input['password']);
+    $adminUser->password = Hash::make($inputs['password']);
     $adminUser->save();
 
     return response('', 204);
@@ -114,7 +113,7 @@ class AdminAuthController extends Controller
   {
     /** @var AdminUser $user */
     $user = $this->jwtAuth()->user();
-    return $user->toResource('admin');
+    return  response()->json($user->toResource('admin'));
   }
 
   /**
