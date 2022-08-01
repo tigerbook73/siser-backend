@@ -128,7 +128,7 @@ class AdminAuthController extends Controller
     return response()->json([
       'access_token' => $token,
       'token_type' => 'bearer',
-      'expires_in' => $this->jwtAuth()->factory()->getTTL() * 60  // @phpstan-ignore-line
+      'expires_in' => config('jwt.ttl') * 60
     ]);
   }
 }

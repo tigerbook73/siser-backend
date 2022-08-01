@@ -99,7 +99,6 @@ class AuthController extends Controller
   public function logout()
   {
     $this->jwtAuth()->logout();
-
     return response('', 204);
   }
 
@@ -112,7 +111,7 @@ class AuthController extends Controller
   {
     /** @var User $user */
     $user = $this->jwtAuth()->user();
-    return $user->toResource('customer');
+    return response()->json($user->toResource('customer'));
   }
 
   /**
