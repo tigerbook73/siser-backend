@@ -12,6 +12,11 @@ class AdminUserController extends SimpleController
 {
   protected string $modelClass = AdminUser::class;
 
+  protected function getListRules()
+  {
+    return [];
+  }
+
   protected function getCreateRules()
   {
     return [
