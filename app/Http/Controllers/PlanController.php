@@ -9,6 +9,13 @@ class PlanController extends SimpleController
 {
   protected string $modelClass = Plan::class;
 
+  protected function getListRules()
+  {
+    return [
+      'catagory'    => ['in:machine,software'],
+    ];
+  }
+
   public function deactivate(Request $request, $id)
   {
     $this->validateUser();
