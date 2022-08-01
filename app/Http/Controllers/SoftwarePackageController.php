@@ -10,6 +10,44 @@ class SoftwarePackageController extends SimpleController
   protected string $modelClass = SoftwarePackage::class;
   protected string $orderDirection = 'desc';   // default is 'desc'
 
+  protected function getListRules()
+  {
+    return [
+      'name'      => [],
+      'platform'  => ['in:Windows,Mac'],
+    ];
+  }
+
+  protected function getCreateRules()
+  {
+    return [
+      'name'          => ['required'],
+      'platform'      => ['required', 'in:Windows,Mac'],
+      'version'       => ['required'],
+      'description'   => ['nullable'],
+      'version_type'  => ['required'],
+      'released_date' => ['required', 'date'],
+      'release_notes' => ['nullable'],
+      'filename'      => ['required'],
+      'url'           => ['required'],
+    ];
+  }
+
+  protected function getUpdateRules()
+  {
+    return [
+      'name'          => [],
+      'platform'      => ['in:Windows,Mac'],
+      'version'       => [],
+      'description'   => [],
+      'version_type'  => [],
+      'released_date' => ['date'],
+      'release_notes' => [],
+      'filename'      => [],
+      'url'           => [],
+    ];
+  }
+
   public function list(Request $request)
   {
     $result = parent::list($request);
