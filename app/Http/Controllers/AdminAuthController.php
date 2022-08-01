@@ -79,7 +79,7 @@ class AdminAuthController extends Controller
 
     return $status === Password::PASSWORD_RESET
       ? response('', 204)
-      : response()->json(['message' => __($status)]);
+      : response()->json(['message' => __($status)], 400);
   }
 
   public function updatePassword(Request $request)
