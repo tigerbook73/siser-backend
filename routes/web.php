@@ -30,7 +30,6 @@ Route::get('/admin/auth/reset-password', function () {
 /**
  * LDS
  */
-// Route::get('/lds/reg', [LdsController::class, 'reg']);
 Route::get('/check-in', [LdsController::class, 'checkIn']);
 Route::get('/check-out', [LdsController::class, 'checkOut']);
 

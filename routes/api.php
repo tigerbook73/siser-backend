@@ -4,17 +4,14 @@ use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GeneralConfigurationController;
-use App\Http\Controllers\JwtAuthController;
-use App\Http\Controllers\LdsController;
+use App\Http\Controllers\LdsRegistrationController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TestController;
-use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -91,7 +88,7 @@ Route::middleware('auth:admin')->group(function () {
 // LDS
 //
 Route::middleware('auth:api')->group(function () {
-  Route::post('/lds/reg-device', [LdsController::class, 'regDevice']);
+  Route::post('/lds/reg-device', [LdsRegistrationController::class, 'regDevice']);
 });
 
 //

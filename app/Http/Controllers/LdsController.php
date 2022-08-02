@@ -21,39 +21,6 @@ class LdsController extends Controller
     return is_string($str) && strlen($str) == $length && ctype_digit($str);
   }
 
-  public function regDevice(Request $request)
-  {
-    // validation
-    $inputs = $request->validate([
-      'version' => [Rule::in([1])],
-      'device_id' => ['required', "digits:16"],
-      'device_name' => ['required', 'string'],
-      'online' => [Rule::in([0, 1])]
-    ]);
-
-    /** @var User $user */
-    $user = auth('api')->user();
-    $user_code = $this->ldsCoding->encodeUserId($user->id);
-
-    /** @var LdsRegistration $registration */
-    $registration = LdsRegistration::where('user_code', $user_code)
-      ->where('device_id', $inputs['device_id'])
-      ->first() ?? new LdsRegistration();
-    $registration->fill([
-      'user_id' => $user->id,
-      'device_id' => $inputs['device_id'],
-      'user_code' => $user_code,
-      'device_name' => $inputs['device_name'],
-    ]);
-    $registration->save();
-
-    $result = $inputs;
-    $result['online'] = $inputs['online'] ?? 1;
-    $result['user'] = $user->toResource('customer');
-    $result['user_code'] = $user_code;
-    return $result;
-  }
-
   protected function validateCheckInputs(array $inputs): array
   {
     // validation
@@ -61,18 +28,17 @@ class LdsController extends Controller
       throw new LdsException(LDS_ERR_BAD_REQUEST);
     }
 
-    $rq = $inputs['rq'];
-    if (!$input = $this->ldsCoding->decodeJsonText($rq)) {
+    if (!$reqJson = $this->ldsCoding->decodeJsonText($inputs['rq'])) {
       throw new LdsException(LDS_ERR_BAD_REQUEST);
     }
 
-    if (!$reqData = (array)json_decode($input)) {
+    if (!$reqData = (array)json_decode($reqJson)) {
       throw new LdsException(LDS_ERR_BAD_REQUEST);
     }
 
     // more validation
     if (
-      $reqData['version'] != 1 ||
+      ($reqData['version'] ?? 0) != 1 ||
       !$this->isDigitString($reqData['request_id'] ?? "",  5)  ||
       !$this->isDigitString($reqData['device_id'] ?? "",  16)  ||
       !$this->isDigitString($reqData['user_code'] ?? "",  15)
@@ -84,8 +50,8 @@ class LdsController extends Controller
   }
 
   protected function prepareOnlineResponse(
+    string $request_id,
     int $version             = 1,
-    string $request_id       = "00000",
     int $error_code          = 0,
     int $result_code         = 0,
     int $subscription_level  = 0,
@@ -109,8 +75,8 @@ class LdsController extends Controller
   }
 
   protected function prepareOfflineResponse(
+    string $request_id,
     int $version              = 1,
-    string $request_id        = "00000",
     int $error_code           = 0,
     int $result_code          = 0,
     int $subscription_level   = 0,
@@ -172,7 +138,7 @@ class LdsController extends Controller
     } catch (LdsException $e) {
       // for bad request
       if ($e->getCode() == LDS_ERR_BAD_REQUEST[0]) {
-        abort(400, 'Bad Request');
+        return response('Bad Request', 400);
       }
 
       if ($online) {
@@ -181,7 +147,7 @@ class LdsController extends Controller
           error_code: $e->getCode(),
         );
       } else {
-        abort(400, "Error: {$e->getCode()} : {$e->getMessage()}");
+        return response("Error: {$e->getCode()} : {$e->getMessage()}", 400);
       }
     }
   }
@@ -197,20 +163,21 @@ class LdsController extends Controller
       if ($online) {
         return $this->prepareOnlineResponse(request_id: $reqData['request_id']);
       } else {
-        return $this->prepareOfflineResponse(
-          request_id: $reqData['request_id']
-        );
+        return $this->prepareOfflineResponse(request_id: $reqData['request_id']);
       }
     } catch (LdsException $e) {
       // for bad request
       if ($e->getCode() == LDS_ERR_BAD_REQUEST[0]) {
-        abort(400, 'Bad Request');
+        return response('Bad Request', 400);
       }
 
       if ($online) {
-        return $this->prepareOnlineResponse(request_id: $reqData['request_id'], error_code: $e->getCode());
+        return $this->prepareOnlineResponse(
+          request_id: $reqData['request_id'],
+          error_code: $e->getCode()
+        );
       } else {
-        abort(400, "Error: {$e->getCode()} : {$e->getMessage()}");
+        return response("Error: {$e->getCode()} : {$e->getMessage()}", 400);
       }
     }
   }
