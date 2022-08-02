@@ -16,7 +16,7 @@ class SubscriptionController extends SimpleController
     return self::list($request);
   }
 
-  public function listByLoginUser(Request $request)
+  public function listByAccount(Request $request)
   {
     $request->merge(['user_id' => auth('api')->user()->id]);
     return self::list($request);

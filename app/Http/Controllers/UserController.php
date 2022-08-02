@@ -10,18 +10,29 @@ class UserController extends SimpleController
 {
   protected string $modelClass = User::class;
 
+
+  protected function getListRules()
+  {
+    return [
+      'name'      => [],
+      'email'     => [],
+    ];
+  }
+
   public function create(Request $request)
   {
-    $create_from = $request->create_from;
-    $access_token = $request->access_token;
-    $username = $request->username;
+    $inputs = $request->validate([
+      'create_from'     => ['required', 'in:access_token,username'],
+      'access_token'    => ['required_if:create_from,access_token'],
+      'username'        => ['required_if:create_from,username'],
+    ]);
 
     /** @var CognitoProvider $cognitoProvider */
     $cognitoProvider = app()->make(CognitoProvider::class);
-    if ($create_from == 'access_token') {
-      $cognitoUser = $cognitoProvider->getCognitoUser($access_token);
+    if ($inputs['create_from'] == 'access_token') {
+      $cognitoUser = $cognitoProvider->getCognitoUser($inputs['access_token']);
     } else {
-      $cognitoUser = $cognitoProvider->getUserByName($username);
+      $cognitoUser = $cognitoProvider->getUserByName($inputs['username']);
     }
 
     if (!$cognitoUser) {
@@ -29,11 +40,10 @@ class UserController extends SimpleController
     }
 
     $user = User::createFromCognitoUser($cognitoUser);
-
     return response()->json($user->toResource('admin'), 201);
   }
 
-  public function refresh(Request $request, $id)
+  public function refresh($id)
   {
     /** @var User $user */
     $user = User::find($id);
@@ -41,10 +51,10 @@ class UserController extends SimpleController
     $cognitoUser = $cognitoProvider->getUserByName($user->name);
     $user->updateFromCognitoUser($cognitoUser);
 
-    return $user->toResource('admin');
+    return response()->json($user->toResource('admin'));
   }
 
-  protected function fullByUserId(int $id)
+  protected function full(int $id)
   {
     $this->validateUser();
 
@@ -61,16 +71,11 @@ class UserController extends SimpleController
       return $machine->toResource($this->userType);
     }, $machines->all());
 
-    return $result;
+    return  response()->json($result);
   }
 
-  protected function fullByLoginUser(Request $request)
+  protected function fullByAccount()
   {
-    return $this->fullByUserId(auth('api')->user()->id);
-  }
-
-  protected function fullByUser(Request $request, $id)
-  {
-    return $this->fullByUserId($id);
+    return $this->full(auth('api')->user()->id);
   }
 }

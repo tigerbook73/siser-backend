@@ -114,7 +114,7 @@ Route::middleware('auth:admin')->group(function () {
   Route::post('/users', [UserController::class, 'create']);
   Route::post('/users/{id}', [UserController::class, 'refresh']);
 
-  Route::get('/users/{id}/full', [UserController::class, 'fullByUser']);
+  Route::get('/users/{id}/full', [UserController::class, 'full']);
   Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
   Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
 });
@@ -142,9 +142,9 @@ Route::middleware('auth:admin')->group(function () {
 //
 Route::middleware('auth:api')->group(function () {
   Route::get('/account/me', [AuthController::class, 'me']);
-  Route::get('/account/full', [UserController::class, 'fullByLoginUser']);
-  Route::get('/account/machines', [MachineController::class, 'listByLoginUser']);
-  Route::get('/account/subscriptions', [SubscriptionController::class, 'listByLoginUser']);
+  Route::get('/account/full', [UserController::class, 'fullByAccount']);
+  Route::get('/account/machines', [MachineController::class, 'listByAccount']);
+  Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
 });
 
 
