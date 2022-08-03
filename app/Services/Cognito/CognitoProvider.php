@@ -31,7 +31,7 @@ class CognitoProvider
   {
     if (is_null($this->cognitoClient)) {
       $this->cognitoClient = new CognitoIdentityProviderClient([
-        'profile' => 'default',
+        'profile' => 'siser',
         'region'  => $this->region,
         'version' => '2016-04-18'
       ]);
