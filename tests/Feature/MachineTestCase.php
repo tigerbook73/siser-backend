@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Machine;
+use App\Models\User;
 use Tests\ApiTestCase;
 
 class MachineTestCase extends ApiTestCase
@@ -29,7 +30,7 @@ class MachineTestCase extends ApiTestCase
       'serial_no' => "5555-6666-7777-9999",
       'model' => "TEST MODEL",
       'nickname' => "NONE",
-      'user_id' => 2,
+      'user_id' => User::first()->id,
     ];
 
     $this->modelUpdate = [

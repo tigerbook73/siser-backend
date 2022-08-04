@@ -5,7 +5,6 @@ namespace Tests;
 use App\Models\AdminUser;
 use App\Models\User;
 use Faker\Generator;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 abstract class ApiTestCase extends TestCase
@@ -122,7 +121,7 @@ abstract class ApiTestCase extends TestCase
         ->assertJsonStructure($this->modelSchema)
         ->assertJson(array_diff_key($modelCreate, array_flip($this->hiden)));
     } else {
-      $response->assert($status);
+      $response->assertStatus($status);
     }
 
     return $response;

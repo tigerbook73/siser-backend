@@ -22,6 +22,7 @@ class SoftwarePackage extends BaseSoftwarePackage
 
   static public function getLatest(string $platform): SoftwarePackage|null
   {
+    // TODO: algorithm need to be improved
     return self::where('platform', $platform)
       ->where('version_type', 'stable')
       ->orderByDesc('version')

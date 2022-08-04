@@ -6,7 +6,7 @@ use App\Models\SoftwarePackage;
 
 class SoftwarePackageListApiTest extends SoftwarePackageTestCase
 {
-  public ?string $role = 'admin';
+  public ?string $role = '';
 
   public function testSoftwarePackageListAll()
   {
