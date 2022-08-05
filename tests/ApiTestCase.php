@@ -6,10 +6,13 @@ use App\Models\AdminUser;
 use App\Models\User;
 use Faker\Generator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Testing\TestResponse;
 
 abstract class ApiTestCase extends TestCase
 {
   use RefreshDatabase;
+  use WithFaker;
 
   /**
    * Indicates whether the default seeder should run before each test.
@@ -31,15 +34,13 @@ abstract class ApiTestCase extends TestCase
   protected $hiden = [
     'password',
   ];
+  protected $noAssert = false;
+  protected $noAssertAways = false;
 
   /** @var User|AdminUser|null $user */
   public ?string $role = null;
   public $user = null;
 
-  /**
-   * faker helper
-   */
-  public ?Generator $faker = null;
 
   protected function setUp(): void
   {
@@ -53,9 +54,7 @@ abstract class ApiTestCase extends TestCase
       $this->actingAs($this->user, 'api');
     }
 
-    if (!$this->faker) {
-      $this->faker = app()->make(Generator::class);
-    }
+    $this->noAssert = false;
   }
 
   protected function tearDown(): void
@@ -67,9 +66,9 @@ abstract class ApiTestCase extends TestCase
    * the following are helper function
    */
 
-  public function modelCount($conditions = [], $limit = -1): int
+  protected function modelCount($conditions = [], $limit = -1): int
   {
-    return count($this->model::where($conditions)->limit(-1)->get());
+    return count($this->model::where($conditions)->limit($limit)->get());
   }
 
   public function listAssert($status = 200, $params = [], $count = null)
@@ -78,6 +77,10 @@ abstract class ApiTestCase extends TestCase
     $count = $count ?? $this->modelCount($params);
 
     $response = $this->getJson($this->baseUrl . ($paramString ? "?$paramString" : ""));
+
+    if ($this->noAssertAways || $this->noAssert) {
+      return $response;
+    }
 
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
@@ -99,6 +102,10 @@ abstract class ApiTestCase extends TestCase
 
     $response = $this->getJson($this->baseUrl . '/' . $id . ($paramString ? "?$paramString" : ""));
 
+    if ($this->noAssertAways || $this->noAssert) {
+      return $response;
+    }
+
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
         ->assertJsonStructure($this->modelSchema)
@@ -116,6 +123,10 @@ abstract class ApiTestCase extends TestCase
 
     $response = $this->postJson($this->baseUrl, $modelCreate);
 
+    if ($this->noAssertAways || $this->noAssert) {
+      return $response;
+    }
+
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
         ->assertJsonStructure($this->modelSchema)
@@ -132,6 +143,10 @@ abstract class ApiTestCase extends TestCase
     $modelUpdate = $this->modelUpdate;
 
     $response = $this->patchJson("$this->baseUrl/$id", $modelUpdate);
+
+    if ($this->noAssertAways || $this->noAssert) {
+      return $response;
+    }
 
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
