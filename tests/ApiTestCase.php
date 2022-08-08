@@ -90,7 +90,7 @@ abstract class ApiTestCase extends TestCase
 
       $this->assertEquals(count($response->json()['data']), $count);
     } else {
-      $response->assert($status);
+      $response->assertStatus($status);
     }
 
     return $response;
@@ -111,7 +111,7 @@ abstract class ApiTestCase extends TestCase
         ->assertJsonStructure($this->modelSchema)
         ->assertJson([(new $this->model)->getKeyName() => $id]);
     } else {
-      $response->assert($status);
+      $response->assertStatus($status);
     }
 
     return $response;
@@ -126,7 +126,6 @@ abstract class ApiTestCase extends TestCase
     if ($this->noAssertAways || $this->noAssert) {
       return $response;
     }
-
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
         ->assertJsonStructure($this->modelSchema)
@@ -153,7 +152,7 @@ abstract class ApiTestCase extends TestCase
         ->assertJsonStructure($this->modelSchema)
         ->assertJson(array_diff_key($modelUpdate, array_flip($this->hiden)));
     } else {
-      $response->assert($status);
+      $response->assertStatus($status);
     }
 
     return $response;

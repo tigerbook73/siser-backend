@@ -21,15 +21,15 @@ class SoftwarePackageController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      'name'          => ['required'],
+      'name'          => ['required', 'max:255'],
       'platform'      => ['required', 'in:Windows,Mac'],
-      'version'       => ['required'],
-      'description'   => ['nullable'],
-      'version_type'  => ['required'],
+      'version'       => ['required', 'max:255'],
+      'description'   => ['nullable', 'max:255'],
+      'version_type'  => ['required', 'in:stable,beta'],
       'released_date' => ['required', 'date'],
-      'release_notes' => ['nullable'],
-      'filename'      => ['required'],
-      'url'           => ['required'],
+      'release_notes' => ['nullable', 'max:255'],
+      'filename'      => ['required', 'max:255'],
+      'url'           => ['required', 'max:255'],
     ];
   }
 

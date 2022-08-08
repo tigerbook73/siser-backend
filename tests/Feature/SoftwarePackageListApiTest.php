@@ -15,7 +15,7 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
 
   public function testSoftwarePackageListFilter()
   {
-    // 
+    //
     $this->listAssert(
       200,
       ['platform' => $this->object->platform],
