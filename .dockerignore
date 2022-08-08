@@ -1,0 +1,38 @@
+# general
+.vscode
+.dockerignore
+
+# git data
+**/.git
+**/.gitignore
+**/.gitattributes
+
+# env
+.env*
+!.env.prod
+
+# tools & test
+tests
+
+# develop configurateion & resource
+jsconfig.json
+package.json
+yarn.lock
+
+api
+
+# others
+phpunit.xml
+server.php
+README.md
+
+# middle files (not need in formal env)
+bootstrap/cache/*
+invoice
+**/node_modules
+public/**/vendor
+public/css/app.css
+public/js
+public/assets
+public/payment
+vendor
