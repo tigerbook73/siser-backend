@@ -2,12 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\Trait\ApiTestTrait;
-
 class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
 {
-  use ApiTestTrait;
-
   public ?string $role = 'admin';
 
   public function testSoftwarePackageCreateOk()
