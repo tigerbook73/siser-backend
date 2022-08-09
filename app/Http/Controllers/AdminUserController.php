@@ -20,11 +20,12 @@ class AdminUserController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      'name'      => ['required', 'string', 'unique:' . AdminUser::class],
-      'email'     => ['required', 'email', 'unique:' . AdminUser::class],
-      'full_name' => ['required', 'string'],
-      'roles'     => ['required', 'array'], // TODO: more validation
-      'password'  => ['required', 'string', Password::min(8)->mixedCase()->numbers()->symbols()],
+      'name'      => ['required', 'string', 'max:255', 'unique:' . AdminUser::class],
+      'email'     => ['required', 'email', 'max:255', 'unique:' . AdminUser::class],
+      'full_name' => ['required', 'string', 'max:255'],
+      'roles'     => ['required', 'array', 'min:1'],
+      'roles.*'   => ['required', 'string', 'distinct', 'in:admin,siser-backend'],
+      'password'  => ['required', 'string', 'max:32', Password::min(8)->mixedCase()->numbers()->symbols()],
     ];
   }
 
