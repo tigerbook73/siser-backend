@@ -32,9 +32,10 @@ class AdminUserController extends SimpleController
   protected function getUpdateRules()
   {
     return [
-      'full_name' => ['string'],
-      'roles'     => ['array'],
-      'password'  => [Password::min(8)->mixedCase()->numbers()->symbols()],
+      'full_name' => ['string', 'max:255'],
+      'roles'     => ['array', 'min:1'],
+      'roles.*'   => ['string', 'distinct', 'in:admin,siser-backend'],
+      'password'  => ['string', 'max:32', Password::min(8)->mixedCase()->numbers()->symbols()],
     ];
   }
 
