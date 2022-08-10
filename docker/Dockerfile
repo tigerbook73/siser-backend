@@ -44,7 +44,7 @@ COPY --from=frontend /dist/index.html ./resources/views/index.blade.php
 RUN mv ./.env.prod ./.env && \
   composer install --no-dev --optimize-autoloader --no-interaction && \
   php artisan config:cache && \
-  php artisan route:cache \
+  php artisan route:cache && \
   php artisan view:cache
 
 USER root
