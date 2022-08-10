@@ -2,14 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Models\Plan;
-
 class PlanGetApiTest extends PlanTestCase
 {
-  public ?string $role = 'admin';
+  public ?string $role = '';
 
-  public function testPlanGetOk()
+  public function testPlanGetSuccess()
   {
-    $this->getAssert(200, 1);
+    $this->getAssert(200, $this->object->id);
+  }
+
+  public function testPlanGetError()
+  {
+    $this->getAssert(404, 999999999999999999);
+
+    $this->getAssert(404, -1);
+
+    $this->getAssert(404, 0);
   }
 }

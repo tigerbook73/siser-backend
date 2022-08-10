@@ -2,23 +2,37 @@
 
 namespace Tests\Feature;
 
-use App\Models\Plan;
-
 class PlanListApiTest extends PlanTestCase
 {
   public ?string $role = 'admin';
 
-  public function testPlanListAll()
+  public function testPlanListSuccess()
   {
     $this->listAssert();
+
+    $this->listAssert(200, ['catagory' => 'machine']);
+
+    $this->listAssert(200, ['catagory' => 'software']);
+
+    $this->listAssert(200, []);
+
+    $this->listAssert(200, ['catagory' => $this->object->catagory]);
   }
 
-  public function testPlanListFilter()
+  public function testPlanListError()
   {
-    // 
-    $this->listAssert(
-      200,
-      ['catagory' => $this->object->catagory],
-    );
+    $this->listAssert(422, ['catagory' => '']);
+
+    $this->listAssert(422, ['catagory' => 'linux']);
+
+    $this->listAssert(400, ['catagory' => 'machine', 'name' => 'LDS Machine Basic']);
+
+    $this->listAssert(400, ['catagory' => 'machine', 'contract_term' => 'permanent']);
+
+    $this->listAssert(400, ['contract_term' => 'year']);
+
+    $this->listAssert(400, ['status' => 'active']);
+
+    $this->listAssert(400, ['name' => 'LDS Machine Basic']);
   }
 }
