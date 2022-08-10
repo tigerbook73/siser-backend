@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-
 class UserFullGetApiTest extends UserTestCase
 {
   public ?string $role = 'admin';
 
-  public function testUserFullGetOk()
+  public function testUserFullGetSuccess()
   {
     $userFullSchema = $this->modelSchema;
     $userFullSchema['machines'] = [
@@ -25,5 +23,26 @@ class UserFullGetApiTest extends UserTestCase
     return $response;
   }
 
-  // TODO: more tests to come
+  public function testUserFullGetError()
+  {
+    $userFullSchema = $this->modelSchema;
+    $userFullSchema['machines'] = [
+      '*' => $this->machineSchema,
+    ];
+    $userFullSchema['subscriptions'] = [
+      '*' => $this->subscriptionSchema,
+    ];
+
+    $response = $this->getJson("{$this->baseUrl}/999999999999999999/full");
+    $response->assertStatus(404);
+
+    $response = $this->getJson("{$this->baseUrl}/-1/full");
+    $response->assertStatus(404);
+
+    $response = $this->getJson("{$this->baseUrl}/0/full");
+    $response->assertStatus(404);
+
+    $response = $this->getJson("{$this->baseUrl}//full");
+    $response->assertStatus(404);
+  }
 }

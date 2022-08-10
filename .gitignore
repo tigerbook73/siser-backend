@@ -4,6 +4,7 @@
 /storage/*.key
 /vendor
 .env
+.env.chinlim*
 .env.backup
 .phpunit.result.cache
 Homestead.json
@@ -17,3 +18,5 @@ yarn-error.log
 
 /.docker
 docker-compose.yml
+Dockerfile
+/.aws

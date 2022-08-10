@@ -2,10 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\GeneralConfiguration;
-use App\Models\Plan;
-use Tests\ApiTestCase;
-
 class ConfigGeneralGetApiTest extends ConfigGeneralTestCase
 {
   public ?string $role = 'admin';

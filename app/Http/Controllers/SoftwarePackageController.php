@@ -21,30 +21,30 @@ class SoftwarePackageController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      'name'          => ['required'],
+      'name'          => ['required', 'max:255'],
       'platform'      => ['required', 'in:Windows,Mac'],
-      'version'       => ['required'],
-      'description'   => ['nullable'],
-      'version_type'  => ['required'],
+      'version'       => ['required', 'max:255'],
+      'description'   => ['nullable', 'max:255'],
+      'version_type'  => ['required', 'in:stable,beta'],
       'released_date' => ['required', 'date'],
-      'release_notes' => ['nullable'],
-      'filename'      => ['required'],
-      'url'           => ['required'],
+      'release_notes' => ['nullable', 'max:255'],
+      'filename'      => ['required', 'max:255'],
+      'url'           => ['required', 'max:255'],
     ];
   }
 
   protected function getUpdateRules()
   {
     return [
-      'name'          => [],
+      'name'          => ['string', 'max:255'],
       'platform'      => ['in:Windows,Mac'],
-      'version'       => [],
-      'description'   => [],
-      'version_type'  => [],
-      'released_date' => ['date'],
-      'release_notes' => [],
-      'filename'      => [],
-      'url'           => [],
+      'version'       => ['string', 'max:255'],
+      'description'   => ['nullable', 'max:255'],
+      'version_type'  => ['in:stable,beta'],
+      'released_date' => ['string', 'date'],
+      'release_notes' => ['nullable', 'max:255'],
+      'filename'      => ['string', 'max:255'],
+      'url'           => ['string', 'max:255'],
     ];
   }
 
