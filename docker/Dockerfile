@@ -20,7 +20,6 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN docker-php-source extract \
   && docker-php-ext-install bcmath \
   && docker-php-ext-install ctype \
-  && docker-php-ext-install zip \
   && docker-php-source delete \
   && ln -s /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled
 
@@ -42,8 +41,11 @@ COPY . .
 COPY --from=frontend /dist/public/ ./public/
 COPY --from=frontend /dist/index.html ./resources/views/index.blade.php
 
-RUN mv ./.env.prod ./.env \
-  && composer install --no-dev
+RUN mv ./.env.prod ./.env && \
+  composer install --no-dev --optimize-autoloader --no-interaction && \
+  php artisan config:cache && \
+  php artisan route:cache \
+  php artisan view:cache
 
 USER root
 
