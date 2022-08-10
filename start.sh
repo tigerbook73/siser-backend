@@ -15,7 +15,7 @@ fi
 if [ "$role" = "main" ]; then
 
   echo "do migration ..."
-  php migrate --force
+  php artisan migrate --force
 
   echo "start main service ..."
   exec apache2-foreground
