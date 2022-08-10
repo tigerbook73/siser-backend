@@ -89,13 +89,25 @@ class AdminUserCreateApiTest extends AdminUserTestCase
   public function testAdminUserPasswordCreateSuccess()
   {
     DB::beginTransaction();
-    $this->modelCreate['password'] = 'abcd1234A!';
+    $newPassword = 'abcd1234A!';
+    $this->modelCreate['password'] = $newPassword;
     $this->createAssert();
+    $credentials = [
+      'email' => $this->modelCreate['email'],
+      'password' => $newPassword,
+    ];
+    $this->assertTrue(!!auth('admin')->attempt($credentials));
     DB::rollBack();
 
     DB::beginTransaction();
-    $this->modelCreate['password'] = "!Aa1" . $this->createRandomString(28);
+    $newPassword = '!Aa1' . $this->createRandomString(28);
+    $this->modelCreate['password'] = $newPassword;
     $this->createAssert();
+    $credentials = [
+      'email' => $this->modelCreate['email'],
+      'password' => $newPassword,
+    ];
+    $this->assertTrue(!!auth('admin')->attempt($credentials));
     DB::rollBack();
   }
 
