@@ -1,6 +1,15 @@
 # general
-.vscode
-.dockerignore
+/.vscode
+/.dockerignore
+/bin
+/tests
+/vendor
+/.dockerignore
+/.editorconfig
+/.prettierrc
+/phpstan.neon
+/phpunit.xml
+/server.php
 
 # git data
 **/.git
@@ -10,29 +19,3 @@
 # env
 .env*
 !.env.prod
-
-# tools & test
-tests
-
-# develop configurateion & resource
-jsconfig.json
-package.json
-yarn.lock
-
-api
-
-# others
-phpunit.xml
-server.php
-README.md
-
-# middle files (not need in formal env)
-bootstrap/cache/*
-invoice
-**/node_modules
-public/**/vendor
-public/css/app.css
-public/js
-public/assets
-public/payment
-vendor
