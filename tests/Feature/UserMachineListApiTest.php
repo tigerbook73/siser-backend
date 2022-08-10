@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-
 class UserMachineListApiTest extends UserTestCase
 {
   public ?string $role = 'admin';
 
-  public function testUserMachineListOk()
+  public function testUserMachineListSuccess()
   {
     $count = $this->object->machines()->count();
 
@@ -25,5 +23,15 @@ class UserMachineListApiTest extends UserTestCase
     return $response;
   }
 
-  // TODO: more tests to come
+  public function testUserMachineListError()
+  {
+    $response = $this->getJson("{$this->baseUrl}/x/machines");
+    $response->assertStatus(422);
+
+    $response = $this->getJson("{$this->baseUrl}//machines");
+    $response->assertStatus(404);
+
+    $response = $this->getJson("{$this->baseUrl}/{$this->object->id}/apparatus");
+    $response->assertStatus(404);
+  }
 }

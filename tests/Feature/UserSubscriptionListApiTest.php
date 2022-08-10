@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-
 class UserSubscriptionListApiTest extends UserTestCase
 {
   public ?string $role = 'admin';
 
-  public function testUserSubscriptionListOk()
+  public function testUserSubscriptionListSuccess()
   {
     $count = $this->object->subscriptions()->count();
 
@@ -25,5 +23,15 @@ class UserSubscriptionListApiTest extends UserTestCase
     return $response;
   }
 
-  // TODO: more tests to come
+  public function testUserSubscriptionListError()
+  {
+    $response = $this->getJson("{$this->baseUrl}/x/subscriptions");
+    $response->assertStatus(422);
+
+    $response = $this->getJson("{$this->baseUrl}//moneypledged");
+    $response->assertStatus(404);
+
+    $response = $this->getJson("{$this->baseUrl}/{$this->object->id}/moneypledged");
+    $response->assertStatus(404);
+  }
 }
