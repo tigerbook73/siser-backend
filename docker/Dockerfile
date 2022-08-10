@@ -42,10 +42,11 @@ COPY --from=frontend /dist/public/ ./public/
 COPY --from=frontend /dist/index.html ./resources/views/index.blade.php
 
 RUN mv ./.env.prod ./.env && \
-  composer install --no-dev --optimize-autoloader --no-interaction && \
-  php artisan config:cache && \
-  php artisan route:cache && \
-  php artisan view:cache
+  composer install --no-dev --optimize-autoloader --no-interaction
+
+RUN chmod 755 ./start.sh
+
+CMD ["/var/www/html/start.sh"]
 
 USER root
 
@@ -53,7 +54,7 @@ EXPOSE 80
 
 # add alias
 RUN echo "" >> ~/.bashrc \
-  && echo "alias php='runuser -u www-data -- /usr/local/bin/php'" >> ~/.bashrc \
-  && echo "alias art='runuser -u www-data -- /usr/local/bin/php /var/www/html/artisan'" >> ~/.bashrc \
+  && echo "alias php='/usr/local/bin/php'" >> ~/.bashrc \
+  && echo "alias art='/usr/local/bin/php /var/www/html/artisan'" >> ~/.bashrc \
   && echo "alias ll='ls -l'" >> ~/.bashrc \
   && echo "alias l='ls -la'" >> ~/.bashrc
