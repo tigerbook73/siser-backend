@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-
 class AccountMeGetApiTest extends AccountTestCase
 {
   public ?string $role = 'customer';
