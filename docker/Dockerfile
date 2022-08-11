@@ -37,26 +37,24 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader
 
 # copy backend
-COPY . .
+COPY --chown=www-data:www-data . .
 
 # copy frontend
-COPY --from=frontend /dist/public/ ./public/
-COPY --from=frontend /dist/index.html ./resources/views/index.blade.php
+COPY --chown=www-data:www-data --from=frontend /dist/public/ ./public/
+COPY --chown=www-data:www-data --from=frontend /dist/index.html ./resources/views/index.blade.php
 
 RUN mv ./.env.prod ./.env && \
-  composer install --no-dev --optimize-autoloader --no-interaction
+  composer install --no-dev --optimize-autoloader
 
 RUN chmod 755 ./start.sh
 
 CMD ["/var/www/html/start.sh"]
 
-USER root
-
 EXPOSE 80
 
 # add alias
 RUN echo "" >> ~/.bashrc \
-  && echo "alias php='/usr/local/bin/php'" >> ~/.bashrc \
-  && echo "alias art='/usr/local/bin/php /var/www/html/artisan'" >> ~/.bashrc \
+  && echo "alias php='runuser -u www-data -- /usr/local/bin/php'" >> ~/.bashrc \
+  && echo "alias art='runuser -u www-data -- /usr/local/bin/php /var/www/html/artisan'" >> ~/.bashrc \
   && echo "alias ll='ls -l'" >> ~/.bashrc \
   && echo "alias l='ls -la'" >> ~/.bashrc

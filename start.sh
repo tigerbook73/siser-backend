@@ -15,7 +15,7 @@ fi
 if [ "$role" = "main" ]; then
 
   echo "do migration ..."
-  php artisan migrate --force
+  runuser -u www-data -- php artisan migrate --force
 
   echo "start main service ..."
   exec apache2-foreground
@@ -23,13 +23,13 @@ if [ "$role" = "main" ]; then
 elif [ "$role" = "queue" ]; then
 
   echo "start queue service ..."
-  php /var/www/html/artisan queue:work --tries=3 --timeout=180
+  runuser -u www-data -- php /var/www/html/artisan queue:work --tries=3 --timeout=180
 
 elif [ "$role" = "scheduler" ]; then
 
   echo "start scheduler service ..."
   while [ true ]; do
-    php /var/www/html/artisan schedule:run >>/dev/null 2>&1 &
+    runuser -u www-data -- php /var/www/html/artisan schedule:run >>/dev/null 2>&1 &
     sleep 60
   done
 
