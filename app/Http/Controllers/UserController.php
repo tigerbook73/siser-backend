@@ -46,7 +46,7 @@ class UserController extends SimpleController
   public function refresh($id)
   {
     /** @var User $user */
-    $user = User::find($id);
+    $user = User::findOrFail($id);
     $cognitoProvider = app()->make(CognitoProvider::class);
     $cognitoUser = $cognitoProvider->getUserByName($user->name);
     $user->updateFromCognitoUser($cognitoUser);
