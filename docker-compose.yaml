@@ -1,0 +1,25 @@
+# For more information: https://laravel.com/docs/sail
+version: "3"
+services:
+  main:
+    image: localhost/backend:latest
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:80"
+    networks:
+      - sail
+    env_file:
+      - ~/.env
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      - CONTAINER_ROLE=main
+      - DB_HOST=host.docker.internal
+      - DB_USERNAME=homestead
+      - DB_PASSWORD=secret
+
+networks:
+  sail:
+    driver: bridge

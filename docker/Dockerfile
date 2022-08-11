@@ -10,8 +10,8 @@ FROM php:8.1-apache
 
 # library
 RUN apt update && apt install -y \
-  zip \
-  unzip
+  unzip \
+  libzip-dev
 
 # composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -20,6 +20,8 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 RUN docker-php-source extract \
   && docker-php-ext-install bcmath \
   && docker-php-ext-install ctype \
+  && docker-php-ext-install pdo_mysql \
+  && docker-php-ext-install zip \
   && docker-php-source delete \
   && ln -s /etc/apache2/mods-available/rewrite.load /etc/apache2/mods-enabled
 
