@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Tests\Trait\CognitoProviderMockup;
 
 class UserUpdateApiTest extends UserTestCase
@@ -21,5 +20,9 @@ class UserUpdateApiTest extends UserTestCase
     return $response;
   }
 
-  // TODO: more tests to come
+  public function testUserUpdateError()
+  {
+    $response = $this->postJson("$this->baseUrl/0", []);
+    $response->assertStatus(404);
+  }
 }
