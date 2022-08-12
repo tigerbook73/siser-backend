@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Notification;
 
@@ -10,14 +9,13 @@ class AuthAdminResetPasswordApiTest extends AuthAdminTestCase
 {
   public ?string $role = null;
 
-
   /**
    * helper function to generate reset token
    */
   public function getResetToken()
   {
     $fake = Notification::fake();
-    $response = $this->postJson("{$this->baseUrl}/forgot-password", [
+    $this->postJson("{$this->baseUrl}/forgot-password", [
       'email' => $this->object->email,
     ]);
     $notification = $fake->sent($this->object, ResetPassword::class)[0];

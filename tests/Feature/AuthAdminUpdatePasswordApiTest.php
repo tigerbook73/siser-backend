@@ -2,10 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Notification;
-
 class AuthAdminUpdatePasswordApiTest extends AuthAdminTestCase
 {
   public ?string $role = 'admin';

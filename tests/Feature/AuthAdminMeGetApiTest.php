@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-
 class AuthAdminMeGetApiTest extends AuthAdminTestCase
 {
   public ?string $role = 'admin';
