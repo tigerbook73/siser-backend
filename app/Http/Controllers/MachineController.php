@@ -31,8 +31,8 @@ class MachineController extends SimpleController
   protected function getUpdateRules()
   {
     return [
-      "model"     => [],
-      "nickname"  => [],
+      "model"     => ['string', 'max:255'],
+      "nickname"  => ['nullable', 'max:255'],
     ];
   }
 
