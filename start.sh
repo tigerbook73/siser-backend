@@ -8,7 +8,9 @@ env=${APP_ENV:-production}
 # cache configuration
 if [ "$env" == "production" ]; then
   echo "Caching configuration..."
-  (cd /var/www/html && php artisan config:cache && php artisan route:cache && php artisan view:cache)
+  runuser -u www-data -- php artisan config:cache &&
+  runuser -u www-data -- php artisan route:cache &&
+  runuser -u www-data -- php artisan view:cache
 fi
 
 # run by role
