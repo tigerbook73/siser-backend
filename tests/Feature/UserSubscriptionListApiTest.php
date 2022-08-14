@@ -27,6 +27,7 @@ class UserSubscriptionListApiTest extends UserTestCase
   {
     $response = $this->getJson("{$this->baseUrl}/x/subscriptions");
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['user_id' => 'The user id must be an integer.']);
 
     $response = $this->getJson("{$this->baseUrl}//moneypledged");
     $response->assertStatus(404);

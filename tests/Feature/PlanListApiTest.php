@@ -21,9 +21,11 @@ class PlanListApiTest extends PlanTestCase
 
   public function testPlanListError()
   {
-    $this->listAssert(422, ['catagory' => '']);
+    $response = $this->listAssert(422, ['catagory' => '']);
+    $response->assertJsonValidationErrors(['catagory' => 'The selected catagory is invalid.']);
 
-    $this->listAssert(422, ['catagory' => 'linux']);
+    $response = $this->listAssert(422, ['catagory' => 'linux']);
+    $response->assertJsonValidationErrors(['catagory' => 'The selected catagory is invalid.']);
 
     $this->listAssert(400, ['catagory' => 'machine', 'name' => 'LDS Machine Basic']);
 

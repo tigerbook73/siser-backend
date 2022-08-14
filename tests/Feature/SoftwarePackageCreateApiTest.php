@@ -152,143 +152,172 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['name']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['name' => 'The name field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['name'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['name' => 'The name field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['name'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['name' => 'The name must not be greater than 255 characters.']);
 
     /**
      * error platform
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['platform']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['platform' => 'The platform field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['platform'] = 'abc';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['platform'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['platform' => 'The platform field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['platform'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
 
     /**
      * error version
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['version']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version' => 'The version field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['version'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version' => 'The version field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['version'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version' => 'The version must not be greater than 255 characters.']);
 
     /**
      * error version type
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['version_type']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version_type' => 'The version type field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['version_type'] = 'xxx';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version_type' => 'The selected version type is invalid.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['version_type'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version_type' => 'The version type field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['version_type'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['version_type' => 'The selected version type is invalid.']);
 
     /**
      * error released date
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['released_date']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['released_date'] = 'xxx';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['released_date'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['released_date'] = '2022-08-04 29:26:03';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['released_date'] = '2022-13-31 29:26:03';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['released_date'] = '2022-11-40 16:26:03';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['released_date'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     /**
      * error filename
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['filename']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['filename' => 'The filename field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['filename'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['filename' => 'The filename field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['filename'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['filename' => 'The filename must not be greater than 255 characters.']);
 
     /**
      * error url
      */
     $this->modelCreate = $modelCreate;
     unset($this->modelCreate['url']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['url' => 'The url field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['url'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['url' => 'The url field is required.']);
 
     $this->modelCreate = $modelCreate;
     $this->modelCreate['url'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['url' => 'The url must not be greater than 255 characters.']);
 
     /**
      * error description
      */
     $this->modelCreate = $modelCreate;
     $this->modelCreate['description'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['description' => 'The description must not be greater than 255 characters.']);
 
     /**
      * error release notes
      */
     $this->modelCreate = $modelCreate;
     $this->modelCreate['release_notes'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['release_notes' => 'The release notes must not be greater than 255 characters.']);
   }
 
   public function testSoftwarePackageCreateReleasedDateError()
@@ -302,6 +331,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['released_date'] = '2022-12-33';
     $response = $this->createAssert();
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $modelCreate = $this->modelCreate;
     $this->noAssert = TRUE;
@@ -309,6 +339,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['released_date'] = '2022-13-25';
     $response = $this->createAssert();
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $modelCreate = $this->modelCreate;
     $this->noAssert = TRUE;
@@ -316,6 +347,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['released_date'] = '2022-13-25 14:09:30';
     $response = $this->createAssert();
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $modelCreate = $this->modelCreate;
     $this->noAssert = TRUE;
@@ -323,5 +355,6 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['released_date'] = '2022-12-25 14:78:29';
     $response = $this->createAssert();
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
   }
 }
