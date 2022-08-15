@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
+use App\Models\GeneralConfiguration;
+
 class MachineCreateApiTest extends MachineTestCase
 {
   public ?string $role = 'admin';
@@ -11,34 +14,55 @@ class MachineCreateApiTest extends MachineTestCase
     $this->createAssert();
   }
 
+  private function getUserCurrentLicenseCount()
+  {
+    $user = User::find($this->modelCreate['user_id']);
+    return $user->license_count;
+  }
+
   public function testMachineCreateSerialNoSuccess()
   {
+    $licenseCountBefore = $this->getUserCurrentLicenseCount();
     $this->modelCreate['serial_no'] = $this->createRandomString(255);
     $this->createAssert();
+    $licenseCountAfter = $this->getUserCurrentLicenseCount();
+    $this->assertEquals($licenseCountBefore + GeneralConfiguration::getMachineLicenseUnit(), $licenseCountAfter);
   }
 
   public function testMachineCreateUserIDSuccess()
   {
+    $licenseCountBefore = $this->getUserCurrentLicenseCount();
     $this->modelCreate['user_id'] = $this->object->user_id;
     $this->createAssert();
+    $licenseCountAfter = $this->getUserCurrentLicenseCount();
+    $this->assertEquals($licenseCountBefore + GeneralConfiguration::getMachineLicenseUnit(), $licenseCountAfter);
   }
 
   public function testMachineCreateModelSuccess()
   {
+    $licenseCountBefore = $this->getUserCurrentLicenseCount();
     $this->modelCreate['model'] = $this->createRandomString(255);
     $this->createAssert();
+    $licenseCountAfter = $this->getUserCurrentLicenseCount();
+    $this->assertEquals($licenseCountBefore + GeneralConfiguration::getMachineLicenseUnit(), $licenseCountAfter);
   }
 
   public function testMachineCreateNicknameSuccess()
   {
+    $licenseCountBefore = $this->getUserCurrentLicenseCount();
     $this->modelCreate['nickname'] = $this->createRandomString(255);
     $this->createAssert();
+    $licenseCountAfter = $this->getUserCurrentLicenseCount();
+    $this->assertEquals($licenseCountBefore + GeneralConfiguration::getMachineLicenseUnit(), $licenseCountAfter);
   }
 
   public function testMachineCreateNicknameNotRequiredSuccess()
   {
+    $licenseCountBefore = $this->getUserCurrentLicenseCount();
     unset($this->modelCreate['nickname']);
     $this->createAssert();
+    $licenseCountAfter = $this->getUserCurrentLicenseCount();
+    $this->assertEquals($licenseCountBefore + GeneralConfiguration::getMachineLicenseUnit(), $licenseCountAfter);
   }
 
   public function testMachineCreateError()
