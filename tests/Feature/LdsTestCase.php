@@ -60,7 +60,7 @@ namespace Tests\Feature {
 
     protected function getUserCode()
     {
-      $response = $this->postJson('/api/v1/lds/reg-device', $this->regRequest);
+      $response = $this->postJson($this->baseUrl . '/reg-device', $this->regRequest);
       return $response->json('user_code');
     }
 
@@ -130,7 +130,7 @@ namespace Tests\Feature {
 
     public function regDeviceApi()
     {
-      $response = $this->postJson('/api/v1/lds/reg-device', $this->regRequest);
+      $response = $this->postJson($this->baseUrl . '/reg-device', $this->regRequest);
       $response->assertStatus(200)
         ->assertJsonStructure($this->regResponseSchema);
 

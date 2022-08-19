@@ -20,7 +20,7 @@ class LdsRegistrationController extends Controller
     $inputs = $request->validate([
       'version' => [Rule::in([1])],
       'device_id' => ['required', "digits:16"],
-      'device_name' => ['required', 'string'],
+      'device_name' => ['required', 'string', 'max:255'],
       'online' => [Rule::in([0, 1])]
     ]);
 
