@@ -21,18 +21,18 @@ class MachineController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      "serial_no" => ['required',],
+      "serial_no" => ['required', 'max:255'],
       "user_id"   => ['required', Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))],
-      "model"     => ['required',],
-      "nickname"  => [],
+      "model"     => ['required', 'max:255'],
+      "nickname"  => ['nullable', 'max:255'],
     ];
   }
 
   protected function getUpdateRules()
   {
     return [
-      "model"     => [],
-      "nickname"  => [],
+      "model"     => ['string', 'max:255'],
+      "nickname"  => ['nullable', 'max:255'],
     ];
   }
 

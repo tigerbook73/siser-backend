@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Machine;
-
 class MachineListApiTest extends MachineTestCase
 {
   public ?string $role = 'admin';
@@ -13,34 +11,27 @@ class MachineListApiTest extends MachineTestCase
     $this->listAssert();
   }
 
-  public function testMachineListFilter()
+  public function testMachineListSuccess()
   {
-    // 
-    $this->listAssert(
-      200,
-      ['serial_no' => $this->object->serial_no],
-    );
+    $this->listAssert(200, ['serial_no' => $this->object->serial_no]);
 
-    // 
-    $this->listAssert(
-      200,
-      ['user_id' => 1],
-    );
+    $this->listAssert(200, ['serial_no' => '9999999999']);
+
+    /* Note: Commented out as this case will be revisited later
+    $this->listAssert(200, ['serial_no' => '']);
+    */
+
+    $this->listAssert(200, ['user_id' => $this->object->id]);
+
+    $this->listAssert(200, ['user_id' => '9999999999'], 0);
   }
 
-  public function testMachineListNone()
+  public function testMachineListError()
   {
-    // 
-    $this->listAssert(
-      200,
-      ['serial_no' => "99999999"],
-    );
+    $response = $this->listAssert(422, ['user_id' => '']);
+    $response->assertJsonPath('errors.user_id', ['The user id must be an integer.']);
 
-    // 
-    $this->listAssert(
-      200,
-      ['user_id' => "99999999"],
-      0
-    );
+    $response = $this->listAssert(422, ['user_id' => 'x']);
+    $response->assertJsonPath('errors.user_id', ['The user id must be an integer.']);
   }
 }

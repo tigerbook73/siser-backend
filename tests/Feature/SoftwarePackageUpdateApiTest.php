@@ -180,115 +180,137 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['name'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['name' => 'The name must be a string.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['name'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['name' => 'The name must not be greater than 255 characters.']);
 
     /**
      * error platform
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['platform'] = 'abc';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['platform'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['platform'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
 
     /**
      * error version
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['version' => 'The version must be a string.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['version' => 'The version must not be greater than 255 characters.']);
 
     /**
      * error version type
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version_type'] = 'xxx';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['version_type' => 'The selected version type is invalid.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version_type'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['version_type' => 'The selected version type is invalid.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version_type'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['version_type' => 'The selected version type is invalid.']);
 
     /**
      * error released date
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = 'xxx';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = '2022-08-04 29:26:03';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = '2022-13-31 29:26:03';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = '2022-11-40 16:26:03';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     /**
      * error filename
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['filename'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['filename' => 'The filename must be a string.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['filename'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['filename' => 'The filename must not be greater than 255 characters.']);
 
     /**
      * error url
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['url'] = '';
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['url' => 'The url must be a string.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['url'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['url' => 'The url must not be greater than 255 characters.']);
 
     /**
      * error description
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['description'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['description' => 'The description must not be greater than 255 characters.']);
 
     /**
      * error release notes
      */
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['release_notes'] = $this->createRandomString(256);
-    $this->updateAssert(422, $this->object->id);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['release_notes' => 'The release notes must not be greater than 255 characters.']);
   }
 
   public function testSoftwarePackageUpdateReleasedDateError()
@@ -303,6 +325,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['released_date'] = '2022-12-33';
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $modelUpdate = $this->modelUpdate;
     $this->noAssert = TRUE;
@@ -310,6 +333,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['released_date'] = '2022-13-25';
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $modelUpdate = $this->modelUpdate;
     $this->noAssert = TRUE;
@@ -317,6 +341,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['released_date'] = '2022-13-25 14:09:30';
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
 
     $modelUpdate = $this->modelUpdate;
     $this->noAssert = TRUE;
@@ -324,5 +349,6 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['released_date'] = '2022-12-25 14:78:29';
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
   }
 }

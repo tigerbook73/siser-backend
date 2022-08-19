@@ -121,19 +121,22 @@ class AdminUserCreateApiTest extends AdminUserTestCase
   public function testAdminUserNoNameCreateError()
   {
     unset($this->modelCreate['name']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.name', ['The name field is required.']);
   }
 
   public function testAdminUserEmptyNameCreateError()
   {
     $this->modelCreate['name'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.name', ['The name field is required.']);
   }
 
   public function testAdminUserNameExceedsLengthCreateError()
   {
     $this->modelCreate['name'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.name', ['The name must not be greater than 255 characters.']);
   }
 
   /**
@@ -142,37 +145,43 @@ class AdminUserCreateApiTest extends AdminUserTestCase
   public function testAdminUserNoEmailCreateError()
   {
     unset($this->modelCreate['email']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.email', ['The email field is required.']);
   }
 
   public function testAdminUserEmptyEmailCreateError()
   {
     $this->modelCreate['email'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.email', ['The email field is required.']);
   }
 
   public function testAdminUserInvalidFormatEmailCreateError()
   {
     $this->modelCreate['email'] = 'tester';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.email', ['The email must be a valid email address.']);
   }
 
   public function testAdminUserEmailExceedLengthCreateError()
   {
     $this->modelCreate['email'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.email', ['The email must be a valid email address.', 'The email must not be greater than 255 characters.']);
   }
 
   public function testAdminUserEmailExistedCreateError()
   {
     $this->modelCreate['email'] = 'admin@iifuture.com';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.email', ['The email has already been taken.']);
   }
 
   public function testAdminUserEmailExceedsLengthCreateError()
   {
     $this->modelCreate['email'] = 'a@' . $this->createRandomString(250) . '.com';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.email', ['The email must be a valid email address.', 'The email must not be greater than 255 characters.']);
   }
 
   /**
@@ -181,19 +190,22 @@ class AdminUserCreateApiTest extends AdminUserTestCase
   public function testAdminUserNoFullNameCreateError()
   {
     unset($this->modelCreate['full_name']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.full_name', ['The full name field is required.']);
   }
 
   public function testAdminUserEmptyFullNameCreateError()
   {
     $this->modelCreate['full_name'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.full_name', ['The full name field is required.']);
   }
 
   public function testAdminUserFullNameExceedsMaxLengthCreateError()
   {
     $this->modelCreate['full_name'] = $this->createRandomString(256);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.full_name', ['The full name must not be greater than 255 characters.']);
   }
 
   /**
@@ -203,22 +215,28 @@ class AdminUserCreateApiTest extends AdminUserTestCase
   {
 
     $this->modelCreate['roles'] = [''];
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['roles.0' => 'The roles.0 field is required.']);
 
     $this->modelCreate['roles'] = ['siser-backend-iifuture'];
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['roles.0' => 'The selected roles.0 is invalid.']);
 
     $this->modelCreate['roles'] = ['admin-iifuture', 'siser-backend'];
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['roles.0' => 'invalid']);
 
     $this->modelCreate['roles'] = ['siser-backend', ''];
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['roles.1' => 'required']);
 
     $this->modelCreate['roles'] = ['siser-backend', 'siser-backend'];
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['roles.0' => 'duplicate']);
 
     $this->modelCreate['roles'] = ['admin', 'siser-backend', 'global-admin'];
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['roles.2' => 'invalid']);
   }
 
   /**
@@ -227,18 +245,21 @@ class AdminUserCreateApiTest extends AdminUserTestCase
   public function testAdminUserNoPasswordCreateError()
   {
     unset($this->modelCreate['password']);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.password', ['The password field is required.']);
   }
 
   public function testAdminUserEmptyPasswordCreateError()
   {
     $this->modelCreate['password'] = '';
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.password', ['The password field is required.']);
   }
 
   public function testAdminUserPasswordExceedsMaxLengthCreateError()
   {
     $this->modelCreate['password'] = "!Aa1" . $this->createRandomString(29);
-    $this->createAssert(422);
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.password', ['The password must not be greater than 32 characters.']);
   }
 }

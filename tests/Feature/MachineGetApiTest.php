@@ -2,14 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Models\Machine;
-
 class MachineGetApiTest extends MachineTestCase
 {
   public ?string $role = 'admin';
 
   public function testMachineGetOk()
   {
-    $this->getAssert(200, 1);
+    $this->getAssert(200, $this->object->id);
+  }
+
+  public function testMachineGetError()
+  {
+    $this->getAssert(404, 999999999999999999);
+
+    $this->getAssert(404, -1);
+
+    $this->getAssert(404, 0);
   }
 }

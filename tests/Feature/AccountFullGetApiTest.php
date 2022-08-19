@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-
 class AccountFullGetApiTest extends AccountTestCase
 {
   public ?string $role = 'customer';
@@ -24,6 +22,4 @@ class AccountFullGetApiTest extends AccountTestCase
 
     return $response;
   }
-
-  // TODO: more tests to come
 }
