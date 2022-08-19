@@ -92,7 +92,7 @@ namespace Tests\Feature {
       return $response;
     }
 
-    protected function verifyCheckActionDataContent(array $checkInRequest, object $response, int $error_code = 0)
+    protected function verifyCheckActionDataContent(array $checkInRequest, object $response, int $errorCode = 0)
     {
       $content = $response->getContent();
       $this->assertTrue(strpos($content, 'BeginLDSData') !== FALSE);
@@ -106,7 +106,7 @@ namespace Tests\Feature {
       $this->assertEquals($object->request_id, $checkInRequest['request_id']);
       $this->assertEquals($object->version, $checkInRequest['version']);
       $this->assertEquals($object->cutter_number, 0);
-      $this->assertEquals($object->error_code, $error_code);
+      $this->assertEquals($object->error_code, $errorCode);
       $this->assertEquals($object->result_code, 0);
     }
 
