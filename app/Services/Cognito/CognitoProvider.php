@@ -13,7 +13,6 @@ class CognitoProvider
   public CognitoIdentityProviderClient|null $cognitoClient = null;
 
   public string $region;
-  public string $host;
   public string $userPoolId;
   public string $clientId;
   public string $clientSecret;
@@ -21,7 +20,6 @@ class CognitoProvider
   public function __construct()
   {
     $this->region = config('siser.aws_region');
-    $this->host = config('siser.cognito.host');
     $this->userPoolId = config('siser.cognito.user_pool_id');
     $this->clientId = config('siser.cognito.client_id');
     $this->clientSecret = config('siser.cognito.client_secret');

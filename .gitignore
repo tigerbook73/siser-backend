@@ -5,7 +5,7 @@
 /vendor
 .env
 .env.chinlim*
-.env.backup
+.env.prod.secret
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
