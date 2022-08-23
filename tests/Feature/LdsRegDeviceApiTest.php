@@ -44,7 +44,7 @@ class LdsRegDeviceApiTest extends LdsTestCase
     $this->regRequest['version'] = '';
     $response = $this->postJson('/api/v1/lds/reg-device', $this->regRequest);
     $response->assertStatus(422)
-      ->assertJsonPath('errors.version', ['The selected version is invalid.']);
+      ->assertJsonPath('errors.version', ['The version field is required.']);
   }
 
   public function testLdsRegApiDeviceNameEmptyFail()
@@ -68,7 +68,7 @@ class LdsRegDeviceApiTest extends LdsTestCase
     $this->regRequest['online'] = '';
     $response = $this->postJson('/api/v1/lds/reg-device', $this->regRequest);
     $response->assertStatus(422)
-      ->assertJsonPath('errors.online', ['The selected online is invalid.']);
+      ->assertJsonPath('errors.online', ['The online field must have a value.']);
   }
 
   public function testLdsRegApiOnlineInvalidFail()

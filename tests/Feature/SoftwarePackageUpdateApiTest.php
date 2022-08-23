@@ -181,7 +181,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['name'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['name' => 'The name must be a string.']);
+    $response->assertJsonValidationErrors(['name' => 'The name field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['name'] = $this->createRandomString(256);
@@ -199,7 +199,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['platform'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
+    $response->assertJsonValidationErrors(['platform' => 'he platform field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['platform'] = $this->createRandomString(256);
@@ -212,7 +212,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['version' => 'The version must be a string.']);
+    $response->assertJsonValidationErrors(['version' => 'The version field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version'] = $this->createRandomString(256);
@@ -230,7 +230,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version_type'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['version_type' => 'The selected version type is invalid.']);
+    $response->assertJsonValidationErrors(['version_type' => 'The version type field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['version_type'] = $this->createRandomString(256);
@@ -248,7 +248,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['released_date' => 'The released date is not a valid date.']);
+    $response->assertJsonValidationErrors(['released_date' => 'The released date field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['released_date'] = '2022-08-04 29:26:03';
@@ -276,7 +276,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['filename'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['filename' => 'The filename must be a string.']);
+    $response->assertJsonValidationErrors(['filename' => 'The filename field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['filename'] = $this->createRandomString(256);
@@ -289,7 +289,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['url'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonValidationErrors(['url' => 'The url must be a string.']);
+    $response->assertJsonValidationErrors(['url' => 'The url field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['url'] = $this->createRandomString(256);

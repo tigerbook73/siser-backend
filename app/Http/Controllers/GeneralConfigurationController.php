@@ -18,7 +18,7 @@ class GeneralConfigurationController extends Controller
   public function set(Request $request)
   {
     $inputs = $request->validate([
-      'machine_license_unit' => ['integer', 'between:1,10'],
+      'machine_license_unit' => ['filled', 'integer', 'between:1,10'],
     ]);
     GeneralConfiguration::setAll($inputs);
 

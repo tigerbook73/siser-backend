@@ -12,7 +12,7 @@ class PlanController extends SimpleController
   protected function getListRules()
   {
     return [
-      'catagory'    => ['in:machine,software'],
+      'catagory'    => ['filled', 'in:machine,software'],
     ];
   }
 

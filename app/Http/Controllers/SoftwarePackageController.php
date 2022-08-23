@@ -13,8 +13,8 @@ class SoftwarePackageController extends SimpleController
   protected function getListRules()
   {
     return [
-      'name'      => [],
-      'platform'  => ['in:Windows,Mac'],
+      'name'      => ['filled'],
+      'platform'  => ['filled', 'in:Windows,Mac'],
     ];
   }
 
@@ -24,10 +24,10 @@ class SoftwarePackageController extends SimpleController
       'name'          => ['required', 'max:255'],
       'platform'      => ['required', 'in:Windows,Mac'],
       'version'       => ['required', 'max:255'],
-      'description'   => ['nullable', 'max:255'],
+      'description'   => ['max:255'],
       'version_type'  => ['required', 'in:stable,beta'],
       'released_date' => ['required', 'date'],
-      'release_notes' => ['nullable', 'max:255'],
+      'release_notes' => ['max:255'],
       'filename'      => ['required', 'max:255'],
       'url'           => ['required', 'max:255'],
     ];
@@ -36,15 +36,15 @@ class SoftwarePackageController extends SimpleController
   protected function getUpdateRules()
   {
     return [
-      'name'          => ['string', 'max:255'],
-      'platform'      => ['in:Windows,Mac'],
-      'version'       => ['string', 'max:255'],
-      'description'   => ['nullable', 'max:255'],
-      'version_type'  => ['in:stable,beta'],
-      'released_date' => ['string', 'date'],
-      'release_notes' => ['nullable', 'max:255'],
-      'filename'      => ['string', 'max:255'],
-      'url'           => ['string', 'max:255'],
+      'name'          => ['filled', 'string', 'max:255'],
+      'platform'      => ['filled', 'in:Windows,Mac'],
+      'version'       => ['filled', 'string', 'max:255'],
+      'description'   => ['max:255'],
+      'version_type'  => ['filled', 'in:stable,beta'],
+      'released_date' => ['filled', 'string', 'date'],
+      'release_notes' => ['max:255'],
+      'filename'      => ['filled', 'string', 'max:255'],
+      'url'           => ['filled', 'string', 'max:255'],
     ];
   }
 

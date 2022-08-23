@@ -14,8 +14,8 @@ class UserController extends SimpleController
   protected function getListRules()
   {
     return [
-      'name'      => [],
-      'email'     => [],
+      'name'      => ['filled'],
+      'email'     => ['filled'],
     ];
   }
 

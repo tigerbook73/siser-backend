@@ -69,7 +69,7 @@ class MachineUpdateApiTest extends MachineTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['model'] = '';
     $response = $this->updateAssert(422, $this->object->id);
-    $response->assertJsonPath('errors.model', ['The model must be a string.']);
+    $response->assertJsonPath('errors.model', ['The model field must have a value.']);
 
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['model'] = $this->createRandomString(256);

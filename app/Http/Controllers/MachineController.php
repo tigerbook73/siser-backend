@@ -13,8 +13,8 @@ class MachineController extends SimpleController
   protected function getListRules()
   {
     return [
-      'serial_no' => [],
-      'user_id'   => ['integer'],
+      'serial_no' => ['filled'],
+      'user_id'   => ['filled', 'integer'],
     ];
   }
 
@@ -24,15 +24,15 @@ class MachineController extends SimpleController
       "serial_no" => ['required', 'max:255'],
       "user_id"   => ['required', Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))],
       "model"     => ['required', 'max:255'],
-      "nickname"  => ['nullable', 'max:255'],
+      "nickname"  => ['max:255'],
     ];
   }
 
   protected function getUpdateRules()
   {
     return [
-      "model"     => ['string', 'max:255'],
-      "nickname"  => ['nullable', 'max:255'],
+      "model"     => ['filled', 'string', 'max:255'],
+      "nickname"  => ['max:255'],
     ];
   }
 

@@ -22,7 +22,7 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
   public function testSoftwarePackageListError()
   {
     $response = $this->listAssert(422, ['platform' => ''],);
-    $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);
+    $response->assertJsonValidationErrors(['platform' => 'The platform field must have a value.']);
 
     $response = $this->listAssert(422, ['platform' => 'Linux'],);
     $response->assertJsonValidationErrors(['platform' => 'The selected platform is invalid.']);

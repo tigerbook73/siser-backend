@@ -13,7 +13,7 @@ class SubscriptionController extends SimpleController
   protected function getListRules()
   {
     return [
-      'user_id'   => ['integer'],
+      'user_id'   => ['filled', 'integer'],
     ];
   }
 

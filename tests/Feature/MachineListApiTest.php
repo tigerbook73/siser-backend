@@ -29,7 +29,7 @@ class MachineListApiTest extends MachineTestCase
   public function testMachineListError()
   {
     $response = $this->listAssert(422, ['user_id' => '']);
-    $response->assertJsonPath('errors.user_id', ['The user id must be an integer.']);
+    $response->assertJsonPath('errors.user_id', ['The user id field must have a value.']);
 
     $response = $this->listAssert(422, ['user_id' => 'x']);
     $response->assertJsonPath('errors.user_id', ['The user id must be an integer.']);
