@@ -19,7 +19,7 @@ class AuthController extends Controller
   protected function getLoginRedirect()
   {
     return  redirect(
-      config('siser.sign_in_uri') . '?' . http_build_query(['redirect' => config('siser.login_uri')]),
+      config('siser.sign_in_uri') . '?' . http_build_query(['redirect' => url(config('siser.login_uri'))]),
       302,
       ['Cache-Control' => 'no-store']
     );

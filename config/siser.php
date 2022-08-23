@@ -9,7 +9,7 @@ return [
   ],
 
   // sis configuration
-  'login_uri'       => env('LOGIN_URI'),
+  'login_uri'       => '/auth/login',
   'sign_in_uri'     => env('SIGN_IN_URI', 'https://auth.siser.com'),
   'sign_out_uri'    => env('SIGN_OUT_URI', 'https://auth.siser.com/'),
 
