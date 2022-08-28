@@ -14,22 +14,23 @@ class CognitoProvider
 
   public string $region;
   public string $userPoolId;
-  public string $clientId;
-  public string $clientSecret;
+  public string $keyId;
+  public string $keySecret;
 
   public function __construct()
   {
-    $this->region = config('siser.aws_region');
+    $this->region     = config('siser.cognito.region');
     $this->userPoolId = config('siser.cognito.user_pool_id');
-    $this->clientId = config('siser.cognito.client_id');
-    $this->clientSecret = config('siser.cognito.client_secret');
+    $this->keyId      = config('siser.cognito.key_id');
+    $this->keySecret  = config('siser.cognito.key_secret');
   }
 
   protected function getCognitoClient(): CognitoIdentityProviderClient
   {
     if (is_null($this->cognitoClient)) {
       $this->cognitoClient = new CognitoIdentityProviderClient([
-        'profile' => 'siser',
+        'profile' => $this->keyId ? null : 'siser',
+        'credentials' => $this->keyId ? ['key' => $this->keyId, 'secret' => $this->keySecret] : null,
         'region'  => $this->region,
         'version' => '2016-04-18'
       ]);

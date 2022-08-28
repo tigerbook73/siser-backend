@@ -4,8 +4,9 @@ return [
   // siser's cognito configuration
   'cognito' => [
     'user_pool_id'  => env("COGNITO_USER_POOL_ID"),
-    'client_id'     => env('COGNITO_CLIENT_ID'),
-    'client_secret' => env('COGNITO_CLIENT_SECRET'),
+    'region'        => env('COGNITO_REGION'),
+    'key_id'        => env('COGNITO_ACCESS_KEY_ID'),
+    'key_secret'    => env('COGNITO_SECRET_ACCESS_KEY'),
   ],
 
   // sis configuration
@@ -17,9 +18,9 @@ return [
   'domain_env'      => (env('APP_ENV') === 'production') ? 'production' : 'sandbox',
 
   // in environment
-  'aws_region'      => env('AWS_DEFAULT_REGION'),
-  // 'aws_key_id' => null,
-  // 'aws_key_secret' => null,
+  'aws_region'      => env('AWS_REGION'),
+  'aws_key_id'      => env('AWS_ACCESS_KEY_ID'),
+  'aws_key_secret'  => env('AWS_SECRET_ACCESS_KEY'),
 
   'plan' => [
     'default_machine_plan' => 1,
