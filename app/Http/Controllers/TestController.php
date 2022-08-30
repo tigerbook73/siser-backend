@@ -9,8 +9,8 @@ class TestController extends Controller
 {
   public function resetData()
   {
-    Artisan::call('migrate:fresh');
-    Artisan::call('db:seed');
+    Artisan::call('migrate:fresh', ['--force' => true]);
+    Artisan::call('db:seed', ['--force' => true]);
 
     return response()->json(['message' => 'database reset successfully!']);
   }
