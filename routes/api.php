@@ -26,35 +26,45 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+$role = env('CONTAINER_ROLE', null);
+
+// LDS role does not provides APIs
+if ($role == 'lds') {
+  return;
+}
+
 
 // 
 // admin authentication
 // 
-Route::post('/auth/admin/login',            [AdminAuthController::class, 'login']);
-Route::post('/auth/admin/forgot-password',  [AdminAuthController::class, 'forgotPassword'])->name('password.email');
-Route::post('/auth/admin/reset-password',   [AdminAuthController::class, 'resetPassword']);
+if (!$role || $role == 'admin') {
+  Route::post('/auth/admin/login',            [AdminAuthController::class, 'login']);
+  Route::post('/auth/admin/forgot-password',  [AdminAuthController::class, 'forgotPassword'])->name('password.email');
+  Route::post('/auth/admin/reset-password',   [AdminAuthController::class, 'resetPassword']);
 
-Route::middleware('auth:admin')->group(function () {
-  Route::post('/auth/admin/refresh',        [AdminAuthController::class, 'refresh']);
-  Route::post('/auth/admin/me',             [AdminAuthController::class, 'me']);
-  Route::post('/auth/admin/logout',         [AdminAuthController::class, 'logout']);
+  Route::middleware('auth:admin')->group(function () {
+    Route::post('/auth/admin/refresh',        [AdminAuthController::class, 'refresh']);
+    Route::post('/auth/admin/me',             [AdminAuthController::class, 'me']);
+    Route::post('/auth/admin/logout',         [AdminAuthController::class, 'logout']);
 
-  Route::post('/auth/admin/update-password', [AdminAuthController::class, 'updatePassword']);
-});
+    Route::post('/auth/admin/update-password', [AdminAuthController::class, 'updatePassword']);
+  });
+}
 
 
 //
 // user authentication
 //
-// TODO: to remove in production version
-Route::post('/auth/login-test', [AuthController::class, 'loginTest']);
+if (!$role || $role == 'customer') {
+  // TODO: to remove in production version
+  Route::post('/auth/login-test', [AuthController::class, 'loginTest']);
 
-Route::middleware('auth:api')->group(function () {
-  Route::post('/auth/refresh', [AuthController::class, 'refresh']);
-  Route::post('/auth/me', [AuthController::class, 'me']);
-  Route::post('/auth/logout', [AuthController::class, 'logout']);
-});
-
+  Route::middleware('auth:api')->group(function () {
+    Route::post('/auth/refresh', [AuthController::class, 'refresh']);
+    Route::post('/auth/me', [AuthController::class, 'me']);
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+  });
+}
 
 // 
 // plans
@@ -62,87 +72,100 @@ Route::middleware('auth:api')->group(function () {
 Route::get('/plans', [PlanController::class, 'list']);
 Route::get('/plans/{id}', [PlanController::class, 'index']);
 
-
 // 
 // software packages
 // 
 Route::get('/software-packages', [SoftwarePackageController::class, 'list']);
 Route::get('/software-packages/{id}', [SoftwarePackageController::class, 'index']);
 
-Route::middleware('auth:admin')->group(function () {
-  Route::post('/software-packages', [SoftwarePackageController::class, 'create']);
-  Route::patch('/software-packages/{id}', [SoftwarePackageController::class, 'update']);
-});
-
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::post('/software-packages', [SoftwarePackageController::class, 'create']);
+    Route::patch('/software-packages/{id}', [SoftwarePackageController::class, 'update']);
+  });
+}
 
 //
 // configure
 //
-Route::middleware('auth:admin')->group(function () {
-  Route::get('/config/general', [GeneralConfigurationController::class, 'get']);
-  Route::patch('/config/general', [GeneralConfigurationController::class, 'set']);
-});
-
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/config/general', [GeneralConfigurationController::class, 'get']);
+    Route::patch('/config/general', [GeneralConfigurationController::class, 'set']);
+  });
+}
 
 //
 // LDS
 //
-Route::middleware('auth:api')->group(function () {
-  Route::post('/lds/reg-device', [LdsRegistrationController::class, 'regDevice']);
-});
+if (!$role || $role == 'customer') {
+  Route::middleware('auth:api')->group(function () {
+    Route::post('/lds/reg-device', [LdsRegistrationController::class, 'regDevice']);
+  });
+}
 
 //
 // machine
 //
-Route::middleware('auth:admin')->group(function () {
-  Route::get('/machines', [MachineController::class, 'list']);
-  Route::get('/machines/{id}', [MachineController::class, 'index']);
-  Route::post('/machines', [MachineController::class, 'create']);
-  Route::patch('/machines/{id}', [MachineController::class, 'update']);
-});
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/machines', [MachineController::class, 'list']);
+    Route::get('/machines/{id}', [MachineController::class, 'index']);
+    Route::post('/machines', [MachineController::class, 'create']);
+    Route::patch('/machines/{id}', [MachineController::class, 'update']);
+  });
+}
 
 
 // 
 // user
 // 
-Route::middleware('auth:admin')->group(function () {
-  Route::get('/users', [UserController::class, 'list']);
-  Route::get('/users/{id}', [UserController::class, 'index']);
-  Route::post('/users', [UserController::class, 'create']);
-  Route::post('/users/{id}', [UserController::class, 'refresh']);
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/users', [UserController::class, 'list']);
+    Route::get('/users/{id}', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'create']);
+    Route::post('/users/{id}', [UserController::class, 'refresh']);
 
-  Route::get('/users/{id}/full', [UserController::class, 'full']);
-  Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
-  Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
-});
+    Route::get('/users/{id}/full', [UserController::class, 'full']);
+    Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
+    Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
+  });
+}
 
 // 
 // admin users
 // 
-Route::middleware('auth:admin')->group(function () {
-  Route::get('/admin-users', [AdminUserController::class, 'list']);
-  Route::get('/admin-users/{id}', [AdminUserController::class, 'index']);
-  Route::post('/admin-users', [AdminUserController::class, 'create']);
-  Route::patch('/admin-users/{id}', [AdminUserController::class, 'update']);
-});
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/admin-users', [AdminUserController::class, 'list']);
+    Route::get('/admin-users/{id}', [AdminUserController::class, 'index']);
+    Route::post('/admin-users', [AdminUserController::class, 'create']);
+    Route::patch('/admin-users/{id}', [AdminUserController::class, 'update']);
+  });
+}
 
 // 
 // report
 // 
-Route::middleware('auth:admin')->group(function () {
-  Route::post('/report/subscriptions', [ReportController::class, 'subscriptions']);
-});
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::post('/report/subscriptions', [ReportController::class, 'subscriptions']);
+  });
+}
 
 
 //
 // account
 //
-Route::middleware('auth:api')->group(function () {
-  Route::get('/account/me', [AuthController::class, 'me']);
-  Route::get('/account/full', [UserController::class, 'fullByAccount']);
-  Route::get('/account/machines', [MachineController::class, 'listByAccount']);
-  Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
-});
+if (!$role || $role == 'customer') {
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/me', [AuthController::class, 'me']);
+    Route::get('/account/full', [UserController::class, 'fullByAccount']);
+    Route::get('/account/machines', [MachineController::class, 'listByAccount']);
+    Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
+  });
+}
 
 
 //

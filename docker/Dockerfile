@@ -1,12 +1,21 @@
+ARG frontend
+
 #
 # stage: frontend
 #
-FROM localhost/frontend as frontend
+FROM ${frontend} as frontend
 
 #
 # stage: final -- backend
 #
 FROM php:8.1-apache
+
+# add alias
+RUN echo "" >> ~/.bashrc \
+  && echo "alias php='runuser -u www-data -- /usr/local/bin/php'" >> ~/.bashrc \
+  && echo "alias art='runuser -u www-data -- /usr/local/bin/php /var/www/html/artisan'" >> ~/.bashrc \
+  && echo "alias ll='ls -l'" >> ~/.bashrc \
+  && echo "alias l='ls -la'" >> ~/.bashrc
 
 # library
 RUN apt update && apt install -y \
@@ -39,10 +48,6 @@ RUN composer install --no-dev --no-scripts --no-autoloader
 # copy backend
 COPY --chown=www-data:www-data . .
 
-# copy frontend
-COPY --chown=www-data:www-data --from=frontend /dist/public/ ./public/
-COPY --chown=www-data:www-data --from=frontend /dist/index.html ./resources/views/index.blade.php
-
 RUN mv ./.env.prod ./.env && \
   composer install --no-dev --optimize-autoloader
 
@@ -50,11 +55,9 @@ RUN chmod 755 ./start.sh
 
 CMD ["/var/www/html/start.sh"]
 
+# copy frontend
+COPY --chown=www-data:www-data --from=frontend /dist/public/ ./public/
+COPY --chown=www-data:www-data --from=frontend /dist/index.html ./resources/views/index.blade.php
+
 EXPOSE 80
 
-# add alias
-RUN echo "" >> ~/.bashrc \
-  && echo "alias php='runuser -u www-data -- /usr/local/bin/php'" >> ~/.bashrc \
-  && echo "alias art='runuser -u www-data -- /usr/local/bin/php /var/www/html/artisan'" >> ~/.bashrc \
-  && echo "alias ll='ls -l'" >> ~/.bashrc \
-  && echo "alias l='ls -la'" >> ~/.bashrc

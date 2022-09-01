@@ -15,23 +15,31 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+$role = env('CONTAINER_ROLE', null);
+
+
 /**
  * authentication
  */
 
-Route::get('/auth/login', [AuthController::class, 'loginWeb']);
-Route::get('/auth/logout', [AuthController::class, 'logoutWeb']);
+if (!$role || $role == 'customer') {
+  Route::get('/auth/login', [AuthController::class, 'loginWeb']);
+  Route::get('/auth/logout', [AuthController::class, 'logoutWeb']);
+}
 
-Route::get('/admin/auth/reset-password', function () {
-  return view('index');
-})->name('password.reset');
-
+if (!$role || $role == 'admin') {
+  Route::get('/admin/auth/reset-password', function () {
+    return view('index');
+  })->name('password.reset');
+}
 
 /**
  * LDS
  */
-Route::get('/check-in', [LdsController::class, 'checkIn']);
-Route::get('/check-out', [LdsController::class, 'checkOut']);
+if (!$role || $role == 'lds') {
+  Route::get('/check-in', [LdsController::class, 'checkIn']);
+  Route::get('/check-out', [LdsController::class, 'checkOut']);
+}
 
 
 /**
