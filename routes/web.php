@@ -36,7 +36,7 @@ if (!$role || $role == 'admin') {
 /**
  * LDS
  */
-if (!$role || $role == 'lds') {
+if (!$role || $role == 'customer') {
   Route::get('/check-in', [LdsController::class, 'checkIn']);
   Route::get('/check-out', [LdsController::class, 'checkOut']);
 }

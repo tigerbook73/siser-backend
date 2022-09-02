@@ -28,11 +28,6 @@ use Illuminate\Support\Facades\Route;
 
 $role = env('CONTAINER_ROLE', null);
 
-// LDS role does not provides APIs
-if ($role == 'lds') {
-  return;
-}
-
 
 // 
 // admin authentication

@@ -14,7 +14,7 @@ if [ "$env" == "production" ]; then
 fi
 
 # run by role
-if [ "$role" = "main" ] || [ "$role" = "customer" ] || [ "$role" = "admin" ] || [ "$role" = "lds" ]; then
+if [ "$role" = "main" ] || [ "$role" = "customer" ] || [ "$role" = "admin" ]; then
 
   echo "do migration ..."
   runuser -u www-data -- php artisan migrate --force

@@ -24,7 +24,7 @@ class LdsController extends Controller
   protected function validateCheckInputs(array $inputs): array
   {
     // validation
-    if (!$inputs['rq']) {
+    if (empty($inputs['rq'])) {
       throw new LdsException(LDS_ERR_BAD_REQUEST);
     }
 
