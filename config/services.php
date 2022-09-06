@@ -25,10 +25,10 @@ return [
   //   'token' => env('POSTMARK_TOKEN'),
   // ],
 
-  // 'ses' => [
-  //   'key' => env('AWS_ACCESS_KEY_ID'),
-  //   'secret' => env('AWS_SECRET_ACCESS_KEY'),
-  //   'region' => env('AWS_REGION', 'us-east-1'),
-  // ],
+  'ses' => [
+    'region'  => env('COGNITO_REGION', 'us-east-2'),
+    'key'     => env('COGNITO_ACCESS_KEY_ID'),
+    'secret'  => env('COGNITO_SECRET_ACCESS_KEY'),
+  ],
 
 ];
