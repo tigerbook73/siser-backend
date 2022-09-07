@@ -19,13 +19,16 @@ if [ "$role" = "main" ] || [ "$role" = "customer" ] || [ "$role" = "admin" ]; th
   echo "do migration ..."
   runuser -u www-data -- php artisan migrate --force
 
-  echo "start main service ..."
+  echo "start $role service ..."
   exec apache2-foreground
 
 elif [ "$role" = "queue" ]; then
 
   echo "start queue service ..."
-  runuser -u www-data -- php /var/www/html/artisan queue:work --tries=3 --timeout=180
+  while [ true ]; do
+      echo "run queue worker ..."
+      runuser -u www-data -- php /var/www/html/artisan queue:work --tries=3 --timeout=180 --max-jobs=1000
+  done
 
 elif [ "$role" = "scheduler" ]; then
 
