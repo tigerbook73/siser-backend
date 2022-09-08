@@ -167,6 +167,7 @@ if (!$role || $role == 'customer') {
 // test
 //
 // TODO: to remove in production version
+Route::get('test/reset-data', [TestController::class, 'resetData']);
 Route::post('test/reset-data', [TestController::class, 'resetData']);
 
 //
