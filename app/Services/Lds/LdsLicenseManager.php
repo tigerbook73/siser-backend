@@ -21,7 +21,7 @@ class LdsLicenseManager
 {
   public function findPool(int $user_id): ?LdsPool
   {
-    return LdsPool::where('user_id', $user_id)->first();;
+    return LdsPool::where('user_id', $user_id)->first();
   }
 
   public function findInstance(string $user_code, string $device_id): ?LdsInstance
