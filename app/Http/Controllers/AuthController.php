@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Services\Cognito\CognitoProvider;
+use App\Services\Cognito\CognitoUser;
 use Illuminate\Http\Request;
 use PHPOpenSourceSaver\JWTAuth\JWTGuard;
 
@@ -47,17 +48,19 @@ class AuthController extends Controller
       return $this->getLoginRedirect();
     }
 
-    // check accessToken validaty
+    /** @var CognitoUser|null $cognitoUser */
     $cognitoUser = app()->make(CognitoProvider::class)->getCognitoUser($accessToken);
     if (!$cognitoUser) {
       return $this->getLoginRedirect();
     }
 
-    // create software user
+    // create / update software user
     /** @var User|null $user */
     $user = User::where('name', $cognitoUser->username)->first();
     if (!$user) {
-      $user = User::createFromCognitoUser($cognitoUser);;
+      $user = User::createFromCognitoUser($cognitoUser);
+    } else {
+      $user->updateFromCognitoUser($cognitoUser);
     }
 
     $viewData = [
