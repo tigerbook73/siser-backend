@@ -20,17 +20,17 @@ class LdsEventSubscriber
 
   public function handleUserSaved(UserSaved $event)
   {
-    LdsSynchronizer::dispatch('UserSaved', $event->user);
+    LdsSynchronizer::dispatch('UserSaved', $event->user)->onConnection('sync');
   }
 
   public function handleUserDeleted(UserDeleted $event)
   {
-    LdsSynchronizer::dispatch('UserDeleted', $event->user);
+    LdsSynchronizer::dispatch('UserDeleted', $event->user)->onConnection('sync');
   }
 
   public function handleLdsRegistered(LdsRegistered $event)
   {
-    LdsSynchronizer::dispatch('LdsRegistered', $event->ldsRegistration);
+    LdsSynchronizer::dispatch('LdsRegistered', $event->ldsRegistration)->onConnection('sync');
   }
 
 

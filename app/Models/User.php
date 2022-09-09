@@ -27,7 +27,6 @@ class User extends UserWithTrait
     'license_count'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
   ];
 
-
   /**
    * The attributes that should be hidden for serialization.
    *
@@ -36,16 +35,6 @@ class User extends UserWithTrait
   protected $hidden = [
     'password',
     'remember_token',
-  ];
-
-  /**
-   * The event map for the model.
-   *
-   * @var array
-   */
-  protected $dispatchesEvents = [
-    'saved' => UserSaved::class,
-    'deleted' => UserDeleted::class,
   ];
 
 
@@ -61,11 +50,19 @@ class User extends UserWithTrait
     $this->roles = null;
   }
 
-  protected function afterSave()
+  protected function afterCreate()
+  {
+    UserSaved::dispatch($this);
+  }
+
+  protected function afterUpdate()
   {
     if ($this->wasChanged('subscription_level')) {
       UserSubscriptionLevelChanged::dispatch($this);
     }
+    if ($this->wasChanged(['subscription_level', 'license_count'])) {
+      UserSaved::dispatch($this);
+    };
   }
 
   static public function createFromCognitoUser(CognitoUser $cognitoUser): User

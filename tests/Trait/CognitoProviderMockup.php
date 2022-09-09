@@ -49,6 +49,10 @@ class CognitoProvider extends CognitoProviderBase
     }
     return null;
   }
+
+  public function updateUserSubscriptionLevel(string $username, int $subscription_level): void
+  {
+  }
 }
 
 trait CognitoProviderMockup

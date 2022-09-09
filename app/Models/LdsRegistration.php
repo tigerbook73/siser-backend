@@ -7,12 +7,14 @@ use App\Models\Base\LdsRegistration as BaseLdsRegistration;
 
 class LdsRegistration extends BaseLdsRegistration
 {
-  /**
-   * The event map for the model.
-   *
-   * @var array
-   */
-  protected $dispatchesEvents = [
-    'saved' => LdsRegistered::class,
-  ];
+  protected function afterCreate()
+  {
+    LdsRegistered::dispatch($this);
+  }
+
+  protected function afterUpdate()
+  {
+    // not required to send event
+    // LdsRegistered::dispatch($this);
+  }
 }
