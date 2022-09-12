@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Machine as BaseMachine;
+use Illuminate\Support\Facades\DB;
 
 class Machine extends BaseMachine
 {
@@ -17,11 +18,32 @@ class Machine extends BaseMachine
 
   protected function afterCreate()
   {
-    /** @var User $user */
-    $user = User::find($this->user_id);
+    $this->attachUser($this->user);
+  }
 
+  public function transfer(int $newUserId)
+  {
+    DB::transaction(function () use ($newUserId) {
+      $prevUser = $this->user;
+      $this->user_id = $newUserId;
+      $this->save();
+
+      $this->detachUser($prevUser);
+      $this->attachUser(User::find($newUserId));
+    });
+
+    return $this;
+  }
+
+  protected function attachUser(User $user)
+  {
     // create subscription if required and update license count for user
-    if ($user->subscriptions()->count() <= 0) {
+    if (
+      $user->subscriptions()
+      ->whereIn('status', ['active'])
+      ->whereRelation('plan', 'catagory', 'machine')
+      ->count() <= 0
+    ) {
       Subscription::create([
         'user_id'     => $user->id,
         'plan_id'     => config('siser.plan.default_machine_plan'),
@@ -39,5 +61,27 @@ class Machine extends BaseMachine
     }
 
     $user->save();
+  }
+
+  protected function detachUser(User $user)
+  {
+    /** @var Subscription|null $subscription */
+    $subscription = $user->subscriptions()
+      ->whereIn('status', ['active'])
+      ->whereRelation('plan', 'catagory', 'machine')
+      ->first();
+    if ($subscription) {
+      $user->license_count -= GeneralConfiguration::getMachineLicenseUnit();
+      if ($user->license_count <= 0) {
+        // TODO: more to be considered if PRO plan support (e.g. when to stop)
+        $subscription->end_date = today();
+        $subscription->status = 'inactive';
+        $subscription->save();
+
+        // to avoid mistake
+        $user->license_count = 0;
+      }
+      $user->save();
+    }
   }
 }

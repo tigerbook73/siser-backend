@@ -22,6 +22,9 @@ class GeneralConfigurationController extends Controller
     ]);
     GeneralConfiguration::setAll($inputs);
 
+    // TODO: update all user's license_count
+    // ..
+
     return $this->get();
   }
 }

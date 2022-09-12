@@ -108,6 +108,7 @@ if (!$role || $role == 'admin') {
     Route::get('/machines/{id}', [MachineController::class, 'index']);
     Route::post('/machines', [MachineController::class, 'create']);
     Route::patch('/machines/{id}', [MachineController::class, 'update']);
+    Route::post('/machines/{id}/transfer', [MachineController::class, 'transfer']);
   });
 }
 

@@ -47,4 +47,22 @@ class MachineController extends SimpleController
     $request->merge(['user_id' => auth('api')->user()->id]);
     return self::list($request);
   }
+
+  public function transfer(Request $request, int $id)
+  {
+    // input validation
+    $inputs = $request->validate([
+      "new_user_id"   => [
+        'required',
+        // user exist and not owns any machine
+        Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))
+      ],
+    ]);
+
+    /** @var Machine|null $machine */
+    $machine = Machine::findOrFail($id);
+    $machine->transfer($inputs['new_user_id']);
+
+    return $machine->unsetRelations()->toResource('admin');
+  }
 }
