@@ -20,7 +20,9 @@ class AuthController extends Controller
   protected function getLoginRedirect()
   {
     return  redirect(
-      config('siser.sign_in_uri') . '?' . http_build_query(['redirect' => url(config('siser.login_uri'))]),
+      config('siser.sign_in_uri') . '?' . http_build_query([
+        'redirect' => url(config('siser.login_uri'), [], app()->environment('production') ?: null)
+      ]),
       302,
       ['Cache-Control' => 'no-store']
     );
@@ -29,7 +31,9 @@ class AuthController extends Controller
   protected function getLogoutRedirect()
   {
     return redirect(
-      config('siser.sign_out_uri') . '?' . http_build_query(['redirect' => url('/')]),
+      config('siser.sign_out_uri') . '?' . http_build_query([
+        'redirect' => url(config('siser.login_uri'), [], app()->environment('production') ?: null)
+      ]),
       302,
       ['Cache-Control' => 'no-store']
     );
