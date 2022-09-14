@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Base\SoftwarePackageLatest;
 use App\Models\SoftwarePackage;
 use Illuminate\Http\Request;
 
@@ -13,8 +14,10 @@ class SoftwarePackageController extends SimpleController
   protected function getListRules()
   {
     return [
-      'name'      => ['filled'],
-      'platform'  => ['filled', 'in:Windows,Mac'],
+      'name'          => ['filled'],
+      'platform'      => ['filled', 'in:Windows,Mac'],
+      'version_type'  => ['filled', 'in:stable,beta'],
+      'version'       => ['filled'],
     ];
   }
 
@@ -23,7 +26,7 @@ class SoftwarePackageController extends SimpleController
     return [
       'name'          => ['required', 'max:255'],
       'platform'      => ['required', 'in:Windows,Mac'],
-      'version'       => ['required', 'max:255'],
+      'version'       => ['required', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
       'description'   => ['max:255'],
       'version_type'  => ['required', 'in:stable,beta'],
       'released_date' => ['required', 'date'],
@@ -38,7 +41,7 @@ class SoftwarePackageController extends SimpleController
     return [
       'name'          => ['filled', 'string', 'max:255'],
       'platform'      => ['filled', 'in:Windows,Mac'],
-      'version'       => ['filled', 'string', 'max:255'],
+      'version'       => ['filled', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
       'description'   => ['max:255'],
       'version_type'  => ['filled', 'in:stable,beta'],
       'released_date' => ['filled', 'string', 'date'],
@@ -50,38 +53,30 @@ class SoftwarePackageController extends SimpleController
 
   public function list(Request $request)
   {
-    $result = parent::list($request);
+    $this->validateUser();
+    $inputs = $this->validateList($request);
 
-    // get latest
-    $windowsLatest = SoftwarePackage::getLatest('Windows');
-    $macLatest = SoftwarePackage::getLatest('Mac');
+    // latests
+    $latestIds = SoftwarePackageLatest::all()->map(fn ($item) => $item->software_package_id)->all();
 
-    for ($i = 0; $i < count($result['data']); $i++) {
-      if (
-        $result['data'][$i]['id'] === $windowsLatest?->id ||
-        $result['data'][$i]['id'] === $macLatest?->id
-      ) {
-        $result['data'][$i]['is_latest'] = true;
-      }
+    if (isset($inputs['version']) && $inputs['version'] == 'latest') {
+      unset($inputs['version']);
+      $packages = $this->standardQuery($inputs)->whereIn('id', $latestIds)->get();
+    } else {
+      $packages = $this->standardQuery($inputs)->get();
     }
-    return $result;
+
+    foreach ($packages as $package) {
+      $package->is_latest = in_array($package->id, $latestIds);
+    }
+
+    return ['data' => $this->transformMultipleResources($packages)];
   }
 
   public function index($id)
   {
     $result = parent::index($id);
-
-    // get latest
-    $windowsLatest = SoftwarePackage::getLatest('Windows');
-    $macLatest = SoftwarePackage::getLatest('Mac');
-
-    if (
-      $result['id'] === $windowsLatest?->id ||
-      $result['id'] === $macLatest?->id
-    ) {
-      $result['is_latest'] = true;
-    }
-
+    $result['is_latest'] = SoftwarePackageLatest::where('software_package_id', $result['id'])->count() > 0;
     return $result;
   }
 }

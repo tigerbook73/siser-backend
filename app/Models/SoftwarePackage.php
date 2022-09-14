@@ -10,9 +10,9 @@ class SoftwarePackage extends BaseSoftwarePackage
     'id'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'name'          => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'platform'      => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
-    'version'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
+    'version'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'description'   => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
-    'version_type'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
+    'version_type'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'released_date' => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'release_notes' => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'filename'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
@@ -20,12 +20,23 @@ class SoftwarePackage extends BaseSoftwarePackage
     'url'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
   ];
 
-  static public function getLatest(string $platform): SoftwarePackage|null
+
+  public function afterCreate()
   {
-    // TODO: algorithm need to be improved
-    return self::where('platform', $platform)
-      ->where('version_type', 'stable')
-      ->orderByDesc('version')
-      ->first();
+    SoftwarePackageLatest::updateLatest($this->name, $this->platform, $this->version_type);
+  }
+
+  public function afterUpdate()
+  {
+    $prevLatest = $this->software_package_latest;
+    if (
+      $prevLatest->name != $this->name  ||
+      $prevLatest->platform != $this->platform  ||
+      $prevLatest->version_type != $this->version_type
+    ) {
+      SoftwarePackageLatest::updateLatest($prevLatest->name, $prevLatest->platform, $prevLatest->version_type);
+    }
+
+    SoftwarePackageLatest::updateLatest($this->name, $this->platform, $this->version_type);
   }
 }

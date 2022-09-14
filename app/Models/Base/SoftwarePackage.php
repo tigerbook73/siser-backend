@@ -6,6 +6,7 @@
 
 namespace App\Models\Base;
 
+use App\Models\SoftwarePackageLatest;
 use App\Models\TraitModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $url
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * 
+ * @property SoftwarePackageLatest $software_package_latest
  *
  * @package App\Models\Base
  */
@@ -50,4 +53,9 @@ class SoftwarePackage extends Model
     'filename',
     'url'
   ];
+
+  public function software_package_latest()
+  {
+    return $this->hasOne(SoftwarePackageLatest::class);
+  }
 }
