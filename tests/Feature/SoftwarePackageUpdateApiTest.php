@@ -52,10 +52,6 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['version'] = '1.0.1';
     $this->updateAssert(200, $this->object->id);
 
-    // TODO: error cases
-    // $this->modelUpdate['version'] = $this->createRandomString(255);
-    // $this->updateAssert(200, $this->object->id);
-
     /**
      * success version type
      */
@@ -219,6 +215,10 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['version'] = $this->createRandomString(256);
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertJsonValidationErrors(['version' => 'The version must not be greater than 255 characters.']);
+
+    $this->modelCreate = $modelUpdate;
+    $this->modelCreate['version'] = $this->createRandomString(255);
+    $this->updateAssert(422, $this->object->id)->assertJsonValidationErrors(['version' => 'The version format is invalid.']);
 
     /**
      * error version type
