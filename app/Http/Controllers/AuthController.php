@@ -45,7 +45,8 @@ class AuthController extends Controller
   public function loginWeb(Request $request)
   {
     // domain-token
-    $accessToken = $request->input('accessToken') ?? $request->cookie('siser')['sandbox']['accessToken'] ?? null;
+    $accessToken = $request->input('accessToken') ??
+      $request->cookie('siser')[config('siser.domain_env')]['accessToken'] ?? null;
 
     // check domain login
     if (!$accessToken) {
