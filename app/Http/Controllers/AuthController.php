@@ -56,7 +56,7 @@ class AuthController extends Controller
     /** @var CognitoUser|null $cognitoUser */
     $cognitoUser = app()->make(CognitoProvider::class)->getCognitoUser($accessToken);
     if (!$cognitoUser) {
-      abort(500, 'access token is invalid');
+      abort(400, 'access token is invalid');
     }
 
     // create / update software user
