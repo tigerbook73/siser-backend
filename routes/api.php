@@ -27,6 +27,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 $role = env('CONTAINER_ROLE', null);
+$testCode = env('APP_TEST_CODE', false);
 
 
 // 
@@ -51,8 +52,10 @@ if (!$role || $role == 'admin') {
 // user authentication
 //
 if (!$role || $role == 'customer') {
-  // TODO: to remove in production version
-  Route::post('/auth/login-test', [AuthController::class, 'loginTest']);
+  // not in production environment
+  if ($testCode) {
+    Route::post('/auth/login-test', [AuthController::class, 'loginTest']);
+  }
 
   Route::middleware('auth:api')->group(function () {
     Route::post('/auth/refresh', [AuthController::class, 'refresh']);
@@ -165,11 +168,12 @@ if (!$role || $role == 'customer') {
 
 
 //
-// test
+// test: not in production version
 //
-// TODO: to remove in production version
-Route::get('test/reset-data', [TestController::class, 'resetData']);
-Route::post('test/reset-data', [TestController::class, 'resetData']);
+if ($testCode) {
+  Route::get('test/reset-data', [TestController::class, 'resetData']);
+  Route::post('test/reset-data', [TestController::class, 'resetData']);
+}
 
 //
 // fall back

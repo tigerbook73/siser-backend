@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 $role = env('CONTAINER_ROLE', null);
-
+$testCode = env('APP_TEST_CODE', false);
 
 /**
  * authentication

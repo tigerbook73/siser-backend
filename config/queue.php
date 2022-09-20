@@ -55,7 +55,7 @@ return [
       'driver' => 'sqs',
       'key' => env('AWS_ACCESS_KEY_ID'),
       'secret' => env('AWS_SECRET_ACCESS_KEY'),
-      'prefix' => env('SQS_PREFIX', 'https://sqs.ap-southeast-2.amazonaws.com/830140436756'),
+      'prefix' => env('SQS_PREFIX', 'https://sqs.' . env('AWS_REGION') . '.amazonaws.com/830140436756'),
       'queue' => env('SQS_QUEUE', 'siser-blue'),
       'suffix' => env('SQS_SUFFIX'),
       'region' => env('AWS_REGION', 'us-east-2'),
