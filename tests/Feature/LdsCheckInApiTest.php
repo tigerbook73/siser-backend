@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Base\LdsInstance;
+use App\Models\LdsPool;
 use Tests\Helper\ApiTestTimeHelper;
 
 class LdsCheckInApiTest extends LdsTestCase
@@ -496,6 +497,23 @@ class LdsCheckInApiTest extends LdsTestCase
     $checkInRequest['version'] = 0;
     $checkInRequest['user_code'] = $this->getUserCode();
     $response = $this->verifyCheckInResponse($checkInRequest, FALSE, 400);
+
+    return $response;
+  }
+
+  public function testLdsCheckInOnlineUserNoLicenseFail()
+  {
+    // Manual set user to no licenses
+    $ldsPool = LdsPool::where('user_id', $this->user->id)->first();
+    $ldsPool->license_count = 0;
+    $ldsPool->save();
+
+    // check-in
+    $checkInRequest = $this->checkInRequest;
+    $checkInRequest['user_code'] = $this->getUserCode();
+    $response = $this->verifyCheckInResponse($checkInRequest);
+    // Verify returns User doesn't have any licenses
+    $this->verifyCheckActionDataContent($checkInRequest, $response, 8);
 
     return $response;
   }
