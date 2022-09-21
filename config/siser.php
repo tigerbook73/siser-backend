@@ -14,9 +14,6 @@ return [
   'sign_in_uri'     => env('SIGN_IN_URI', 'https://auth.siser.com'),
   'sign_out_uri'    => env('SIGN_OUT_URI', 'https://auth.siser.com/'),
 
-  'domain_cookie'   => 'siser',
-  'domain_env'      => (env('APP_ENV') === 'production') ? 'production' : 'sandbox',
-
   // in environment
   'aws_region'      => env('AWS_REGION'),
   'aws_key_id'      => env('AWS_ACCESS_KEY_ID'),
