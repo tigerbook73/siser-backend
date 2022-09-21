@@ -40,6 +40,12 @@ class LdsLicenseManager
       };
       $pool = $instance->lds_pool;
 
+      // if no license
+      if ($pool->license_count <= 0) {
+        LdsLog::log($instance->id, 'check-in', 'nok', 'user doesnt have licenses');
+        throw new LdsException(LDS_ERR_USER_DOESNT_HAVE_LICENSE);
+      }
+
       // if already online, extend it for 3600 seconds
       if ($instance->online) {
         $instance->expires_at = time() + 3600;

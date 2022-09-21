@@ -12,6 +12,7 @@ define('LDS_ERR_INVALID_USER_CODE',         [4, 'Invalid user code']);
 define('LDS_ERR_USER_NOT_REGISTERED',       [5, 'User not registered']);
 define('LDS_ERR_DEVICE_NOT_REGISTERED',     [6, 'Device not registered']);
 define('LDS_ERR_DEVICE_NOT_CHECK_IN',       [7, 'Device not check-in yet']);
+define('LDS_ERR_USER_DOESNT_HAVE_LICENSE',  [8, 'User doesn\'t have any licenses']);
 
 
 class LdsException extends Exception
