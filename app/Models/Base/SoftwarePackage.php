@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $release_notes
  * @property string $filename
  * @property string $url
+ * @property string|null $file_hash
+ * @property bool $force_update
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
@@ -37,6 +39,10 @@ class SoftwarePackage extends Model
   use HasFactory;
   use TraitModel;
   protected $table = 'software_packages';
+
+  protected $casts = [
+    'force_update' => 'bool'
+  ];
 
   protected $dates = [
     'released_date'
@@ -51,7 +57,9 @@ class SoftwarePackage extends Model
     'released_date',
     'release_notes',
     'filename',
-    'url'
+    'url',
+    'file_hash',
+    'force_update'
   ];
 
   public function software_package_latest()

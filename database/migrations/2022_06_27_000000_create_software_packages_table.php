@@ -24,6 +24,8 @@ return new class extends Migration
       $table->string('release_notes')->nullable()->comment('URL for release notes');
       $table->string('filename');
       $table->string('url')->comment('URL for software package download');
+      $table->string('file_hash')->nullable();
+      $table->boolean('force_update')->default(false);
       $table->timestamps();
     });
   }
