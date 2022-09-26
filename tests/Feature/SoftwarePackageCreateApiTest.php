@@ -98,6 +98,29 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate = $modelCreate;
     $this->modelCreate['release_notes'] = $this->createRandomString(255);
     $this->createAssert();
+
+    /**
+     * success file hash
+     */
+    unset($this->modelCreate['file_hash']);
+    $this->createAssert();
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['file_hash'] = '';
+    $this->createAssert();
+
+    $this->modelCreate['file_hash'] = $this->createRandomString(255);
+    $this->createAssert();
+
+    /**
+     * success force update
+     */
+    unset($this->modelCreate['force_update']);
+    $this->createAssert();
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['force_update'] = 1;
+    $this->createAssert();
   }
 
   public function testSoftwarePackageCreateReleasedDateSuccess()
@@ -319,6 +342,22 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['release_notes'] = $this->createRandomString(256);
     $response = $this->createAssert(422);
     $response->assertJsonValidationErrors(['release_notes' => 'The release notes must not be greater than 255 characters.']);
+
+    /**
+     * error file hash
+     */
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['file_hash'] = $this->createRandomString(256);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['file_hash' => 'The file hash must not be greater than 255 characters.']);
+
+    /**
+     * error force update
+     */
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['force_update'] = "a";
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['force_update' => 'The force update field must be true or false.']);
   }
 
   public function testSoftwarePackageCreateReleasedDateError()

@@ -42,8 +42,9 @@ class SoftwarePackageTestCase extends ApiTestCase
       "released_date" => "2022-03-21 00:00:00",
       "release_notes" => "https://st-software.siser.com/software-packages/lds/99.99.99/release_notes",
       "filename"      => "Test.99.99.99.Windows.zip",
-      "url"           => "./favicon.ico"
-      // TODO: file_hash and force_update
+      "url"           => "./favicon.ico",
+      "file_hash"     => "xyz",
+      "force_update"  => 0,
     ];
 
     $this->modelUpdate = [
@@ -55,8 +56,9 @@ class SoftwarePackageTestCase extends ApiTestCase
       "released_date" => "2022-03-21 00:00:00",
       "release_notes" => "https://st-software.siser.com/software-packages/lds/100.00.00/release_notes",
       "filename"      => "Test.100.00.00.Windows.zip",
-      "url"           => "./favicon.ico"
-      // TODO: file_hash and force_update
+      "url"           => "./favicon.ico",
+      "file_hash"     => "abc",
+      "force_update"  => 1,
     ];
 
     $this->object = SoftwarePackage::first();
