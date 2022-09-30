@@ -42,6 +42,14 @@ return new class extends Migration
         'full_name'           => 'default admin',
         'roles'               => json_encode(['admin']),
         'password'            => Hash::make('password'),
+      ],
+      [
+        'id'                  => 2,
+        'name'                => 'web-team',
+        'email'               => 'web-team@siserna.com',
+        'full_name'           => 'Web Team',
+        'roles'               => json_encode(['admin']),
+        'password'            => Hash::make('password'),
       ]
     ]);
   }
