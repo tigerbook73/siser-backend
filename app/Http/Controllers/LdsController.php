@@ -102,7 +102,7 @@ class LdsController extends Controller
 
   /**
    * LDS check API
-   * 
+   *
    * return status will always be 200
    */
   public function checkIn(Request $request)
@@ -147,7 +147,7 @@ class LdsController extends Controller
           error_code: $e->getCode(),
         );
       } else {
-        return response("Error: {$e->getCode()} : {$e->getMessage()}", 400);
+        return response()->view('lds-error-response', ['errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()], 400, ['Cache-Control' => 'no-store']);
       }
     }
   }
@@ -177,7 +177,7 @@ class LdsController extends Controller
           error_code: $e->getCode()
         );
       } else {
-        return response("Error: {$e->getCode()} : {$e->getMessage()}", 400);
+        return response()->view('lds-error-response', ['errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()], 400, ['Cache-Control' => 'no-store']);
       }
     }
   }
