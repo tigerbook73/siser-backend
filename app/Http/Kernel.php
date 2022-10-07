@@ -39,6 +39,7 @@ class Kernel extends HttpKernel
     ],
 
     'api' => [
+      // TODO: uncomment in formal version
       // 'throttle:api',
       \Illuminate\Routing\Middleware\SubstituteBindings::class,
     ],
