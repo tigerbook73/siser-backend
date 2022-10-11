@@ -14,7 +14,7 @@ class SoftwarePackageGetApiTest extends SoftwarePackageTestCase
 
     $this->getAssert(200, $this->object->id, ['version_type' => 'beta']);
 
-    $this->getAssert(200, $this->object->id, ['version' => '5.0.1']);
+    $this->getAssert(200, $this->object->id, ['version' => '0.0.1']);
 
     $this->getAssert(200, $this->object->id, ['version' => '9.9.1']);
   }

@@ -128,6 +128,28 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->updateAssert(200, $this->object->id);
 
     /**
+     * success release notes text
+     */
+    $this->modelUpdate['release_notes_text'] = "";
+    $this->updateAssert(200, $this->object->id);
+
+    $this->modelUpdate['release_notes_text'] = ["lines" => null];
+    $this->updateAssert(200, $this->object->id);
+
+    $this->modelUpdate['release_notes_text'] = ["lines" => ""];
+    $this->updateAssert(200, $this->object->id);
+
+    unset($this->modelUpdate['release_notes_text']);
+    $this->updateAssert(200, $this->object->id);
+
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['release_notes_text'] = ["lines" => []];
+    $this->updateAssert(200, $this->object->id);
+
+    $this->modelUpdate['release_notes_text'] = ["lines" => [$this->createRandomString(256), "", $this->createRandomString(1024)]];
+    $this->updateAssert(200, $this->object->id);
+
+    /**
      * success file hash
      */
     unset($this->modelUpdate['file_hash']);
@@ -239,8 +261,8 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertJsonValidationErrors(['version' => 'The version must not be greater than 255 characters.']);
 
-    $this->modelCreate = $modelUpdate;
-    $this->modelCreate['version'] = $this->createRandomString(255);
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['version'] = $this->createRandomString(255);
     $this->updateAssert(422, $this->object->id)->assertJsonValidationErrors(['version' => 'The version format is invalid.']);
 
     /**
@@ -335,6 +357,24 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate['release_notes'] = $this->createRandomString(256);
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertJsonValidationErrors(['release_notes' => 'The release notes must not be greater than 255 characters.']);
+
+    /**
+     * error release notes text
+     */
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['release_notes_text'] = $this->createRandomString(64);
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['release_notes_text' => 'The release notes text must be an array.']);
+
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['release_notes_text'] = ["line" => ["feature1 ...", "feature2 ..."]];
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['release_notes_text' => 'The release notes text must be an array.']);
+
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['release_notes_text'] = ["lines" => [$this->createRandomString(64), null, $this->createRandomString(128)]];
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['release_notes_text.lines.1' => 'The release_notes_text.lines.1 must be a string.']);
 
     /**
      * error file hash

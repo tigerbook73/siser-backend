@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $force_update
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property array|null $release_notes_text
  * 
  * @property SoftwarePackageLatest $software_package_latest
  *
@@ -41,7 +42,8 @@ class SoftwarePackage extends Model
   protected $table = 'software_packages';
 
   protected $casts = [
-    'force_update' => 'bool'
+    'force_update' => 'bool',
+    'release_notes_text' => 'json'
   ];
 
   protected $dates = [
@@ -59,7 +61,8 @@ class SoftwarePackage extends Model
     'filename',
     'url',
     'file_hash',
-    'force_update'
+    'force_update',
+    'release_notes_text'
   ];
 
   public function software_package_latest()

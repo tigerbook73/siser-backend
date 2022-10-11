@@ -24,34 +24,38 @@ class SoftwarePackageController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      'name'          => ['required', 'max:255'],
-      'platform'      => ['required', 'in:Windows,Mac'],
-      'version'       => ['required', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
-      'description'   => ['max:255'],
-      'version_type'  => ['required', 'in:stable,beta'],
-      'released_date' => ['required', 'date'],
-      'release_notes' => ['max:255'],
-      'filename'      => ['required', 'max:255'],
-      'url'           => ['required', 'max:255'],
-      'file_hash'     => ['max:255'],
-      'force_update'  => ['boolean'],
+      'name'                        => ['required', 'max:255'],
+      'platform'                    => ['required', 'in:Windows,Mac'],
+      'version'                     => ['required', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
+      'description'                 => ['max:255'],
+      'version_type'                => ['required', 'in:stable,beta'],
+      'released_date'               => ['required', 'date'],
+      'release_notes'               => ['max:255'],
+      'release_notes_text'          => ['array:lines'],
+      'release_notes_text.lines.*'  => ['string'],
+      'filename'                    => ['required', 'max:255'],
+      'url'                         => ['required', 'max:255'],
+      'file_hash'                   => ['max:255'],
+      'force_update'                => ['boolean'],
     ];
   }
 
   protected function getUpdateRules()
   {
     return [
-      'name'          => ['filled', 'string', 'max:255'],
-      'platform'      => ['filled', 'in:Windows,Mac'],
-      'version'       => ['filled', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
-      'description'   => ['max:255'],
-      'version_type'  => ['filled', 'in:stable,beta'],
-      'released_date' => ['filled', 'string', 'date'],
-      'release_notes' => ['max:255'],
-      'filename'      => ['filled', 'string', 'max:255'],
-      'url'           => ['filled', 'string', 'max:255'],
-      'file_hash'     => ['max:255'],
-      'force_update'  => ['boolean'],
+      'name'                        => ['filled', 'string', 'max:255'],
+      'platform'                    => ['filled', 'in:Windows,Mac'],
+      'version'                     => ['filled', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
+      'description'                 => ['max:255'],
+      'version_type'                => ['filled', 'in:stable,beta'],
+      'released_date'               => ['filled', 'string', 'date'],
+      'release_notes'               => ['max:255'],
+      'release_notes_text'          => ['array:lines'],
+      'release_notes_text.lines.*'  => ['string'],
+      'filename'                    => ['filled', 'string', 'max:255'],
+      'url'                         => ['filled', 'string', 'max:255'],
+      'file_hash'                   => ['max:255'],
+      'force_update'                => ['boolean'],
     ];
   }
 

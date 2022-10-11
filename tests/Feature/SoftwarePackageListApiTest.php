@@ -35,8 +35,8 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
 
     // Combinations
     $this->listAssert(200, ['platform' => 'Windows', 'version_type' => 'stable']);
-    $this->listAssert(200, ['platform' => 'Windows', 'version' => '5.0.1']);
-    $this->listAssert(200, ['platform' => 'Windows', 'version_type' => 'stable', 'version' => '5.0.1']);
+    $this->listAssert(200, ['platform' => 'Windows', 'version' => '0.0.1']);
+    $this->listAssert(200, ['platform' => 'Windows', 'version_type' => 'stable', 'version' => '0.0.1']);
   }
 
   public function testSoftwarePackageListError()

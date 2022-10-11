@@ -100,6 +100,29 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->createAssert();
 
     /**
+     * success release notes text
+     */
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['release_notes_text'] = "";
+    $this->createAssert();
+
+    $this->modelCreate['release_notes_text'] = ["lines" => null];
+    $this->createAssert();
+
+    $this->modelCreate['release_notes_text'] = ["lines" => ""];
+    $this->createAssert();
+
+    unset($this->modelCreate['release_notes_text']);
+    $this->createAssert();
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['release_notes_text'] = ["lines" => []];
+    $this->createAssert();
+
+    $this->modelCreate['release_notes_text'] = ["lines" => [$this->createRandomString(256), "", $this->createRandomString(1024)]];
+    $this->createAssert();
+
+    /**
      * success file hash
      */
     unset($this->modelCreate['file_hash']);
@@ -342,6 +365,24 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['release_notes'] = $this->createRandomString(256);
     $response = $this->createAssert(422);
     $response->assertJsonValidationErrors(['release_notes' => 'The release notes must not be greater than 255 characters.']);
+
+    /**
+     * error release notes text
+     */
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['release_notes_text'] = $this->createRandomString(64);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['release_notes_text' => 'The release notes text must be an array.']);
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['release_notes_text'] = ["line" => ["feature1 ...", "feature2 ..."]];
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['release_notes_text' => 'The release notes text must be an array.']);
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['release_notes_text'] = ["lines" => [$this->createRandomString(64), null, $this->createRandomString(128)]];
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['release_notes_text.lines.1' => 'The release_notes_text.lines.1 must be a string.']);
 
     /**
      * error file hash
