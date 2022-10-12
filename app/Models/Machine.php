@@ -21,6 +21,11 @@ class Machine extends BaseMachine
     $this->attachUser($this->user);
   }
 
+  protected function afterDelete()
+  {
+    $this->detachUser($this->user);
+  }
+
   public function transfer(int $newUserId)
   {
     DB::transaction(function () use ($newUserId) {
@@ -78,7 +83,8 @@ class Machine extends BaseMachine
         $subscription->status = 'inactive';
         $subscription->save();
 
-        // to avoid mistake
+        // refresh user
+        $user->subscription_level = 0;
         $user->license_count = 0;
       }
       $user->save();
