@@ -110,8 +110,8 @@ if (!$role || $role == 'admin') {
     Route::get('/machines', [MachineController::class, 'list']);
     Route::get('/machines/{id}', [MachineController::class, 'index']);
     Route::post('/machines', [MachineController::class, 'create']);
-    Route::delete('/machines/{id}', [MachineController::class, 'destroy']);
     Route::patch('/machines/{id}', [MachineController::class, 'update']);
+    Route::delete('/machines/{id}', [MachineController::class, 'destroy']);
     Route::post('/machines/{id}/transfer', [MachineController::class, 'transfer']);
   });
 }
