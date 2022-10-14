@@ -354,9 +354,9 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
      * error description
      */
     $this->modelCreate = $modelCreate;
-    $this->modelCreate['description'] = $this->createRandomString(256);
+    $this->modelCreate['description'] = $this->createRandomString(2001);
     $response = $this->createAssert(422);
-    $response->assertJsonValidationErrors(['description' => 'The description must not be greater than 255 characters.']);
+    $response->assertJsonValidationErrors(['description' => 'The description must not be greater than 2000 characters.']);
 
     /**
      * error release notes

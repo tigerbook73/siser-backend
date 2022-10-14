@@ -27,7 +27,7 @@ class SoftwarePackageController extends SimpleController
       'name'                        => ['required', 'max:255'],
       'platform'                    => ['required', 'in:Windows,Mac'],
       'version'                     => ['required', 'regex:/^\d+\.\d+\.\d+/', 'max:255'],
-      'description'                 => ['max:255'],
+      'description'                 => ['max:2000'],
       'version_type'                => ['required', 'in:stable,beta'],
       'released_date'               => ['required', 'date'],
       'release_notes'               => ['max:255'],
