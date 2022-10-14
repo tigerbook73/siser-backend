@@ -24,6 +24,9 @@ if [ "$role" = "main" ] || [ "$role" = "customer" ] || [ "$role" = "admin" ]; th
 
 elif [ "$role" = "queue" ]; then
 
+  echo "do migration ..."
+  runuser -u www-data -- php artisan migrate --force
+
   echo "start queue service ..."
   while [ true ]; do
       echo "run queue worker ..."
