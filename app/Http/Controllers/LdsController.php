@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LdsRegistration;
-use App\Models\User;
 use App\Services\Lds\LdsCoding;
 use App\Services\Lds\LdsException;
 use App\Services\Lds\LdsLicenseManager;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class LdsController extends Controller
 {
@@ -25,15 +22,15 @@ class LdsController extends Controller
   {
     // validation
     if (empty($inputs['rq'])) {
-      throw new LdsException(LDS_ERR_BAD_REQUEST);
+      throw new LdsException(LdsException::LDS_ERR_BAD_REQUEST);
     }
 
     if (!$reqJson = $this->ldsCoding->decodeJsonText($inputs['rq'])) {
-      throw new LdsException(LDS_ERR_BAD_REQUEST);
+      throw new LdsException(LdsException::LDS_ERR_BAD_REQUEST);
     }
 
     if (!$reqData = (array)json_decode($reqJson)) {
-      throw new LdsException(LDS_ERR_BAD_REQUEST);
+      throw new LdsException(LdsException::LDS_ERR_BAD_REQUEST);
     }
 
     // more validation
@@ -43,7 +40,7 @@ class LdsController extends Controller
       !$this->isDigitString($reqData['device_id'] ?? "",  16)  ||
       !$this->isDigitString($reqData['user_code'] ?? "",  15)
     ) {
-      throw new LdsException(LDS_ERR_BAD_REQUEST);
+      throw new LdsException(LdsException::LDS_ERR_BAD_REQUEST);
     }
 
     return $reqData;
@@ -137,7 +134,7 @@ class LdsController extends Controller
       }
     } catch (LdsException $e) {
       // for bad request
-      if ($e->getCode() == LDS_ERR_BAD_REQUEST[0]) {
+      if ($e->getCode() == LdsException::LDS_ERR_BAD_REQUEST[0]) {
         return response('Bad Request', 400);
       }
 
@@ -145,6 +142,7 @@ class LdsController extends Controller
         return $this->prepareOnlineResponse(
           request_id: $reqData['request_id'],
           error_code: $e->getCode(),
+          subscription_level: $e->subscription_level,
         );
       } else {
         return response()->view('lds-error-response', ['errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()], 400, ['Cache-Control' => 'no-store']);
@@ -167,14 +165,15 @@ class LdsController extends Controller
       }
     } catch (LdsException $e) {
       // for bad request
-      if ($e->getCode() == LDS_ERR_BAD_REQUEST[0]) {
+      if ($e->getCode() == LdsException::LDS_ERR_BAD_REQUEST[0]) {
         return response('Bad Request', 400);
       }
 
       if ($online) {
         return $this->prepareOnlineResponse(
           request_id: $reqData['request_id'],
-          error_code: $e->getCode()
+          error_code: $e->getCode(),
+          subscription_level: $e->subscription_level,
         );
       } else {
         return response()->view('lds-error-response', ['errorCode' => $e->getCode(), 'errorMessage' => $e->getMessage()], 400, ['Cache-Control' => 'no-store']);

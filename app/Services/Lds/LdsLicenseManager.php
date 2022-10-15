@@ -36,14 +36,14 @@ class LdsLicenseManager
   {
     return DB::transaction(function () use ($user_code, $device_id) {
       if (!$instance = $this->findInstance($user_code, $device_id)) {
-        throw new LdsException(LDS_ERR_DEVICE_NOT_REGISTERED);
+        throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_REGISTERED);
       };
       $pool = $instance->lds_pool;
 
       // if no license
       if ($pool->license_count <= 0) {
         LdsLog::log($instance->id, 'check-in', 'nok', 'user doesnt have licenses');
-        throw new LdsException(LDS_ERR_USER_DOESNT_HAVE_LICENSE);
+        throw new LdsException(LdsException::LDS_ERR_USER_DOESNT_HAVE_LICENSE);
       }
 
       // if already online, extend it for 3600 seconds
@@ -87,7 +87,7 @@ class LdsLicenseManager
       }
 
       LdsLog::log($instance->id, 'check-in', 'nok', 'no free license');
-      throw new LdsException(LDS_ERR_TOO_MANY_DEVICES);
+      throw new LdsException(LdsException::LDS_ERR_TOO_MANY_DEVICES, $pool->subscription_level);
     });
   }
 
@@ -98,14 +98,14 @@ class LdsLicenseManager
   {
     DB::transaction(function () use ($user_code, $device_id) {
       if (!$instance = $this->findInstance($user_code, $device_id)) {
-        throw new LdsException(LDS_ERR_DEVICE_NOT_REGISTERED);
+        throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_REGISTERED);
       };
       $pool = $instance->lds_pool;
 
       // not online
       if (!$instance->online) {
         LdsLog::log($instance->id, 'check-out', 'nok', 'instance not online');
-        throw new LdsException(LDS_ERR_DEVICE_NOT_CHECK_IN);
+        throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN);
       }
 
       $instance->online = false;
@@ -130,6 +130,7 @@ class LdsLicenseManager
    */
   public function timeout(int $count = 100)
   {
+    /** @var LdsInstance[] $instances */
     $instances = LdsInstance::where('online', true)
       ->where('expires_at', '<', time())
       ->limit($count)
@@ -138,6 +139,12 @@ class LdsLicenseManager
       $instance->online = false;
       $instance->expires_at = 0;
       $instance->save();
+
+      $pool = $instance->lds_pool;
+      if ($pool->license_free < $pool->license_count) {
+        $pool->license_free++;
+        $pool->save();
+      }
 
       LdsLog::Log($instance->id, 'check-out', 'ok', 'expired check-out');
     };

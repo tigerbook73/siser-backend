@@ -14,6 +14,7 @@ namespace Tests\Feature {
   use Tests\ApiTestCase;
   use App\Models\Base\LdsInstance;
   use App\Models\LdsPool;
+  use App\Services\Lds\LdsException;
   use Tests\Helper\ApiTestTimeHelper;
 
   class LdsTestCase extends ApiTestCase
@@ -108,6 +109,10 @@ namespace Tests\Feature {
       $this->assertEquals($object->cutter_number, 0);
       $this->assertEquals($object->error_code, $errorCode);
       $this->assertEquals($object->result_code, 0);
+
+      if ($object->error_code == LdsException::LDS_ERR_TOO_MANY_DEVICES[0]) {
+        $this->assertTrue($object->subscription_level > 0);
+      }
     }
 
     protected function verifyCheckActionDatabaseContent(array $checkInRequest, int $count = 1, bool $isOnline = TRUE)
