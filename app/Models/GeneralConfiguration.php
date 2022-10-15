@@ -32,9 +32,9 @@ class GeneralConfiguration extends BaseGeneralConfiguration
       $new_machine_license_unit = static::getMachineLicenseUnit();
       if ($machine_license_unit != $new_machine_license_unit) {
         /** @var User[] $users */
-        $users = User::has('machines')->withCount('machines')->get();
+        $users = User::has('machines')->withCount('machines')->get(); // @phpstan-ignore-line
         foreach ($users as $user) {
-          $user->license_count = $user->machines_count * $new_machine_license_unit;
+          $user->license_count = $user->machines_count * $new_machine_license_unit; // @phpstan-ignore-line
           $user->save();
         }
       }
