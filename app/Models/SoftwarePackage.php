@@ -42,4 +42,16 @@ class SoftwarePackage extends BaseSoftwarePackage
 
     SoftwarePackageLatest::updateLatest($this->name, $this->platform, $this->version_type);
   }
+
+  public function beforeDelete()
+  {
+    // remove latest if required
+    SoftwarePackageLatest::where('software_package_id', $this->id)->delete();
+  }
+
+  public function afterDelete()
+  {
+    // update latest
+    SoftwarePackageLatest::updateLatest($this->name, $this->platform, $this->version_type);
+  }
 }

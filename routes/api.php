@@ -80,6 +80,7 @@ if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::post('/software-packages', [SoftwarePackageController::class, 'create']);
     Route::patch('/software-packages/{id}', [SoftwarePackageController::class, 'update']);
+    Route::delete('/software-packages/{id}', [SoftwarePackageController::class, 'destroy']);
   });
 }
 
