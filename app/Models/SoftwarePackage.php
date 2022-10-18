@@ -33,9 +33,10 @@ class SoftwarePackage extends BaseSoftwarePackage
   {
     $prevLatest = $this->software_package_latest;
     if (
-      $prevLatest->name != $this->name  ||
-      $prevLatest->platform != $this->platform  ||
-      $prevLatest->version_type != $this->version_type
+      $prevLatest &&
+      ($prevLatest->name != $this->name  ||
+        $prevLatest->platform != $this->platform  ||
+        $prevLatest->version_type != $this->version_type)
     ) {
       SoftwarePackageLatest::updateLatest($prevLatest->name, $prevLatest->platform, $prevLatest->version_type);
     }
