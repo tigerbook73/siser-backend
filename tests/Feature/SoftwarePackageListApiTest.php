@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Base\SoftwarePackageLatest;
+use App\Models\SoftwarePackage;
 
 class SoftwarePackageListApiTest extends SoftwarePackageTestCase
 {
@@ -32,6 +33,11 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
     $this->listAssert(200, ['version' => '1.1.2.3.beta']);
     $this->listAssert(200, ['version' => $this->object->version]);
     $this->listAssert(200, ['version' => 'latest'], SoftwarePackageLatest::count());
+
+    // version
+    $this->listAssert(200, ['status'  => 'active']);
+    $this->listAssert(200, ['status'  => 'inactive']);
+    $this->listAssert(200, ['status'  => 'all'], SoftwarePackage::count());
 
     // Combinations
     $this->listAssert(200, ['platform' => 'Windows', 'version_type' => 'stable']);

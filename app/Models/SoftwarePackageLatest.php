@@ -43,6 +43,7 @@ class SoftwarePackageLatest extends BaseSoftwarePackageLatest
       'name' => $name,
       'platform' => $platform,
       'version_type' => $version_type,
+      'status' => 'active',
     ])->get();
 
     $latestPackage = null;

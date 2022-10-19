@@ -31,6 +31,7 @@ class SoftwarePackageTestCase extends ApiTestCase
       "url",
       "file_hash",
       "force_update",
+      "status",
     ];
 
     $this->modelCreate = [
@@ -46,6 +47,7 @@ class SoftwarePackageTestCase extends ApiTestCase
       "url"                 => "./favicon.ico",
       "file_hash"           => "xyz",
       "force_update"        => 0,
+      "status"              => "active",
     ];
 
     $this->modelUpdate = [
@@ -61,6 +63,7 @@ class SoftwarePackageTestCase extends ApiTestCase
       "url"                 => "./favicon.ico",
       "file_hash"           => "abc",
       "force_update"        => 1,
+      "status"              => "active",
     ];
 
     $this->object = SoftwarePackage::first();

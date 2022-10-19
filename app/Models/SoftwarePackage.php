@@ -21,16 +21,26 @@ class SoftwarePackage extends BaseSoftwarePackage
     'url'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'file_hash'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'force_update'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
+    'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
   ];
 
+  public function beforeCreate()
+  {
+    if ($this->status == null) {
+      $this->status = 'active';
+    }
+  }
 
   public function afterCreate()
   {
-    SoftwarePackageLatest::updateLatest($this->name, $this->platform, $this->version_type);
+    if ($this->status == 'active') {
+      SoftwarePackageLatest::updateLatest($this->name, $this->platform, $this->version_type);
+    }
   }
 
   public function afterUpdate()
   {
+    /** @var SoftwarePackageLatest|null $prevLatest */
     $prevLatest = $this->software_package_latest;
     if (
       $prevLatest &&

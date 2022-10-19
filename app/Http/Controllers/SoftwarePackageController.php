@@ -18,6 +18,7 @@ class SoftwarePackageController extends SimpleController
       'platform'      => ['filled', 'in:Windows,Mac'],
       'version_type'  => ['filled', 'in:stable,beta'],
       'version'       => ['filled'],
+      'status'        => ['filled', 'in:active,inactive,all'],
     ];
   }
 
@@ -37,6 +38,7 @@ class SoftwarePackageController extends SimpleController
       'url'                         => ['required', 'max:255'],
       'file_hash'                   => ['max:255'],
       'force_update'                => ['boolean'],
+      'status'                      => ['string', 'in:active,inactive'],
     ];
   }
 
@@ -56,6 +58,7 @@ class SoftwarePackageController extends SimpleController
       'url'                         => ['filled', 'string', 'max:255'],
       'file_hash'                   => ['max:255'],
       'force_update'                => ['boolean'],
+      'status'                      => ['string', 'in:active,inactive'],
     ];
   }
 
@@ -63,6 +66,13 @@ class SoftwarePackageController extends SimpleController
   {
     $this->validateUser();
     $inputs = $this->validateList($request);
+
+    // adjust status
+    if (!isset($inputs['status']) || $inputs['status'] === '') {
+      $input['status'] = 'active';
+    } else if ($inputs['status'] == 'all') {
+      unset($inputs['status']);
+    }
 
     // latests
     $latestIds = SoftwarePackageLatest::all()->map(fn ($item) => $item->software_package_id)->all();

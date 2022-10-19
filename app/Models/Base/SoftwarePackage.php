@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array|null $release_notes_text
+ * @property string|null $status
  * 
  * @property SoftwarePackageLatest $software_package_latest
  *
@@ -62,7 +63,8 @@ class SoftwarePackage extends Model
     'url',
     'file_hash',
     'force_update',
-    'release_notes_text'
+    'release_notes_text',
+    'status'
   ];
 
   public function software_package_latest()
