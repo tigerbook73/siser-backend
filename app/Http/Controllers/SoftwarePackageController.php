@@ -38,7 +38,7 @@ class SoftwarePackageController extends SimpleController
       'url'                         => ['required', 'max:255'],
       'file_hash'                   => ['max:255'],
       'force_update'                => ['boolean'],
-      'status'                      => ['string', 'in:active,inactive'],
+      'status'                      => ['filled', 'in:active,inactive'],
     ];
   }
 
@@ -58,7 +58,7 @@ class SoftwarePackageController extends SimpleController
       'url'                         => ['filled', 'string', 'max:255'],
       'file_hash'                   => ['max:255'],
       'force_update'                => ['boolean'],
-      'status'                      => ['string', 'in:active,inactive'],
+      'status'                      => ['filled', 'in:active,inactive'],
     ];
   }
 

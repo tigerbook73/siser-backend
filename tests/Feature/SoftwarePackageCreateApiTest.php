@@ -144,6 +144,19 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate = $modelCreate;
     $this->modelCreate['force_update'] = 1;
     $this->createAssert();
+
+    /**
+     * success status
+     */
+    unset($this->modelCreate['status']);
+    $this->createAssert();
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['status'] = 'active';
+    $this->createAssert();
+
+    $this->modelCreate['status'] = 'inactive';
+    $this->createAssert();
   }
 
   public function testSoftwarePackageCreateReleasedDateSuccess()
@@ -399,6 +412,29 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $this->modelCreate['force_update'] = "a";
     $response = $this->createAssert(422);
     $response->assertJsonValidationErrors(['force_update' => 'The force update field must be true or false.']);
+
+    /**
+     * error status
+     */
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['status'] = 'xxx';
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['status'] = 'all';
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['status'] = $this->createRandomString(256);
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
+
+    $this->modelCreate = $modelCreate;
+    $this->modelCreate['status'] = '';
+    $response = $this->createAssert(422);
+    $response->assertJsonValidationErrors(['status' => 'The status field must have a value.']);
   }
 
   public function testSoftwarePackageCreateReleasedDateError()
