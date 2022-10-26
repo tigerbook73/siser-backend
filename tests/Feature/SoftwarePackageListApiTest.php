@@ -34,9 +34,10 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
     $this->listAssert(200, ['version' => $this->object->version]);
     $this->listAssert(200, ['version' => 'latest'], SoftwarePackageLatest::count());
 
-    // version
+    // status
     $this->listAssert(200, ['status'  => 'active']);
     $this->listAssert(200, ['status'  => 'inactive']);
+    $this->listAssert(200, ['status'  => $this->object->status]);
     $this->listAssert(200, ['status'  => 'all'], SoftwarePackage::count());
 
     // Combinations
@@ -64,5 +65,11 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
     $this->listAssert(422, ['name' => ''],)->assertJsonValidationErrors(['name' => 'The name field must have a value.']);
 
     $this->listAssert(422, ['version' => ''],)->assertJsonValidationErrors(['version' => 'The version field must have a value.']);
+
+    $this->listAssert(422, ['status' => ''])->assertJsonValidationErrors(['status' => 'The status field must have a value.']);
+
+    $this->listAssert(422, ['status' => 'xxx'])->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
+
+    $this->listAssert(422, ['status' => 'yyy', 'version_type' => 'beta'])->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
   }
 }

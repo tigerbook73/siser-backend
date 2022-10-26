@@ -171,6 +171,19 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $this->modelUpdate = $modelUpdate;
     $this->modelUpdate['force_update'] = 1;
     $this->updateAssert(200, $this->object->id);
+
+    /**
+     * success status
+     */
+    unset($this->modelUpdate['status']);
+    $this->updateAssert(200, $this->object->id);
+
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['status'] = 'active';
+    $this->updateAssert(200, $this->object->id);
+
+    $this->modelUpdate['status'] = 'inactive';
+    $this->updateAssert(200, $this->object->id);
   }
 
   public function testSoftwarePackageUpdateReleasedDateSuccess()
@@ -388,9 +401,25 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
      * error force update
      */
     $this->modelUpdate = $modelUpdate;
-    $this->modelUpdate['force_update'] = "a";
+    $this->modelUpdate['force_update'] = 'a';
     $response = $this->updateAssert(422, $this->object->id);
     $response->assertJsonValidationErrors(['force_update' => 'The force update field must be true or false.']);
+
+    /**
+     * error status
+     */
+    $this->modelUpdate = $modelUpdate;
+    $this->modelUpdate['status'] = 'true';
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
+
+    $this->modelUpdate['status'] = 'all';
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['status' => 'The selected status is invalid.']);
+
+    $this->modelUpdate['status'] = '';
+    $response = $this->updateAssert(422, $this->object->id);
+    $response->assertJsonValidationErrors(['status' => 'The status field must have a value.']);
   }
 
   public function testSoftwarePackageUpdateReleasedDateError()
