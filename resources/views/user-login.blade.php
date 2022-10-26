@@ -9,8 +9,11 @@
 
   <body>
     <script>
-      const token = JSON.parse('{!! $token !!}');  // must be ' here 
-      const account = JSON.parse('{!! $account !!}');  // must be ' here
+      const token = JSON.parse(atob('{!! $token !!}'));  // must be ' here 
+      const account = JSON.parse(atob('{!! $account !!}'));  // must be ' here
+
+      console.log(token);
+      console.log(account);
 
       for (const prop in token) {
         window.sessionStorage.setItem("user_token." + prop, token[prop]);

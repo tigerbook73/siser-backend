@@ -68,12 +68,12 @@ class AuthController extends Controller
     }
 
     $viewData = [
-      'token' => json_encode([
+      'token' => base64_encode(json_encode([
         'access_token' => $this->jwtAuth()->login($user),
         'token_type' => 'bearer',
         'expires_in' => config('jwt.ttl') * 60,
-      ]),
-      'account' => json_encode($user->toResource('customer'))
+      ])),
+      'account' => base64_encode(json_encode($user->toResource('customer')))
     ];
 
     // login user
