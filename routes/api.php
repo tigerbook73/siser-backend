@@ -78,9 +78,9 @@ Route::get('/software-packages/{id}', [SoftwarePackageController::class, 'index'
 
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::post('/software-packages', [SoftwarePackageController::class, 'create']);
-    Route::patch('/software-packages/{id}', [SoftwarePackageController::class, 'update']);
-    Route::delete('/software-packages/{id}', [SoftwarePackageController::class, 'destroy']);
+    Route::post('/software-packages', [SoftwarePackageController::class, 'create'])->middleware('role:admin');
+    Route::patch('/software-packages/{id}', [SoftwarePackageController::class, 'update'])->middleware('role:admin');
+    Route::delete('/software-packages/{id}', [SoftwarePackageController::class, 'destroy'])->middleware('role:admin');
   });
 }
 
@@ -89,8 +89,8 @@ if (!$role || $role == 'admin') {
 //
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/config/general', [GeneralConfigurationController::class, 'get']);
-    Route::patch('/config/general', [GeneralConfigurationController::class, 'set']);
+    Route::get('/config/general', [GeneralConfigurationController::class, 'get'])->middleware('role:admin');
+    Route::patch('/config/general', [GeneralConfigurationController::class, 'set'])->middleware('role:admin');
   });
 }
 
@@ -110,10 +110,10 @@ if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/machines', [MachineController::class, 'list']);
     Route::get('/machines/{id}', [MachineController::class, 'index']);
-    Route::post('/machines', [MachineController::class, 'create']);
-    Route::patch('/machines/{id}', [MachineController::class, 'update']);
-    Route::delete('/machines/{id}', [MachineController::class, 'destroy']);
-    Route::post('/machines/{id}/transfer', [MachineController::class, 'transfer']);
+    Route::post('/machines', [MachineController::class, 'create'])->middleware('role:siser-backend');
+    Route::patch('/machines/{id}', [MachineController::class, 'update'])->middleware('role:siser-backend');
+    Route::delete('/machines/{id}', [MachineController::class, 'destroy'])->middleware('role:siser-backend');
+    Route::post('/machines/{id}/transfer', [MachineController::class, 'transfer'])->middleware('role:siser-backend');
   });
 }
 
@@ -125,8 +125,8 @@ if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/users', [UserController::class, 'list']);
     Route::get('/users/{id}', [UserController::class, 'index']);
-    Route::post('/users', [UserController::class, 'create']);
-    Route::post('/users/{id}', [UserController::class, 'refresh']);
+    Route::post('/users', [UserController::class, 'create'])->middleware('role:admin|siser-backend');
+    Route::post('/users/{id}', [UserController::class, 'refresh'])->middleware('role:admin|siser-backend');
 
     Route::get('/users/{id}/full', [UserController::class, 'full']);
     Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
@@ -139,10 +139,10 @@ if (!$role || $role == 'admin') {
 // 
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/admin-users', [AdminUserController::class, 'list']);
-    Route::get('/admin-users/{id}', [AdminUserController::class, 'index']);
-    Route::post('/admin-users', [AdminUserController::class, 'create']);
-    Route::patch('/admin-users/{id}', [AdminUserController::class, 'update']);
+    Route::get('/admin-users', [AdminUserController::class, 'list'])->middleware('role:admin|siser-backend');
+    Route::get('/admin-users/{id}', [AdminUserController::class, 'index'])->middleware('role:admin|siser-backend');
+    Route::post('/admin-users', [AdminUserController::class, 'create'])->middleware('role:admin|siser-backend');
+    Route::patch('/admin-users/{id}', [AdminUserController::class, 'update'])->middleware('role:admin|siser-backend');
   });
 }
 
@@ -151,7 +151,7 @@ if (!$role || $role == 'admin') {
 // 
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::post('/report/subscriptions', [ReportController::class, 'subscriptions']);
+    Route::post('/report/subscriptions', [ReportController::class, 'subscriptions'])->middleware['role:admin|siser-backend'];
   });
 }
 
