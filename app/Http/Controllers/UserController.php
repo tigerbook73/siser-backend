@@ -14,8 +14,13 @@ class UserController extends SimpleController
   protected function getListRules()
   {
     return [
-      'name'      => ['filled'],
-      'email'     => ['filled'],
+      'name'                => ['filled'],
+      'email'               => ['filled'],
+      'full_name'           => ['filled'],
+      'phone_number'        => ['filled'],
+      'country_code'        => ['filled'],
+      'subscription_level'  => ['filled'],
+      'license_count'       => ['filled'],
     ];
   }
 
