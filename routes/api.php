@@ -151,7 +151,7 @@ if (!$role || $role == 'admin') {
 // 
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::post('/report/subscriptions', [ReportController::class, 'subscriptions'])->middleware('role:admin|siser-backend');
+    Route::post('/report/subscriptions', [ReportController::class, 'subscriptions']);
   });
 }
 
