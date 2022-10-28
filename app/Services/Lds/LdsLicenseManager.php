@@ -26,7 +26,10 @@ class LdsLicenseManager
 
   public function findInstance(string $user_code, string $device_id): ?LdsInstance
   {
-    return LdsInstance::where('user_code', $user_code)->where('device_id', $device_id)->first();
+    return LdsInstance::where('user_code', $user_code)
+      ->where('device_id', $device_id)
+      ->where('status', 'active')
+      ->first();
   }
 
   /**
@@ -42,7 +45,7 @@ class LdsLicenseManager
 
       // if no license
       if ($pool->license_count <= 0) {
-        LdsLog::log($instance->id, 'check-in', 'nok', 'user doesnt have licenses');
+        LdsLog::log($instance->id, 'check-in', 'nok', "user:$pool->user_id doesnt have licenses");
         throw new LdsException(LdsException::LDS_ERR_USER_DOESNT_HAVE_LICENSE);
       }
 
@@ -51,13 +54,14 @@ class LdsLicenseManager
         $instance->expires_at = time() + 3600;
         $instance->save();
 
-        LdsLog::log($instance->id, 'check-in', 'ok', 'extended');
+        LdsLog::log($instance->id, 'check-in', 'ok', "user:$instance->user_id device:$instance->device_id extended");
         return new ApplyResult($pool->subscription_level);
       }
 
       // step 1: revoke expired license belong to this pool
       /** @var LdsInstance[] $expiredInstances */
       $expiredInstances = $pool->lds_instances()
+        ->where('status', 'active')
         ->where('online', true)
         ->where('expires_at', '<', time())
         ->get();
@@ -66,6 +70,8 @@ class LdsLicenseManager
           $expiredInstance->online = false;
           $expiredInstance->expires_at = 0;
           $expiredInstance->save();
+
+          LdsLog::Log($expiredInstance->id, 'check-out', 'ok', "user:$expiredInstance->user_id device:$expiredInstance->device_id expired");
         }
         $pool->license_free += count($expiredInstances);
         if ($pool->license_free > $pool->license_count) {
@@ -82,11 +88,11 @@ class LdsLicenseManager
         $instance->expires_at = time() + 3600;
         $instance->save();
 
-        LdsLog::log($instance->id, 'check-in', 'ok', 'check-in');
+        LdsLog::log($instance->id, 'check-in', 'ok', "user:$instance->user_id device:$instance->device_id check-in");
         return new ApplyResult($pool->subscription_level);
       }
 
-      LdsLog::log($instance->id, 'check-in', 'nok', 'no free license');
+      LdsLog::log($instance->id, 'check-in', 'nok', "user:$instance->user_id device:$instance->device_id no free license");
       throw new LdsException(LdsException::LDS_ERR_TOO_MANY_DEVICES, $pool->subscription_level);
     });
   }
@@ -104,7 +110,7 @@ class LdsLicenseManager
 
       // not online
       if (!$instance->online) {
-        LdsLog::log($instance->id, 'check-out', 'nok', 'instance not online');
+        LdsLog::log($instance->id, 'check-out', 'nok', "user:$instance->user_id device:$instance->device_id not online");
         throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN);
       }
 
@@ -117,7 +123,7 @@ class LdsLicenseManager
         $pool->save();
       }
 
-      LdsLog::log($instance->id, 'check-out', 'ok', 'check-out');
+      LdsLog::log($instance->id, 'check-out', 'ok', "user:$instance->user_id device:$instance->device_id check-out");
     });
   }
 
@@ -131,7 +137,8 @@ class LdsLicenseManager
   public function timeout(int $count = 100)
   {
     /** @var LdsInstance[] $instances */
-    $instances = LdsInstance::where('online', true)
+    $instances = LdsInstance::where('status', 'active')
+      ->where('online', true)
       ->where('expires_at', '<', time())
       ->limit($count)
       ->get();
@@ -146,7 +153,7 @@ class LdsLicenseManager
         $pool->save();
       }
 
-      LdsLog::Log($instance->id, 'check-out', 'ok', 'expired check-out');
+      LdsLog::Log($instance->id, 'check-out', 'ok', "user:$instance->user_id device:$instance->device_id expired");
     };
 
     return count($instances);

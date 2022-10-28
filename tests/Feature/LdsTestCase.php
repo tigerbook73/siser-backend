@@ -15,6 +15,7 @@ namespace Tests\Feature {
   use App\Models\Base\LdsInstance;
   use App\Models\LdsPool;
   use App\Services\Lds\LdsException;
+  use App\Services\Lds\LdsLicenseManager;
   use Tests\Helper\ApiTestTimeHelper;
 
   class LdsTestCase extends ApiTestCase
@@ -26,7 +27,6 @@ namespace Tests\Feature {
       'version' => 1,
       'device_id' => '0000111100002222',
       'device_name' => 'test-computer',
-      'online' => 1,
     ];
 
     public $regResponseSchema = [
@@ -41,6 +41,12 @@ namespace Tests\Feature {
       'request_id'  => '10101',
       'device_id'   => '0000111100002222',
       'user_code'   => '',
+    ];
+
+    public $unregRequest = [
+      'version' => 1,
+      'user_code' => '',
+      'device_id' => '0000111100002222',
     ];
 
     protected function encodeRequest(array $request)
@@ -118,9 +124,7 @@ namespace Tests\Feature {
     protected function verifyCheckActionDatabaseContent(array $checkInRequest, int $count = 1, bool $isOnline = TRUE)
     {
       /** @var LdsInstance $ldsInstance */
-      $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-        ->where('device_id', $checkInRequest['device_id'])
-        ->first();
+      $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
       if ($isOnline) {
         $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
       } else {
@@ -140,17 +144,29 @@ namespace Tests\Feature {
         ->assertJsonStructure($this->regResponseSchema);
 
       /** @var LdsInstance $ldsInstance */
-      $ldsInstance = LdsInstance::where('user_code', $response->json('user_code'))
-        ->where('device_id', $this->regRequest['device_id'])
-        ->first();
+      $ldsInstance = $this->findInstance($response->json('user_code'), $this->regRequest['device_id']);
       $this->assertTrue($ldsInstance !== null);
+
+      return $response;
+    }
+
+    public function unregDeviceApi(string $user_code)
+    {
+      $unregRequest = $this->unregRequest;
+      $unregRequest['user_code'] = $user_code;
+      $response = $this->postJson($this->baseUrl . '/unreg-device', $unregRequest);
+      $response->assertStatus(200);
+
+      /** @var LdsInstance $ldsInstance */
+      $ldsInstance = $this->findInstance($user_code, $unregRequest['device_id']);
+      $this->assertTrue($ldsInstance == null);
 
       return $response;
     }
 
     public function findInstance(string $user_code, string $device_id): ?LdsInstance
     {
-      return LdsInstance::where('user_code', $user_code)->where('device_id', $device_id)->first();
+      return (new LdsLicenseManager)->findInstance($user_code, $device_id);
     }
   }
 }

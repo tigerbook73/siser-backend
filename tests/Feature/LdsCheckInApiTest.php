@@ -186,9 +186,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->verifyCheckActionDataContent($checkInRequest, $response);
     $this->verifyCheckActionDatabaseContent($checkInRequest);
     /** @var LdsInstance $ldsInstance */
-    $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-      ->where('device_id', $checkInRequest['device_id'])
-      ->first();
+    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
     $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
     $first_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
 
@@ -197,9 +195,7 @@ class LdsCheckInApiTest extends LdsTestCase
     // check-in
     $response = $this->verifyCheckInResponse($checkInRequest);
     /** @var LdsInstance $ldsInstance */
-    $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-      ->where('device_id', $checkInRequest['device_id'])
-      ->first();
+    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
     $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
     $second_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
 
@@ -234,9 +230,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->verifyCheckInResponse($checkInRequest, FALSE);
     $this->verifyCheckActionDatabaseContent($checkInRequest);
     /** @var LdsInstance $ldsInstance */
-    $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-      ->where('device_id', $checkInRequest['device_id'])
-      ->first();
+    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
     $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
     $first_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
 
@@ -245,9 +239,7 @@ class LdsCheckInApiTest extends LdsTestCase
     // check-in (offline)
     $this->verifyCheckInResponse($checkInRequest, FALSE);
     /** @var LdsInstance $ldsInstance */
-    $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-      ->where('device_id', $checkInRequest['device_id'])
-      ->first();
+    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
     $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
     $second_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
 
@@ -266,9 +258,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->verifyCheckInResponse($checkInRequest, FALSE);
     $this->verifyCheckActionDatabaseContent($checkInRequest);
     /** @var LdsInstance $ldsInstance */
-    $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-      ->where('device_id', $checkInRequest['device_id'])
-      ->first();
+    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
     $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
     $first_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
 
@@ -277,9 +267,7 @@ class LdsCheckInApiTest extends LdsTestCase
     // check-in
     $this->verifyCheckInResponse($checkInRequest);
     /** @var LdsInstance $ldsInstance */
-    $ldsInstance = LdsInstance::where('user_code', $checkInRequest['user_code'])
-      ->where('device_id', $checkInRequest['device_id'])
-      ->first();
+    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
     $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
     $second_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
 

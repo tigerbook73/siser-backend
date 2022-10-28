@@ -3,6 +3,7 @@
 namespace App\Services\Lds;
 
 use App\Events\LdsRegistered;
+use App\Events\LdsUnregistered;
 use App\Events\UserDeleted;
 use App\Events\UserSaved;
 
@@ -33,6 +34,11 @@ class LdsEventSubscriber
     LdsSynchronizer::dispatch('LdsRegistered', $event->ldsRegistration)->onConnection('sync');
   }
 
+  public function handleLdsUnregistered(LdsUnregistered $event)
+  {
+    LdsSynchronizer::dispatch('LdsUnregistered', $event->ldsRegistration)->onConnection('sync');
+  }
+
 
   /**
    * Register the listeners for the subscriber.
@@ -46,6 +52,7 @@ class LdsEventSubscriber
       UserSaved::class => 'handleUserSaved',
       UserDeleted::class => 'handleUserDeleted',
       LdsRegistered::class => 'handleLdsRegistered',
+      LdsUnregistered::class => 'handleLdsUnregistered',
     ];
   }
 }

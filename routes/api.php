@@ -100,6 +100,7 @@ if (!$role || $role == 'admin') {
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
     Route::post('/lds/reg-device', [LdsRegistrationController::class, 'regDevice']);
+    Route::post('/lds/unreg-device', [LdsRegistrationController::class, 'unregDevice']);
   });
 }
 
