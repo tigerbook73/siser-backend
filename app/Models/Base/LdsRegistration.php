@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $device_name
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $status
  * 
  * @property User $user
  *
@@ -41,7 +42,8 @@ class LdsRegistration extends Model
     'user_id',
     'device_id',
     'user_code',
-    'device_name'
+    'device_name',
+    'status'
   ];
 
   public function user()

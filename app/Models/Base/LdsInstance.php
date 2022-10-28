@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $expires_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $status
  * 
  * @property LdsPool $lds_pool
  *
@@ -57,7 +58,8 @@ class LdsInstance extends Model
     'user_code',
     'registered_at',
     'online',
-    'expires_at'
+    'expires_at',
+    'status'
   ];
 
   public function lds_pool()
