@@ -10,7 +10,6 @@ class UserController extends SimpleController
 {
   protected string $modelClass = User::class;
 
-
   protected function getListRules()
   {
     return [
@@ -44,7 +43,7 @@ class UserController extends SimpleController
       return response()->json(['message' => 'user do not exist!'], 400);
     }
 
-    $user = User::createFromCognitoUser($cognitoUser);
+    $user = User::createOrUpdateFromCognitoUser($cognitoUser);
     return response()->json($user->toResource('admin'), 201);
   }
 

@@ -59,14 +59,9 @@ class AuthController extends Controller
     }
 
     // create / update software user
-    /** @var User|null $user */
-    $user = User::where('name', $cognitoUser->username)->first();
-    if (!$user) {
-      $user = User::createFromCognitoUser($cognitoUser);
-    } else {
-      $user->updateFromCognitoUser($cognitoUser);
-    }
+    $user = User::createOrUpdateFromCognitoUser($cognitoUser);
 
+    // view
     $viewData = [
       'token' => base64_encode(json_encode([
         'access_token' => $this->jwtAuth()->login($user),
@@ -75,8 +70,6 @@ class AuthController extends Controller
       ])),
       'account' => base64_encode(json_encode($user->toResource('customer')))
     ];
-
-    // login user
     return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
   }
 
