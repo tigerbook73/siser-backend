@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Events\UserDeleted;
 use App\Events\UserSaved;
 use App\Events\UserSubscriptionLevelChanged;
 use App\Services\Cognito\CognitoUser;
@@ -65,37 +64,36 @@ class User extends UserWithTrait
     };
   }
 
-  static public function createFromCognitoUser(CognitoUser $cognitoUser): User
+  static public function createOrUpdateFromCognitoUser(CognitoUser $cognitoUser): User
   {
-    if (User::where('cognito_id', $cognitoUser->id)->count() > 0) {
-      abort(400, 'user already exists');
+    /** @var User|null $user */
+    $user = User::where('cognito_id', $cognitoUser->id)->first();
+    if ($user) {
+      $user->updateFromCognitoUser($cognitoUser);
+    } else {
+      $user = User::create([
+        'name'          => $cognitoUser->username,
+        'cognito_id'    => $cognitoUser->id,
+        'email'         => $cognitoUser->email,
+        'given_name'    => $cognitoUser->given_name,
+        'family_name'   => $cognitoUser->family_name,
+        'full_name'     => $cognitoUser->full_name,
+        'phone_number'  => $cognitoUser->phone_number,
+        'country_code'  => $cognitoUser->country_code,
+        'language_code' => $cognitoUser->language_code,
+        'password'      => 'not allowed',
+      ]);
     }
-
-    $user = User::create([
-      'name'          => $cognitoUser->username,
-      'cognito_id'    => $cognitoUser->id,
-      'email'         => $cognitoUser->email,
-      'given_name'    => $cognitoUser->given_name,
-      'family_name'   => $cognitoUser->family_name,
-      'full_name'     => $cognitoUser->full_name,
-      'phone_number'  => $cognitoUser->phone_number,
-      'country_code'  => $cognitoUser->country_code,
-      'language_code' => $cognitoUser->language_code,
-      'password'      => 'not allowed',
-    ]);
-
     return $user;
   }
 
-  public function updateFromCognitoUser(CognitoUser $cognitoUser)
+  public function updateFromCognitoUser(CognitoUser $cognitoUser): User
   {
-    if (
-      $this->name !== $cognitoUser->username ||
-      $this->cognito_id !== $cognitoUser->id
-    ) {
+    if ($this->cognito_id !== $cognitoUser->id) {
       abort(500, 'Something wrong when updating from cognito user');
     }
 
+    $this->name           = $cognitoUser->username;
     $this->email          = $cognitoUser->email;
     $this->given_name     = $cognitoUser->given_name;
     $this->family_name    = $cognitoUser->family_name;
@@ -104,5 +102,7 @@ class User extends UserWithTrait
     $this->country_code   = $cognitoUser->country_code;
     $this->language_code  = $cognitoUser->language_code;
     $this->save();
+
+    return $this;
   }
 }

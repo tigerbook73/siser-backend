@@ -20,32 +20,37 @@ class UserListApiTest extends UserTestCase
 
     $this->listAssert(200, ['name' => 'user1.testDoesNotExist', 'email' => 'user1.testDoesNotExist@iifuture.com']);
 
-    // TODO: more tests
-    $this->markTestIncomplete();
-    //  name
-    //  email
-    //  full_name
-    //  phone_number
-    //  country_code
-    //  subscription_level
-    //  license_count
+    $this->listAssert(200, ['name' => 'user1.test'], 1);
 
-    /* Commented out below 2 test cases will be revisited later
-    $this->listAssert(200, ['name' => '']);
+    $this->listAssert(200, ['email' => 'user1.test@iifuture.com'], 1);
 
-    $this->listAssert(200, ['email' => '']);
-    */
+    $this->listAssert(200, ['full_name' => 'User1 Test']);
+
+    $this->listAssert(200, ['phone_number' => NULL]);
+
+    $this->listAssert(200, ['country_code' => 'AU']);
+
+    $this->listAssert(200, ['subscription_level' => '1']);
+
+    $this->listAssert(200, ['license_count' => '2']);
+
+    $this->listAssert(200, ['name' => 'user1.test', 'email' => 'user1.test@iifuture.com'], 1);
   }
 
   public function testUserListError()
   {
-    // TODO: more tests
-    $this->markTestIncomplete();
+    $this->listAssert(422, ['name' => ''])->assertJsonValidationErrors(['name' => 'The name field must have a value.']);
 
-    // $this->listAssert(400, ['full_name' => '']);
+    $this->listAssert(422, ['email' => ''])->assertJsonValidationErrors(['email' => 'The email field must have a value.']);
 
-    // $this->listAssert(400, ['full_name' => 'User1 Test']);
+    $this->listAssert(422, ['full_name' => ''])->assertJsonValidationErrors(['full_name' => 'The full name field must have a value.']);
 
-    // $this->listAssert(400, ['full_name' => 'User1 Test', 'family_name' => 'Test']);
+    $this->listAssert(422, ['phone_number' => ''])->assertJsonValidationErrors(['phone_number' => 'The phone number field must have a value.']);
+
+    $this->listAssert(422, ['country_code' => ''])->assertJsonValidationErrors(['country_code' => 'The country code field must have a value.']);
+
+    $this->listAssert(422, ['subscription_level' => ''])->assertJsonValidationErrors(['subscription_level' => 'The subscription level field must have a value.']);
+
+    $this->listAssert(422, ['license_count' => ''])->assertJsonValidationErrors(['license_count' => 'The license count field must have a value.']);
   }
 }
