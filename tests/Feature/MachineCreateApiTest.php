@@ -4,14 +4,25 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\GeneralConfiguration;
+use Tests\Trait\CognitoProviderMockup;
 
 class MachineCreateApiTest extends MachineTestCase
 {
+  use CognitoProviderMockup;
+
   public ?string $role = 'admin';
 
   public function testMachineCreateOk()
   {
     $this->createAssert();
+  }
+
+  public function testMachineCreateUpdateOk()
+  {
+    $this->createAssert();
+
+    $this->modelCreate['nickname'] = $this->modelCreate['nickname'] . '_update';
+    $this->createAssert(200);
   }
 
   private function getUserCurrentLicenseCount()
@@ -63,6 +74,25 @@ class MachineCreateApiTest extends MachineTestCase
     $this->createAssert();
     $licenseCountAfter = $this->getUserCurrentLicenseCount();
     $this->assertEquals($licenseCountBefore + GeneralConfiguration::getMachineLicenseUnit(), $licenseCountAfter);
+  }
+
+  public function testMachineCreateDuplicatedSerialNo()
+  {
+    // create user2
+    $userCreateFrom = [
+      "create_from" => "username",
+      "username" => $this->getDefaultTestUserName(),
+    ];
+    $this->postJson('/api/v1/users', $userCreateFrom);
+    $user2 = User::where('name', $this->getDefaultTestUserName())->first();
+
+    // create machine
+    $response = $this->createAssert();
+
+    // create duplicated machine
+    $this->modelCreate['user_id'] = $user2->id;
+    $response = $this->createAssert(422);
+    $response->assertJsonPath('errors.serial_no', ['Machine with the serial_no already exists.']);
   }
 
   public function testMachineCreateError()
