@@ -72,6 +72,7 @@ class User extends UserWithTrait
       $user->updateFromCognitoUser($cognitoUser);
     } else {
       $user = User::create([
+        'id'            => $cognitoUser->software_user_id,
         'name'          => $cognitoUser->username,
         'cognito_id'    => $cognitoUser->id,
         'email'         => $cognitoUser->email,

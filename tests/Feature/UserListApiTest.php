@@ -26,7 +26,7 @@ class UserListApiTest extends UserTestCase
 
     $this->listAssert(200, ['full_name' => 'User1 Test']);
 
-    $this->listAssert(200, ['phone_number' => NULL]);
+    $this->listAssert(200, ['phone_number' => '+61400000000']);
 
     $this->listAssert(200, ['country_code' => 'AU']);
 

@@ -3,12 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Machine;
-use App\Models\Plan;
 use App\Models\SoftwarePackage;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Services\Cognito\CognitoProvider;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -23,19 +21,11 @@ class DatabaseSeeder extends Seeder
     /**
      * create users
      */
-    // end users
-    $customer = User::create([
-      'name'                => 'user1.test',
-      'email'               => 'user1.test@iifuture.com',
-      'given_name'          => 'User1',
-      'family_name'         => 'Test',
-      'full_name'           => 'User1 Test',
-      'country_code'        => 'AU',
-      'language_code'       => 'en',
-      'cognito_id'          => 'b0620f5c-cada-4f75-a8b1-811ea8ddf69d',
-      'subscription_level'  => 0,
-      'password'            => 'not allowed',
-    ]);
+    $cognitoUsers = (new CognitoProvider)->getSoftwareUserList();
+    foreach ($cognitoUsers as $cognitoUser) {
+      User::createOrUpdateFromCognitoUser($cognitoUser);
+    }
+    $customer = User::first();
 
     /**
      * create software packages

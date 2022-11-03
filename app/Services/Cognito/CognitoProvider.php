@@ -46,7 +46,7 @@ class CognitoProvider
   {
     $username = $result['Username'];
     $user = [];
-    foreach ($result['UserAttributes'] as $attribute) {
+    foreach ($result['UserAttributes'] ?? $result['Attributes'] as $attribute) {
       $user[$attribute['Name']]  = $attribute['Value'];
     };
 
@@ -61,6 +61,7 @@ class CognitoProvider
       language_code: $user['custom:language_code'] ?? null,
       country_code: $user['custom:country_code'] ?? null,
       is_lds_prem_sub: $user['custom:is_lds_prem_sub'] ?? null,
+      software_user_id: $user['custom:software_user_id'] ?? null,
     );
   }
 
@@ -83,14 +84,14 @@ class CognitoProvider
     }
   }
 
-  public function updateUserSubscriptionLevel(string $username, int $subscription_level): void
+  public function updateUserCustomAttribute(string $username, string $attrName, string $attrValue): void
   {
     try {
-      $result = $this->getCognitoClient()->adminUpdateUserAttributes([
+      $this->getCognitoClient()->adminUpdateUserAttributes([
         'UserPoolId' => $this->userPoolId,
         'Username' => $username,
         'UserAttributes' => [
-          ['Name' => 'custom:is_lds_prem_sub', 'Value' => (string)($subscription_level >= 2 ? 1 : 0)]
+          ['Name' => 'custom:' . $attrName, 'Value' => $attrValue]
         ],
       ]);
       // var_dump($result);
@@ -99,6 +100,16 @@ class CognitoProvider
       echo $e->getMessage() . "\n";
       error_log($e->getMessage());
     }
+  }
+
+  public function updateUserSubscriptionLevel(string $username, int $subscription_level): void
+  {
+    $this->updateUserCustomAttribute($username, 'is_lds_prem_sub', (string)($subscription_level >= 2 ? 1 : 0));
+  }
+
+  public function updateUserId(string $username, int $software_user_id): void
+  {
+    $this->updateUserCustomAttribute($username, 'software_user_id', (string)($software_user_id));
   }
 
   public function getUserByName(string $name): ?CognitoUser
@@ -115,6 +126,34 @@ class CognitoProvider
       echo $e->getMessage() . "\n";
       error_log($e->getMessage());
       return null;
+    }
+  }
+
+  /**
+   * @return CognitoUser[]
+   */
+  public function getSoftwareUserList(): array
+  {
+    try {
+      $result = $this->getCognitoClient()->listUsers([
+        'UserPoolId' => $this->userPoolId,
+        'Limit' => 40,
+      ]);
+
+      $cognitoUsers = [];
+      foreach ($result['Users'] as $user) {
+        $cognitoUser = $this->getCognitoUserFromApiResult($user);
+        if ($cognitoUser->software_user_id) {
+          $cognitoUsers[] = $cognitoUser;
+        }
+      }
+
+      return $cognitoUsers;
+    } catch (AwsException $e) {
+      // output error message if fails
+      echo $e->getMessage() . "\n";
+      error_log($e->getMessage());
+      return [];
     }
   }
 }
