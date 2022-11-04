@@ -24,7 +24,7 @@ class AdminUserController extends SimpleController
       'email'     => ['required', 'email', 'max:255', 'unique:' . AdminUser::class],
       'full_name' => ['required', 'string', 'max:255'],
       'roles'     => ['required', 'array', 'min:1'],
-      'roles.*'   => ['required', 'string', 'distinct', 'in:admin,siser-backend'],
+      'roles.*'   => ['required', 'string', 'distinct', 'in:admin,siser-backend,support'],
       'password'  => ['required', 'string', 'max:32', Password::min(8)->mixedCase()->numbers()->symbols()],
     ];
   }
@@ -34,7 +34,7 @@ class AdminUserController extends SimpleController
     return [
       'full_name' => ['filled', 'string', 'max:255'],
       'roles'     => ['filled', 'array', 'min:1'],
-      'roles.*'   => ['filled', 'string', 'distinct', 'in:admin,siser-backend'],
+      'roles.*'   => ['filled', 'string', 'distinct', 'in:admin,siser-backend,support'],
       'password'  => ['filled', 'string', 'max:32', Password::min(8)->mixedCase()->numbers()->symbols()],
     ];
   }
