@@ -86,31 +86,31 @@ class DatabaseSeeder extends Seeder
     // 
 
     /** @var int[] $userIds */
-    $userIds = User::where('email', 'like', 'user%.test%')->get()->map(fn ($item) => $item->id);
+    $userIds = User::where('email', 'like', 'user%.test%')->get()->modelKeys();
 
     /** @var int[] $subscriptionIds */
-    $subscriptionIds = Subscription::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+    $subscriptionIds = Subscription::whereIn('user_id', $userIds)->get()->modelKeys();
 
     /** @var int[] $ldsPoolIds */
-    $ldsPoolIds = LdsPool::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+    $ldsPoolIds = LdsPool::whereIn('user_id', $userIds)->get()->modelKeys();
 
     /** @var int[] $ldsRegistrationIds */
-    $ldsRegistrationIds = LdsRegistration::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+    $ldsRegistrationIds = LdsRegistration::whereIn('user_id', $userIds)->get()->modelKeys();
 
     /** @var int[] $ldsInstanceIds */
-    $ldsInstanceIds = LdsInstance::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+    $ldsInstanceIds = LdsInstance::whereIn('user_id', $userIds)->get()->modelKeys();
 
     /** @var int[] $machineIds */
-    $machineIds = Machine::where('nickname', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+    $machineIds = Machine::where('nickname', 'like', '%__test__%')->get()->modelKeys();
 
     /** @var int[] $plans */
-    $planIds = Plan::where('name', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+    $planIds = Plan::where('name', 'like', '%__test__%')->get()->modelKeys();
 
     /** @var int[] $softwarePackageIds */
-    $softwarePackageIds = SoftwarePackage::where('description', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+    $softwarePackageIds = SoftwarePackage::where('description', 'like', '%__test__%')->get()->modelKeys();
 
     /** @var AdminUser[]|Collection $users */
-    $adminUserIds = AdminUser::where('name', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+    $adminUserIds = AdminUser::where('name', 'like', '%__test__%')->get()->modelKeys();
 
     // remove user related data
     LdsLog::whereIn('lds_instance_id', $ldsInstanceIds)->delete();
