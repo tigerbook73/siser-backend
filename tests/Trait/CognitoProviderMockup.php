@@ -9,7 +9,7 @@ use Exception;
 
 class CognitoProvider extends CognitoProviderBase
 {
-  public string $testUserName = "user2.test";
+  public string $testUserName = "user99999.test";
 
   public function getCognitoUser(string $accessToken = null): ?CognitoUser
   {

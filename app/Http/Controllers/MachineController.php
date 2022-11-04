@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Machine;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class MachineController extends SimpleController
@@ -15,16 +16,6 @@ class MachineController extends SimpleController
     return [
       'serial_no' => ['filled'],
       'user_id'   => ['filled', 'integer'],
-    ];
-  }
-
-  protected function getCreateRules()
-  {
-    return [
-      "serial_no" => ['required', 'max:255'],
-      "user_id"   => ['required', Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))],
-      "model"     => ['required', 'max:255'],
-      "nickname"  => ['max:255'],
     ];
   }
 
@@ -46,6 +37,43 @@ class MachineController extends SimpleController
   {
     $request->merge(['user_id' => auth('api')->user()->id]);
     return self::list($request);
+  }
+
+  public function create(Request $request)
+  {
+    $this->validateUser();
+
+    $inputs = $request->validate([
+      "serial_no" => ['required', 'max:255'],
+      "user_id"   => ['required', Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))],
+      "model"     => ['required', 'max:255'],
+      "nickname"  => ['max:255'],
+    ]);
+
+    /** @var Machine|null $machine */
+    $machine = Machine::where([
+      'serial_no' => $inputs['serial_no']
+    ])->first();
+
+    if ($machine) {
+      // must be same user
+      if ($machine->user_id != $inputs['user_id']) {
+        $message = __('validation._machine', ['attribute' => 'serial_no']);
+        return response()->json(['message' => $message, 'errors' => ['serial_no' => [$message]]], 422);
+      }
+
+      // update
+      $machine->fill($inputs);
+      $machine->save();
+      return  response()->json($this->transformSingleResource($machine), 200);
+    } else {
+      // create
+      $machine = new Machine($inputs);
+      DB::transaction(
+        fn () => $machine->save()
+      );
+      return  response()->json($this->transformSingleResource($machine), 201);
+    }
   }
 
   public function transfer(Request $request, int $id)

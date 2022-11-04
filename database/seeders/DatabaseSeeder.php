@@ -2,13 +2,19 @@
 
 namespace Database\Seeders;
 
+use App\Models\AdminUser;
+use App\Models\LdsInstance;
+use App\Models\LdsLog;
+use App\Models\LdsPool;
+use App\Models\LdsRegistration;
 use App\Models\Machine;
 use App\Models\Plan;
 use App\Models\SoftwarePackage;
+use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Services\Cognito\CognitoProvider;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -19,23 +25,20 @@ class DatabaseSeeder extends Seeder
    */
   public function run()
   {
+    $this->cleanData();
+    $this->createTestData();
+  }
 
+  public function createTestData()
+  {
     /**
      * create users
      */
-    // end users
-    $customer = User::create([
-      'name'                => 'user1.test',
-      'email'               => 'user1.test@iifuture.com',
-      'given_name'          => 'User1',
-      'family_name'         => 'Test',
-      'full_name'           => 'User1 Test',
-      'country_code'        => 'AU',
-      'language_code'       => 'en',
-      'cognito_id'          => 'b0620f5c-cada-4f75-a8b1-811ea8ddf69d',
-      'subscription_level'  => 0,
-      'password'            => 'not allowed',
-    ]);
+    $cognitoUsers = (new CognitoProvider)->getSoftwareUserList();
+    foreach ($cognitoUsers as $cognitoUser) {
+      User::createOrUpdateFromCognitoUser($cognitoUser);
+    }
+    $customer = User::first();
 
     /**
      * create software packages
@@ -44,7 +47,7 @@ class DatabaseSeeder extends Seeder
       'name'                => 'LDS software',
       'platform'            => 'Windows',
       'version'             => '0.0.1',
-      'description'         => 'test data',
+      'description'         => 'test data __test__',
       'version_type'        => 'stable',
       'released_date'       => now(),
       'release_notes'       => 'https://www.google.com',
@@ -57,7 +60,7 @@ class DatabaseSeeder extends Seeder
       'name'                => 'LDS software',
       'platform'            => 'Mac',
       'version'             => '0.0.1',
-      'description'         => 'test data',
+      'description'         => 'test data __test__',
       'version_type'        => 'stable',
       'released_date'       => now(),
       'release_notes'       => 'https://www.google.com',
@@ -71,8 +74,60 @@ class DatabaseSeeder extends Seeder
     Machine::create([
       'serial_no'     => '0000-1111-2222-3333',
       'model'         => 'Siser Cutter XY',
-      'nickname'      => 'first machine',
+      'nickname'      => 'first machine __test__',
       'user_id'       => $customer->id,
     ]);
+  }
+
+  public function cleanData()
+  {
+    // 
+    // clean test data
+    // 
+
+    /** @var int[] $userIds */
+    $userIds = User::where('email', 'like', 'user%.test%')->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $subscriptionIds */
+    $subscriptionIds = Subscription::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $ldsPoolIds */
+    $ldsPoolIds = LdsPool::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $ldsRegistrationIds */
+    $ldsRegistrationIds = LdsRegistration::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $ldsInstanceIds */
+    $ldsInstanceIds = LdsInstance::whereIn('user_id', $userIds)->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $machineIds */
+    $machineIds = Machine::where('nickname', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $plans */
+    $planIds = Plan::where('name', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+
+    /** @var int[] $softwarePackageIds */
+    $softwarePackageIds = SoftwarePackage::where('description', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
+
+    /** @var AdminUser[]|Collection $users */
+    $adminUserIds = AdminUser::where('name', 'like', '%__test__%')->get();
+
+    // remove user related data
+    LdsLog::whereIn('lds_instance_id', $ldsInstanceIds)->delete();
+    LdsInstance::whereIn('id', $ldsInstanceIds)->delete();
+    LdsRegistration::whereIn('id', $ldsRegistrationIds)->delete();
+    Machine::whereIn('id', $machineIds)->delete();
+    LdsPool::whereIn('id', $ldsPoolIds)->delete();
+    Subscription::whereIn('id', $subscriptionIds)->delete();
+    User::whereIn('id', $userIds)->delete();
+
+    // remove test softare packages
+    SoftwarePackage::destroy($softwarePackageIds);
+
+    // remove test plans
+    Plan::whereIn('id', $planIds)->delete();
+
+    // remove test admin users
+    AdminUser::whereIn('id', $adminUserIds)->delete();
   }
 }

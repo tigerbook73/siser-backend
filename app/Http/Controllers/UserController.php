@@ -44,7 +44,7 @@ class UserController extends SimpleController
     }
 
     $user = User::createOrUpdateFromCognitoUser($cognitoUser);
-    return response()->json($user->toResource('admin'), 201);
+    return response()->json($user->toResource('admin'), $user->wasRecentlyCreated ? 201 : 200);
   }
 
   public function refresh($id)
