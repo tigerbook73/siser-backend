@@ -34,11 +34,7 @@ class DatabaseSeeder extends Seeder
     /**
      * create users
      */
-    $cognitoUsers = (new CognitoProvider)->getSoftwareUserList();
-    foreach ($cognitoUsers as $cognitoUser) {
-      User::createOrUpdateFromCognitoUser($cognitoUser);
-    }
-    $customer = User::first();
+    $customer = User::createOrUpdateFromCognitoUser((new CognitoProvider)->getUserByName('user1.test'));
 
     /**
      * create software packages
@@ -47,7 +43,7 @@ class DatabaseSeeder extends Seeder
       'name'                => 'LDS software',
       'platform'            => 'Windows',
       'version'             => '0.0.1',
-      'description'         => 'test data __test__',
+      'description'         => '__test__',
       'version_type'        => 'stable',
       'released_date'       => now(),
       'release_notes'       => 'https://www.google.com',
@@ -60,7 +56,7 @@ class DatabaseSeeder extends Seeder
       'name'                => 'LDS software',
       'platform'            => 'Mac',
       'version'             => '0.0.1',
-      'description'         => 'test data __test__',
+      'description'         => '__test__',
       'version_type'        => 'stable',
       'released_date'       => now(),
       'release_notes'       => 'https://www.google.com',
@@ -74,7 +70,7 @@ class DatabaseSeeder extends Seeder
     Machine::create([
       'serial_no'     => '0000-1111-2222-3333',
       'model'         => 'Siser Cutter XY',
-      'nickname'      => 'first machine __test__',
+      'nickname'      => '__test__',
       'user_id'       => $customer->id,
     ]);
   }

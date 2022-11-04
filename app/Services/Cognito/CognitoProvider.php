@@ -132,18 +132,21 @@ class CognitoProvider
   /**
    * @return CognitoUser[]
    */
-  public function getSoftwareUserList(): array
+  public function getCognitoUserList(bool $softwareUser = false, int $limit = 40): array
   {
     try {
       $result = $this->getCognitoClient()->listUsers([
         'UserPoolId' => $this->userPoolId,
-        'Limit' => 40,
+        'Limit' => min($limit, 100),
       ]);
 
       $cognitoUsers = [];
       foreach ($result['Users'] as $user) {
         $cognitoUser = $this->getCognitoUserFromApiResult($user);
-        if ($cognitoUser->software_user_id) {
+        if (
+          ($softwareUser && $cognitoUser->software_user_id) ||
+          (!$softwareUser && !$cognitoUser->software_user_id)
+        ) {
           $cognitoUsers[] = $cognitoUser;
         }
       }
