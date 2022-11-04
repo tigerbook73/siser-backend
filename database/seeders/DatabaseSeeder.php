@@ -110,7 +110,7 @@ class DatabaseSeeder extends Seeder
     $softwarePackageIds = SoftwarePackage::where('description', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
 
     /** @var AdminUser[]|Collection $users */
-    $adminUserIds = AdminUser::where('name', 'like', '%__test__%')->get();
+    $adminUserIds = AdminUser::where('name', 'like', '%__test__%')->get()->map(fn ($item) => $item->id);
 
     // remove user related data
     LdsLog::whereIn('lds_instance_id', $ldsInstanceIds)->delete();
