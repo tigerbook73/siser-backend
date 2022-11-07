@@ -29,7 +29,7 @@ const resourceRoleMapping = [
   'user.create' => ['siser-backend' => 1],
   'user.refresh' => ['siser-backend' => 1],
 
-  'x-ray.summary' => [],
+  'x-ray.summary' => ['siser-backend' => 1],
 ];
 
 
