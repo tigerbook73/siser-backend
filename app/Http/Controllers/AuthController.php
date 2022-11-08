@@ -81,16 +81,6 @@ class AuthController extends Controller
     return $this->getLogoutRedirect();
   }
 
-  public function loginTest(Request $request)
-  {
-    $input = $request->only(['email']);
-
-    $user = User::where('email', $input['email'])->first();
-    $token  = $this->jwtAuth()->tokenById($user->id);
-
-    return $this->respondWithToken($token);
-  }
-
   /**
    * Log the user out (Invalidate the token).
    *

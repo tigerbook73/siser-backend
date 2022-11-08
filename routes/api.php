@@ -52,11 +52,6 @@ if (!$role || $role == 'admin') {
 // user authentication
 //
 if (!$role || $role == 'customer') {
-  // not in production environment
-  if ($testCode) {
-    Route::post('/auth/login-test', [AuthController::class, 'loginTest']);
-  }
-
   Route::middleware('auth:api')->group(function () {
     Route::post('/auth/refresh', [AuthController::class, 'refresh']);
     Route::post('/auth/me', [AuthController::class, 'me']);
