@@ -10,6 +10,8 @@ class PlanListApiTest extends PlanTestCase
   {
     $this->listAssert();
 
+    $this->listAssert(200, ['name' => 'LDS Machine Basic']);
+
     $this->listAssert(200, ['catagory' => 'machine']);
 
     $this->listAssert(200, ['catagory' => 'software']);
@@ -17,6 +19,10 @@ class PlanListApiTest extends PlanTestCase
     $this->listAssert(200, []);
 
     $this->listAssert(200, ['catagory' => $this->object->catagory]);
+
+    $this->listAssert(200, ['status' => 'active']);
+
+    $this->markTestIncomplete('more filter to do');
   }
 
   public function testPlanListError()
@@ -27,14 +33,10 @@ class PlanListApiTest extends PlanTestCase
     $response = $this->listAssert(422, ['catagory' => 'linux']);
     $response->assertJsonValidationErrors(['catagory' => 'The selected catagory is invalid.']);
 
-    $this->listAssert(400, ['catagory' => 'machine', 'name' => 'LDS Machine Basic']);
-
     $this->listAssert(400, ['catagory' => 'machine', 'contract_term' => 'permanent']);
 
     $this->listAssert(400, ['contract_term' => 'year']);
 
-    $this->listAssert(400, ['status' => 'active']);
-
-    $this->listAssert(400, ['name' => 'LDS Machine Basic']);
+    $this->markTestIncomplete('more filter to do');
   }
 }

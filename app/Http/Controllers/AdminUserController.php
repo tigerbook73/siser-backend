@@ -14,7 +14,11 @@ class AdminUserController extends SimpleController
 
   protected function getListRules()
   {
-    return [];
+    return [
+      'name'                => ['filled'],
+      'email'               => ['filled'],
+      'full_name'           => ['filled'],
+    ];
   }
 
   protected function getCreateRules()
