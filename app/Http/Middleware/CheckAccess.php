@@ -14,6 +14,7 @@ const resourceRoleMapping = [
   'admin-user.get' => [],
   'admin-user.create' => [],
   'admin-user.update' => [],
+  'admin-user.delete' => [],
 
   'config.update' => [],
 

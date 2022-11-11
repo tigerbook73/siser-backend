@@ -139,6 +139,7 @@ if (!$role || $role == 'admin') {
     Route::get('/admin-users/{id}', [AdminUserController::class, 'index'])->middleware('access:admin-user.get');
     Route::post('/admin-users', [AdminUserController::class, 'create'])->middleware('access:admin-user.create');
     Route::patch('/admin-users/{id}', [AdminUserController::class, 'update'])->middleware('access:admin-user.update');
+    Route::delete('/admin-users/{id}', [AdminUserController::class, 'destroy'])->middleware('access:admin-user.delete');
   });
 }
 
