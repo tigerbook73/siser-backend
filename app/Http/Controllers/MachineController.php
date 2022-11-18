@@ -82,7 +82,7 @@ class MachineController extends SimpleController
     $inputs = $request->validate([
       "new_user_id"   => [
         'required',
-        // user exist and not owns any machine
+        // user exist
         Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))
       ],
     ]);
