@@ -176,6 +176,13 @@ if ($testCode) {
 }
 
 //
+// fake login route (just to make sure that route('login') shall not fail)
+//
+Route::get('/fake-login', function () {
+  return response()->json(['message' => 'Not found'], 404);
+})->name('login');
+
+//
 // fall back
 //
 Route::get('/{any}', function () {
