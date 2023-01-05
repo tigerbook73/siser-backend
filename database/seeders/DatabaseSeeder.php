@@ -97,16 +97,16 @@ class DatabaseSeeder extends Seeder
     $ldsInstanceIds = LdsInstance::whereIn('user_id', $userIds)->get()->modelKeys();
 
     /** @var int[] $machineIds */
-    $machineIds = Machine::where('nickname', 'like', '%__test__%')->get()->modelKeys();
+    $machineIds = Machine::where('nickname', 'like', '%\_\_test\_\_%')->get()->modelKeys();
 
     /** @var int[] $plans */
-    $planIds = Plan::where('name', 'like', '%__test__%')->get()->modelKeys();
+    $planIds = Plan::where('name', 'like', '%\_\_test\_\_%')->get()->modelKeys();
 
     /** @var int[] $softwarePackageIds */
-    $softwarePackageIds = SoftwarePackage::where('description', 'like', '%__test__%')->get()->modelKeys();
+    $softwarePackageIds = SoftwarePackage::where('description', 'like', '%\_\_test\_\_%')->get()->modelKeys();
 
     /** @var AdminUser[]|Collection $users */
-    $adminUserIds = AdminUser::where('name', 'like', '%__test__%')->get()->modelKeys();
+    $adminUserIds = AdminUser::where('name', 'like', '%\_\_test\_\_%')->get()->modelKeys();
 
     // remove user related data
     LdsLog::whereIn('lds_instance_id', $ldsInstanceIds)->delete();
