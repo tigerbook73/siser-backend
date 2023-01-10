@@ -31,6 +31,7 @@ elif [ "$role" = "queue" ]; then
   while [ true ]; do
       echo "run queue worker ..."
       runuser -u www-data -- php /var/www/html/artisan queue:work --tries=3 --timeout=180 --max-jobs=1000
+      echo "queue worker exits"
   done
 
 elif [ "$role" = "scheduler" ]; then
@@ -43,5 +44,6 @@ elif [ "$role" = "scheduler" ]; then
 
 else
   echo "Could not match the container role \"$role\""
+  sleep 60;
   exit 1
 fi
