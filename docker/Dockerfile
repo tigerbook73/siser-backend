@@ -10,6 +10,11 @@ FROM ${frontend} as frontend
 #
 FROM php:8.1-apache
 
+# php & apache configuration
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+  && sed -i "s/expose_php = On/expose_php = Off/" "$PHP_INI_DIR/php.ini" \
+  && a2enmod headers
+
 # add alias
 RUN echo "" >> ~/.bashrc \
   && echo "alias php='runuser -u www-data -- /usr/local/bin/php'" >> ~/.bashrc \
