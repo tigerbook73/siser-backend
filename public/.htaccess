@@ -23,6 +23,6 @@
 <IfModule mod_headers.c>    
     Header set X-Content-Type-Options nosniff
     Header always append X-Frame-Options SAMEORIGIN
-    Header set Strict-Transport-Security max-age=10886400; includeSubDomains
+    Header set Strict-Transport-Security "max-age=10886400; includeSubDomains"
     # Header set Content-Security-Policy "default-src 'self';"
 </IfModule>
