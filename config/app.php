@@ -186,6 +186,7 @@ return [
      * Package Service Providers...
      */
     PHPOpenSourceSaver\JWTAuth\Providers\LaravelServiceProvider::class,
+    Bugsnag\BugsnagLaravel\BugsnagServiceProvider::class,
 
     /*
      * Application Service Providers...
