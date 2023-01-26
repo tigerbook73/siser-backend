@@ -70,7 +70,5 @@ class LdsRegistrationController extends Controller
 
     $registration->status = 'inactive';
     $registration->save();
-
-    return;
   }
 }

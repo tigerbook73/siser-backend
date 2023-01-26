@@ -34,4 +34,72 @@ class PlanController extends SimpleController
     $plan->deactivate();
     return $this->transformSingleResource($plan);
   }
+
+
+  /**
+   * TODO: MOCKUP
+   */
+
+  public $mockData = [
+    [
+      "id" => 1,
+      "name" => "LDS Basic Plan",
+      "catagory" => "machine",
+      "description" => "basic plan",
+      "subscription_level" => 1,
+      "url" => "",
+      "status" => "active",
+      "price" => [
+        "country" => "US",
+        "state" => "New York",
+        "currency" => "USD",
+        "price" => 0,
+        "processing_fee_rate" => 0,
+        "processing_fee_amount" => 0,
+        "tax_rate" => 0,
+        "tax_amount" => 0
+      ]
+    ],
+    [
+      "id" => 2,
+      "name" => "LDS Pro Plan",
+      "catagory" => "machine",
+      "description" => "pro plan",
+      "subscription_level" => 2,
+      "url" => "",
+      "status" => "active",
+      "price" => [
+        "country" => "US",
+        "state" => "New York",
+        "currency" => "USD",
+        "price" => 10,
+        "processing_fee_rate" => 0,
+        "processing_fee_amount" => 0,
+        "tax_rate" => 5,
+        "tax_amount" => 0.5
+      ]
+    ]
+  ];
+
+  public function list(Request $request)
+  {
+    return response()->json([
+      "data" => $this->mockData
+    ]);
+  }
+
+  public function index(int $id)
+  {
+    $found = null;
+    foreach ($this->mockData as $item) {
+      if ($item['id'] == $id) {
+        $found = $item;
+      }
+    }
+
+    if (!$found) {
+      return response()->json(null, 404);
+    }
+    return response()->json($found);
+  }
 }

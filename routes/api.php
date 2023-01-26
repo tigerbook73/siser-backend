@@ -3,12 +3,19 @@
 use App\Http\Controllers\AdminAuthController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BillingInfoController;
+use App\Http\Controllers\CountryController;
+use App\Http\Controllers\CouponController;
+use App\Http\Controllers\DesignPlanController;
 use App\Http\Controllers\GeneralConfigurationController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LdsRegistrationController;
 use App\Http\Controllers\MachineController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
+use App\Http\Controllers\StateController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\UserController;
@@ -60,10 +67,25 @@ if (!$role || $role == 'customer') {
 }
 
 // 
-// plans
+// TODO: public country
+// 
+Route::get('/countries', [CountryController::class, 'list']);
+
+// 
+// TODO: public state
+// 
+Route::get('/states', [StateController::class, 'list']);
+
+// 
+// TODO: public plans
 // 
 Route::get('/plans', [PlanController::class, 'list']);
 Route::get('/plans/{id}', [PlanController::class, 'index']);
+
+//
+// TODO: public coupon
+//
+Route::post('/coupon-validate', [CouponController::class, 'check']);
 
 // 
 // software packages
@@ -88,6 +110,37 @@ if (!$role || $role == 'admin') {
     Route::patch('/config/general', [GeneralConfigurationController::class, 'set'])->middleware('access:config.update');
   });
 }
+
+// 
+// TODO: coupon
+// 
+Route::get('/coupons', [CouponController::class, 'list']);
+Route::post('/coupons', [CouponController::class, 'create']);
+Route::get('/coupons/{id}', [CouponController::class, 'index']);
+Route::post('/coupons/{id}', [CouponController::class, 'update']);
+Route::delete('/coupons/{id}', [CouponController::class, 'destroy']);
+Route::post('/coupons/{id}/activate', [CouponController::class, 'activate']);
+Route::post('/coupons/{id}/deactivate', [CouponController::class, 'deactivate']);
+Route::get('/coupons/{id}/history-records', [CouponController::class, 'history']);
+
+//
+// TODO: design plan
+//
+Route::get('/design-plans', [DesignPlanController::class, 'list']);
+Route::post('/design-plans', [DesignPlanController::class, 'create']);
+Route::get('/design-plans/{id}', [DesignPlanController::class, 'index']);
+Route::post('/design-plans/{id}', [DesignPlanController::class, 'update']);
+Route::delete('/design-plans/{id}', [DesignPlanController::class, 'destroy']);
+Route::post('/design-plans/{id}/activate', [DesignPlanController::class, 'activate']);
+Route::post('/design-plans/{id}/deactivate', [DesignPlanController::class, 'deactivate']);
+Route::get('/design-plans/{id}/history-records', [DesignPlanController::class, 'history']);
+
+// 
+// TODO: invoice
+// 
+Route::get('/invoices', [InvoiceController::class, 'list']);
+Route::get('/invoices/{id}', [InvoiceController::class, 'index']);
+
 
 //
 // LDS
@@ -155,17 +208,44 @@ if (!$role || $role == 'admin') {
 
 
 //
-// account
+// TODO: account
 //
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/me', [AuthController::class, 'me']);
     Route::get('/account/full', [UserController::class, 'fullByAccount']);
     Route::get('/account/machines', [MachineController::class, 'listByAccount']);
-    Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
   });
 }
 
+// 
+// TODO: account subscription
+// 
+Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
+Route::post('/account/subscriptions', [SubscriptionController::class, 'create']);
+Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'index']);
+Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
+Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
+Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+
+
+// 
+// TODO: account billing info
+// 
+Route::get('/account/billing-info', [BillingInfoController::class, 'get']);
+Route::post('/account/billing-info', [BillingInfoController::class, 'set']);
+
+// 
+// TODO: account payment method
+// 
+Route::get('/account/payment-method', [PaymentMethodController::class, 'get']);
+Route::post('/account/payment-method', [PaymentMethodController::class, 'set']);
+
+// 
+// TODO: account invoice
+// 
+Route::get('/account/invoices', [InvoiceController::class, 'listByAccount']);
+Route::get('/account/invoices/{id}', [InvoiceController::class, 'indexByAccount']);
 
 //
 // test: not in production version
