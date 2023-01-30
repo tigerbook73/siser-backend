@@ -51,13 +51,8 @@ class PlanController extends SimpleController
       "status" => "active",
       "price" => [
         "country" => "US",
-        "state" => "New York",
         "currency" => "USD",
         "price" => 0,
-        "processing_fee_rate" => 0,
-        "processing_fee_amount" => 0,
-        "tax_rate" => 0,
-        "tax_amount" => 0
       ]
     ],
     [
@@ -70,13 +65,8 @@ class PlanController extends SimpleController
       "status" => "active",
       "price" => [
         "country" => "US",
-        "state" => "New York",
         "currency" => "USD",
         "price" => 10,
-        "processing_fee_rate" => 0,
-        "processing_fee_amount" => 0,
-        "tax_rate" => 5,
-        "tax_amount" => 0.5
       ]
     ]
   ];

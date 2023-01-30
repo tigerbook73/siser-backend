@@ -15,7 +15,6 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
-use App\Http\Controllers\StateController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\UserController;
@@ -70,11 +69,6 @@ if (!$role || $role == 'customer') {
 // TODO: public country
 // 
 Route::get('/countries', [CountryController::class, 'list']);
-
-// 
-// TODO: public state
-// 
-Route::get('/states', [StateController::class, 'list']);
 
 // 
 // TODO: public plans
@@ -182,6 +176,16 @@ if (!$role || $role == 'admin') {
     Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
   });
 }
+
+//
+// user billing info
+//
+Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'get']);
+
+//
+// user payment method
+//
+Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'get']);
 
 // 
 // admin users

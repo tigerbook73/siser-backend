@@ -17,11 +17,11 @@ class SubscriptionController extends SimpleController
     ];
   }
 
-  public function listByUser(Request $request, $id)
-  {
-    $request->merge(['user_id' => $id]);
-    return self::list($request);
-  }
+  // public function listByUser(Request $request, $id)
+  // {
+  //   $request->merge(['user_id' => $id]);
+  //   return self::list($request);
+  // }
 
   // public function listByAccount(Request $request)
   // {
@@ -61,8 +61,16 @@ class SubscriptionController extends SimpleController
     }
   }
 
-
   public function listByAccount(Request $request)
+  {
+    $this->initMockData();
+
+    return response()->json([
+      "data" => $this->mockData[0]
+    ]);
+  }
+
+  public function listByUser(Request $request, $id)
   {
     $this->initMockData();
 

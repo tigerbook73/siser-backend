@@ -28,7 +28,7 @@ class CouponController extends SimpleController
       "period" => 2,
       "start_date" => "2023-01-01",
       "end_date" => "2023-06-30",
-      "state" => "active",
+      "status" => "active",
     ],
     [
       "id" => 2,
@@ -43,7 +43,7 @@ class CouponController extends SimpleController
       "period" => 1,
       "start_date" => "2023-01-01",
       "end_date" => "2023-06-30",
-      "state" => "active",
+      "status" => "active",
     ]
   ];
 

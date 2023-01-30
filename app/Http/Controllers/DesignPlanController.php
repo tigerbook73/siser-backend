@@ -29,8 +29,6 @@ class DesignPlanController extends SimpleController
           "country" => "US",
           "currency" => "USD",
           "price" => 0,
-          "processing_fee_rate" => 0,
-          "processing_fee_amount" => 0,
         ]
       ]
     ],
@@ -47,13 +45,11 @@ class DesignPlanController extends SimpleController
           "country" => "US",
           "currency" => "USD",
           "price" => 9.9,
-          "processing_fee_rate" => 2,
         ],
         [
           "country" => "AU",
           "currency" => "AUD",
           "price" => 15.2,
-          "processing_fee_rate" => 3,
         ]
       ]
     ]
