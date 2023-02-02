@@ -19,12 +19,14 @@ class CountryController extends SimpleController
       "name" => "Australia",
       "code" => "AU",
       "currency" => "AUD",
+      "processing_fee_rate" => 2.0,
       "explicit_processing_fee" => true,
     ],
     [
       "name" => "The United State of America",
       "code" => "US",
       "currency" => "USD",
+      "processing_fee_rate" => 2.0,
       "explicit_processing_fee" => true,
     ],
   ];
