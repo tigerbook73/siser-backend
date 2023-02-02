@@ -37,4 +37,69 @@ class CountryController extends SimpleController
       "data" => $this->mockData
     ]);
   }
+
+  public function indexWithCode(string $code)
+  {
+    $found = null;
+    foreach ($this->mockData as $item) {
+      if ($item['code'] == $code) {
+        $found = $item;
+      }
+    }
+
+    if (!$found) {
+      return response()->json(null, 404);
+    }
+    return response()->json($found);
+  }
+
+  public function create(Request $request)
+  {
+    if (
+      !$request->code ||
+      !$request->name ||
+      !$request->currency ||
+      !$request->processing_fee_rate ||
+      !$request->explicit_processing_fee
+    ) {
+      return response()->json(['message' => 'invalid input'], 400);
+    }
+
+    return response()->json($this->mockData[1]);
+  }
+
+  public function updateWithCode(Request $request, string $code)
+  {
+    $found = null;
+    foreach ($this->mockData as $item) {
+      if ($item['code'] == $code) {
+        $found = $item;
+      }
+    }
+
+    if (!$found) {
+      return response()->json(null, 404);
+    }
+
+    $found['name'] = $request->name;
+    $found['currency'] = $request->currency;
+    $found['processing_fee_rate'] = $request->processing_fee_rate;
+    $found['explicit_processing_fee'] = $request->explicit_processing_fee;
+
+    return response()->json($found);
+  }
+
+  public function destroyWithCode(string $code)
+  {
+    $found = null;
+    foreach ($this->mockData as $item) {
+      if ($item['code'] == $code) {
+        $found = $item;
+      }
+    }
+
+    if (!$found) {
+      return response()->json(null, 404);
+    }
+  }
 }

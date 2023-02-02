@@ -69,6 +69,7 @@ if (!$role || $role == 'customer') {
 // TODO: public country
 // 
 Route::get('/countries', [CountryController::class, 'list']);
+Route::get('/countries/{code}', [CountryController::class, 'indexWithCode']);
 
 // 
 // TODO: public plans
@@ -104,6 +105,15 @@ if (!$role || $role == 'admin') {
     Route::patch('/config/general', [GeneralConfigurationController::class, 'set'])->middleware('access:config.update');
   });
 }
+
+
+// 
+// TODO: country
+// 
+Route::post('/countries', [CountryController::class, 'create']);
+Route::post('/countries/{code}', [CountryController::class, 'updateWithCode']);
+Route::delete('/countries/{code}', [CountryController::class, 'destroyWithCode']);
+
 
 // 
 // TODO: coupon
