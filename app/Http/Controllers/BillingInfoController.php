@@ -15,7 +15,8 @@ class BillingInfoController extends SimpleController
    */
 
   public $mockData = [
-    "name" => "User1 Test",
+    "first_name" => "User1",
+    "last_name" => "Test",
     "phone" => "123345667",
     "organization" => null,
     "email" => "user1.test@iifuture.com",
