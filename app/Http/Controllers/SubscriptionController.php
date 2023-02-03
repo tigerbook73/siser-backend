@@ -41,7 +41,10 @@ class SubscriptionController extends SimpleController
       "billing_info" => [],
       "plan_info" => [],
       "coupon_info" => [],
-      "processing_fee_info" => [],
+      "processing_fee_info" => [
+        "explicit_processing_fee" => true,
+        "processing_fee_rate" => 2
+      ],
       "currency" => "USD",
       "price" => 10.0,
       "processing_fee" => 0.2,
@@ -62,8 +65,8 @@ class SubscriptionController extends SimpleController
   {
     foreach ($this->mockData as $index => $item) {
       $this->mockData[$index]['billing_info'] = (new BillingInfoController)->mockData;
-      $this->mockData[$index]['plan'] = (new PlanController)->mockData[0];
-      $this->mockData[$index]['coupon'] = (new CouponController)->mockData[0];
+      $this->mockData[$index]['plan_info'] = (new PlanController)->mockData[0];
+      $this->mockData[$index]['coupon_info'] = (new CouponController)->mockData[0];
     }
   }
 
