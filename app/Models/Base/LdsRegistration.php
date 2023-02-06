@@ -6,6 +6,7 @@
 
 namespace App\Models\Base;
 
+use App\Models\LdsInstance;
 use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
@@ -25,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $status
  * 
  * @property User $user
+ * @property LdsInstance $lds_instance
  *
  * @package App\Models\Base
  */
@@ -49,5 +51,10 @@ class LdsRegistration extends Model
   public function user()
   {
     return $this->belongsTo(User::class);
+  }
+
+  public function lds_instance()
+  {
+    return $this->hasOne(LdsInstance::class);
   }
 }

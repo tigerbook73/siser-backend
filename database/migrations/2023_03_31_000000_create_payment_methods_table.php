@@ -13,10 +13,17 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::create('countries', function (Blueprint $table) {
+    Schema::create('payment_methods', function (Blueprint $table) {
       $table->id();
-      $table->string('country_code')->unique();
-      $table->string('country');
+      $table->foreignId('user_id')->unique()->constrained();
+      $table->string('type');
+      $table->json('credit_card')->nullable()->comment('{
+        "last_four_digits": "3119",
+        "brand": "Visa"        
+      }');
+      $table->string('provider_id');
+
+      $table->timestamps();
     });
   }
 
@@ -27,6 +34,5 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::dropIfExists('countries');
   }
 };

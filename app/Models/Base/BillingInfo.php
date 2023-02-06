@@ -6,57 +6,56 @@
 
 namespace App\Models\Base;
 
-use App\Models\LdsInstance;
 use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class LdsPool
+ * Class BillingInfo
  * 
  * @property int $id
  * @property int $user_id
- * @property int $subscription_level
- * @property int $license_count
- * @property int $license_free
+ * @property string $first_name
+ * @property string $last_name
+ * @property string|null $phone
+ * @property string|null $organization
+ * @property string $email
+ * @property array $address
+ * @property array|null $tax_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
  * @property User $user
- * @property Collection|LdsInstance[] $lds_instances
  *
  * @package App\Models\Base
  */
-class LdsPool extends Model
+class BillingInfo extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'lds_pools';
+  protected $table = 'billing_infos';
 
   protected $casts = [
     'user_id' => 'int',
-    'subscription_level' => 'int',
-    'license_count' => 'int',
-    'license_free' => 'int'
+    'address' => 'json',
+    'tax_id' => 'json'
   ];
 
   protected $fillable = [
     'user_id',
-    'subscription_level',
-    'license_count',
-    'license_free'
+    'first_name',
+    'last_name',
+    'phone',
+    'organization',
+    'email',
+    'address',
+    'tax_id'
   ];
 
   public function user()
   {
     return $this->belongsTo(User::class);
-  }
-
-  public function lds_instances()
-  {
-    return $this->hasMany(LdsInstance::class);
   }
 }

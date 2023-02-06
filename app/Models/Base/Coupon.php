@@ -14,42 +14,50 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class Plan
+ * Class Coupon
  * 
  * @property int $id
- * @property string $name
- * @property string $catagory
- * @property string $description
- * @property int $subscription_level
- * @property string|null $url
+ * @property string $code
+ * @property string|null $description
+ * @property float $percentage_off
+ * @property Carbon $start_date
+ * @property Carbon|null $end_date
+ * @property int $period
+ * @property array $condition
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property array $price_list
  * 
  * @property Collection|Subscription[] $subscriptions
  *
  * @package App\Models\Base
  */
-class Plan extends Model
+class Coupon extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'plans';
+  protected $table = 'coupons';
 
   protected $casts = [
-    'subscription_level' => 'int',
-    'price_list' => 'json'
+    'percentage_off' => 'float',
+    'period' => 'int',
+    'condition' => 'json'
+  ];
+
+  protected $dates = [
+    'start_date',
+    'end_date'
   ];
 
   protected $fillable = [
-    'name',
-    'catagory',
+    'code',
     'description',
-    'subscription_level',
-    'url',
-    'status',
-    'price_list'
+    'percentage_off',
+    'start_date',
+    'end_date',
+    'period',
+    'condition',
+    'status'
   ];
 
   public function subscriptions()

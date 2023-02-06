@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 use App\Models\AdminUser;
+use App\Models\BillingInfo;
+use App\Models\Invoice;
 use App\Models\LdsInstance;
 use App\Models\LdsLog;
 use App\Models\LdsPool;
 use App\Models\LdsRegistration;
 use App\Models\Machine;
+use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\SoftwarePackage;
 use App\Models\Subscription;
@@ -84,8 +87,17 @@ class DatabaseSeeder extends Seeder
     /** @var int[] $userIds */
     $userIds = User::where('email', 'like', 'user%.test%')->get()->modelKeys();
 
+    /** @var int[] $billingInfoIds */
+    $billingInfoIds = BillingInfo::whereIn('user_id', $userIds)->get()->modelKeys();
+
+    /** @var int[] $paymentMethodIds */
+    $paymentMethodIds = PaymentMethod::whereIn('user_id', $userIds)->get()->modelKeys();
+
     /** @var int[] $subscriptionIds */
     $subscriptionIds = Subscription::whereIn('user_id', $userIds)->get()->modelKeys();
+
+    /** @var int[] $invoiceIds */
+    $invoiceIds = Invoice::whereIn('user_id', $userIds)->get()->modelKeys();
 
     /** @var int[] $ldsPoolIds */
     $ldsPoolIds = LdsPool::whereIn('user_id', $userIds)->get()->modelKeys();
@@ -114,7 +126,10 @@ class DatabaseSeeder extends Seeder
     LdsRegistration::whereIn('id', $ldsRegistrationIds)->delete();
     Machine::whereIn('id', $machineIds)->delete();
     LdsPool::whereIn('id', $ldsPoolIds)->delete();
+    Invoice::whereIn('id', $invoiceIds)->delete();
     Subscription::whereIn('id', $subscriptionIds)->delete();
+    BillingInfo::whereIn('id', $billingInfoIds)->delete();
+    PaymentMethod::whereIn('id', $paymentMethodIds)->delete();
     User::whereIn('id', $userIds)->delete();
 
     // remove test softare packages

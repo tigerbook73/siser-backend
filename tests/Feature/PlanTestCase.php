@@ -23,14 +23,11 @@ class PlanTestCase extends ApiTestCase
       'catagory',
       'description',
       'subscription_level',
-      'contract_term',
       'price' => [
-        '*' => [
-          'currency',
-          'price',
-        ]
+        'country',
+        'currency',
+        'price',
       ],
-      'auto_renew',
       'url',
       'status',
     ];

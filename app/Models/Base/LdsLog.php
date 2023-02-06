@@ -6,6 +6,7 @@
 
 namespace App\Models\Base;
 
+use App\Models\LdsInstance;
 use App\Models\TraitModel;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $text
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * 
+ * @property LdsInstance $lds_instance
  *
  * @package App\Models\Base
  */
@@ -40,4 +43,9 @@ class LdsLog extends Model
     'result',
     'text'
   ];
+
+  public function lds_instance()
+  {
+    return $this->belongsTo(LdsInstance::class);
+  }
 }

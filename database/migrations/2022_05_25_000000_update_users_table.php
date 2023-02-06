@@ -20,16 +20,16 @@ return new class extends Migration
     });
 
     Schema::table('users', function (Blueprint $table) {
-      $table->string("cognito_id")->nullable()->comment('only for end users');
-      $table->string("given_name")->nullable()->comment('only for end users');
-      $table->string("family_name")->nullable()->comment('only for end users');
-      $table->string("full_name");
-      $table->string("phone_number")->nullable()->comment('only for end users');
-      $table->string("country_code")->nullable()->comment('only for end users');
-      $table->string("language_code")->nullable()->comment('only for end users');
-      $table->unsignedInteger("subscription_level")->nullable()->comment('only for end users');
-      $table->unsignedInteger("license_count")->nullable()->comment('only for end users');
-      $table->json("roles")->nullable()->comment('e.g ["admin", "siser-backend", "support"]')->comment('only for admin users');
+      $table->string('cognito_id')->nullable()->comment('only for end users');
+      $table->string('given_name')->nullable()->comment('only for end users');
+      $table->string('family_name')->nullable()->comment('only for end users');
+      $table->string('full_name');
+      $table->string('phone_number')->nullable()->comment('only for end users');
+      $table->string('country_code')->nullable()->comment('only for end users');
+      $table->string('language_code')->nullable()->comment('only for end users');
+      $table->unsignedInteger('subscription_level')->nullable()->comment('only for end users');
+      $table->unsignedInteger('license_count')->nullable()->comment('only for end users');
+      $table->json('roles')->nullable()->comment('e.g ["admin", "siser-backend", "support"]')->comment('only for admin users');
       $table->timestamps();
     });
 

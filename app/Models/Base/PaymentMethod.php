@@ -6,57 +6,47 @@
 
 namespace App\Models\Base;
 
-use App\Models\LdsInstance;
 use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class LdsPool
+ * Class PaymentMethod
  * 
  * @property int $id
  * @property int $user_id
- * @property int $subscription_level
- * @property int $license_count
- * @property int $license_free
+ * @property string $type
+ * @property array|null $credit_card
+ * @property string $provider_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
  * @property User $user
- * @property Collection|LdsInstance[] $lds_instances
  *
  * @package App\Models\Base
  */
-class LdsPool extends Model
+class PaymentMethod extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'lds_pools';
+  protected $table = 'payment_methods';
 
   protected $casts = [
     'user_id' => 'int',
-    'subscription_level' => 'int',
-    'license_count' => 'int',
-    'license_free' => 'int'
+    'credit_card' => 'json'
   ];
 
   protected $fillable = [
     'user_id',
-    'subscription_level',
-    'license_count',
-    'license_free'
+    'type',
+    'credit_card',
+    'provider_id'
   ];
 
   public function user()
   {
     return $this->belongsTo(User::class);
-  }
-
-  public function lds_instances()
-  {
-    return $this->hasMany(LdsInstance::class);
   }
 }

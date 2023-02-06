@@ -22,20 +22,17 @@ class UserTestCase extends ApiTestCase
     "id",
     "user_id",
     "plan_id",
-    "plan" => [
+    "plan_info" => [
       "id",
       "name",
       "catagory",
       "description",
       "subscription_level",
-      "contract_term",
       "price" => [
-        "*" => [
-          "price",
-          "currency",
-        ],
+        "country",
+        "currency",
+        "price",
       ],
-      "auto_renew",
     ],
     "currency",
     "price",

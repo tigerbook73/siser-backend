@@ -37,6 +37,7 @@ class SubscriptionController extends SimpleController
     [
       "id" => 1,
       "user_id" => 1,
+      "plan_id" => 1,
       "coupon_id" => 1,
       "billing_info" => [],
       "plan_info" => [],
@@ -75,7 +76,7 @@ class SubscriptionController extends SimpleController
     $this->initMockData();
 
     return response()->json([
-      "data" => $this->mockData[0]
+      "data" => $this->mockData
     ]);
   }
 
@@ -84,7 +85,7 @@ class SubscriptionController extends SimpleController
     $this->initMockData();
 
     return response()->json([
-      "data" => $this->mockData[0]
+      "data" => $this->mockData
     ]);
   }
 

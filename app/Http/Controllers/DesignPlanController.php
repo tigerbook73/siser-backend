@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DesignPlan;
+use App\Models\Plan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DesignPlanController extends SimpleController
 {
-  protected string $modelClass = DesignPlan::class;
+  protected string $modelClass = Plan::class;
 
 
   /**

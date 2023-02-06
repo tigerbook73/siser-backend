@@ -6,9 +6,12 @@
 
 namespace App\Models\Base;
 
+use App\Models\LdsLog;
 use App\Models\LdsPool;
+use App\Models\LdsRegistration;
 use App\Models\TraitModel;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,6 +32,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $status
  * 
  * @property LdsPool $lds_pool
+ * @property LdsRegistration $lds_registration
+ * @property Collection|LdsLog[] $lds_logs
  *
  * @package App\Models\Base
  */
@@ -65,5 +70,15 @@ class LdsInstance extends Model
   public function lds_pool()
   {
     return $this->belongsTo(LdsPool::class);
+  }
+
+  public function lds_registration()
+  {
+    return $this->belongsTo(LdsRegistration::class);
+  }
+
+  public function lds_logs()
+  {
+    return $this->hasMany(LdsLog::class);
   }
 }

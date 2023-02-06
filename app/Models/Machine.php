@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Machine as BaseMachine;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class Machine extends BaseMachine
@@ -49,15 +50,7 @@ class Machine extends BaseMachine
       ->whereRelation('plan', 'catagory', 'machine')
       ->count() <= 0
     ) {
-      Subscription::create([
-        'user_id'     => $user->id,
-        'plan_id'     => config('siser.plan.default_machine_plan'),
-        'currency'    => 'USD',
-        'price'       => 0.0,
-        'start_date'  => today(),
-        'end_date'    => null,
-        'status'      => 'active',
-      ]);
+      Subscription::createBasicMachineSubscription($user);
 
       $user->subscription_level = 1;
       $user->license_count = GeneralConfiguration::getMachineLicenseUnit();
