@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AdminUser;
 use Tests\ApiTestCase;
+use Tests\Models\AdminUser as ModelsAdminUser;
 
 class AdminUserTestCase extends ApiTestCase
 {
@@ -16,13 +17,7 @@ class AdminUserTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = [
-      "id",
-      "name",
-      "full_name",
-      "email",
-      "roles",
-    ];
+    $this->modelSchema = array_keys((array)new ModelsAdminUser);
 
     $this->modelCreate = [
       "name"      =>  "admin2",

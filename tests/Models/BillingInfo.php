@@ -1,0 +1,33 @@
+<?php
+/**
+ * BillingInfo
+ */
+namespace Tests\Models;
+
+/**
+ * BillingInfo
+ */
+class BillingInfo {
+
+    /** @var string $first_name */
+    public $first_name = "";
+
+    /** @var string $last_name */
+    public $last_name = "";
+
+    /** @var string $phone */
+    public $phone = "";
+
+    /** @var string $organization */
+    public $organization = "";
+
+    /** @var string $email */
+    public $email = "";
+
+    /** @var \Tests\Models\Address $address */
+    public $address;
+
+    /** @var \Tests\Models\BillingInfoTaxId $tax_id */
+    public $tax_id;
+
+}

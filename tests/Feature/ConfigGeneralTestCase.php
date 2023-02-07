@@ -6,6 +6,7 @@ use App\Models\GeneralConfiguration;
 use App\Models\Plan;
 use stdClass;
 use Tests\ApiTestCase;
+use Tests\Models\GeneralConfiguration as ModelsGeneralConfiguration;
 
 class ConfigGeneralTestCase extends ApiTestCase
 {
@@ -18,9 +19,7 @@ class ConfigGeneralTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = [
-      "machine_license_unit",
-    ];
+    $this->modelSchema = array_keys((array)new ModelsGeneralConfiguration);
 
     $this->modelCreate = [];
 

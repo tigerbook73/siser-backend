@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Machine;
 use App\Models\User;
 use Tests\ApiTestCase;
+use Tests\Models\Machine as ModelsMachine;
 
 class MachineTestCase extends ApiTestCase
 {
@@ -18,13 +19,7 @@ class MachineTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = [
-      'id',
-      'serial_no',
-      'model',
-      'nickname',
-      'user_id',
-    ];
+    $this->modelSchema = array_keys((array)new ModelsMachine);;
 
     $this->modelCreate = [
       'serial_no' => "5555-6666-7777-9999",

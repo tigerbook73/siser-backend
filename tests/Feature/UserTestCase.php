@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Tests\ApiTestCase;
+use Tests\Models\User as ModelsUser;
 
 class UserTestCase extends ApiTestCase
 {
@@ -45,20 +46,7 @@ class UserTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = [
-      "id",
-      "name",
-      "given_name",
-      "family_name",
-      "full_name",
-      "email",
-      "phone_number",
-      "cognito_id",
-      "country_code",
-      "language_code",
-      "subscription_level",
-      "license_count",
-    ];
+    $this->modelSchema = array_keys((array)new ModelsUser);;
 
     $this->modelCreate = [];
     $this->modelUpdate = [];

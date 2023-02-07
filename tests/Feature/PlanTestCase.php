@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Plan;
 use Tests\ApiTestCase;
+use Tests\Models\Plan as ModelsPlan;
+use Tests\Models\Price as ModelsPrice;
 
 class PlanTestCase extends ApiTestCase
 {
@@ -17,20 +19,8 @@ class PlanTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = [
-      'id',
-      'name',
-      'catagory',
-      'description',
-      'subscription_level',
-      'price' => [
-        'country',
-        'currency',
-        'price',
-      ],
-      'url',
-      'status',
-    ];
+    $this->modelSchema = array_keys((array)new ModelsPlan);
+    $this->modelSchema['price'] = array_keys((array)new ModelsPrice);
 
     $this->modelCreate = [];
 

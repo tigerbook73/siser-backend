@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\SoftwarePackage;
 use Tests\ApiTestCase;
+use Tests\Models\SoftwarePackage as ModelsSoftwarePackage;
 
 class SoftwarePackageTestCase extends ApiTestCase
 {
@@ -17,22 +18,7 @@ class SoftwarePackageTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = [
-      "id",
-      "name",
-      "platform",
-      "version",
-      "description",
-      "version_type",
-      "released_date",
-      "release_notes",
-      "filename",
-      "is_latest",
-      "url",
-      "file_hash",
-      "force_update",
-      "status",
-    ];
+    $this->modelSchema = array_keys((array)new ModelsSoftwarePackage);;
 
     $this->modelCreate = [
       "name"                => "Test",
