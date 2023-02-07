@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Country as BaseCountry;
+use Illuminate\Database\Eloquent\Builder;
 
 class Country extends BaseCountry
 {
@@ -15,4 +16,9 @@ class Country extends BaseCountry
     'created_at'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
+
+  public function scopeCode(Builder $query, string $code)
+  {
+    return $query->where('code', $code);
+  }
 }

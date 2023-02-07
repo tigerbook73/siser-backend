@@ -111,7 +111,7 @@ if (!$role || $role == 'admin') {
 // TODO: country
 // 
 Route::post('/countries', [CountryController::class, 'create']);
-Route::post('/countries/{code}', [CountryController::class, 'updateWithCode']);
+Route::patch('/countries/{code}', [CountryController::class, 'updateWithCode']);
 Route::delete('/countries/{code}', [CountryController::class, 'destroyWithCode']);
 
 

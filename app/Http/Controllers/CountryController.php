@@ -4,102 +4,86 @@ namespace App\Http\Controllers;
 
 use App\Models\Country;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CountryController extends SimpleController
 {
   protected string $modelClass = Country::class;
 
 
-  /**
-   * TODO: MOCKUP
-   */
-
-  public $mockData = [
-    [
-      "name" => "Australia",
-      "code" => "AU",
-      "currency" => "AUD",
-      "processing_fee_rate" => 2.0,
-      "explicit_processing_fee" => true,
-    ],
-    [
-      "name" => "The United State of America",
-      "code" => "US",
-      "currency" => "USD",
-      "processing_fee_rate" => 2.0,
-      "explicit_processing_fee" => true,
-    ],
-  ];
-
-  public function list(Request $request)
+  protected function getListRules()
   {
-    return response()->json([
-      "data" => $this->mockData
-    ]);
+    return [
+      'code'      => ['filled'],
+      'name'      => ['filled'],
+      'currency'  => ['filled'],
+    ];
+  }
+
+  protected function getCreateRules()
+  {
+    return [
+      'code'                    => ['required', 'string', 'size:2', 'unique:countries'],
+      'name'                    => ['required', 'string', 'max:255'],
+      'currency'                => ['required', 'string', 'size:3'],
+      'processing_fee_rate'     => ['required', 'numeric', 'between:0,50'],
+      'explicit_processing_fee' => ['required', 'boolean'],
+    ];
+  }
+
+  protected function getUpdateRules()
+  {
+    return [
+      'name'                    => ['filled', 'string', 'max:255'],
+      'currency'                => ['filled', 'string', 'size:3'],
+      'processing_fee_rate'     => ['filled', 'numeric', 'between:0,50'],
+      'explicit_processing_fee' => ['filled', 'boolean'],
+    ];
   }
 
   public function indexWithCode(string $code)
   {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['code'] == $code) {
-        $found = $item;
-      }
-    }
+    $this->validateUser();
 
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-    return response()->json($found);
-  }
-
-  public function create(Request $request)
-  {
-    if (
-      !$request->code ||
-      !$request->name ||
-      !$request->currency ||
-      !$request->processing_fee_rate ||
-      !$request->explicit_processing_fee
-    ) {
-      return response()->json(['message' => 'invalid input'], 400);
-    }
-
-    return response()->json($this->mockData[1]);
+    $country = $this->baseQuery()
+      ->code($code)
+      ->firstOrFail();
+    return $this->transformSingleResource($country);
   }
 
   public function updateWithCode(Request $request, string $code)
   {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['code'] == $code) {
-        $found = $item;
+    $this->validateUser();
+
+    /** @var Country $country */
+    $country = Country::code($code)->firstOrFail();
+    $inputs = $this->validateUpdate($request, $country->id);
+    if (empty($inputs)) {
+      abort(400, 'input data can not be empty.');
+    }
+
+    // validate and update attributers
+    $updatable = $this->modelClass::getUpdatable($this->userType);
+    foreach ($inputs as $attr => $value) {
+      if (!in_array($attr, $updatable)) {
+        abort(400, 'attribute: [' . $attr . '] is not updatable.');
       }
+      $country->$attr = $value;
     }
 
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-
-    $found['name'] = $request->name;
-    $found['currency'] = $request->currency;
-    $found['processing_fee_rate'] = $request->processing_fee_rate;
-    $found['explicit_processing_fee'] = $request->explicit_processing_fee;
-
-    return response()->json($found);
+    DB::transaction(
+      fn () => $country->save()
+    );
+    return $this->transformSingleResource($country->unsetRelations());
   }
 
   public function destroyWithCode(string $code)
   {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['code'] == $code) {
-        $found = $item;
-      }
-    }
+    $this->validateUser();
 
-    if (!$found) {
-      return response()->json(null, 404);
-    }
+    $country = Country::code($code)->firstOrFail();
+    return DB::transaction(
+      fn () => $country->delete()
+    );
   }
 }

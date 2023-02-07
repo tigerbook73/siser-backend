@@ -14,7 +14,7 @@ return [
     */
 
   'defaults' => [
-    'guard' => 'api',
+    'guard' => env('CONTAINER_ROLE') == 'admin' ? 'admin' : 'api',
     'passwords' => 'users',
   ],
 

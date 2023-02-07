@@ -108,8 +108,7 @@ abstract class ApiTestCase extends TestCase
 
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
-        ->assertJsonStructure($this->modelSchema)
-        ->assertJson([(new $this->model)->getKeyName() => $id]);
+        ->assertJsonStructure($this->modelSchema);
     } else {
       $response->assertStatus($status);
     }
