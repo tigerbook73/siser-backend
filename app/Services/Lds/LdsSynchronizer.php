@@ -94,19 +94,21 @@ class LdsSynchronizer implements ShouldQueue
   {
     /** @var LdsInstance $instance */
     $instance = LdsInstance::where('lds_registration_id', $this->ldsRegistration->id)->first() ?? new LdsInstance();
-    $pool_id = $instance->lds_pool_id ?? LdsPool::where('user_id', $this->ldsRegistration->user_id)->first()->id;
-    $instance->fill([
-      'lds_pool_id'         => $pool_id,
-      'lds_registration_id' => $this->ldsRegistration->id,
-      'user_id'             => $this->ldsRegistration->user_id,
-      'device_id'           => $this->ldsRegistration->device_id,
-      'user_code'           => $this->ldsRegistration->user_code,
-      'registered_at'       => $this->ldsRegistration->created_at,
-      'online'              => false,
-      'expires_at'          => 0,
-      'status'              => 'active',
-    ]);
-    $instance->save();
+    if (!$instance->online) {
+      $pool_id = $instance->lds_pool_id ?? LdsPool::where('user_id', $this->ldsRegistration->user_id)->first()->id;
+      $instance->fill([
+        'lds_pool_id'         => $pool_id,
+        'lds_registration_id' => $this->ldsRegistration->id,
+        'user_id'             => $this->ldsRegistration->user_id,
+        'device_id'           => $this->ldsRegistration->device_id,
+        'user_code'           => $this->ldsRegistration->user_code,
+        'registered_at'       => $this->ldsRegistration->created_at,
+        'online'              => false,
+        'expires_at'          => 0,
+        'status'              => 'active',
+      ]);
+      $instance->save();
+    }
 
     LdsLog::log($instance->id, 'reg', 'ok', "user:$instance->user_id device:$instance->device_id");
   }
