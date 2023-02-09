@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Machine;
+use App\Models\StatisticRecord;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -34,5 +35,12 @@ class ReportController extends Controller
     ];
 
     return response()->json($summary);
+  }
+
+  public function listStaticsRecord(Request $request)
+  {
+    StatisticRecord::generateRecords();
+    $limit = $request->limit > 100 ? 100 : $request->limit;
+    return StatisticRecord::orderBy('date', 'desc')->limit($limit)->get();
   }
 }
