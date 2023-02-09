@@ -149,7 +149,7 @@ if (!$role || $role == 'admin') {
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/x-ray/summary', [ReportController::class, 'summary'])->middleware('access:x-ray.summary');
-    Route::post('/report/subscriptions', [ReportController::class, 'subscriptions']);
+    Route::get('/x-ray/statistic-records', [ReportController::class, 'listStaticsRecord'])->middleware('access:x-ray.summary');
   });
 }
 
