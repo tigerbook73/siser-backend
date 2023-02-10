@@ -30,7 +30,7 @@ class DesignPlan {
     /** @var string $status */
     public $status = "";
 
-    /** @var \Tests\Models\DesignPrice[] $price_list */
+    /** @var \Tests\Models\Price[] $price_list */
     public $price_list = [];
 
 }
