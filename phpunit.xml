@@ -24,6 +24,7 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
+        <env name="CONTAINER_ROLE" value=""/>
         <!-- <env name="DB_DATABASE" value="testing"/> -->
         <env name="LOG_CHANNEL" value="null"/>
         <env name="MAIL_MAILER" value="array"/>
