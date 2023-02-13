@@ -21,11 +21,12 @@ class PlanTestCase extends ApiTestCase
 
     $this->modelSchema = array_keys((array)new ModelsPlan);
     $this->modelSchema['price'] = array_keys((array)new ModelsPrice);
+    unset($this->modelSchema['price_list']);
 
     $this->modelCreate = [];
 
     $this->modelUpdate = [];
 
-    $this->object = Plan::first();
+    $this->object = Plan::public()->first();
   }
 }

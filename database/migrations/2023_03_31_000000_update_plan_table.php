@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,8 @@ return new class extends Migration
           "price": 9.98
         }
       ]');
+
+      $table->unique('name');
     });
 
     DB::table('plans')->upsert(
@@ -45,6 +48,8 @@ return new class extends Migration
           ]),
           'url'                 => '',
           'status'              => 'active',
+          'created_at'          => new Carbon(),
+          'updated_at'          => new Carbon(),
         ]
       ],
       ['id']
@@ -70,6 +75,8 @@ return new class extends Migration
         ]),
         'url'                 => '',
         'status'              => 'active',
+        'created_at'          => new Carbon(),
+        'updated_at'          => new Carbon(),
       ]
     ]);
   }

@@ -6,7 +6,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingInfoController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CouponController;
-use App\Http\Controllers\DesignPlanController;
 use App\Http\Controllers\GeneralConfigurationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LdsRegistrationController;
@@ -74,8 +73,8 @@ Route::get('/countries/{code}', [CountryController::class, 'indexWithCode']);
 // 
 // TODO: public plans
 // 
-Route::get('/plans', [PlanController::class, 'list']);
-Route::get('/plans/{id}', [PlanController::class, 'index']);
+Route::get('/plans', [PlanController::class, 'listPlan']);
+Route::get('/plans/{id}', [PlanController::class, 'indexPlan']);
 
 //
 // TODO: public coupon
@@ -106,39 +105,45 @@ if (!$role || $role == 'admin') {
   });
 }
 
+// 
+// country
+// 
+if (!$role || $role == 'admin') {
+  Route::post('/countries', [CountryController::class, 'create'])->middleware('access:country.create');
+  Route::patch('/countries/{code}', [CountryController::class, 'updateWithCode'])->middleware('access:country.update');
+  Route::delete('/countries/{code}', [CountryController::class, 'destroyWithCode'])->middleware('access:country.delete');
+}
 
-// 
-// TODO: country
-// 
-Route::post('/countries', [CountryController::class, 'create']);
-Route::patch('/countries/{code}', [CountryController::class, 'updateWithCode']);
-Route::delete('/countries/{code}', [CountryController::class, 'destroyWithCode']);
+
 
 
 // 
 // TODO: coupon
 // 
-Route::get('/coupons', [CouponController::class, 'list']);
-Route::post('/coupons', [CouponController::class, 'create']);
-Route::get('/coupons/{id}', [CouponController::class, 'index']);
-Route::post('/coupons/{id}', [CouponController::class, 'update']);
-Route::delete('/coupons/{id}', [CouponController::class, 'destroy']);
-Route::post('/coupons/{id}/activate', [CouponController::class, 'activate']);
-Route::post('/coupons/{id}/deactivate', [CouponController::class, 'deactivate']);
-Route::get('/coupons/{id}/history-records', [CouponController::class, 'history']);
+Route::get('/coupons', [CouponController::class, 'list'])->middleware('access:coupon.list');
+Route::post('/coupons', [CouponController::class, 'create'])->middleware('access:decoupon.create');
+Route::get('/coupons/{id}', [CouponController::class, 'index'])->middleware('access:coupon.get');
+Route::patch('/coupons/{id}', [CouponController::class, 'update'])->middleware('access:decoupon.update');
+Route::delete('/coupons/{id}', [CouponController::class, 'destroy'])->middleware('access:decoupon.delete');
+Route::post('/coupons/{id}/activate', [CouponController::class, 'activate'])->middleware('access:decoupon.update');
+Route::post('/coupons/{id}/deactivate', [CouponController::class, 'deactivate'])->middleware('access:decoupon.update');
+Route::get('/coupons/{id}/history-records', [CouponController::class, 'history'])->middleware('access:coupon.list');
 
 //
-// TODO: design plan
+// design plan
 //
-Route::get('/design-plans', [DesignPlanController::class, 'list']);
-Route::post('/design-plans', [DesignPlanController::class, 'create']);
-Route::get('/design-plans/{id}', [DesignPlanController::class, 'index']);
-Route::post('/design-plans/{id}', [DesignPlanController::class, 'update']);
-Route::delete('/design-plans/{id}', [DesignPlanController::class, 'destroy']);
-Route::post('/design-plans/{id}/activate', [DesignPlanController::class, 'activate']);
-Route::post('/design-plans/{id}/deactivate', [DesignPlanController::class, 'deactivate']);
-Route::get('/design-plans/{id}/history-records', [DesignPlanController::class, 'history']);
+if (!$role || $role == 'admin') {
+  Route::get('/design-plans', [PlanController::class, 'list'])->middleware('access:design-plan.list');
+  Route::post('/design-plans', [PlanController::class, 'create'])->middleware('access:design-plan.create');
+  Route::get('/design-plans/{id}', [PlanController::class, 'index'])->middleware('access:design-plan.get');
+  Route::patch('/design-plans/{id}', [PlanController::class, 'update'])->middleware('access:design-plan.update');
+  Route::delete('/design-plans/{id}', [PlanController::class, 'destroy'])->middleware('access:design-plan.delete');
+  Route::post('/design-plans/{id}/activate', [PlanController::class, 'activate'])->middleware('access:design-plan.update');
+  Route::post('/design-plans/{id}/deactivate', [PlanController::class, 'deactivate'])->middleware('access:design-plan.update');
 
+  // TODO: 
+  Route::get('/design-plans/{id}/history-records', [PlanController::class, 'history'])->middleware('access:design-plan.list');
+}
 // 
 // TODO: invoice
 // 

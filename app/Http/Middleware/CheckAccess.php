@@ -16,6 +16,23 @@ const resourceRoleMapping = [
   'admin-user.update' => [],
   'admin-user.delete' => [],
 
+  'country.list' => [],
+  'country.create' => [],
+  'country.update' => [],
+  'country.delete' => [],
+
+  'coupon.list' => [],
+  'coupon.get' => [],
+  'coupon.create' => [],
+  'coupon.update' => [],
+  'coupon.delete' => [],
+
+  'design-plan.list' => [],
+  'design-plan.get' => [],
+  'design-plan.create' => [],
+  'design-plan.update' => [],
+  'design-plan.delete' => [],
+
   'config.update' => [],
 
   'machine.create' => ['siser-backend' => 1],

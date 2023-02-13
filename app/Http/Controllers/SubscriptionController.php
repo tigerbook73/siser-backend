@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -66,7 +67,7 @@ class SubscriptionController extends SimpleController
   {
     foreach ($this->mockData as $index => $item) {
       $this->mockData[$index]['billing_info'] = (new BillingInfoController)->mockData;
-      $this->mockData[$index]['plan_info'] = (new PlanController)->mockData[0];
+      $this->mockData[$index]['plan_info'] = Plan::find(2)->getCustomerPlan('US');
       $this->mockData[$index]['coupon_info'] = (new CouponController)->mockData[0];
     }
   }

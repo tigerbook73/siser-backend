@@ -23,7 +23,7 @@ class StatisticRecord extends BaseStatisticRecord
       $record = [];
       $record['user'] = User::whereDate('created_at', '<=', $date)->count();
       $record['machine'] = Machine::whereDate('created_at', '<=', $date)->count();
-      $record['licensed_user'] = Machine::whereDate('created_at', '<=', $date)
+      $record['licensed_user'] = Machine::whereDate('created_at', '<=', $date)  // @phpstan-ignore-line
         ->selectRaw('count(distinct user_id) as count')
         ->first()
         ->count;

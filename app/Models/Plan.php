@@ -4,6 +4,12 @@ namespace App\Models;
 
 use App\Models\Base\Plan as BasePlan;
 
+/**
+ * Class Plan
+ * 
+ * @property array $price
+ * 
+ */
 class Plan extends BasePlan
 {
   static protected $attributesOption = [
@@ -14,16 +20,17 @@ class Plan extends BasePlan
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'url'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'price'               => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_0_1],
+    'price'               => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_0_1],
     'price_list'          => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
-    'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
 
 
-  public function scopeActive($query)
+  public function scopePublic($query)
   {
-    return $query->where('status', 'active');
+    return $query->where('subscription_level', '>', 1)
+      ->where('status', 'active');
   }
 
   public function getCustomerPlan(string $country)
