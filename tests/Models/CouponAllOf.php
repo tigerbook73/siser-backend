@@ -9,7 +9,7 @@ namespace Tests\Models;
  */
 class CouponAllOf {
 
-    /** @var int $id */
-    public $id = 0;
+    /** @var string $status */
+    public $status = "";
 
 }
