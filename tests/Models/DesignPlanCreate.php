@@ -1,13 +1,13 @@
 <?php
 /**
- * PlanBasic
+ * DesignPlanCreate
  */
 namespace Tests\Models;
 
 /**
- * PlanBasic
+ * DesignPlanCreate
  */
-class PlanBasic {
+class DesignPlanCreate {
 
     /** @var string $name */
     public $name = "";
@@ -23,5 +23,8 @@ class PlanBasic {
 
     /** @var string $url */
     public $url = "";
+
+    /** @var \Tests\Models\Price[] $price_list */
+    public $price_list = [];
 
 }

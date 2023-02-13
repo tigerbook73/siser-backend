@@ -27,10 +27,10 @@ class DesignPlan {
     /** @var string $url */
     public $url = "";
 
-    /** @var string $status */
-    public $status = "";
-
     /** @var \Tests\Models\Price[] $price_list */
     public $price_list = [];
+
+    /** @var string $status */
+    public $status = "";
 
 }

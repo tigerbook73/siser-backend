@@ -27,9 +27,6 @@ class Plan {
     /** @var string $url */
     public $url = "";
 
-    /** @var string $status */
-    public $status = "";
-
     /** @var \Tests\Models\Price $price */
     public $price;
 

@@ -9,7 +9,7 @@ namespace Tests\Models;
  */
 class DesignPlanAllOf {
 
-    /** @var \Tests\Models\Price[] $price_list */
-    public $price_list = [];
+    /** @var string $status */
+    public $status = "";
 
 }
