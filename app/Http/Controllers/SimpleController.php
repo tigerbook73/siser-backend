@@ -238,7 +238,7 @@ class SimpleController extends Controller
    */
   protected function validateUser()
   {
-    $this->user = auth()->user();
+    $this->user = auth('api')->user() ?: auth('admin')->user();
     $this->userType = $this->user ? ($this->user->cognito_id ? 'customer' : 'admin') : 'customer';
   }
 
