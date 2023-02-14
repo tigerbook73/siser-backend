@@ -3,190 +3,147 @@
 namespace App\Http\Controllers;
 
 use App\Models\Coupon;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class CouponController extends SimpleController
 {
   protected string $modelClass = Coupon::class;
 
+  protected function getListRules()
+  {
+    return [
+      'code'        => ['filled'],
+    ];
+  }
+
+  protected function getCreateRules()
+  {
+    return [
+      'code'                            => ['required', 'string', 'max:255', 'unique:coupons'],
+      'description'                     => ['string', 'max:255'],
+      'condition'                       => ['required', 'array'],
+      'condition.new_customer_only'     => ['required', 'boolean'],
+      'condition.new_subscription_only' => ['required', 'boolean'],
+      'condition.upgrade_only'          => ['required', 'boolean'],
+      'percentage_off'                  => ['required', 'decimal:0,2', 'between:0,100'],
+      'period'                          => ['required', 'integer', 'between:0,12'],
+      'start_date'                      => ['required', 'date'],
+      'end_date'                        => ['required', 'after:start_date', 'after:today'],
+    ];
+  }
+
+  protected function getUpdateRules()
+  {
+    return [
+      'code'                            => ['filled', 'string', 'max:255', Rule::unique('coupons')->ignore(request("id"))],
+      'description'                     => ['string', 'max:255'],
+      'condition'                       => ['filled', 'array'],
+      'condition.new_customer_only'     => ['required_with:condition', 'boolean'],
+      'condition.new_subscription_only' => ['required_with:condition', 'boolean'],
+      'condition.upgrade_only'          => ['required_with:condition', 'boolean'],
+      'percentage_off'                  => ['filled', 'decimal:0,2', 'between:0,100'],
+      'period'                          => ['filled', 'integer', 'between:0,12'],
+      'start_date'                      => ['filled', 'date'],
+      'end_date'                        => ['filled', 'date', 'after:start_date', 'after:today'],
+    ];
+  }
+
+  protected function getUpdateRulesForDraft()
+  {
+    return $this->getUpdateRules();
+  }
+
+  protected function getUpdateRulesForActive()
+  {
+    return [
+      'description'                     => ['string', 'max:255'],
+      'end_date'                        => ['filled', 'date', 'after:start_date'],
+    ];
+  }
 
   /**
-   * TODO: MOCKUP
+   * GET /coupons
    */
+  // default
 
-  public $mockData = [
-    [
-      "id" => 1,
-      "code" => "code20",
-      "description" => "20% off for the first 2 months",
-      "condition" => [
-        "new_customer_only" => true,
-        "new_subscription_only" => true,
-        "upgrade_only" => true,
-      ],
-      "percentage_off" => 20,
-      "period" => 2,
-      "start_date" => "2023-01-01",
-      "end_date" => "2023-06-30",
-      "status" => "active",
-    ],
-    [
-      "id" => 2,
-      "code" => "code50",
-      "description" => "50% off for the first month",
-      "condition" => [
-        "new_customer_only" => true,
-        "new_subscription_only" => true,
-        "upgrade_only" => true,
-      ],
-      "percentage_off" => 50,
-      "period" => 1,
-      "start_date" => "2023-01-01",
-      "end_date" => "2023-06-30",
-      "status" => "active",
-    ]
-  ];
+  /**
+   * GET /coupons/{id}
+   */
+  // default
 
-  public function check(Request $request)
-  {
-    if (
-      !$request->code ||
-      !$request->plan_id ||
-      !$request->country
-    ) {
-      return response()->json(["message" => "invalid ..."], 400);
-    }
-
-    foreach ($this->mockData as  $coupon) {
-      if ($coupon["code"] == $request->code) {
-        return response()->json($coupon);
-      }
-    }
-
-    return response()->json(["message" => "Not found"], 404);
-  }
-
-  public function list(Request $request)
-  {
-    return response()->json([
-      "data" => $this->mockData
-    ]);
-  }
-
-  public function index(int $id)
-  {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
-      }
-    }
-
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-    return response()->json($found);
-  }
-
+  /**
+   * post /coupons
+   */
   public function create(Request $request)
   {
-    if (
-      !$request->code ||
-      !$request->condition ||
-      !$request->start_date
-    ) {
-      return response()->json(['message' => 'invalid input'], 400);
-    }
+    $this->validateUser();
+    $inputs = $this->validateCreate($request);
 
-    return response()->json($this->mockData[1]);
+    $coupon = new Coupon($inputs);
+    $coupon->status = 'draft';
+    DB::transaction(
+      fn () => $coupon->save()
+    );
+    return  response()->json($this->transformSingleResource($coupon), 201);
   }
 
-  public function destroy(int $id)
-  {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
-      }
-    }
-
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-  }
-
+  /**
+   * patch /coupon/{id}
+   */
   public function update(Request $request, int $id)
   {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
+    $this->validateUser();
+
+    /** @var Coupon $coupon */
+    $coupon = $this->baseQuery()->findOrFail($id);
+
+    $inputs = $request->all();
+    if ($coupon->status === 'draft') {
+      $rules = $this->getUpdateRulesForDraft();
+    } else if ($coupon->status === 'active') {
+      $rules = $this->getUpdateRulesForActive();
+    } else {
+      return response()->json(['message' => "Coupon in {$coupon->status} status can not be updated"], 400);
+    }
+    $inputs = $this->validateRules($inputs, $rules);
+    if (empty($inputs)) {
+      abort(400, 'input data can not be empty.');
+    }
+
+    // validate and update attributers
+    $updatable = $this->modelClass::getUpdatable($this->userType);
+    foreach ($inputs as $attr => $value) {
+      if (!in_array($attr, $updatable)) {
+        abort(400, 'attribute: [' . $attr . '] is not updatable.');
       }
+      $coupon->$attr = $value;
     }
 
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-
-    $found['description'] = $request->description;
-    $found['end_date'] = $request->end_date;
-
-    return response()->json($found);
+    DB::transaction(
+      fn () => $coupon->save()
+      // TODO: update all active subscriptions
+    );
+    return $this->transformSingleResource($coupon->unsetRelations());
   }
 
-  public function activate(Request $request, int $id)
+  /**
+   * delete /coupons/{id}
+   */
+  public function destroy(int $id)
   {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
-      }
+    $this->validateUser();
+
+    /** @var Coupon $coupon */
+    $coupon = $this->baseQuery()->findOrFail($id);
+    if ($coupon->status !== "draft") {
+      return response()->json(['message' => 'Only draft coupon can be deleted'], 400);
     }
 
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-
-    $found['status'] = 'active';
-    return response()->json($found);
-  }
-
-  public function deactivate(Request $request, int $id)
-  {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
-      }
-    }
-
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-
-    $found['status'] = 'inactive';
-    return response()->json($found);
-  }
-
-  public function history(Request $request, int $id)
-  {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
-      }
-    }
-
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-
-    return response()->json([
-      'data' => [
-        "id" => 1,
-        "design_plan" => $found,
-        "created_at" => "2023-03-01",
-      ]
-    ]);
+    return DB::transaction(
+      fn () => $coupon->delete()
+    );
   }
 }

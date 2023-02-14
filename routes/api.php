@@ -121,13 +121,10 @@ if (!$role || $role == 'admin') {
 // TODO: coupon
 // 
 Route::get('/coupons', [CouponController::class, 'list'])->middleware('access:coupon.list');
-Route::post('/coupons', [CouponController::class, 'create'])->middleware('access:decoupon.create');
+Route::post('/coupons', [CouponController::class, 'create'])->middleware('access:coupon.create');
 Route::get('/coupons/{id}', [CouponController::class, 'index'])->middleware('access:coupon.get');
-Route::patch('/coupons/{id}', [CouponController::class, 'update'])->middleware('access:decoupon.update');
-Route::delete('/coupons/{id}', [CouponController::class, 'destroy'])->middleware('access:decoupon.delete');
-Route::post('/coupons/{id}/activate', [CouponController::class, 'activate'])->middleware('access:decoupon.update');
-Route::post('/coupons/{id}/deactivate', [CouponController::class, 'deactivate'])->middleware('access:decoupon.update');
-Route::get('/coupons/{id}/history-records', [CouponController::class, 'history'])->middleware('access:coupon.list');
+Route::patch('/coupons/{id}', [CouponController::class, 'update'])->middleware('access:coupon.update');
+Route::delete('/coupons/{id}', [CouponController::class, 'destroy'])->middleware('access:coupon.delete');
 
 //
 // design plan

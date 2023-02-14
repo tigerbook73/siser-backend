@@ -67,8 +67,8 @@ class SubscriptionController extends SimpleController
   {
     foreach ($this->mockData as $index => $item) {
       $this->mockData[$index]['billing_info'] = (new BillingInfoController)->mockData;
-      $this->mockData[$index]['plan_info'] = Plan::find(2)->getCustomerPlan('US');
-      $this->mockData[$index]['coupon_info'] = (new CouponController)->mockData[0];
+      $this->mockData[$index]['plan_info'] = Plan::find(2)->toPublicPlan('US');
+      $this->mockData[$index]['coupon_info'] = null;
     }
   }
 

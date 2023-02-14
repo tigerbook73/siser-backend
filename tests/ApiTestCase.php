@@ -31,7 +31,7 @@ abstract class ApiTestCase extends TestCase
   public $modelCreate = [];
   public $modelUpdate = [];
 
-  protected $hiden = [
+  protected $hidden = [
     'password',
   ];
   protected $noAssert = false;
@@ -128,7 +128,7 @@ abstract class ApiTestCase extends TestCase
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
         ->assertJsonStructure($this->modelSchema)
-        ->assertJson(array_diff_key($modelCreate, array_flip($this->hiden)));
+        ->assertJson(array_diff_key($modelCreate, array_flip($this->hidden)));
     } else {
       $response->assertStatus($status);
     }
@@ -149,7 +149,7 @@ abstract class ApiTestCase extends TestCase
     if ($status >= 200 && $status < 300) {
       $response->assertStatus($status)
         ->assertJsonStructure($this->modelSchema)
-        ->assertJson(array_diff_key($modelUpdate, array_flip($this->hiden)));
+        ->assertJson(array_diff_key($modelUpdate, array_flip($this->hidden)));
     } else {
       $response->assertStatus($status);
     }

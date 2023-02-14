@@ -20,10 +20,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $code
  * @property string|null $description
  * @property float $percentage_off
- * @property Carbon $start_date
- * @property Carbon|null $end_date
  * @property int $period
  * @property array $condition
+ * @property Carbon $start_date
+ * @property Carbon $end_date
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,10 +53,10 @@ class Coupon extends Model
     'code',
     'description',
     'percentage_off',
-    'start_date',
-    'end_date',
     'period',
     'condition',
+    'start_date',
+    'end_date',
     'status'
   ];
 

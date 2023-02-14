@@ -43,7 +43,7 @@ class Subscription extends BaseSubscription
       'plan_id'                   => config('siser.plan.default_machine_plan'),
       'coupon_id'                 => null,
       'billing_info'              => $user->billing_info,
-      'plan_info'                 => $plan->getCustomerPlan('US'),
+      'plan_info'                 => $plan->toPublicPlan('US'),
       'coupon_info'               => null,
       'processing_fee_info'       => [
         'explicit_processing_fee' => false,

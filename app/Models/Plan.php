@@ -33,7 +33,7 @@ class Plan extends BasePlan
       ->where('status', 'active');
   }
 
-  public function getCustomerPlan(string $country)
+  public function toPublicPlan(string $country)
   {
     $priceInCountry = null;
     foreach ($this->price_list as $price) {
@@ -61,7 +61,7 @@ class Plan extends BasePlan
     ];
   }
 
-  public function getSimplePlan(string $country)
+  public function toSimplePlan(string $country)
   {
     $priceInCountry = null;
     foreach ($this->price_list as $price) {

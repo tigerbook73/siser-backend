@@ -30,7 +30,7 @@ class PlanController extends SimpleController
       'price_list'            => ['required', 'array'],
       'price_list.*.country'  => ['required', 'string', 'exists:countries,code'],
       'price_list.*.currency' => ['required', 'string', 'exists:countries,currency'],
-      'price_list.*.price'    => ['required', 'decimal:,2', 'min:0'],
+      'price_list.*.price'    => ['required', 'decimal:0,2', 'min:0'],
     ];
   }
 
@@ -45,7 +45,7 @@ class PlanController extends SimpleController
       'price_list'            => ['filled', 'array'],
       'price_list.*.country'  => ['required', 'string', 'exists:countries,code'],
       'price_list.*.currency' => ['required', 'string', 'exists:countries,currency'],
-      'price_list.*.price'    => ['required', 'decimal:,2', 'min:0'],
+      'price_list.*.price'    => ['required', 'decimal:0,2', 'min:0'],
     ];
   }
 
