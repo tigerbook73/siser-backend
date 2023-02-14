@@ -27,8 +27,9 @@ return new class extends Migration
       $table->date('start_date');
       $table->date('end_date')->default('2099-12-31');
       $table->string('status')->comment('[draft, active, inactive]');
-
       $table->timestamps();
+
+      $table->index('status');
     });
   }
 

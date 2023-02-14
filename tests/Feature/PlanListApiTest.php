@@ -30,7 +30,6 @@ class PlanListApiTest extends PlanTestCase
 
   public function testPlanListSuccess()
   {
-    // TODO: mockup code issues
     $this->listAssert(200, ['country' => 'US'], 1);
 
     $this->listAssert(200, ['country' => 'US', 'name' => 'LDS Premier Plan'], 1);

@@ -19,6 +19,7 @@ class CouponTestCase extends ApiTestCase
   ];
 
   public Coupon $object;
+  public Coupon $object2;
 
   protected function setUp(): void
   {
@@ -30,9 +31,9 @@ class CouponTestCase extends ApiTestCase
       "code"                    => "coupon-create20",
       "description"             => "20% percent off",
       "condition" => [
-        "new_customer_only"     => true,
-        "new_subscription_only" => true,
-        "upgrade_only"          => true
+        "new_customer_only"     => false,
+        "new_subscription_only" => false,
+        "upgrade_only"          => false
       ],
       "percentage_off"          => 20,
       "period"                  => 6,
@@ -44,9 +45,9 @@ class CouponTestCase extends ApiTestCase
       "code"                    => "coupon-code20",
       "description"             => "20% percent off",
       "condition" => [
-        "new_customer_only"     => true,
-        "new_subscription_only" => true,
-        "upgrade_only"          => true
+        "new_customer_only"     => false,
+        "new_subscription_only" => false,
+        "upgrade_only"          => false
       ],
       "percentage_off"          => 20,
       "period"                  => 6,
@@ -55,8 +56,15 @@ class CouponTestCase extends ApiTestCase
     ];
 
     $createData = $this->modelCreate;
-    $createData['code']   = 'test-precreate-20';
-    $createData['status'] = 'active';
+    $createData['code']         = 'test-precreate-20';
+    $createData['start_date']   = Carbon::today();
+    $createData['status']       = 'active';
     $this->object = Coupon::create($createData);
+
+    $createData = $this->modelCreate;
+    $createData['code']         = 'test-precreate-30';
+    $createData['start_date']   = Carbon::tomorrow();
+    $createData['status']       = 'active';
+    $this->object2 = Coupon::create($createData);
   }
 }

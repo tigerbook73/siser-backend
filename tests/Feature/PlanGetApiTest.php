@@ -13,7 +13,6 @@ class PlanGetApiTest extends PlanTestCase
 
   public function testPlanGetError()
   {
-    // TODO: mockup code issues
     $this->markTestIncomplete('mock code issues');
 
     $this->getAssert(404, 999999999999999999);

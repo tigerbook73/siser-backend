@@ -18,7 +18,7 @@ class SimpleController extends Controller
   protected string $keyName = "";
 
   // login user information
-  /** @var User|AdminUser $user */
+  /** @var User|AdminUser|null $user */
   protected $user = null;
   protected string $userType = "";
 

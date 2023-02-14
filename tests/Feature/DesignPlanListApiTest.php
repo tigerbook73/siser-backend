@@ -8,7 +8,6 @@ class DesignPlanListApiTest extends DesignPlanTestCase
 
   public function testDesignPlanListSuccess()
   {
-    // TODO: mockup code issues
     $this->listAssert(200);
 
     $this->listAssert(200, ['name' => 'LDS Premier Plan']);

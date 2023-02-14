@@ -76,6 +76,11 @@ return new class extends Migration
 
       $table->string('status')->comment('[draft, pending-payment, processing, active, failed, cancelled]')->change();
       $table->string('sub_status')->comment('[normal, cancelling, overdue]')->default('normal');
+
+      $table->index('subscription_level');
+      $table->index('current_period');
+      $table->index('status');
+      $table->index('sub_status');
     });
   }
 

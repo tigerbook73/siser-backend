@@ -8,7 +8,7 @@ class CouponUpdateApiTest extends CouponTestCase
 
   public function testCouponUpdateOk()
   {
-    $this->updateAssert(200, $this->object->id);
+    $this->updateAssert(200, $this->object2->id);
   }
 
   public function testMore()

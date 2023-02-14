@@ -146,4 +146,40 @@ class CouponController extends SimpleController
       fn () => $coupon->delete()
     );
   }
+
+  /**
+   * post /coupon-validate
+   */
+  public function check(Request $request)
+  {
+    $this->validateUser();
+
+    $inputs = $request->validate([
+      'code'    => ['required', 'string', Rule::exists('coupons', 'code')->where(fn ($q) => $q->where('status', 'active'))],
+      'plan_id' => ['filled', 'numeric', Rule::exists('plans', 'id')->where(fn ($q) => $q->where('status', 'active')->where('subscription_level', '>', 1))],
+    ]);
+
+    if ($this->user) {
+      $new_customer = $this->user->subscriptions()->where('subscription_level', '>', 1)->count() <= 0;
+      $new_subscription = true;
+      $upgrade_subscription = false;
+    } else {
+      $new_customer = true;
+      $new_subscription = true;
+      $upgrade_subscription = false;
+    }
+
+    /** @var Coupon $coupon */
+    $coupon = $this->baseQuery()->where('code', $inputs['code'])->firstOrFail();
+
+    if (
+      ($coupon->condition['new_customer_only'] && !$new_customer) ||
+      ($coupon->condition['new_subscription_only'] && !$new_subscription) ||   // @phpstan-ignore-line
+      ($coupon->condition['upgrade_only'] && !$upgrade_subscription)   // @phpstan-ignore-line
+    ) {
+      return response()->json(['message' => 'Coupon is not valid or not applicable'], 400);
+    }
+
+    return $this->transformSingleResource($coupon->unsetRelations());
+  }
 }

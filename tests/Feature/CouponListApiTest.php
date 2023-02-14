@@ -8,7 +8,6 @@ class CouponListApiTest extends CouponTestCase
 
   public function testCouponListSuccess()
   {
-    // TODO: mockup code issues
     $this->listAssert(200);
 
     $this->markTestIncomplete('more test case to come');

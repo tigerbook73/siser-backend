@@ -29,6 +29,8 @@ return new class extends Migration
       ]');
 
       $table->unique('name');
+      $table->index('catagory');
+      $table->index('status');
     });
 
     DB::table('plans')->upsert(
