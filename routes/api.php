@@ -206,7 +206,7 @@ if (!$role || $role == 'admin') {
 //
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'get']);
+    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'userGet']);
   });
 }
 
@@ -274,8 +274,8 @@ if (!$role || $role == 'customer') {
 // 
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
-    Route::get('/account/billing-info', [BillingInfoController::class, 'get']);
-    Route::post('/account/billing-info', [BillingInfoController::class, 'set']);
+    Route::get('/account/billing-info', [BillingInfoController::class, 'accountGet']);
+    Route::post('/account/billing-info', [BillingInfoController::class, 'accountSet']);
   });
 }
 

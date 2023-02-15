@@ -19,4 +19,25 @@ class BillingInfo extends BaseBillingInfo
     'created_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
+
+  static public function createDefault(User $user): BillingInfo
+  {
+    return BillingInfo::create([
+      'user_id'       => $user->id,
+      'first_name'    => $user->given_name,
+      'last_name'     => $user->family_name,
+      'phone'         => $user->phone_number,
+      'organization'  => "",
+      'email'         => $user->email,
+      'address'       => [
+        "line1" => "",
+        "line2" => "",
+        "city" => "",
+        "postcode" => "",
+        "state" => "",
+        "country" => $user->country_code,
+      ],
+      'tax_id'        => null
+    ]);
+  }
 }

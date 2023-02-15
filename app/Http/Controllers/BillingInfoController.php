@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillingInfo;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class BillingInfoController extends SimpleController
@@ -10,34 +11,48 @@ class BillingInfoController extends SimpleController
   protected string $modelClass = BillingInfo::class;
 
 
-  /**
-   * TODO: MOCKUP
-   */
-
-  public $mockData = [
-    "first_name" => "User1",
-    "last_name" => "Test",
-    "phone" => "123345667",
-    "organization" => null,
-    "email" => "user1.test@iifuture.com",
-    "address" => [
-      "line1" => "123 Abc Street",
-      "line2" => "",
-      "city" => "New York",
-      "postcode" => "55129",
-      "state" => "NY",
-      "country" => "US"
-    ],
-    "tax_id" => []
-  ];
-
-  public function get(Request $request)
+  protected function getUpdateRules()
   {
-    return response()->json($this->mockData);
+    return [
+      "first_name"        => ['filled', 'string', 'max:255'],
+      "last_name"         => ['filled', 'string', 'max:255'],
+      "phone"             => ['string', 'max:255'],
+      "organization"      => ['string', 'max:255'],
+      "email"             => ['filled', 'email'],
+      "address"           => ['filled', 'array'],
+      'address.line1'     => ['required_with:address', 'string', 'max:255'],
+      'address.line2'     => ['string', 'max:255'],
+      'address.city'      => ['required_with:address', 'string', 'max:255'],
+      'address.postcode'  => ['required_with:address', 'string', 'max:255'],
+      'address.state'     => ['required_with:address', 'string', 'max:255'],
+      'address.country'   => ['required_with:address', 'string', 'exists:countries,code'],
+      "tax_id"            => ['array'],
+      "tax_id.type"       => ['required_with:tax_id', 'string', 'max:255'],
+      "tax_id.value"      => ['required_with:tax_id', 'string', 'max:255'],
+    ];
   }
 
-  public function set(Request $request)
+  public function accountGet()
   {
-    return response()->json($this->mockData);
+    $this->validateUser();
+    $billingInfo = $this->user->billing_info()->first() ?: BillingInfo::createDefault($this->user);
+    return $this->transformSingleResource($billingInfo->unsetRelations());
+  }
+
+  public function accountSet(Request $request)
+  {
+    $this->validateUser();
+    $billingInfo = $this->user->billing_info()->first() ?: BillingInfo::createDefault($this->user);
+    return parent::update($request, $billingInfo->id);
+  }
+
+  public function userGet($id)
+  {
+    $this->validateUser();
+
+    /** @var User $user */
+    $user = User::findOrFail($id);
+    $billingInfo = $user->billing_info()->first() ?: BillingInfo::createDefault($user);
+    return $this->transformSingleResource($billingInfo->unsetRelations());
   }
 }
