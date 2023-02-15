@@ -65,19 +65,19 @@ if (!$role || $role == 'customer') {
 }
 
 // 
-// TODO: public country
+// public country
 // 
 Route::get('/countries', [CountryController::class, 'list']);
 Route::get('/countries/{code}', [CountryController::class, 'indexWithCode']);
 
 // 
-// TODO: public plans
+// public plans
 // 
 Route::get('/plans', [PlanController::class, 'listPlan']);
 Route::get('/plans/{id}', [PlanController::class, 'indexPlan']);
 
 //
-// TODO: public coupon
+// public coupon
 //
 Route::post('/coupon-validate', [CouponController::class, 'check']);
 
@@ -109,44 +109,56 @@ if (!$role || $role == 'admin') {
 // country
 // 
 if (!$role || $role == 'admin') {
-  Route::post('/countries', [CountryController::class, 'create'])->middleware('access:country.create');
-  Route::patch('/countries/{code}', [CountryController::class, 'updateWithCode'])->middleware('access:country.update');
-  Route::delete('/countries/{code}', [CountryController::class, 'destroyWithCode'])->middleware('access:country.delete');
+  Route::middleware('auth:admin')->group(function () {
+    Route::post('/countries', [CountryController::class, 'create'])->middleware('access:country.create');
+    Route::patch('/countries/{code}', [CountryController::class, 'updateWithCode'])->middleware('access:country.update');
+    Route::delete('/countries/{code}', [CountryController::class, 'destroyWithCode'])->middleware('access:country.delete');
+  });
 }
 
 
 
 
 // 
-// TODO: coupon
+// coupon
 // 
-Route::get('/coupons', [CouponController::class, 'list'])->middleware('access:coupon.list');
-Route::post('/coupons', [CouponController::class, 'create'])->middleware('access:coupon.create');
-Route::get('/coupons/{id}', [CouponController::class, 'index'])->middleware('access:coupon.get');
-Route::patch('/coupons/{id}', [CouponController::class, 'update'])->middleware('access:coupon.update');
-Route::delete('/coupons/{id}', [CouponController::class, 'destroy'])->middleware('access:coupon.delete');
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/coupons', [CouponController::class, 'list'])->middleware('access:coupon.list');
+    Route::post('/coupons', [CouponController::class, 'create'])->middleware('access:coupon.create');
+    Route::get('/coupons/{id}', [CouponController::class, 'index'])->middleware('access:coupon.get');
+    Route::patch('/coupons/{id}', [CouponController::class, 'update'])->middleware('access:coupon.update');
+    Route::delete('/coupons/{id}', [CouponController::class, 'destroy'])->middleware('access:coupon.delete');
+  });
+}
 
 //
 // design plan
 //
 if (!$role || $role == 'admin') {
-  Route::get('/design-plans', [PlanController::class, 'list'])->middleware('access:design-plan.list');
-  Route::post('/design-plans', [PlanController::class, 'create'])->middleware('access:design-plan.create');
-  Route::get('/design-plans/{id}', [PlanController::class, 'index'])->middleware('access:design-plan.get');
-  Route::patch('/design-plans/{id}', [PlanController::class, 'update'])->middleware('access:design-plan.update');
-  Route::delete('/design-plans/{id}', [PlanController::class, 'destroy'])->middleware('access:design-plan.delete');
-  Route::post('/design-plans/{id}/activate', [PlanController::class, 'activate'])->middleware('access:design-plan.update');
-  Route::post('/design-plans/{id}/deactivate', [PlanController::class, 'deactivate'])->middleware('access:design-plan.update');
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/design-plans', [PlanController::class, 'list'])->middleware('access:design-plan.list');
+    Route::post('/design-plans', [PlanController::class, 'create'])->middleware('access:design-plan.create');
+    Route::get('/design-plans/{id}', [PlanController::class, 'index'])->middleware('access:design-plan.get');
+    Route::patch('/design-plans/{id}', [PlanController::class, 'update'])->middleware('access:design-plan.update');
+    Route::delete('/design-plans/{id}', [PlanController::class, 'destroy'])->middleware('access:design-plan.delete');
+    Route::post('/design-plans/{id}/activate', [PlanController::class, 'activate'])->middleware('access:design-plan.update');
+    Route::post('/design-plans/{id}/deactivate', [PlanController::class, 'deactivate'])->middleware('access:design-plan.update');
 
-  // TODO: 
-  Route::get('/design-plans/{id}/history-records', [PlanController::class, 'history'])->middleware('access:design-plan.list');
+    // TODO: 
+    Route::get('/design-plans/{id}/history-records', [PlanController::class, 'history'])->middleware('access:design-plan.list');
+  });
 }
+
 // 
 // TODO: invoice
 // 
-Route::get('/invoices', [InvoiceController::class, 'list']);
-Route::get('/invoices/{id}', [InvoiceController::class, 'index']);
-
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/invoices', [InvoiceController::class, 'list']);
+    Route::get('/invoices/{id}', [InvoiceController::class, 'index']);
+  });
+}
 
 //
 // LDS
@@ -192,12 +204,20 @@ if (!$role || $role == 'admin') {
 //
 // user billing info
 //
-Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'get']);
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'get']);
+  });
+}
 
 //
 // user payment method
 //
-Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'get']);
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'get']);
+  });
+}
 
 // 
 // admin users
@@ -237,31 +257,47 @@ if (!$role || $role == 'customer') {
 // 
 // TODO: account subscription
 // 
-Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
-Route::post('/account/subscriptions', [SubscriptionController::class, 'create']);
-Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'index']);
-Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
-Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
-Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+if (!$role || $role == 'customer') {
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
+    Route::post('/account/subscriptions', [SubscriptionController::class, 'create']);
+    Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'index']);
+    Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
+    Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
+    Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+  });
+}
 
 
 // 
 // TODO: account billing info
 // 
-Route::get('/account/billing-info', [BillingInfoController::class, 'get']);
-Route::post('/account/billing-info', [BillingInfoController::class, 'set']);
+if (!$role || $role == 'customer') {
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/billing-info', [BillingInfoController::class, 'get']);
+    Route::post('/account/billing-info', [BillingInfoController::class, 'set']);
+  });
+}
 
 // 
 // TODO: account payment method
 // 
-Route::get('/account/payment-method', [PaymentMethodController::class, 'get']);
-Route::post('/account/payment-method', [PaymentMethodController::class, 'set']);
+if (!$role || $role == 'customer') {
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/payment-method', [PaymentMethodController::class, 'get']);
+    Route::post('/account/payment-method', [PaymentMethodController::class, 'set']);
+  });
+}
 
 // 
 // TODO: account invoice
 // 
-Route::get('/account/invoices', [InvoiceController::class, 'listByAccount']);
-Route::get('/account/invoices/{id}', [InvoiceController::class, 'indexByAccount']);
+if (!$role || $role == 'customer') {
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/invoices', [InvoiceController::class, 'listByAccount']);
+    Route::get('/account/invoices/{id}', [InvoiceController::class, 'indexByAccount']);
+  });
+}
 
 //
 // test: not in production version

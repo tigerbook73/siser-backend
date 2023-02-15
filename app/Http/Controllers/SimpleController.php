@@ -238,7 +238,8 @@ class SimpleController extends Controller
    */
   protected function validateUser()
   {
-    $this->user = auth('api')->user() ?: auth('admin')->user();
+    $guard = in_array('auth:admin', request()->route()->middleware()) ? 'admin' : 'api';
+    $this->user = auth($guard)->user();
     $this->userType = $this->user ? ($this->user->cognito_id ? 'customer' : 'admin') : 'customer';
   }
 
