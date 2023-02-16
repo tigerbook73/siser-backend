@@ -15,11 +15,8 @@ class PaymentMethod {
     /** @var string $type */
     public $type = "";
 
-    /** @var \Tests\Models\CreditCard $credit_card */
-    public $credit_card;
-
-    /** @var object $paypal_billing */
-    public $paypal_billing;
+    /** @var \Tests\Models\PaymentMethodDisplayData $display_data */
+    public $display_data;
 
     /** @var string $provider_id the payment-method id of the Provider, e.g. DR::source_id*/
     public $provider_id = "";

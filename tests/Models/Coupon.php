@@ -18,7 +18,7 @@ class Coupon {
     /** @var string $description */
     public $description = "";
 
-    /** @var \Tests\Models\CouponCreateCondition $condition */
+    /** @var \Tests\Models\CouponUpdateCondition $condition */
     public $condition;
 
     /** @var float $percentage_off */

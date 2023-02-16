@@ -1,13 +1,13 @@
 <?php
 /**
- * CouponCreateCondition
+ * CouponUpdateCondition
  */
 namespace Tests\Models;
 
 /**
- * CouponCreateCondition
+ * CouponUpdateCondition
  */
-class CouponCreateCondition {
+class CouponUpdateCondition {
 
     /** @var bool $new_customer_only */
     public $new_customer_only = false;
