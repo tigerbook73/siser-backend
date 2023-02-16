@@ -16,13 +16,15 @@ return new class extends Migration
     Schema::create('payment_methods', function (Blueprint $table) {
       $table->id();
       $table->foreignId('user_id')->unique()->constrained();
-      $table->string('type');
-      $table->json('credit_card')->nullable()->comment('{
+      $table->string('type')->comment('[credit-card, bpays]');
+      $table->json('display_data')->nullable()->comment('{
+        // for credit card
         "last_four_digits": "3119",
-        "brand": "Visa"        
+        "brand": "Visa"
+        
+        // for ...
       }');
       $table->string('provider_id');
-
       $table->timestamps();
     });
   }

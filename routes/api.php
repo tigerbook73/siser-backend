@@ -215,7 +215,7 @@ if (!$role || $role == 'admin') {
 //
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'get']);
+    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'userGet']);
   });
 }
 
@@ -284,8 +284,8 @@ if (!$role || $role == 'customer') {
 // 
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
-    Route::get('/account/payment-method', [PaymentMethodController::class, 'get']);
-    Route::post('/account/payment-method', [PaymentMethodController::class, 'set']);
+    Route::get('/account/payment-method', [PaymentMethodController::class, 'accountGet']);
+    Route::post('/account/payment-method', [PaymentMethodController::class, 'accountSet']);
   });
 }
 

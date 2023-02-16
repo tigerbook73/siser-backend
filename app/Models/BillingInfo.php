@@ -22,7 +22,7 @@ class BillingInfo extends BaseBillingInfo
 
   static public function createDefault(User $user): BillingInfo
   {
-    return BillingInfo::create([
+    $billingInfo = new BillingInfo([
       'user_id'       => $user->id,
       'first_name'    => $user->given_name,
       'last_name'     => $user->family_name,
@@ -39,5 +39,9 @@ class BillingInfo extends BaseBillingInfo
       ],
       'tax_id'        => null
     ]);
+
+    $billingInfo->id = $user->id;
+    $billingInfo->save();
+    return $billingInfo;
   }
 }
