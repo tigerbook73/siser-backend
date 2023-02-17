@@ -63,7 +63,7 @@ class SimpleController extends Controller
     $this->validateUser();
     $inputs = $this->validateList($request);
 
-    $objects = $this->customizeQuery($this->standardQuery($inputs), $inputs)->get();
+    $objects = $this->standardQuery($inputs)->get();
     return ['data' => $this->transformMultipleResources($objects)];
   }
 
@@ -71,7 +71,7 @@ class SimpleController extends Controller
   {
     $this->validateUser();
 
-    $object = $this->customizeQuery($this->baseQuery(), [])->findOrFail($id);
+    $object = $this->baseQuery()->findOrFail($id);
     return $this->transformSingleResource($object);
   }
 
@@ -220,17 +220,6 @@ class SimpleController extends Controller
     $offset = max($inputs['offset'] ?? 0, 0);
 
     return $query->limit($limit)->offset($offset);
-  }
-
-  /**
-   * child class can override this function to customize query
-   *
-   * @param Builder $query
-   * @param array $inputs
-   */
-  protected function customizeQuery($query, array $inputs)
-  {
-    return $query;
   }
 
   /**

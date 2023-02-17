@@ -63,7 +63,7 @@ class UserController extends SimpleController
     $this->validateUser();
 
     /** @var User $user */
-    $user = $this->customizeQuery($this->baseQuery(), [])->findOrFail($id);
+    $user = $this->baseQuery()->findOrFail($id);
     $subscriptions = $user->subscriptions()
       ->whereIn('status', ['active'])
       ->with('plan')->get();

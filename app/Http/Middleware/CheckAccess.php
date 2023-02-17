@@ -16,6 +16,8 @@ const resourceRoleMapping = [
   'admin-user.update' => [],
   'admin-user.delete' => [],
 
+  'billing-info.get' => [],
+
   'country.list' => [],
   'country.create' => [],
   'country.update' => [],
@@ -40,12 +42,19 @@ const resourceRoleMapping = [
   'machine.delete' => ['siser-backend' => 1],
   'machine.transfer' => ['siser-backend' => 1],
 
+  'payment-method.get' => [],
+
   'software-package.create' => [],
   'software-package.update' => [],
   'software-package.delete' => [],
 
+  'user.list' => ['siser-backend' => 1],
+  'user.get' => ['siser-backend' => 1],
   'user.create' => ['siser-backend' => 1],
   'user.refresh' => ['siser-backend' => 1],
+
+  'invoice.list' => [],
+  'invoice.get' => [],
 
   'x-ray.summary' => ['siser-backend' => 1],
 ];

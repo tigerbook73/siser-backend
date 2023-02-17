@@ -155,8 +155,8 @@ if (!$role || $role == 'admin') {
 // 
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/invoices', [InvoiceController::class, 'list']);
-    Route::get('/invoices/{id}', [InvoiceController::class, 'index']);
+    Route::get('/invoices', [InvoiceController::class, 'list'])->middleware('access:invoice.list');
+    Route::get('/invoices/{id}', [InvoiceController::class, 'index'])->middleware('access:invoice.get');
   });
 }
 
@@ -195,7 +195,7 @@ if (!$role || $role == 'admin') {
     Route::post('/users', [UserController::class, 'create'])->middleware('access:user.create');
     Route::post('/users/{id}', [UserController::class, 'refresh'])->middleware('access:user.refresh');
 
-    Route::get('/users/{id}/full', [UserController::class, 'full']);
+    Route::get('/users/{id}/full', [UserController::class, 'full'])->middleware('access:user.get');
     Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
     Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
   });
@@ -206,7 +206,7 @@ if (!$role || $role == 'admin') {
 //
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'userGet']);
+    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'userGet'])->middleware('access:billing-info.get');
   });
 }
 
@@ -215,7 +215,7 @@ if (!$role || $role == 'admin') {
 //
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'userGet']);
+    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'userGet'])->middleware('access:payment-method.get');
   });
 }
 
@@ -294,8 +294,8 @@ if (!$role || $role == 'customer') {
 // 
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
-    Route::get('/account/invoices', [InvoiceController::class, 'listByAccount']);
-    Route::get('/account/invoices/{id}', [InvoiceController::class, 'indexByAccount']);
+    Route::get('/account/invoices', [InvoiceController::class, 'accountList']);
+    Route::get('/account/invoices/{id}', [InvoiceController::class, 'accountIndex']);
   });
 }
 

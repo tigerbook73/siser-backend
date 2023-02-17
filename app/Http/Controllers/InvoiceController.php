@@ -9,59 +9,27 @@ class InvoiceController extends SimpleController
 {
   protected string $modelClass = Invoice::class;
 
-
-  /**
-   * TODO: MOCKUP
-   */
-
-  public $mockData = [
-    [
-      "id" => 1,
-      "user_id" => 1,
-      "subscription_id" => 1,
-      "period" => 1,
-      "currency" => "USD",
-      "amount" => 9.9,
-      "discount" => 4.95,
-      "processing_fee" => 0,
-      "tax" => 0,
-      "total_amount" => 4.95,
-      "invoice_date" => "2023-01-25",
-      "close_date" => "2023-01-25",
-      "pdf_file" => "to be discussed",
-      "status" => "draft"
-    ]
-  ];
-
-  public function list(Request $request)
+  protected function getListRules()
   {
-    return response()->json([
-      "data" => $this->mockData
-    ]);
+    return [
+      'id'              => ['filled'],
+      'user_id'         => ['filled'],
+      'subscription_id' => ['filled'],
+    ];
   }
 
-  public function index(int $id)
+  public function accountList(Request $request)
   {
-    $found = null;
-    foreach ($this->mockData as $item) {
-      if ($item['id'] == $id) {
-        $found = $item;
-      }
-    }
-
-    if (!$found) {
-      return response()->json(null, 404);
-    }
-    return response()->json($found);
+    $this->validateUser();
+    $request->merge(['user_id' => $this->user->id]);
+    return static::list($request);
   }
 
-  public function listByAccount(Request $request)
+  public function accountIndex(int $id)
   {
-    return $this->list($request);
-  }
+    $this->validateUser();
 
-  public function indexByAccount(int $id)
-  {
-    return $this->index($id);
+    $invoice = $this->baseQuery()->where('user_id', $this->user->id)->findOrFail($id);
+    return $this->transformSingleResource($invoice);
   }
 }
