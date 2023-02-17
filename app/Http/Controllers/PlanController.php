@@ -16,6 +16,7 @@ class PlanController extends SimpleController
     return [
       'name'        => ['filled'],
       'catagory'    => ['filled', 'in:machine,software'],
+      'status'      => ['filled', 'in:draft,active,inactive'],
     ];
   }
 
