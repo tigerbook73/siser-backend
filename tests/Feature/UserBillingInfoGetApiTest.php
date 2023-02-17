@@ -21,6 +21,6 @@ class UserBillingInfoGetApiTest extends UserBillingInfoTestCase
 
   public function testMore()
   {
-    $this->markTestIncomplete('more test case to come');
+    $this->markTestIncomplete('more test cases to come');
   }
 }

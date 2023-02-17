@@ -22,6 +22,6 @@ class CouponPublicValidateApiTest extends CouponTestCase
 
   public function testMore()
   {
-    $this->markTestIncomplete('more test case to come');
+    $this->markTestIncomplete('more test cases to come');
   }
 }

@@ -24,7 +24,11 @@ class ConfigGeneralTestCase extends ApiTestCase
     $this->modelCreate = [];
 
     $this->modelUpdate = [
-      "machine_license_unit" => 9,
+      'machine_license_unit'        => 9,
+      'plan_reminder_offset_days'   => 3,
+      'plan_billing_offset_days'    => 3,
+      'plan_collection_period_days' => 7,
+      'siser_share_rate'            => 55.55
     ];
 
     $this->object = (object)GeneralConfiguration::getAll();

@@ -13,8 +13,8 @@ class CountryGetApiTest extends CountryTestCase
     $this->getAssert(200, 'AU');
   }
 
-  public function testMoreTestCases()
+  public function testMore()
   {
-    $this->markTestIncomplete('more test cases needed');
+    $this->markTestIncomplete('more test cases to come');
   }
 }

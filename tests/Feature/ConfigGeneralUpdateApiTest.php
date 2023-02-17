@@ -43,4 +43,9 @@ class ConfigGeneralUpdateApiTest extends ConfigGeneralTestCase
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['machine_license_unit' => 'The machine license unit field must have a value.']);
   }
+
+  public function testMore()
+  {
+    $this->markTestIncomplete('more test cases to come');
+  }
 }

@@ -18,8 +18,8 @@ class CountryDeleteApiTest extends CountryTestCase
     ]);
   }
 
-  public function testMoreTestCases()
+  public function testMore()
   {
-    $this->markTestIncomplete('more test cases needed');
+    $this->markTestIncomplete('more test cases to come');
   }
 }

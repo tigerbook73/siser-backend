@@ -23,6 +23,6 @@ class AdminUserDeleteApiTest extends AdminUserTestCase
 
   public function testMore()
   {
-    $this->markTestIncomplete("TODO");
+    $this->markTestIncomplete("more test cases to come");
   }
 }

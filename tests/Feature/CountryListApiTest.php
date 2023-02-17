@@ -14,8 +14,8 @@ class CountryListApiTest extends CountryTestCase
     $this->listAssert(200, []);
   }
 
-  public function testMoreTestCases()
+  public function testMore()
   {
-    $this->markTestIncomplete('more test cases needed');
+    $this->markTestIncomplete('more test cases to come');
   }
 }

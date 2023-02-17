@@ -10,11 +10,11 @@ class CouponListApiTest extends CouponTestCase
   {
     $this->listAssert(200);
 
-    $this->markTestIncomplete('more test case to come');
+    $this->markTestIncomplete('more test cases to come');
   }
 
   public function testCouponListError()
   {
-    $this->markTestIncomplete('more test case to come');
+    $this->markTestIncomplete('more test cases to come');
   }
 }

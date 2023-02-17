@@ -11,8 +11,8 @@ class CountryCreateApiTest extends CountryTestCase
     $this->createAssert();
   }
 
-  public function testMoreTestCases()
+  public function testMore()
   {
-    $this->markTestIncomplete('more test cases needed');
+    $this->markTestIncomplete('more test cases to come');
   }
 }
