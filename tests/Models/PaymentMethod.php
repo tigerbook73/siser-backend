@@ -18,7 +18,7 @@ class PaymentMethod {
     /** @var \Tests\Models\PaymentMethodDisplayData $display_data */
     public $display_data;
 
-    /** @var string $provider_id the payment-method id of the Provider, e.g. DR::source_id*/
-    public $provider_id = "";
+    /** @var \Tests\Models\PaymentMethodDR $dr */
+    public $dr;
 
 }
