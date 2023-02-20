@@ -63,10 +63,16 @@ class Subscription {
     /** @var \DateTime $next_invoice_date */
     public $next_invoice_date;
 
+    /** @var \Tests\Models\SubscriptionDR $dr */
+    public $dr;
+
     /** @var string $status */
     public $status = "";
 
     /** @var string $sub_status */
     public $sub_status = "";
+
+    /** @var string $stop_reason */
+    public $stop_reason = "";
 
 }
