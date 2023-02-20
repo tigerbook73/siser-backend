@@ -10,12 +10,19 @@ class CountryDeleteApiTest extends CountryTestCase
 
   public function testCountryDeleteOk()
   {
-    $response = $this->deleteJson("$this->baseUrl/" . $this->object->code);
+    $code = $this->createAssert()->json()['code'];
+    $response = $this->deleteJson("$this->baseUrl/" . $code);
     $response->assertStatus(200);
 
     $this->assertDatabaseMissing('countries', [
-      'code' => $this->object->code,
+      'code' => $code,
     ]);
+  }
+
+  public function testCountryDeleteNok()
+  {
+    $response = $this->deleteJson("$this->baseUrl/" . $this->object->code);
+    $response->assertStatus(422);
   }
 
   public function testMore()

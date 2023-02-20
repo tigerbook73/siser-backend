@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Country;
+use App\Models\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -81,7 +82,12 @@ class CountryController extends SimpleController
   {
     $this->validateUser();
 
+    /** @var Country $country */
     $country = Country::code($code)->firstOrFail();
+    if (Plan::whereJsonContains('price_list', ['country' => $country->code])->count() > 0) {
+      return response()->json(['message' => 'The country has been referenced'], 422);
+    };
+
     return DB::transaction(
       fn () => $country->delete()
     );
