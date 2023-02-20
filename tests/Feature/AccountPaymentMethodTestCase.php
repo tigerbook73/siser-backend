@@ -18,12 +18,12 @@ class AccountPaymentMethodTestCase extends ApiTestCase
     $this->modelSchema = array_keys((array)new ModelsPaymentMethod);
 
     $this->modelCreate = [
-      'type'          => 'credit-card',
+      'type' => 'credit-card',
       // 'display_data'  => [
       //   'last_four_digits'  => '9999',
       //   'brand'             => 'visa',
       // ],
-      'provider_id'   => "digital-river-source-id-master",
+      'dr' => ['source_id' => 'digital-river-source-id-master'],
     ];
 
     $this->modelUpdate = [
@@ -32,7 +32,7 @@ class AccountPaymentMethodTestCase extends ApiTestCase
       //   'last_four_digits'  => '8888',
       //   'brand'             => 'master',
       // ],
-      'provider_id'   => "digital-river-source-id-visa",
+      'dr' => ['source_id'   => 'digital-river-source-id-visa'],
     ];
   }
 }

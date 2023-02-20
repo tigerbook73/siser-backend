@@ -24,7 +24,9 @@ return new class extends Migration
         
         // for ...
       }');
-      $table->string('provider_id');
+      $table->json('dr')->comment('{
+        "source_id": "dr_source_id"
+      }');
       $table->timestamps();
     });
   }

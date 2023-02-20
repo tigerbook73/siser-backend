@@ -13,16 +13,18 @@ class PaymentMethodController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      "type"        => ['required', 'string', 'in:credit-card'],
-      "provider_id" => ['required', 'string', 'max:255'],
+      "type"          => ['required', 'string', 'in:credit-card'],
+      "dr"            => ['required', 'array'],
+      "dr.source_id"  => ['required', 'string', 'max:255'],
     ];
   }
 
   protected function getUpdateRules()
   {
     return [
-      "type"        => ['filled', 'string', 'max:255'],
-      "provider_id" => ['string', 'max:255'],
+      "type"          => ['filled', 'string', 'max:255'],
+      'dr'            => ['filled'],
+      'dr.source_id'  => ['required_with:dr', 'string', 'max:255'],
     ];
   }
 
@@ -49,7 +51,7 @@ class PaymentMethodController extends SimpleController
       $paymentMethod = new PaymentMethod($inputs);
 
       // TODO: the following is mockup code
-      if (str_contains($inputs['provider_id'], 'master')) {
+      if (str_contains($inputs['dr']['source_id'], 'master')) {
         $paymentMethod->display_data = [
           'last_four_digits'  => '9999',
           'brand'             => 'master',
@@ -72,9 +74,9 @@ class PaymentMethodController extends SimpleController
       }
 
       $paymentMethod->type        = $inputs['type'] ?? $paymentMethod->type;
-      $paymentMethod->provider_id = $inputs['provider_id'] ?? $paymentMethod->provider_id;
+      $paymentMethod->dr          = $inputs['dr'] ?? $paymentMethod->dr;
       // TODO: the following is mockup code
-      if (str_contains($inputs['provider_id'], 'master')) {
+      if (str_contains($inputs['dr']['source_id'], 'master')) {
         $paymentMethod->display_data = [
           'last_four_digits'  => '9999',
           'brand'             => 'master',

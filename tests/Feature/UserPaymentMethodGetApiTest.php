@@ -26,7 +26,9 @@ class UserPaymentMethodGetApiTest extends UserPaymentMethodTestCase
         'last_four_digits'  => '9999',
         'brand'             => 'visa',
       ],
-      'provider_id'   => "digital-river-source-id-visa",
+      'dr' => [
+        'source_id' => 'digital-river-source-id-visa'
+      ],
     ];
     PaymentMethod::create($paymentMethodCreate);
     $response = $this->getJson("{$this->baseUrl}/{$user->id}/payment-method");
