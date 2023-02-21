@@ -73,8 +73,13 @@ return new class extends Migration
       $table->date('current_period_start_date')->nullable();
       $table->date('current_period_end_date')->nullable();
       $table->date('next_invoice_date')->nullable();
-
-      $table->string('status')->comment('[draft, pending-payment, processing, active, failed, cancelled]')->change();
+      $table->json('dr')->nullable()->comment('{
+        "checkout_id": "dr_checkout_id",
+        "order_id": "dr_first_order_id",
+        "subscription_id": "dr_subscription_id",
+      }');
+      $table->string('stop_reason')->nullable()->comment('[renew-failed, cancelled, new-subscurition]');
+      $table->string('status')->comment('[draft, pending, failed, processing, active, stopped]')->change();
       $table->string('sub_status')->comment('[normal, cancelling, overdue]')->default('normal');
 
       $table->index('subscription_level');

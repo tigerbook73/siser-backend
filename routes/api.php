@@ -151,12 +151,21 @@ if (!$role || $role == 'admin') {
 }
 
 // 
-// TODO: invoice
+// invoice
 // 
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/invoices', [InvoiceController::class, 'list'])->middleware('access:invoice.list');
     Route::get('/invoices/{id}', [InvoiceController::class, 'index'])->middleware('access:invoice.get');
+  });
+}
+
+// TODO: subscriptions
+// 
+if (!$role || $role == 'admin') {
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/subscriptions', [SubscriptionController::class, 'list'])->middleware('access:subscription.list');
+    Route::get('/subscriptions/{id}', [SubscriptionController::class, 'index'])->middleware('access:subscription.get');
   });
 }
 
@@ -197,7 +206,6 @@ if (!$role || $role == 'admin') {
 
     Route::get('/users/{id}/full', [UserController::class, 'full'])->middleware('access:user.get');
     Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
-    Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser']);
   });
 }
 
@@ -259,9 +267,9 @@ if (!$role || $role == 'customer') {
 // 
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
-    Route::get('/account/subscriptions', [SubscriptionController::class, 'listByAccount']);
+    Route::get('/account/subscriptions', [SubscriptionController::class, 'accountList']);
     Route::post('/account/subscriptions', [SubscriptionController::class, 'create']);
-    Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'index']);
+    Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'accountIndex']);
     Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
     Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
     Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);

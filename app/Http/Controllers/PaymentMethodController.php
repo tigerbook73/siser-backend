@@ -88,7 +88,12 @@ class PaymentMethodController extends SimpleController
         ];
       }
 
+      // TODO: create DR customer is not exist, consistency protection
       $paymentMethod->save();
+
+      // TODO: update DR customer
+      // POST ...
+
       return $this->transformSingleResource($paymentMethod->unsetRelations());
     }
   }

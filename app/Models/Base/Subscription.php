@@ -41,6 +41,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $current_period_start_date
  * @property Carbon|null $current_period_end_date
  * @property Carbon|null $next_invoice_date
+ * @property array|null $dr
+ * @property string|null $stop_reason
  * @property string $sub_status
  * 
  * @property Coupon|null $coupon
@@ -68,7 +70,8 @@ class Subscription extends Model
     'processing_fee' => 'float',
     'tax' => 'float',
     'subscription_level' => 'int',
-    'current_period' => 'int'
+    'current_period' => 'int',
+    'dr' => 'json'
   ];
 
   protected $dates = [
@@ -99,6 +102,8 @@ class Subscription extends Model
     'current_period_start_date',
     'current_period_end_date',
     'next_invoice_date',
+    'dr',
+    'stop_reason',
     'sub_status'
   ];
 

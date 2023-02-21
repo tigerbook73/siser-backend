@@ -51,4 +51,13 @@ class Coupon extends BaseCoupon
       $this->status = 'inactive';
     }
   }
+
+  public function validate(bool $new_customer, bool $new_subscription = true, bool $upgrade_subscription = false): bool
+  {
+    return !(
+      ($this->condition['new_customer_only'] && !$new_customer) ||
+      ($this->condition['new_subscription_only'] && !$new_subscription) ||
+      ($this->condition['upgrade_only'] && !$upgrade_subscription)
+    );
+  }
 }

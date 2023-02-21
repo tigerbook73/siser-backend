@@ -106,4 +106,12 @@ class User extends UserWithTrait
 
     return $this;
   }
+
+  public function isNewCustomer()
+  {
+    return ($this->subscriptions()
+      ->where('subscription_level', '>', 1)
+      ->where('current_period', '>', 0)
+      ->count() <= 0);
+  }
 }

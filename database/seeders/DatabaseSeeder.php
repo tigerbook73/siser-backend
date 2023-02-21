@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\AdminUser;
 use App\Models\BillingInfo;
+use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\LdsInstance;
 use App\Models\LdsLog;
@@ -18,6 +19,7 @@ use App\Models\User;
 use App\Services\Cognito\CognitoProvider;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
+use SebastianBergmann\CodeCoverage\Util\Percentage;
 
 class DatabaseSeeder extends Seeder
 {
@@ -67,6 +69,21 @@ class DatabaseSeeder extends Seeder
       'filename'            => 'lds-software-mac-0.0.1.zip',
       // 'is_latest'          => true,
       'url'                 => '/favicon.ico',
+    ]);
+
+    Coupon::create([
+      'code' => 'seeder23',
+      'description' => '23% discount in 3 month',
+      'percentage_off' => 23,
+      'period' => 3,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
     ]);
 
 

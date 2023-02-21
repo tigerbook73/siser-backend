@@ -2,19 +2,22 @@
 
 namespace Tests\Feature;
 
-class UserSubscriptionListApiTest extends UserTestCase
+use App\Models\User;
+
+class SubscriptionListApiTest extends SubscriptionTestCase
 {
   public ?string $role = 'admin';
 
-  public function testUserSubscriptionListSuccess()
+  public function testSubscriptionListSuccess()
   {
-    $count = $this->object->subscriptions()->count();
+    $user = User::first();
+    $count = $user->subscriptions()->count();
 
-    $response = $this->getJson("{$this->baseUrl}/{$this->object->id}/subscriptions");
+    $response = $this->getJson("{$this->baseUrl}?user_id={$user->id}");
     $response->assertStatus(200)
       ->assertJsonStructure([
         'data' => [
-          '*' => $this->subscriptionSchema
+          '*' => $this->modelSchema
         ]
       ]);
 
@@ -25,6 +28,8 @@ class UserSubscriptionListApiTest extends UserTestCase
 
   public function testUserSubscriptionListError()
   {
+    $user = User::first();
+
     // TODO: mockup code issues
     $this->markTestIncomplete('mockup code issues');
 
@@ -35,7 +40,7 @@ class UserSubscriptionListApiTest extends UserTestCase
     $response = $this->getJson("{$this->baseUrl}//moneypledged");
     $response->assertStatus(404);
 
-    $response = $this->getJson("{$this->baseUrl}/{$this->object->id}/moneypledged");
+    $response = $this->getJson("{$this->baseUrl}/{$user->id}/moneypledged");
     $response->assertStatus(404);
   }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillingInfo;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -42,7 +43,25 @@ class BillingInfoController extends SimpleController
   public function accountSet(Request $request)
   {
     $this->validateUser();
+
+    /** @var BillingInfo $billingInfo */
     $billingInfo = $this->user->billing_info()->first() ?: BillingInfo::createDefault($this->user);
+
+    // if there is active pay subscription, it is not allowed to update country/state/postcode
+    if (Subscription::where('status', 'active')->where('subscription_level', '>', 1)->count()) {
+      if (
+        isset($request->country) && $request->country != $billingInfo->address['country'] ||
+        isset($request->postcode) && $request->postcode != $billingInfo->address['postcode'] ||
+        isset($request->state) && $request->state != $billingInfo->address['state']
+      ) {
+        return response()->json(
+          ['message' => 'BillingInfos state/postcode/country can not be modified when there is active paid subscription.'],
+          400
+        );
+      }
+    }
+
+    // TODO: refactor
     return parent::update($request, $billingInfo->id);
   }
 

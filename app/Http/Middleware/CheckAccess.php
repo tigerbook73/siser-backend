@@ -48,6 +48,9 @@ const resourceRoleMapping = [
   'software-package.update' => [],
   'software-package.delete' => [],
 
+  'subscription.list' => [],
+  'subscription.get' => [],
+
   'user.list' => ['siser-backend' => 1],
   'user.get' => ['siser-backend' => 1],
   'user.create' => ['siser-backend' => 1],

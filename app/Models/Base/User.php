@@ -38,6 +38,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property array|null $roles
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property array|null $dr
  * 
  * @property BillingInfo $billing_info
  * @property Collection|Invoice[] $invoices
@@ -57,7 +58,8 @@ class User extends \Illuminate\Foundation\Auth\User
   protected $casts = [
     'subscription_level' => 'int',
     'license_count' => 'int',
-    'roles' => 'json'
+    'roles' => 'json',
+    'dr' => 'json'
   ];
 
   protected $dates = [
@@ -77,7 +79,8 @@ class User extends \Illuminate\Foundation\Auth\User
     'language_code',
     'subscription_level',
     'license_count',
-    'roles'
+    'roles',
+    'dr'
   ];
 
   public function billing_info()

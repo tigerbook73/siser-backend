@@ -56,8 +56,6 @@ class Plan extends BasePlan
       'subscription_level' => $this->subscription_level,
       'url'                => $this->url,
       'status'             => $this->status,
-      'created_at'         => $this->created_at,
-      'updated_at'         => $this->updated_at,
     ];
   }
 

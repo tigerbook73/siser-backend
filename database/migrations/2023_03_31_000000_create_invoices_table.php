@@ -37,6 +37,9 @@ return new class extends Migration
       $table->double('total_amount');
       $table->date('invoice_date');
       $table->string('pdf_file')->nullable();
+      $table->json('dr')->comment('{
+        "invoice_id": "dr_invoice_id",
+      }');
       $table->string('status')->comment('[ draft, open, overdue, failed, completed ]');
 
       $table->timestamps();

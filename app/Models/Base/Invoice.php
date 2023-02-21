@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $total_amount
  * @property Carbon $invoice_date
  * @property string|null $pdf_file
+ * @property array $dr
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -53,7 +54,8 @@ class Invoice extends Model
     'processing_fee' => 'json',
     'amount' => 'float',
     'tax' => 'float',
-    'total_amount' => 'float'
+    'total_amount' => 'float',
+    'dr' => 'json'
   ];
 
   protected $dates = [
@@ -73,6 +75,7 @@ class Invoice extends Model
     'total_amount',
     'invoice_date',
     'pdf_file',
+    'dr',
     'status'
   ];
 

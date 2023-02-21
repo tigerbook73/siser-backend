@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-class AccountSubscriptionListApiTest extends AccountTestCase
+class AccountSubscriptionListApiTest extends AccountSubscriptionTestCase
 {
   public ?string $role = 'customer';
 
   public function testAccountSubscriptionListOk()
   {
-    $count = $this->object->subscriptions()->count();
+    $count = $this->user->subscriptions()->count();
 
-    $response = $this->getJson("{$this->baseUrl}/subscriptions");
+    $response = $this->getJson($this->baseUrl);
     $response->assertStatus(200)
       ->assertJsonStructure([
         'data' => [
-          '*' => $this->subscriptionSchema
+          '*' => $this->modelSchema
         ]
       ]);
 
