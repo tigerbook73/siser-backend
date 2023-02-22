@@ -69,7 +69,7 @@ end
 
 rect rgba(255,255,0,0.1)
 note over App, DR: Pay subscription
-App->>BE: PaySubscription(subscriptionId, paymentMethodId)
+App->>BE: PaySubscription(subscriptionId)
 activate BE
 BE->>DR: ConvertCheckoutToOrder(dr_checkout_id)
 alt order is active
