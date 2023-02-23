@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Dr;
+namespace Tests\DR;
 
 use App\Models\User;
 use DigitalRiver\ApiSdk\Configuration;
