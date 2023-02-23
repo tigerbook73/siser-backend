@@ -2,14 +2,12 @@
 
 namespace App\Services\Cognito;
 
-use GuzzleHttp\Client;
 use Aws\CognitoIdentityProvider\CognitoIdentityProviderClient;
 use Aws\Exception\AwsException;
 
 
 class CognitoProvider
 {
-  public Client|null $httpClient = null;
   public CognitoIdentityProviderClient|null $cognitoClient = null;
 
   public string $region;
