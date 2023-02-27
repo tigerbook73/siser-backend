@@ -34,7 +34,7 @@ class SubscriptionController extends SimpleController
       ],
       'coupon_id'   => [
         'filled',
-        Rule::exists('coupons', 'id')->where(fn ($q) => $q->where('end_date', '>', 1)->where('status', 'active'))
+        Rule::exists('coupons', 'id')->where(fn ($q) => $q->where('end_date', '>=', today())->where('status', 'active'))
       ],
     ];
   }
