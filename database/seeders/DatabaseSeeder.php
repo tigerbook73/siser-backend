@@ -73,7 +73,7 @@ class DatabaseSeeder extends Seeder
 
     Coupon::create([
       'code' => 'seeder23',
-      'description' => '23% discount in 3 month',
+      'description' => '23% discount in 3 month --test--',
       'percentage_off' => 23,
       'period' => 3,
       'condition' => [
@@ -157,5 +157,8 @@ class DatabaseSeeder extends Seeder
 
     // remove test admin users
     AdminUser::whereIn('id', $adminUserIds)->delete();
+
+    //
+    Coupon::where('description', 'like', '%--test--%')->delete();
   }
 }
