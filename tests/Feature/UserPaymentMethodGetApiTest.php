@@ -15,7 +15,7 @@ class UserPaymentMethodGetApiTest extends UserPaymentMethodTestCase
 
     // no payment method
     $response = $this->getJson("{$this->baseUrl}/{$user->id}/payment-method");
-    $response->assertStatus(404);
+    $response->assertStatus(200)->assertJson([]);
 
 
     // created payment method

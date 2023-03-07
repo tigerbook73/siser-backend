@@ -33,7 +33,7 @@ class PaymentMethodController extends SimpleController
     $this->validateUser();
     $paymentMethod = $this->user->payment_method()->first();
     if (!$paymentMethod) {
-      return response()->json(['message' => 'No payment method found'], 404);
+      return response()->json(null);
     }
     return $this->transformSingleResource($paymentMethod->unsetRelations());
   }
@@ -106,7 +106,7 @@ class PaymentMethodController extends SimpleController
     $user = User::findOrFail($id);
     $paymentMethod = $user->payment_method()->first();
     if (!$paymentMethod) {
-      return response()->json(['message' => 'No payment method found'], 404);
+      return response()->json(null);
     }
     return $this->transformSingleResource($paymentMethod->unsetRelations());
   }
