@@ -17,7 +17,7 @@ return new class extends Migration
       $table->id();
       $table->string('code')->unique();
       $table->string('description')->nullable();
-      $table->double('percentage_off');
+      $table->decimal('percentage_off');
       $table->unsignedInteger('period')->comment('0 means forever');
       $table->json('condition')->comment('{
         "new_customer_only": true,

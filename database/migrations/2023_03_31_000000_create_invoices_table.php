@@ -21,7 +21,7 @@ return new class extends Migration
       $table->string('currency');
       $table->json('plan')->comment('{
         "name": "Premier Plan",
-        "price": 10.00
+        "price": "10.00"
       }');
       $table->json('coupon')->nullable()->comment('{
         "code": "coupon20",
@@ -32,9 +32,9 @@ return new class extends Migration
         "amount": 20
         "explicit_processing_fee": false
       }');
-      $table->double('amount');
-      $table->double('tax');
-      $table->double('total_amount');
+      $table->decimal('amount');
+      $table->decimal('tax');
+      $table->decimal('total_amount');
       $table->date('invoice_date');
       $table->string('pdf_file')->nullable();
       $table->json('dr')->comment('{

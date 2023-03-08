@@ -19,7 +19,7 @@ return new class extends Migration
       $table->renameColumn('country_code', 'code');
       $table->renameColumn('country', 'name');
       $table->string('currency');
-      $table->double('processing_fee_rate');
+      $table->decimal('processing_fee_rate');
       $table->boolean('explicit_processing_fee');
       $table->timestamps();
     });

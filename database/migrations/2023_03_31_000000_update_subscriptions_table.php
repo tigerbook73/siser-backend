@@ -45,7 +45,7 @@ return new class extends Migration
         "price": {
           "country": "US",
           "currency": "USD",
-          "price": 9.98
+          "price": "9.98"
         }
       }');
       $table->json('coupon_info')->nullable()->comment('{
@@ -64,9 +64,9 @@ return new class extends Migration
         "explicit_processing_fee": true,
         "processing_fee_rate": 2.0,
       }');
-      $table->double('price')->comment('beautified subscription price, may or may not include processing fee')->change();
-      $table->double('processing_fee')->default(0.0)->comment('valid when explicit_processing_fee is true');
-      $table->double('tax')->default(0.0)->comment('based on latest invoice');
+      $table->decimal('price')->comment('beautified subscription price, may or may not include processing fee')->change();
+      $table->decimal('processing_fee')->default(0.0)->comment('valid when explicit_processing_fee is true');
+      $table->decimal('tax')->default(0.0)->comment('based on latest invoice');
       $table->unsignedInteger('subscription_level')->default(0);
       $table->unsignedInteger('current_period')->default(0)->comment('0 - not started yet');
       $table->date('start_date')->nullable()->change();
