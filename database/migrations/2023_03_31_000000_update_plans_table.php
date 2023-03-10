@@ -24,7 +24,7 @@ return new class extends Migration
         {
           "country": "US",
           "currency": "USD",
-          "price": "9.98"
+          "price": 9.98
         }
       ]');
 

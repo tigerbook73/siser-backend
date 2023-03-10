@@ -45,7 +45,7 @@ return new class extends Migration
         "price": {
           "country": "US",
           "currency": "USD",
-          "price": "9.98"
+          "price": 9.98
         }
       }');
       $table->json('coupon_info')->nullable()->comment('{

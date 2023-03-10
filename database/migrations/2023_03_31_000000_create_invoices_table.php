@@ -21,7 +21,7 @@ return new class extends Migration
       $table->string('currency');
       $table->json('plan')->comment('{
         "name": "Premier Plan",
-        "price": "10.00"
+        "price": 10.00
       }');
       $table->json('coupon')->nullable()->comment('{
         "code": "coupon20",
