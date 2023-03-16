@@ -114,6 +114,7 @@ class SubscriptionController extends SimpleController
 
     // TODO: create checkout
     $checkoutId = 'dr-checkout-id-' . rand(0, 99999999);
+    $checkoutPaymentSessionId = 'dr-session-id-' . rand(0, 99999999);
 
     // create subscription
     $subscription = new Subscription();
@@ -143,7 +144,10 @@ class SubscriptionController extends SimpleController
     $subscription->current_period_start_date  = null;
     $subscription->current_period_end_date    = null;
     $subscription->next_invoice_date          = null;
-    $subscription->dr                         = ['checkout_id' => $checkoutId];
+    $subscription->dr                         = [
+      'checkout_id'                           => $checkoutId,
+      'checkout_payment_session_id'           => $checkoutPaymentSessionId
+    ];
     $subscription->stop_reason                = null;
     $subscription->status                     = 'draft';
     $subscription->sub_status                 = 'normal';
@@ -202,6 +206,7 @@ class SubscriptionController extends SimpleController
     // TODO: if return 
     $draftSubscription->dr = [
       'checkout_id' => $draftSubscription->dr['checkout_id'],
+      'checkout_payment_session_id' => $draftSubscription->dr['checkout_payment_session_id'],
       'order_id' => $order_id,
       'subscription_id' => $subscription_id,
     ];

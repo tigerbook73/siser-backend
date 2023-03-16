@@ -75,6 +75,7 @@ return new class extends Migration
       $table->date('next_invoice_date')->nullable();
       $table->json('dr')->nullable()->comment('{
         "checkout_id": "dr_checkout_id",
+        "checkout_payment_session_id": "dr_checkout_payment_session_id",
         "order_id": "dr_first_order_id",
         "subscription_id": "dr_subscription_id",
       }');
