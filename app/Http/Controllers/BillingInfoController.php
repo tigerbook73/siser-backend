@@ -27,7 +27,7 @@ class BillingInfoController extends SimpleController
       'address.postcode'  => ['required_with:address', 'string', 'max:255'],
       'address.state'     => ['required_with:address', 'string', 'max:255'],
       'address.country'   => ['required_with:address', 'string', 'exists:countries,code'],
-      "tax_id"            => ['array'],
+      "tax_id"            => ['nullable', 'array'],
       "tax_id.type"       => ['required_with:tax_id', 'string', 'max:255'],
       "tax_id.value"      => ['required_with:tax_id', 'string', 'max:255'],
     ];
