@@ -94,6 +94,9 @@ class PaymentMethodController extends SimpleController
       // TODO: update DR customer
       // POST ...
 
+      // TODO: update active subsription
+      // POST ...
+
       return $this->transformSingleResource($paymentMethod->unsetRelations());
     }
   }
