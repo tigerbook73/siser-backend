@@ -17,6 +17,7 @@ use App\Http\Controllers\SoftwarePackageController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -306,6 +307,10 @@ if (!$role || $role == 'customer') {
     Route::get('/account/invoices/{id}', [InvoiceController::class, 'accountIndex']);
   });
 }
+
+
+// webhook
+Route::post('/dr/webhooks', [WebhookController::class, 'handler']);
 
 //
 // test: not in production version

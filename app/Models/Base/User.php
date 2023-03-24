@@ -56,14 +56,11 @@ class User extends \Illuminate\Foundation\Auth\User
   protected $table = 'users';
 
   protected $casts = [
+    'email_verified_at' => 'date',
     'subscription_level' => 'int',
     'license_count' => 'int',
     'roles' => 'json',
     'dr' => 'json'
-  ];
-
-  protected $dates = [
-    'email_verified_at'
   ];
 
   protected $fillable = [

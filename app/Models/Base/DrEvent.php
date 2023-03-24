@@ -12,28 +12,23 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class StatisticRecord
+ * Class DrEvent
  * 
- * @property int $id
- * @property Carbon $date
- * @property array $record
+ * @property string $id
+ * @property string $type
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  *
  * @package App\Models\Base
  */
-class StatisticRecord extends Model
+class DrEvent extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'statistic_records';
-  public $timestamps = false;
-
-  protected $casts = [
-    'date' => 'date',
-    'record' => 'json'
-  ];
+  protected $table = 'dr_events';
+  public $incrementing = false;
 
   protected $fillable = [
-    'date',
-    'record'
+    'type'
   ];
 }

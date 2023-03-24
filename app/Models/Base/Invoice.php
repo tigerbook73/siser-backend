@@ -55,11 +55,8 @@ class Invoice extends Model
     'amount' => 'float',
     'tax' => 'float',
     'total_amount' => 'float',
+    'invoice_date' => 'date',
     'dr' => 'json'
-  ];
-
-  protected $dates = [
-    'invoice_date'
   ];
 
   protected $fillable = [

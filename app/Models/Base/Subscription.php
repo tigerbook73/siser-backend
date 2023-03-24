@@ -62,6 +62,8 @@ class Subscription extends Model
     'user_id' => 'int',
     'plan_id' => 'int',
     'price' => 'float',
+    'start_date' => 'date',
+    'end_date' => 'date',
     'coupon_id' => 'int',
     'billing_info' => 'json',
     'plan_info' => 'json',
@@ -71,15 +73,10 @@ class Subscription extends Model
     'tax' => 'float',
     'subscription_level' => 'int',
     'current_period' => 'int',
+    'current_period_start_date' => 'date',
+    'current_period_end_date' => 'date',
+    'next_invoice_date' => 'date',
     'dr' => 'json'
-  ];
-
-  protected $dates = [
-    'start_date',
-    'end_date',
-    'current_period_start_date',
-    'current_period_end_date',
-    'next_invoice_date'
   ];
 
   protected $fillable = [

@@ -13,7 +13,7 @@ class DrCommand extends Command
    *
    * @var string
    */
-  protected $signature = 'dr:cmd {subcmd?}';
+  protected $signature = 'dr:cmd {subcmd=help}';
 
   /**
    * The console command description.
@@ -53,14 +53,22 @@ class DrCommand extends Command
   public function init()
   {
     $drService = new DigitalRiverService();
+
+    // create / update default plan
+    $this->info("Create or update default plan ...");
     if (!$defaultPlan = $drService->getDefaultPlan()) {
       $defaultPlan = $drService->createDefaultPlan(GeneralConfiguration::getConfiguration());
     } else {
       $defaultPlan = $drService->updateDefaultPlan(GeneralConfiguration::getConfiguration());
     }
-
     $this->info("Default Plan:");
     $this->info((string)$defaultPlan);
+    $this->info("Create or update default plan ... done!");
+
+    // create / update hook
+    $this->info('Update default webhooks ...');
+    $drService->updateDefaultWebhook();
+    $this->info('Update default webhooks ... done');
 
     return 0;
   }

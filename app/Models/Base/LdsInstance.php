@@ -47,12 +47,9 @@ class LdsInstance extends Model
     'lds_pool_id' => 'int',
     'lds_registration_id' => 'int',
     'user_id' => 'int',
+    'registered_at' => 'date',
     'online' => 'bool',
     'expires_at' => 'int'
-  ];
-
-  protected $dates = [
-    'registered_at'
   ];
 
   protected $fillable = [

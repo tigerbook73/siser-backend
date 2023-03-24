@@ -4,6 +4,7 @@ namespace App\Services\DigitalRiver;
 
 use App\Models\BillingInfo;
 use App\Models\Configuration;
+use App\Models\DrEvent;
 use App\Models\Subscription;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
@@ -38,6 +39,41 @@ class DigitalRiverService
   /** @var \DigitalRiver\ApiSdk\Api\SourcesApi|null */
   public $sourceApi = null;
 
+  /** @var \DigitalRiver\ApiSdk\Api\EventsApi|null */
+  public $eventApi = null;
+
+  /** @var \DigitalRiver\ApiSdk\Api\WebhooksApi|null */
+  public $webhookApi = null;
+
+  public $eventHandlers = [
+    // order events
+    'order.accepted'                    => 'onOrderAccepted',
+    'order.blocked'                     => 'onOrderBlocked',
+    'order.cancelled'                   => 'onOrderCancelled',
+    'order.charge.failed'               => 'onOrderChargeFailed',
+    'order.pending_payment'             => 'doNothing',
+    'order.review_opened'               => 'doNothing',
+    'order.fulfilled'                   => 'doNothing',
+    'order.complete'                    => 'onOrderComplete',
+    'order.invoice.created'             => 'onOrderInvoiceCreated',
+    'order.chargeback'                  => 'onOrderChargeback',
+
+    // refund
+    // 
+
+    // subscription
+    'subscription.created'              => 'doNothing',
+    'subscription.deleted'              => 'doNothing',
+    'subscription.extended'             => 'onSubscriptionExtended',
+    'subscription.failed'               => 'onSubscriptionFailed',
+    'subscription.payment_failed'       => 'onSubscriptionPaymentFailed',
+    'subscription.reminder'             => 'onSubscriptionReminder',
+    'subscription.updated'              => 'doNothing',
+
+    // charge back ...
+
+  ];
+
   public function __construct()
   {
     // rest api client
@@ -45,8 +81,8 @@ class DigitalRiverService
 
     // DR configuration
     $this->config = \DigitalRiver\ApiSdk\Configuration::getDefaultConfiguration();
-    $this->config->setAccessToken('sk_test_dc25334eed6a4fff8ad1516920379189');
-    $this->config->setHost('https://api.digitalriver.com');
+    $this->config->setAccessToken(config('dr.token'));
+    $this->config->setHost(config('dr.host'));
 
     // DR apis
     $this->planApi          = new \DigitalRiver\ApiSdk\Api\PlansApi($this->client, $this->config);
@@ -56,6 +92,8 @@ class DigitalRiverService
     $this->fulfillmentApi   = new \DigitalRiver\ApiSdk\Api\FulfillmentsApi($this->client, $this->config);
     $this->customerApi      = new \DigitalRiver\ApiSdk\Api\CustomersApi($this->client, $this->config);
     $this->sourceApi        = new \DigitalRiver\ApiSdk\Api\SourcesApi($this->client, $this->config);
+    $this->eventApi         = new \DigitalRiver\ApiSdk\Api\EventsApi($this->client, $this->config);
+    $this->webhookApi         = new \DigitalRiver\ApiSdk\Api\WebhooksApi($this->client, $this->config);
   }
 
   /**
@@ -182,6 +220,18 @@ class DigitalRiverService
 
     try {
       return $this->planApi->updatePlans(config('dr.default_plan'), $planRequest);
+    } catch (\Throwable $th) {
+      Log::warning($th->getMessage());
+      return null;
+    }
+  }
+
+  public function updateDefaultWebhook()
+  {
+    try {
+      $webhookUpdateRequest = new \DigitalRiver\ApiSdk\Model\WebhookUpdateRequest();
+      $webhookUpdateRequest->setTypes(array_keys($this->eventHandlers));
+      return $this->webhookApi->updateWebhooks(config('dr.default_webhook'), $webhookUpdateRequest);
     } catch (\Throwable $th) {
       Log::warning($th->getMessage());
       return null;
@@ -576,37 +626,53 @@ class DigitalRiverService
     }
   }
 
-
   /**
-   * advanced function
+   * webhook
    */
-  public function paySubscription(string|int $id)
+  public function listEvents()
   {
+    try {
+      $events = $this->eventApi->listEvents();
+      return $events->getData();
+    } catch (\Throwable $th) {
+      Log::warning($th->getMessage());
+      return null;
+    }
   }
 
 
-
   /**
-   * internal operation
+   * webhook event handler
    */
-  protected function fulfillSubsciption()
+  public function webhookHandler(array $event): bool
   {
+    $eventInfo = ['id' => $event['id'], 'type' => $event['type']];
+    if (DrEvent::find($event['id'])) {
+      Log::info('DR duplicated event received:', $eventInfo);
+      return true;
+    }
+
+    Log::info('DR event received:', $eventInfo);
+
+    $callback = $this->eventHandlers[$event['type']] ?? "no_handler";
+    if (method_exists($this, $callback)) {
+      try {
+        $this->$callback($event['data']);
+      } catch (\Throwable $th) {
+        Log::info($th);
+        return false;
+      }
+    } else {
+      Log::info('DR event has not handler', $eventInfo);
+    }
+
+    Log::info("DR event processed: ", $eventInfo);
+    DrEvent::log($eventInfo);
+    return true;
   }
 
-
   /**
-   * order event
-   * 
-   * order.accepted                    -> onOrderAccepted() (order.status = accepted)
-   * order.blocked                     -> onOrderFailed() (order.status = blocked)
-   * order.charge.failed               -> onOrderFailed() (order.status = blocked)
-   * order.cancelled                   -> onOrderCancelled() (order.status = cancelled)
-   * order.pending_payment             -> log (order.status = pending_payment)
-   * order.review_opened               -> log (order.status = in_review)
-   * order.fulfilled                   -> log (order.status = fulfilled)
-   * order.complete                    -> onOrderComplete() (order.status = complete)
-   * order.invoice.created             -> onInvoiceCreated
-   * order.credit_memo.created         -> onCreditMemoCreated // TODO:
+   * order event handlers
    */
 
   public function onOrderAccepted()
@@ -615,10 +681,10 @@ class DigitalRiverService
     // if not fulfilled, fulfill(order)
   }
 
-  public function onOrderFailed()
+  public function onOrderBlocked()
   {
     // for the first order only
-    // subscription.status = failed
+    // active subscription (dr & local)
   }
 
   public function onOrderCancelled()
@@ -627,30 +693,32 @@ class DigitalRiverService
     // active subscription (dr & local)
   }
 
-  public function onOrderCompleted()
+  public function onOrderChargeFailed()
+  {
+    // for the first order only
+    // subscription.status = failed
+  }
+
+  public function onOrderComplete()
   {
     // for the first order only
     // active subscription (dr & local)
   }
 
-  /**
-   * subscription event
-   * 
-   * subscription.created               -> onSubscriptionCreated()
-   * subscription.deleted               -> log()
-   * subscription.extended              -> onSubscriptionExtended()
-   * subscription.failed                -> onSubscriptionFailed()
-   * subscription.payment_failed        -> onSubscrptionPaymentFailed()
-   * subscription.reminder              -> onSubscriptionReminder()
-   * subscription.updated               -> log()
-   */
-
-  public function onSubscriptionCreated()
+  public function onOrderInvoiceCreated()
   {
-    // validate subscription is created
-
-    // if not , create ??
   }
+
+  public function onOrderChargeback()
+  {
+    // send reminder to customer
+
+    // notifyu customer if credit card to be expired
+  }
+
+  /**
+   * subscription event handlers
+   */
 
   public function onSubscriptionExtended()
   {
@@ -660,6 +728,13 @@ class DigitalRiverService
     // invoice (totalAmount, totalTax)
   }
 
+  public function onSubscriptionFailed()
+  {
+    // update subscription status
+
+    // notify the customer
+  }
+
   public function onSubscrptionPaymentFailed()
   {
     // notify the customer
@@ -667,7 +742,7 @@ class DigitalRiverService
     // ask user to check their payment method
   }
 
-  public function onSubscriptionFailed()
+  public function onSubscriptionPaymentFailed()
   {
     // update subscription status
 
@@ -679,5 +754,9 @@ class DigitalRiverService
     // send reminder to customer
 
     // notifyu customer if credit card to be expired
+  }
+
+  public function doNothing()
+  {
   }
 }
