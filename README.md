@@ -12,6 +12,8 @@
   - [Start development server](#markdown-header-start-development-server)
   - [Configure XDebug](#markdown-header-configure-xdebug)
   - [Artisan \& Artisan Tinker](#markdown-header-artisan-artisan-tinker)
+  - [Static code analyze](#markdown-header-static-code-analyze)
+  - [PHPUnit test](#markdown-header-phpunit-test)
 
 ## Introduction
 
@@ -110,3 +112,13 @@ See Laravel Homestead or Sail document for help.
 ### Artisan & Artisan Tinker
 
 Please be familar with artisan command and artisan tinker. These tools will greatly help you with the development, debug and maintanence of Laraval based projects.
+
+### Static code analyze
+```bash
+./vendor/bin/phpstan
+```
+
+### PHPUnit test
+```bash
+php artisan test
+```
