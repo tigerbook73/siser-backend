@@ -43,7 +43,7 @@ class AccountSubscriptionTestCase extends ApiTestCase
   public function createPaymentMethod()
   {
     return $this->postJson('/api/v1/account/payment-method', [
-      'type' => 'credit-card',
+      'type' => 'creditCard',
       'dr' => ['source_id' => 'digital-river-source-id-master'],
     ]);
   }

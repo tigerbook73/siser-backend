@@ -21,7 +21,7 @@ class UserPaymentMethodGetApiTest extends UserPaymentMethodTestCase
     // created payment method
     $paymentMethodCreate = [
       'user_id'       => $user->id,
-      'type'          => 'credit-card',
+      'type'          => 'creditCard',
       'display_data'  => [
         'last_four_digits'  => '9999',
         'brand'             => 'visa',

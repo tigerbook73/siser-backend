@@ -13,7 +13,7 @@ class PaymentMethodController extends SimpleController
   protected function getCreateRules()
   {
     return [
-      "type"          => ['required', 'string', 'in:credit-card'],
+      "type"          => ['required', 'string'],
       "dr"            => ['required', 'array'],
       "dr.source_id"  => ['required', 'string', 'max:255'],
     ];

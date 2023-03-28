@@ -16,7 +16,7 @@ return new class extends Migration
     Schema::create('payment_methods', function (Blueprint $table) {
       $table->id();
       $table->foreignId('user_id')->unique()->constrained();
-      $table->string('type')->comment('[credit-card, bpays]');
+      $table->string('type')->comment('[creditCard, PayPalBilling]');
       $table->json('display_data')->nullable()->comment('{
         // for credit card
         "last_four_digits": "3119",

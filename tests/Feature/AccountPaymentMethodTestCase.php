@@ -18,7 +18,7 @@ class AccountPaymentMethodTestCase extends ApiTestCase
     $this->modelSchema = array_keys((array)new ModelsPaymentMethod);
 
     $this->modelCreate = [
-      'type' => 'credit-card',
+      'type' => 'creditCard',
       // 'display_data'  => [
       //   'last_four_digits'  => '9999',
       //   'brand'             => 'visa',
@@ -27,7 +27,7 @@ class AccountPaymentMethodTestCase extends ApiTestCase
     ];
 
     $this->modelUpdate = [
-      'type'          => 'credit-card',
+      'type'          => 'creditCard',
       // 'display_data'  => [
       //   'last_four_digits'  => '8888',
       //   'brand'             => 'master',
