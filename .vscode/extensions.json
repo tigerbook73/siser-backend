@@ -1,12 +1,17 @@
 {
   "recommendations": [
+    "42Crunch.vscode-openapi",
+    "atlassian.atlascode",
+    "bierner.markdown-mermaid",
     "bmewburn.vscode-intelephense-client",
     "dbaeumer.vscode-eslint",
+    "eamodio.gitlens",
     "editorconfig.editorconfig",
     "esbenp.prettier-vscode",
     "Vue.volar",
     "wayou.vscode-todo-highlight",
     "xdebug.php-debug",
+    "yzhang.markdown-all-in-one"
   ],
   "unwantedRecommendations": [
     "octref.vetur",
