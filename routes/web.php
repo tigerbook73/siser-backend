@@ -41,6 +41,15 @@ if (!$role || $role == 'customer') {
   Route::get('/check-out', [LdsController::class, 'checkOut']);
 }
 
+/**
+ * DR test
+ */
+if ($testCode) {
+  Route::get('/be-test/dr', function () {
+    return view('dr-test');
+  });
+}
+
 
 /**
  * fallback 
