@@ -27,7 +27,7 @@ class Subscription {
     /** @var \Tests\Models\Coupon $coupon_info */
     public $coupon_info;
 
-    /** @var \Tests\Models\SubscriptionProcessingFeeInfo $processing_fee_info */
+    /** @var \Tests\Models\ProcessingFee $processing_fee_info */
     public $processing_fee_info;
 
     /** @var string $currency */
@@ -39,8 +39,14 @@ class Subscription {
     /** @var float $processing_fee */
     public $processing_fee = 0;
 
-    /** @var float $tax */
-    public $tax = 0;
+    /** @var float $subtotal */
+    public $subtotal = 0;
+
+    /** @var float $total_tax */
+    public $total_tax = 0;
+
+    /** @var float $total_amount */
+    public $total_amount = 0;
 
     /** @var int $subscription_level */
     public $subscription_level = \Tests\Models\SubscriptionLevel::NUMBER_0;

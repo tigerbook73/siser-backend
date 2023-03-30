@@ -30,14 +30,14 @@ class Invoice {
     /** @var \Tests\Models\InvoiceCoupon $coupon */
     public $coupon;
 
-    /** @var \Tests\Models\InvoiceProcessingFee $processing_fee */
+    /** @var \Tests\Models\ProcessingFee $processing_fee */
     public $processing_fee;
 
-    /** @var float $amount price - discount + processing_fee*/
-    public $amount = 0;
+    /** @var float $subtotal price - discount + processing_fee*/
+    public $subtotal = 0;
 
-    /** @var float $tax */
-    public $tax = 0;
+    /** @var float $total_tax */
+    public $total_tax = 0;
 
     /** @var float $total_amount */
     public $total_amount = 0;
