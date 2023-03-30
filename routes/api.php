@@ -20,6 +20,20 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
+use Illuminate\Support\Facades\Mail;
+use App\Models\Subscription;
+use App\Models\Invoice;
+use App\Mail\OrderAccepted;
+use App\Mail\OrderConfirmed;
+use App\Mail\InvoicePDF;
+use App\Mail\SubscriptionCancel;
+use App\Mail\SubscriptionReminder;
+use App\Mail\SubscriptionUpdate;
+use App\Mail\SubscriptionOverdue;
+use App\Mail\SubscriptionFailed;
+use App\Mail\SubscriptionExtended;
+use App\Mail\SubscriptionTerminated;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -36,9 +50,9 @@ $role = env('CONTAINER_ROLE', null);
 $testCode = env('APP_TEST_CODE', false);
 
 
-// 
+//
 // admin authentication
-// 
+//
 if (!$role || $role == 'admin') {
   Route::post('/auth/admin/login',            [AdminAuthController::class, 'login']);
   Route::post('/auth/admin/forgot-password',  [AdminAuthController::class, 'forgotPassword'])->name('password.email');
@@ -65,15 +79,15 @@ if (!$role || $role == 'customer') {
   });
 }
 
-// 
+//
 // public country
-// 
+//
 Route::get('/countries', [CountryController::class, 'list']);
 Route::get('/countries/{code}', [CountryController::class, 'indexWithCode']);
 
-// 
+//
 // public plans
-// 
+//
 Route::get('/plans', [PlanController::class, 'listPlan']);
 Route::get('/plans/{id}', [PlanController::class, 'indexPlan']);
 
@@ -82,9 +96,9 @@ Route::get('/plans/{id}', [PlanController::class, 'indexPlan']);
 //
 Route::post('/coupon-validate', [CouponController::class, 'check']);
 
-// 
+//
 // software packages
-// 
+//
 Route::get('/software-packages', [SoftwarePackageController::class, 'list']);
 Route::get('/software-packages/{id}', [SoftwarePackageController::class, 'index']);
 
@@ -106,9 +120,9 @@ if (!$role || $role == 'admin') {
   });
 }
 
-// 
+//
 // country
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::post('/countries', [CountryController::class, 'create'])->middleware('access:country.create');
@@ -120,9 +134,9 @@ if (!$role || $role == 'admin') {
 
 
 
-// 
+//
 // coupon
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/coupons', [CouponController::class, 'list'])->middleware('access:coupon.list');
@@ -146,14 +160,14 @@ if (!$role || $role == 'admin') {
     Route::post('/design-plans/{id}/activate', [PlanController::class, 'activate'])->middleware('access:design-plan.update');
     Route::post('/design-plans/{id}/deactivate', [PlanController::class, 'deactivate'])->middleware('access:design-plan.update');
 
-    // TODO: 
+    // TODO:
     Route::get('/design-plans/{id}/history-records', [PlanController::class, 'history'])->middleware('access:design-plan.list');
   });
 }
 
-// 
+//
 // invoice
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/invoices', [InvoiceController::class, 'list'])->middleware('access:invoice.list');
@@ -162,7 +176,7 @@ if (!$role || $role == 'admin') {
 }
 
 // TODO: subscriptions
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/subscriptions', [SubscriptionController::class, 'list'])->middleware('access:subscription.list');
@@ -195,9 +209,9 @@ if (!$role || $role == 'admin') {
 }
 
 
-// 
+//
 // user
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/users', [UserController::class, 'list']);
@@ -228,9 +242,9 @@ if (!$role || $role == 'admin') {
   });
 }
 
-// 
+//
 // admin users
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/admin-users', [AdminUserController::class, 'list'])->middleware('access:admin-user.list');
@@ -241,9 +255,9 @@ if (!$role || $role == 'admin') {
   });
 }
 
-// 
+//
 // report
-// 
+//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/x-ray/summary', [ReportController::class, 'summary'])->middleware('access:x-ray.summary');
@@ -263,9 +277,9 @@ if (!$role || $role == 'customer') {
   });
 }
 
-// 
+//
 // TODO: account subscription
-// 
+//
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/subscriptions', [SubscriptionController::class, 'accountList']);
@@ -278,9 +292,9 @@ if (!$role || $role == 'customer') {
 }
 
 
-// 
+//
 // TODO: account billing info
-// 
+//
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/billing-info', [BillingInfoController::class, 'accountGet']);
@@ -288,9 +302,9 @@ if (!$role || $role == 'customer') {
   });
 }
 
-// 
+//
 // TODO: account payment method
-// 
+//
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/payment-method', [PaymentMethodController::class, 'accountGet']);
@@ -298,9 +312,9 @@ if (!$role || $role == 'customer') {
   });
 }
 
-// 
+//
 // TODO: account invoice
-// 
+//
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/invoices', [InvoiceController::class, 'accountList']);
@@ -326,6 +340,54 @@ if ($testCode) {
 Route::get('/fake-login', function () {
   return response()->json(['message' => 'Not found'], 404);
 })->name('login');
+
+//
+// test mail sending
+// 
+Route::get('/test-mail/{type}', function (string $type) {
+  $subscription = Subscription::findOrFail(27);
+  switch ($type) {
+    case 'order-accepted':
+      Mail::send(new OrderAccepted($subscription));
+      break;
+
+    case 'order-confirmed':
+      Mail::send(new OrderAccepted($subscription));
+      break;
+
+    case 'order-confirmed':
+      Mail::send(new OrderConfirmed($subscription));
+      break;
+    case 'invoice-pdf':
+      $invoice = Invoice::findOrFail(1);
+      Mail::send(new InvoicePDF($invoice));
+      break;
+    case 'subscription-reminder':
+      Mail::send(new SubscriptionReminder($subscription));
+      break;
+    case 'subscription-extended':
+      Mail::send(new SubscriptionExtended($subscription));
+      break;
+    case 'subscription-update':
+      Mail::send(new SubscriptionUpdate($subscription));
+      break;
+    case 'subscription-cancel':
+      Mail::send(new SubscriptionCancel($subscription));
+      break;
+    case 'subscription-overdue':
+      Mail::send(new SubscriptionOverdue($subscription));
+      break;
+    case 'subscription-failed':
+      Mail::send(new SubscriptionFailed($subscription));
+      break;
+    case 'subscription-terminated':
+      Mail::send(new SubscriptionTerminated($subscription));
+      break;
+
+    default:
+      break;
+  }
+});
 
 //
 // fall back
