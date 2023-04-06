@@ -28,17 +28,16 @@ return new class extends Migration
         "percentage_off": 20
       }');
       $table->json('processing_fee')->comment('{
-        "rate": 2,
-        "amount": 20
+        "processing_fee_rate": 2,
         "explicit_processing_fee": false
       }');
-      $table->decimal('amount');
-      $table->decimal('tax');
+      $table->decimal('subtotal');
+      $table->decimal('total_tax');
       $table->decimal('total_amount');
       $table->date('invoice_date');
       $table->string('pdf_file')->nullable();
       $table->json('dr')->comment('{
-        "invoice_id": "dr_invoice_id",
+        "file_id": "dr_invoice_id",
       }');
       $table->string('status')->comment('[ draft, open, overdue, failed, completed ]');
 

@@ -23,7 +23,7 @@ class AccountSubscriptionTestCase extends ApiTestCase
 
   public function createBillingInfo()
   {
-    return $this->postJson('/api/v1/account/billing-info', [
+    $response = $this->postJson('/api/v1/account/billing-info', [
       'first_name'    => 'first_name',
       'last_name'     => 'last_name',
       'phone'         => '',
@@ -38,19 +38,33 @@ class AccountSubscriptionTestCase extends ApiTestCase
         'country'     => 'AU',
       ]
     ]);
+
+    // refresh authenticated user data
+    $this->user->refresh();
+
+    return $response;
   }
 
   public function createPaymentMethod()
   {
-    return $this->postJson('/api/v1/account/payment-method', [
+    $response = $this->postJson('/api/v1/account/payment-method', [
       'type' => 'creditCard',
       'dr' => ['source_id' => 'digital-river-source-id-master'],
     ]);
+
+    // refresh authenticated user data
+    $this->user->refresh();
+
+    return $response;
   }
 
   public function createSubscription($data)
   {
     $response = $this->postJson($this->baseUrl, $data);
+
+    // refresh authenticated user data
+    $this->user->refresh();
+
     return $response;
   }
 }

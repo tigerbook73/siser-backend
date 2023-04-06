@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * 
  * @property string $id
  * @property string $type
+ * @property int $subscription_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -28,7 +29,12 @@ class DrEvent extends Model
   protected $table = 'dr_events';
   public $incrementing = false;
 
+  protected $casts = [
+    'subscription_id' => 'int'
+  ];
+
   protected $fillable = [
-    'type'
+    'type',
+    'subscription_id'
   ];
 }

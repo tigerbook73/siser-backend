@@ -24,8 +24,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property array $plan
  * @property array|null $coupon
  * @property array $processing_fee
- * @property float $amount
- * @property float $tax
+ * @property float $subtotal
+ * @property float $total_tax
  * @property float $total_amount
  * @property Carbon $invoice_date
  * @property string|null $pdf_file
@@ -52,8 +52,8 @@ class Invoice extends Model
     'plan' => 'json',
     'coupon' => 'json',
     'processing_fee' => 'json',
-    'amount' => 'float',
-    'tax' => 'float',
+    'subtotal' => 'float',
+    'total_tax' => 'float',
     'total_amount' => 'float',
     'invoice_date' => 'date',
     'dr' => 'json'
@@ -67,8 +67,8 @@ class Invoice extends Model
     'plan',
     'coupon',
     'processing_fee',
-    'amount',
-    'tax',
+    'subtotal',
+    'total_tax',
     'total_amount',
     'invoice_date',
     'pdf_file',

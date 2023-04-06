@@ -39,7 +39,7 @@ class SubscriptionReminder extends Mailable
   public function envelope()
   {
     return new Envelope(
-      to: $this->subscription->user->billing_info->email,
+      to: [$this->subscription->user->billing_info->email],
       subject: 'Subscription Reminder',
     );
   }

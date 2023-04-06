@@ -10,8 +10,7 @@ class CouponDeleteApiTest extends CouponTestCase
 
   public function testCouponDeleteOk()
   {
-    $createResponse = $this->createAssert();
-    $response = $this->deleteJson("$this->baseUrl/" . $createResponse->json()['id']);
+    $response = $this->deleteJson("$this->baseUrl/" . $this->object2->id);
     $response->assertStatus(200);
   }
 

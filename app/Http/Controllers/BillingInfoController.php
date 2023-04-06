@@ -3,14 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\BillingInfo;
-use App\Models\Subscription;
 use App\Models\User;
+use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Http\Request;
 
 class BillingInfoController extends SimpleController
 {
   protected string $modelClass = BillingInfo::class;
 
+
+  public function __construct(public SubscriptionManager $manager)
+  {
+    parent::__construct();
+  }
 
   protected function getUpdateRules()
   {
@@ -46,13 +51,18 @@ class BillingInfoController extends SimpleController
 
     /** @var BillingInfo $billingInfo */
     $billingInfo = $this->user->billing_info()->first() ?: BillingInfo::createDefault($this->user);
+    $inputs = $this->validateUpdate($request, $billingInfo->id);
 
     // if there is active pay subscription, it is not allowed to update country/state/postcode
-    if (Subscription::where('status', 'active')->where('subscription_level', '>', 1)->count()) {
+    if ($this->user->subscriptions()
+      ->where('status', 'active')
+      ->where('subscription_level', '>', 1)
+      ->count()
+    ) {
       if (
-        isset($request->country) && $request->country != $billingInfo->address['country'] ||
-        isset($request->postcode) && $request->postcode != $billingInfo->address['postcode'] ||
-        isset($request->state) && $request->state != $billingInfo->address['state']
+        isset($inputs['country']) && $inputs['country'] != $billingInfo->address['country'] ||
+        isset($inputs['postcode']) && $inputs['postcode'] != $billingInfo->address['postcode'] ||
+        isset($inputs['state']) && $inputs['state'] != $billingInfo->address['state']
       ) {
         return response()->json(
           ['message' => 'BillingInfos state/postcode/country can not be modified when there is active paid subscription.'],
@@ -61,8 +71,25 @@ class BillingInfoController extends SimpleController
       }
     }
 
-    // TODO: refactor
-    return parent::update($request, $billingInfo->id);
+    $billingInfo->forceFill($inputs);
+    if (
+      !$billingInfo->address['line1'] ||
+      !$billingInfo->address['city'] ||
+      !$billingInfo->address['state'] ||
+      !$billingInfo->address['postcode'] ||
+      !$billingInfo->address['country']
+    ) {
+      return response()->json(
+        ['message' => 'BillingInfo address(line1/city/state/postcode/country) is not valid.'],
+        400
+      );
+    }
+    $billingInfo->save();
+
+    // create or update customer
+    $this->manager->createOrUpdateCustomer($billingInfo);
+
+    return $this->transformSingleResource($billingInfo->unsetRelations());
   }
 
   public function userGet($id)

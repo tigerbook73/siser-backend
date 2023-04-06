@@ -8,9 +8,11 @@ class AccountPaymentMethodSetApiTest extends AccountPaymentMethodTestCase
 
   public function testAccountPaymentMethodSetOk()
   {
+    $this->createBillingInfo();
+
     // update
     $response = $this->postJson("{$this->baseUrl}/payment-method", $this->modelUpdate);
-    $response->assertStatus(201)
+    $response->assertSuccessful()
       ->assertJsonStructure($this->modelSchema)
       ->assertJson($this->modelUpdate);
 

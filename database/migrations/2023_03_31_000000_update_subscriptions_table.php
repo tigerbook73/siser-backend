@@ -66,7 +66,9 @@ return new class extends Migration
       }');
       $table->decimal('price')->comment('beautified subscription price, may or may not include processing fee')->change();
       $table->decimal('processing_fee')->default(0.0)->comment('valid when explicit_processing_fee is true');
-      $table->decimal('tax')->default(0.0)->comment('based on latest invoice');
+      $table->decimal('subtotal')->default(0.0)->comment('price + processing_fee');
+      $table->decimal('total_tax')->default(0.0)->comment('based on latest invoice');
+      $table->decimal('total_amount')->default(0.0)->comment('subtotal + total_tax');
       $table->unsignedInteger('subscription_level')->default(0);
       $table->unsignedInteger('current_period')->default(0)->comment('0 - not started yet');
       $table->date('start_date')->nullable()->change();

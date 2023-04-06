@@ -19,7 +19,6 @@ use App\Models\User;
 use App\Services\Cognito\CognitoProvider;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
-use SebastianBergmann\CodeCoverage\Util\Percentage;
 
 class DatabaseSeeder extends Seeder
 {

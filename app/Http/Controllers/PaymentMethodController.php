@@ -4,28 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentMethod;
 use App\Models\User;
+use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Http\Request;
 
 class PaymentMethodController extends SimpleController
 {
   protected string $modelClass = PaymentMethod::class;
 
-  protected function getCreateRules()
+  public function __construct(public SubscriptionManager $manager)
   {
-    return [
-      "type"          => ['required', 'string'],
-      "dr"            => ['required', 'array'],
-      "dr.source_id"  => ['required', 'string', 'max:255'],
-    ];
-  }
-
-  protected function getUpdateRules()
-  {
-    return [
-      "type"          => ['filled', 'string', 'max:255'],
-      'dr'            => ['filled'],
-      'dr.source_id'  => ['required_with:dr', 'string', 'max:255'],
-    ];
+    parent::__construct();
   }
 
   public function accountGet()
@@ -42,63 +30,21 @@ class PaymentMethodController extends SimpleController
   {
     $this->validateUser();
 
-    /** @var PaymentMethod|null $paymentMethod */
-    $paymentMethod = $this->user->payment_method()->first();
-
-    if (!$paymentMethod) {
-      $inputs = $this->validateCreate($request);
-
-      $paymentMethod = new PaymentMethod($inputs);
-
-      // TODO: the following is mockup code
-      if (str_contains($inputs['dr']['source_id'], 'master')) {
-        $paymentMethod->display_data = [
-          'last_four_digits'  => '9999',
-          'brand'             => 'master',
-        ];
-      } else {
-        $paymentMethod->display_data = [
-          'last_four_digits'  => '8888',
-          'brand'             => 'visa',
-        ];
-      }
-      $paymentMethod->id      = $this->user->id;
-      $paymentMethod->user_id = $this->user->id;
-      $paymentMethod->save();
-
-      return  response()->json($this->transformSingleResource($paymentMethod), 201);
-    } else {
-      $inputs = $this->validateUpdate($request, $paymentMethod->id);
-      if (empty($inputs)) {
-        abort(400, 'input data can not be empty.');
-      }
-
-      $paymentMethod->type        = $inputs['type'] ?? $paymentMethod->type;
-      $paymentMethod->dr          = $inputs['dr'] ?? $paymentMethod->dr;
-      // TODO: the following is mockup code
-      if (str_contains($inputs['dr']['source_id'], 'master')) {
-        $paymentMethod->display_data = [
-          'last_four_digits'  => '9999',
-          'brand'             => 'master',
-        ];
-      } else {
-        $paymentMethod->display_data = [
-          'last_four_digits'  => '8888',
-          'brand'             => 'visa',
-        ];
-      }
-
-      // TODO: create DR customer is not exist, consistency protection
-      $paymentMethod->save();
-
-      // TODO: update DR customer
-      // POST ...
-
-      // TODO: update active subsription
-      // POST ...
-
-      return $this->transformSingleResource($paymentMethod->unsetRelations());
+    // validate billing info
+    if (empty($this->user->billing_info->address['line1'])) {
+      return response()->json(['message' => 'parameters dr.source_id is not valid'], 400);
     }
+
+    // validate inputs
+    $inputs = $request->validate([
+      "type"          => ['required', 'string', 'max:255'],
+      "dr"            => ['required', 'array'],
+      "dr.source_id"  => ['required', 'string', 'max:255'],
+    ]);
+
+    $paymentMethod = $this->manager->updatePaymentMethod($this->user, $inputs['dr']['source_id']);
+
+    return $this->transformSingleResource($paymentMethod);
   }
 
   public function userGet($id)
@@ -111,6 +57,6 @@ class PaymentMethodController extends SimpleController
     if (!$paymentMethod) {
       return response()->json(null);
     }
-    return $this->transformSingleResource($paymentMethod->unsetRelations());
+    return $this->transformSingleResource($paymentMethod);
   }
 }

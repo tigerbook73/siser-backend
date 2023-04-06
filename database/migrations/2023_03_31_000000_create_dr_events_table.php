@@ -16,6 +16,7 @@ return new class extends Migration
     Schema::create('dr_events', function (Blueprint $table) {
       $table->string('id')->primary();
       $table->string('type');
+      $table->foreignId('subscription_id')->nullable();
       $table->timestamps();
     });
   }

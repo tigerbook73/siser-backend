@@ -39,7 +39,7 @@ class SubscriptionOverdue extends Mailable
   public function envelope()
   {
     return new Envelope(
-      to: $this->subscription->user->billing_info->email,
+      to: [$this->subscription->user->billing_info->email],
       subject: 'Subscription Overdue',
     );
   }
@@ -52,7 +52,7 @@ class SubscriptionOverdue extends Mailable
   public function content()
   {
     return new Content(
-      view: 'emails.SubscriptionOverdue',
+      view: 'emails.subscription-overdue',
     );
   }
 

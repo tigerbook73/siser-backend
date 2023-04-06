@@ -10,8 +10,9 @@ class DrEvent extends BaseDrEvent
   static public function log(array $eventInfo)
   {
     $event = new self();
-    $event->id = $eventInfo['id'];
-    $event->type = $eventInfo['type'];
+    $event->id              = $eventInfo['id'];
+    $event->type            = $eventInfo['type'];
+    $event->subscription_id = $eventInfo['subscription_id'] ?? null;
     $event->save();
   }
 }

@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\DigitalRiver\DigitalRiverService;
+use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Http\Request;
 
 class WebhookController extends Controller
 {
-  public function __construct(public DigitalRiverService $drService)
+  public function __construct(public SubscriptionManager $manager)
   {
   }
 
   public function handler(Request $request)
   {
     $inputs = $request->all();
-    if (!$this->drService->webhookHandler($inputs)) {
+    if (!$this->manager->webhookHandler($inputs)) {
       return response(status: 400);
     }
   }

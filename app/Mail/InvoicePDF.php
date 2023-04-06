@@ -39,7 +39,7 @@ class InvoicePDF extends Mailable
   public function envelope()
   {
     return new Envelope(
-      to: $this->invoice->user->billing_info->email,
+      to: [$this->invoice->user->billing_info->email],
       subject: 'Invoice PDF',
     );
   }
@@ -52,7 +52,7 @@ class InvoicePDF extends Mailable
   public function content()
   {
     return new Content(
-      view: 'emails.InvoicePDF',
+      view: 'emails.invoice-pdf',
     );
   }
 

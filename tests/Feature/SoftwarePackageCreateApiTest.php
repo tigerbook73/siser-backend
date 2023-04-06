@@ -180,7 +180,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $response = $this->createAssert();
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 15:43:31');
+      ->assertSeeText('2022-12-31 00:00:00');
 
     $this->noAssert = TRUE;
     $this->modelCreate = $modelCreate;

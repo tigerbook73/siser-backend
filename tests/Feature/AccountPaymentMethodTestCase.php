@@ -15,8 +15,7 @@ class AccountPaymentMethodTestCase extends ApiTestCase
   {
     parent::setUp();
 
-    $this->modelSchema = array_keys((array)new ModelsPaymentMethod);
-
+    $this->modelSchema = array_diff(array_keys((array)new ModelsPaymentMethod), ['id']);
     $this->modelCreate = [
       'type' => 'creditCard',
       // 'display_data'  => [
@@ -34,5 +33,29 @@ class AccountPaymentMethodTestCase extends ApiTestCase
       // ],
       'dr' => ['source_id'   => 'digital-river-source-id-visa'],
     ];
+  }
+
+  public function createBillingInfo()
+  {
+    $response = $this->postJson('/api/v1/account/billing-info', [
+      'first_name'    => 'first_name',
+      'last_name'     => 'last_name',
+      'phone'         => '',
+      'organization'  => '',
+      'email'         => 'test-case@me.com',
+      'address' => [
+        'line1'       => '328 Reserve Road,  VIC',
+        'line2'       => '',
+        'city'        => 'Cheltenham',
+        'postcode'    => '3192',
+        'state'       => 'VIC',
+        'country'     => 'AU',
+      ]
+    ]);
+
+    // refresh authenticated user data
+    $this->user->refresh();
+
+    return $response;
   }
 }

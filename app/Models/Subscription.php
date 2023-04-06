@@ -19,7 +19,9 @@ class Subscription extends BaseSubscription
     'currency'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'price'                     => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'processing_fee'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'tax'                       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'subtotal'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'total_tax'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'total_amount'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'start_date'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'end_date'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subscription_level'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -37,7 +39,7 @@ class Subscription extends BaseSubscription
 
   static protected $withAttrs = ['plan', 'coupon'];
 
-  static public function createBasicMachineSubscription(User $user)
+  static public function createBasicMachineSubscription(User $user): Subscription
   {
     /** @var Plan $plan */
     $plan = Plan::find(config('siser.plan.default_machine_plan'));
@@ -56,6 +58,9 @@ class Subscription extends BaseSubscription
       'currency'                  => 'USD',
       'price'                     => 0.0,
       'processing_fee'            => 0.0,
+      'subtotal'                  => 0.0,
+      'total_tax'                 => 0.0,
+      'total_amount'              => 0.0,
       'subscription_level'        => 1,
       'current_period'            => 0,
       'start_date'                => new Carbon(),
@@ -67,4 +72,25 @@ class Subscription extends BaseSubscription
       'sub_status'                => 'normal',
     ]);
   }
+
+  public function stop(string $status, string $stopReason = '', string $subStatus = 'normal')
+  {
+    $this->status = $status;
+    $this->stop_reason = $stopReason;
+    $this->sub_status = $subStatus;
+
+    $this->end_date = $this->start_date ? now() : null;
+    $this->next_invoice_date = null;
+    $this->save();
+  }
+
+  // public function activate($start_date = null, )
+  // {
+  //   $this->status = 'active';
+  //   $this->start_date = now();
+
+  //   $this->end_date = $this->start_date ? now() : null;
+  //   $this->next_invoice_date = null;
+  //   $this->save();
+  // }
 }

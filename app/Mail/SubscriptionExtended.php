@@ -39,7 +39,7 @@ class SubscriptionExtended extends Mailable
   public function envelope()
   {
     return new Envelope(
-      to: $this->subscription->user->billing_info->email,
+      to: [$this->subscription->user->billing_info->email],
       subject: 'Subscription Extended',
     );
   }
@@ -52,7 +52,7 @@ class SubscriptionExtended extends Mailable
   public function content()
   {
     return new Content(
-      view: 'emails.SubscriptionExtended',
+      view: 'emails.subscription-extended',
     );
   }
 

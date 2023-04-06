@@ -10,6 +10,8 @@ class AccountPaymentMethodGetApiTest extends AccountPaymentMethodTestCase
 
   public function testAccountPaymentMethodGetOk()
   {
+    $this->createBillingInfo();
+
     $response = $this->getJson("{$this->baseUrl}/payment-method");
     $response->assertStatus(200)->assertJson([]);
 

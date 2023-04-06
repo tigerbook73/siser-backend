@@ -59,19 +59,7 @@ class CountryController extends SimpleController
     /** @var Country $country */
     $country = Country::code($code)->firstOrFail();
     $inputs = $this->validateUpdate($request, $country->id);
-    if (empty($inputs)) {
-      abort(400, 'input data can not be empty.');
-    }
-
-    // validate and update attributers
-    $updatable = $this->modelClass::getUpdatable($this->userType);
-    foreach ($inputs as $attr => $value) {
-      if (!in_array($attr, $updatable)) {
-        abort(400, 'attribute: [' . $attr . '] is not updatable.');
-      }
-      $country->$attr = $value;
-    }
-
+    $country->forceFill($inputs);
     DB::transaction(
       fn () => $country->save()
     );

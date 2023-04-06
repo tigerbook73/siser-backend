@@ -35,7 +35,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $coupon_info
  * @property array|null $processing_fee_info
  * @property float $processing_fee
- * @property float $tax
+ * @property float $subtotal
+ * @property float $total_tax
+ * @property float $total_amount
  * @property int $subscription_level
  * @property int $current_period
  * @property Carbon|null $current_period_start_date
@@ -70,7 +72,9 @@ class Subscription extends Model
     'coupon_info' => 'json',
     'processing_fee_info' => 'json',
     'processing_fee' => 'float',
-    'tax' => 'float',
+    'subtotal' => 'float',
+    'total_tax' => 'float',
+    'total_amount' => 'float',
     'subscription_level' => 'int',
     'current_period' => 'int',
     'current_period_start_date' => 'date',
@@ -93,7 +97,9 @@ class Subscription extends Model
     'coupon_info',
     'processing_fee_info',
     'processing_fee',
-    'tax',
+    'subtotal',
+    'total_tax',
+    'total_amount',
     'subscription_level',
     'current_period',
     'current_period_start_date',

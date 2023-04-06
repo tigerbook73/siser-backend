@@ -63,30 +63,18 @@ class AdminUserController extends SimpleController
 
   public function update(Request $request, int $id)
   {
-
     $this->validateUser();
     $inputs = $this->validateUpdate($request, $id);
-    if (empty($inputs)) {
-      abort(400, 'input data can not be empty.');
-    }
 
-    $object = $this->baseQuery()->findOrFail($id);
-
-    // validate and update attributers
-    $updatable = $this->modelClass::getUpdatable($this->userType);
-    foreach ($inputs as $attr => $value) {
-      if (!in_array($attr, $updatable)) {
-        abort(400, 'attribute: [' . $attr . '] is not updatable.');
-      }
-      $object->$attr = $value;
-    }
+    $adminUser = $this->baseQuery()->findOrFail($id);
+    $adminUser->forceFill($inputs);
     if (isset($inputs['password'])) {
-      $object->password = Hash::make($inputs['password']);
+      $adminUser->password = Hash::make($inputs['password']);
     }
 
     DB::transaction(
-      fn () => $object->save()
+      fn () => $adminUser->save()
     );
-    return response()->json($this->transformSingleResource($object->unsetRelations()));
+    return response()->json($this->transformSingleResource($adminUser->unsetRelations()));
   }
 }

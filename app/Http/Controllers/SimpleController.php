@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AdminUser;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,21 +107,10 @@ class SimpleController extends Controller
   {
     $this->validateUser();
     $inputs = $this->validateUpdate($request, $id);
-    if (empty($inputs)) {
-      abort(400, 'input data can not be empty.');
-    }
 
+    /** @var Model $object */
     $object = $this->baseQuery()->findOrFail($id);
-
-    // validate and update attributers
-    $updatable = $this->modelClass::getUpdatable($this->userType);
-    foreach ($inputs as $attr => $value) {
-      if (!in_array($attr, $updatable)) {
-        abort(400, 'attribute: [' . $attr . '] is not updatable.');
-      }
-      $object->$attr = $value;
-    }
-
+    $object->forceFill($inputs);
     DB::transaction(
       fn () => $object->save()
     );
@@ -281,8 +271,20 @@ class SimpleController extends Controller
       abort(404, 'The object to be updated does not exist.');
     }
 
-    $inputs = $request->all();
-    return $this->validateRules($inputs, $this->getUpdateRules());
+    $inputs = $this->validateRules($request->all(), $this->getUpdateRules());
+    if (empty($inputs)) {
+      abort(400, 'input data can not be empty.');
+    }
+
+    // validate and update attributers
+    $updatable = $this->modelClass::getUpdatable($this->userType);
+    foreach ($inputs as $attr => $value) {
+      if (!in_array($attr, $updatable)) {
+        abort(400, 'attribute: [' . $attr . '] is not updatable.');
+      }
+    }
+
+    return $inputs;
   }
 
   protected function validateDelete(int $id)

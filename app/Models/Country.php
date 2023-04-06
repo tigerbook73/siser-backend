@@ -21,4 +21,9 @@ class Country extends BaseCountry
   {
     return $query->where('code', $code);
   }
+
+  static public function findByCode(string $code): Country|null
+  {
+    return self::where('code', $code)->first();
+  }
 }

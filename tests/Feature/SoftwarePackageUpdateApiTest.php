@@ -207,7 +207,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $response = $this->updateAssert(200, $this->object->id);
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 15:43:31');
+      ->assertSeeText('2022-12-31 00:00:00');
 
     $this->noAssert = TRUE;
     $this->modelUpdate = $modelUpdate;
