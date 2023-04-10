@@ -15,7 +15,9 @@ class WebhookController extends Controller
   {
     $inputs = $request->all();
     if (!$this->manager->webhookHandler($inputs)) {
-      return response(status: 400);
+      return response()->json(null, status: 400);
+    } else {
+      return response()->json(null);
     }
   }
 }

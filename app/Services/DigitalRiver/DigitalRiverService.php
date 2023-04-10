@@ -91,32 +91,6 @@ class DigitalRiverService
   /** @var DrFileLinksApi|null */
   public $fileLinkApi = null;
 
-  public $eventHandlers = [
-    // order events
-    'order.accepted'                    => 'onOrderAccepted',
-    'order.blocked'                     => 'onOrderBlocked',
-    'order.cancelled'                   => 'onOrderCancelled',
-    'order.charge.failed'               => 'onOrderChargeFailed',
-    'order.pending_payment'             => 'doNothing',
-    'order.review_opened'               => 'doNothing',
-    'order.fulfilled'                   => 'doNothing',
-    'order.complete'                    => 'onOrderComplete',
-    'order.invoice.created'             => 'onOrderInvoiceCreated',
-    'order.chargeback'                  => 'onOrderChargeback',
-
-    // refund
-    // 
-
-    // subscription
-    'subscription.created'              => 'doNothing',
-    'subscription.deleted'              => 'doNothing',
-    'subscription.extended'             => 'onSubscriptionExtended',
-    'subscription.failed'               => 'onSubscriptionFailed',
-    'subscription.payment_failed'       => 'onSubscriptionPaymentFailed',
-    'subscription.reminder'             => 'onSubscriptionReminder',
-    'subscription.updated'              => 'doNothing',
-  ];
-
   public function __construct()
   {
     // rest api client
@@ -239,12 +213,20 @@ class DigitalRiverService
     $planRequest->setId(config('dr.default_plan'));
     $planRequest->setTerms('These are the terms...');
     $planRequest->setContractBindingDays(10000);
-    $planRequest->setInterval('month');
-    $planRequest->setIntervalCount(1);
-    $planRequest->setName('default-plan');
-    $planRequest->setReminderOffsetDays($configuration->plan_reminder_offset_days);
+    if (config('dr.dr_mode') != 'prod') {
+      $planRequest->setName('default-plan');
+      $planRequest->setInterval('day');
+      $planRequest->setIntervalCount(2);
+    } else {
+      $planRequest->setName('default-test-plan');
+      $planRequest->setInterval('day');
+      $planRequest->setInterval('month');
+      $planRequest->setIntervalCount(1);
+    }
     $planRequest->setBillingOffsetDays($configuration->plan_billing_offset_days);
+    $planRequest->setReminderOffsetDays($configuration->plan_reminder_offset_days);
     $planRequest->setCollectionPeriodDays($configuration->plan_collection_period_days);
+
     $planRequest->setState('active');
 
     try {
@@ -254,6 +236,7 @@ class DigitalRiverService
       throw $th;
     }
   }
+
 
   public function UpdateDefaultPlan(Configuration $configuration): DrPlan
   {
@@ -270,11 +253,11 @@ class DigitalRiverService
     }
   }
 
-  public function updateDefaultWebhook(bool $enable)
+  public function updateDefaultWebhook(array $types, bool $enable)
   {
     try {
       $webhookUpdateRequest = new DrWebhookUpdateRequest();
-      $webhookUpdateRequest->setTypes(array_keys($this->eventHandlers));
+      $webhookUpdateRequest->setTypes($types);
       $webhookUpdateRequest->setEnabled($enable);
       return $this->webhookApi->updateWebhooks(config('dr.default_webhook'), $webhookUpdateRequest);
     } catch (\Throwable $th) {
@@ -703,7 +686,7 @@ class DigitalRiverService
   {
     $fileLinkRequest = new DrFileLinkRequest();
     $fileLinkRequest->setFileId($fileId);
-    $fileLinkRequest->setExpiresTime($expiresTime->toDateTime());
+    $fileLinkRequest->setExpiresTime($expiresTime->toIso8601ZuluString());
 
     try {
       return $this->fileLinkApi->createFileLinks($fileLinkRequest);

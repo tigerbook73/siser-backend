@@ -277,7 +277,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $subscription->start_date = now();
     $subscription->current_period = 1;
     $subscription->current_period_start_date = now();
-    $subscription->current_period_end_date = now()->addMonth();
+    $subscription->current_period_end_date = now()->addDays(2);
     $subscription->next_invoice_date = $subscription->current_period_end_date->subDays(
       GeneralConfiguration::getConfiguration()->plan_billing_offset_days
     );
@@ -355,7 +355,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     // update subscription data
     $subscription->current_period = $subscription->current_period + 1; // TODO: more to check
     $subscription->current_period_start_date = $subscription->current_period_end_date;
-    $subscription->current_period_end_date = $subscription->current_period_start_date->addMonth();
+    $subscription->current_period_end_date = $subscription->current_period_start_date->addDays(2);
     $subscription->next_invoice_date = $subscription->current_period_end_date->subDays(
       GeneralConfiguration::getConfiguration()->plan_billing_offset_days
     );

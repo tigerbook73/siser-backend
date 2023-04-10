@@ -1,9 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -14,19 +12,29 @@ return new class extends Migration
    */
   public function up()
   {
+    if (config('dr.dr_mode') != 'prod') {
+      $plan_billing_offset_days = 0;
+      $plan_collection_period_days = 0;
+      $plan_reminder_offset_days = 1;
+    } else {
+      $plan_billing_offset_days = 5;
+      $plan_collection_period_days = 15;
+      $plan_reminder_offset_days = 7;
+    }
+
     // 
     DB::table('general_configuration')->insert([
       [
         'name' => 'plan_reminder_offset_days',
-        'value' => json_encode(7),
+        'value' => json_encode($plan_reminder_offset_days),
       ],
       [
         'name' => 'plan_billing_offset_days',
-        'value' => json_encode(5),
+        'value' => json_encode($plan_billing_offset_days),
       ],
       [
         'name' => 'plan_collection_period_days',
-        'value' => json_encode(15),
+        'value' => json_encode($plan_collection_period_days),
       ],
       [
         'name' => 'siser_share_rate',

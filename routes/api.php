@@ -342,7 +342,7 @@ Route::get('/fake-login', function () {
 })->name('login');
 
 //
-// test mail sending
+// TODO: remove: test mail sending
 // 
 Route::get('/test-mail/{type}', function (string $type) {
   $subscription = Subscription::findOrFail(27);

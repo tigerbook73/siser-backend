@@ -4,12 +4,14 @@ namespace App\Console\Commands;
 
 use App\Models\GeneralConfiguration;
 use App\Services\DigitalRiver\DigitalRiverService;
+use App\Services\DigitalRiver\SubscriptionManagerDR;
 use DigitalRiver\ApiSdk\Model\Checkout;
 use DigitalRiver\ApiSdk\Model\Customer;
 use DigitalRiver\ApiSdk\Model\Order;
+use DigitalRiver\ApiSdk\Model\Plan;
 use DigitalRiver\ApiSdk\Model\Subscription;
 use Illuminate\Console\Command;
-
+use Illuminate\Support\Facades\Cache;
 
 class DrCommand extends Command
 {
@@ -34,8 +36,8 @@ class DrCommand extends Command
    */
   public function handle()
   {
-    if (!config('dr.dr_unit_test', false)) {
-      $this->warn('This command can only be executed under test mode');
+    if (config('dr.dr_mode') == 'prod') {
+      $this->warn('This command can not be executed under "prod" mode');
       return -1;
     }
 
@@ -49,6 +51,7 @@ class DrCommand extends Command
       $this->info('  clear:           try to clear all test data');
       $this->info('  enable-hook:     enable webhook');
       $this->info('  disable-hook:    disable webhook');
+      $this->info('  generate-key:    update magic key');
       return 0;
     }
 
@@ -64,6 +67,9 @@ class DrCommand extends Command
 
       case 'disable-hook':
         return $this->enableWebhook(false);
+
+      case 'generate-key':
+        return $this->generateKey(false);
 
       default:
         $this->error("Invalid subcmd: ${subcmd}");
@@ -83,8 +89,7 @@ class DrCommand extends Command
     } catch (\Throwable $th) {
       $defaultPlan = $drService->createDefaultPlan(GeneralConfiguration::getConfiguration());
     }
-    $this->info("Default Plan:");
-    $this->info((string)$defaultPlan);
+    $this->info("Default Plan: {$defaultPlan->getId()}");
     $this->info("Create or update default plan ... done!");
 
     return 0;
@@ -92,7 +97,7 @@ class DrCommand extends Command
 
   public function enableWebhook(bool $enable)
   {
-    $drService = new DigitalRiverService();
+    $drService = new SubscriptionManagerDR();
 
     // create / update hook
     $this->info('Update default webhooks ...');
@@ -103,6 +108,24 @@ class DrCommand extends Command
   public function clear()
   {
     $drService = new DigitalRiverService();
+
+    /**
+     * clear plans
+     */
+    $this->info('Clear plans ...');
+
+    /** @var Plan[] $plans */
+    $plans = $drService->planApi->listPlans(state: 'draft')->getData();
+    foreach ($plans as $plan) {
+      $this->info("  delete plan " . $plan->getId());
+      $this->ignore(
+        [$drService->planApi, 'deletePlans'],
+        $plan->getId()
+      );
+    }
+
+    $this->info('Clear plans ...');
+    $this->info('');
 
     /**
      * clear subscriptions
@@ -197,7 +220,7 @@ class DrCommand extends Command
     return 0;
   }
 
-  function ignore($callback)
+  public function ignore($callback)
   {
     try {
       $args = func_get_args();

@@ -22,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
     }
 
     // subscription manager
-    if (config('dr.dr_unit_test')) {
+    if (config('dr.dr_mode') == 'test') {
       $this->app->bind(SubscriptionManager::class, fn () => new SubscriptionManagerMockup());
     } else {
       $this->app->bind(SubscriptionManager::class, fn () => new SubscriptionManagerDR());

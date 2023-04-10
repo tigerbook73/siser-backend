@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  * 
  * @property string $id
  * @property string $type
- * @property int $subscription_id
+ * @property int|null $subscription_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *

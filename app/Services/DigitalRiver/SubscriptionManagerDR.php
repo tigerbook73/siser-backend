@@ -12,6 +12,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Carbon\Carbon;
+use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\ObjectSerializer;
@@ -38,7 +39,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       // 'order.review_opened'               => ['class' => DrOrder::class, 'handler' => 'doNothing'],
       // 'order.fulfilled'                   => ['class' => DrOrder::class, 'handler' => 'doNothing'],
       'order.complete'                    => ['class' => DrOrder::class, 'handler' => 'onOrderComplete'],
-      'order.invoice.created'             => ['class' => 'array',                                 'handler' => 'onOrderInvoiceCreated'],
+      'order.invoice.created'             => ['class' => 'array', 'handler' => 'onOrderInvoiceCreated'],
       'order.chargeback'                  => ['class' => DrOrder::class, 'handler' => 'onOrderChargeback'],
 
       // refund
@@ -47,10 +48,10 @@ class SubscriptionManagerDR implements SubscriptionManager
       // subscription
       // 'subscription.created'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
       // 'subscription.deleted'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
-      'subscription.extended'             => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionExtended'],
+      'subscription.extended'             => ['class' => 'array', 'handler' => 'onSubscriptionExtended'],
       'subscription.failed'               => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionFailed'],
-      'subscription.payment_failed'       => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionPaymentFailed'],
-      'subscription.reminder'             => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionReminder'],
+      'subscription.payment_failed'       => ['class' => 'array', 'handler' => 'onSubscriptionPaymentFailed'],
+      'subscription.reminder'             => ['class' => 'array', 'handler' => 'onSubscriptionReminder'],
       // 'subscription.updated'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
     ];
   }
@@ -259,8 +260,14 @@ class SubscriptionManagerDR implements SubscriptionManager
 
 
   /**
-   * webhook event handler
+   * webhook event
    */
+
+  public function updateDefaultWebhook(bool $enable)
+  {
+    $this->drService->updateDefaultWebhook(array_keys($this->eventHandlers), $enable);
+  }
+
   public function webhookHandler(array $event): bool
   {
     $eventInfo = ['id' => $event['id'], 'type' => $event['type']];
@@ -272,7 +279,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     Log::info('DR event received:', $eventInfo);
 
     $eventHandler = $this->eventHandlers[$event['type']] ?? null;
-    if (method_exists($this, $eventHandler['handler'])) {
+    if ($eventHandler && method_exists($this, $eventHandler['handler'])) {
       try {
         $object = ObjectSerializer::deserialize($event['data']['object'], $eventHandler['class']);
         $handler = $eventHandler['handler'];
@@ -319,8 +326,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // only process the first order
     if ($options['first_order'] ?? false) {
-      $subscription = Subscription::find($subscriptionId);
-      if (!$subscription || $subscription->dr['order_id'] != $order->getId()) {
+      if (!isset($subscription->dr['order_id']) || $subscription->dr['order_id'] != $order->getId()) {
         Log::warning(__FUNCTION__ . 'skip non-first subscription', ['object' => $order]);
         return null;
       }
@@ -581,8 +587,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionExtended(DrSubscription $drSubscription): Subscription|null
+  public function onSubscriptionExtended(array $event): Subscription|null
   {
+    $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
+    // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
       return null;
@@ -630,8 +639,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionPaymentFailed(DrSubscription $drSubscription): Subscription|null
+  public function onSubscriptionPaymentFailed(array $event): Subscription|null
   {
+    $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
+    // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
       return null;
@@ -653,8 +665,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionReminder(DrSubscription $drSubscription): Subscription|null
+  public function onSubscriptionReminder(array $event): Subscription|null
   {
+    $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
+    // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
       return null;
