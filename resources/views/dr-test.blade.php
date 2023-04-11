@@ -6,61 +6,93 @@
   </head>
 
   <body>
-    <div id="drop-in"></div>
+    <h1>checkout or management</h1>
+    <div id="buttons">
+      <button onclick="checkout()">Checkout</button>
+      <button onclick="management()">Management</button>
+    </div>
+
+    <div style="display: flex">
+      <div id="drop-in-checkout"></div>
+      <div id="drop-in-management"></div>
+    </div>
 
     <script>
       const public_key = "pk_test_f17c83476a3c4197a37df49cff3875f0";
       const session_id = "2eefd3ab-4df7-42e4-bd5e-72187b7a78f2";
-      let digitalriverpayments = new DigitalRiver(public_key, {
+      const digitalRirver = new DigitalRiver(public_key, {
         locale: "UK",
       });
 
-      let configuration = {
+      // checkout configuration
+      const configurationCheckout = {
         sessionId: session_id,
         options: {
-          button: {
-            type: "custom",
-            buttonText: "Customized Button Text",
-          },
           flow: "checkout",
-          // redirect: {
-          //   disableAutomaticRedirects: true,
-          // },
+          usage: "subscription",
+
           showComplianceSection: true,
           showSavePaymentAgreement: true,
           showTermsOfSaleDisclosure: true,
-          usage: "subscription",
+          expandFirstPaymentMethod: false,
         },
-        // billingAddress: {
-        //   firstName: "John",
-        //   lastName: "Doe",
-        //   email: "test@test.com",
-        //   phoneNumber: "952-253-1234",
-        //   address: {
-        //     line1: "87 Nerrigundah Drive",
-        //     line2: "",
-        //     city: "GRANTVILLE",
-        //     state: "Victoria",
-        //     postalCode: "3984",
-        //     country: "AU",
-        //   },
-        // },
-        onSuccess: function (data) {
-          console.log("onSuccess");
-        },
-        onError: function (data) {
-          console.log("onError");
-        },
-        onReady: function (data) {
-          console.log("onReady");
-        },
-        onCancel: function (data) {
-          console.log("onCancel");
-        },
+        onSuccess: (data) => console.log("onSuccess", data),
+        onError: (data) => console.log("onError", data),
+        onReady: (data) => console.log("onReady", data),
+        onCancel: (data) => console.log("onCancel", data),
       };
 
-      let dropin = digitalriverpayments.createDropin(configuration);
-      dropin.mount("drop-in");
+      // management configuration
+      const configurationManagement = {
+        options: {
+          flow: "managePaymentMethods",
+          usage: "subscription",
+
+          showComplianceSection: true,
+          showSavePaymentAgreement: true,
+          showTermsOfSaleDisclosure: true,
+          expandFirstPaymentMethod: false,
+        },
+        billingAddress: {
+          firstName: "John",
+          lastName: "Doe",
+          email: "test@test.com",
+          phoneNumber: "952-253-1234",
+          address: {
+            line1: "87 Nerrigundah Drive",
+            line2: "",
+            city: "GRANTVILLE",
+            state: "Vic",
+            postalCode: "3984",
+            country: "AU",
+          },
+        },
+        onSuccess: (data) => console.log("onSuccess", data),
+        onError: (data) => console.log("onError", data),
+        onReady: (data) => console.log("onReady", data),
+        onCancel: (data) => console.log("onCancel", data),
+      };
+
+      function hideButtons() {
+        const el = document.getElementById("buttons");
+        el.style.display = "none";
+      }
+
+      function checkout() {
+        hideButtons();
+
+        // checkout
+        const dropin = digitalRirver.createDropin(configurationCheckout);
+        dropin.mount("drop-in-checkout");
+      }
+
+      function management() {
+        hideButtons();
+
+        // management
+        const dropin = digitalRirver.createDropin(configurationManagement);
+        dropin.mount("drop-in-management");
+      }
     </script>
   </body>
 </html>
