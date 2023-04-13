@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\SubscriptionNotification;
 use Illuminate\Support\Facades\Log;
 
 class SubscriptionManagerMockup implements SubscriptionManager
@@ -103,11 +104,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $subscription->save();
 
     // send notification
-    // ...
-
-
-    // TEST: on success
-    dispatch(fn () => $this->onSubscriptionFailed($subscription))->afterResponse();
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
 
     return $subscription;
   }
@@ -187,7 +184,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
   {
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -203,7 +200,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
   {
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -213,9 +210,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $subscription->stop_reason = "first order being blocked";
     $subscription->save();
 
-    // TODO: send notification to customer
-    // ...
-
+    // no notification required
     return $subscription;
   }
 
@@ -223,7 +218,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
   {
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -239,7 +234,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
   {
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -257,7 +252,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
 
     // must be in processing status
     if ($subscription->status != 'processing') {
-      Log::info(__FUNCTION__ . 'skip subscription not in processing');
+      Log::info(__FUNCTION__ . ': skip subscription not in processing');
       return null;
     }
 
@@ -270,7 +265,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     // stop previous subscription
     $previousSubscription = $user->getActiveSubscription();
     if ($previousSubscription) {
-      $previousSubscription->stop('inactive', 'new subscrption activated');
+      $previousSubscription->stop('stopped', 'new subscrption activated');
     }
 
     // active current subscription
@@ -288,6 +283,9 @@ class SubscriptionManagerMockup implements SubscriptionManager
     // update user subscription level and license_count
     $user->subscription_level = $subscription->subscription_level;
     $user->save();
+
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_CONFIRMED);
 
     return $subscription;
   }
@@ -315,10 +313,15 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $invoice->invoice_date = now();
     $invoice->pdf_file = '/robots.txt';
     $invoice->dr = ['file_id' => 'file_id_' . uuid_create()];
+    $invoice->dr = [
+      'order_id'  => 'order_id_' . uuid_create(),
+      'file_id'   => 'file_id_' . uuid_create(),
+    ];
     $invoice->status = 'completed';
     $invoice->save();
 
-    // TODO: sent invoice pdf to customer
+    // sent notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PDF, $invoice);
 
     return $subscription;
   }
@@ -327,7 +330,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
   {
     // must be in active status
     if ($subscription->status != 'active') {
-      Log::info(__FUNCTION__ . 'skip subscription not in active status');
+      Log::info(__FUNCTION__ . ': skip subscription not in active status');
       return null;
     }
 
@@ -361,7 +364,8 @@ class SubscriptionManagerMockup implements SubscriptionManager
     );
     $subscription->save();
 
-    // TODO: notification customer (extented and next invoice date)
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED);
 
     return $subscription;
   }
@@ -373,7 +377,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     }
 
     // stop subscription data
-    $subscription->stop('failed', '');
+    $subscription->stop('failed', 'charge failed');
 
     // activate default subscription
     $user = $subscription->user;
@@ -385,7 +389,8 @@ class SubscriptionManagerMockup implements SubscriptionManager
     }
     $user->save();
 
-    // TODO: notify the customer
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED);
 
     return $subscription;
   }
@@ -393,17 +398,15 @@ class SubscriptionManagerMockup implements SubscriptionManager
   public function onSubscriptionPaymentFailed(Subscription $subscription): Subscription|null
   {
     if (!$subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . 'skip inactive subscription', ['object' => $subscription->id]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $subscription->id]);
       return null;
     }
 
     $subscription->sub_status = 'overdue';
     $subscription->save();
 
-    // notify the customer
-    // credit card info
-    // ask user to check their payment method
-
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_OVERDUE);
 
     return $subscription;
   }
@@ -411,11 +414,14 @@ class SubscriptionManagerMockup implements SubscriptionManager
   public function onSubscriptionReminder(Subscription $subscription): Subscription|null
   {
     if (!$subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . 'skip inactive subscription', ['object' => $subscription->id]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $subscription->id]);
       return null;
     }
     // send reminder to customer
     // notifyu customer if credit card to be expired
+
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
 
     return $subscription;
   }

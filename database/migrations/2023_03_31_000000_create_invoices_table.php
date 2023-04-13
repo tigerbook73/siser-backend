@@ -37,7 +37,8 @@ return new class extends Migration
       $table->date('invoice_date');
       $table->string('pdf_file')->nullable();
       $table->json('dr')->comment('{
-        "file_id": "dr_invoice_id",
+        "order_id": "dr_order_id",
+        "file_id":  "dr_invoice_id",
       }');
       $table->string('status')->comment('[ draft, open, overdue, failed, completed ]');
 

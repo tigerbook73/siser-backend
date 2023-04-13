@@ -342,54 +342,6 @@ Route::get('/fake-login', function () {
 })->name('login');
 
 //
-// TODO: remove: test mail sending
-// 
-Route::get('/test-mail/{type}', function (string $type) {
-  $subscription = Subscription::findOrFail(27);
-  switch ($type) {
-    case 'order-accepted':
-      Mail::send(new OrderAccepted($subscription));
-      break;
-
-    case 'order-confirmed':
-      Mail::send(new OrderAccepted($subscription));
-      break;
-
-    case 'order-confirmed':
-      Mail::send(new OrderConfirmed($subscription));
-      break;
-    case 'invoice-pdf':
-      $invoice = Invoice::findOrFail(1);
-      Mail::send(new InvoicePDF($invoice));
-      break;
-    case 'subscription-reminder':
-      Mail::send(new SubscriptionReminder($subscription));
-      break;
-    case 'subscription-extended':
-      Mail::send(new SubscriptionExtended($subscription));
-      break;
-    case 'subscription-update':
-      Mail::send(new SubscriptionUpdate($subscription));
-      break;
-    case 'subscription-cancel':
-      Mail::send(new SubscriptionCancel($subscription));
-      break;
-    case 'subscription-overdue':
-      Mail::send(new SubscriptionOverdue($subscription));
-      break;
-    case 'subscription-failed':
-      Mail::send(new SubscriptionFailed($subscription));
-      break;
-    case 'subscription-terminated':
-      Mail::send(new SubscriptionTerminated($subscription));
-      break;
-
-    default:
-      break;
-  }
-});
-
-//
 // fall back
 //
 Route::get('/{any}', function () {

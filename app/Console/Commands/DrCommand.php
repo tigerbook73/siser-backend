@@ -68,9 +68,6 @@ class DrCommand extends Command
       case 'disable-hook':
         return $this->enableWebhook(false);
 
-      case 'generate-key':
-        return $this->generateKey(false);
-
       default:
         $this->error("Invalid subcmd: ${subcmd}");
         return -1;

@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use App\Models\Base\Subscription as BaseSubscription;
+use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
+use Illuminate\Notifications\Notifiable;
 
 class Subscription extends BaseSubscription
 {
+  use Notifiable;
+
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'user_id'                   => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -93,4 +97,16 @@ class Subscription extends BaseSubscription
   //   $this->next_invoice_date = null;
   //   $this->save();
   // }
+
+  public function routeNotificationForMail($notification)
+  {
+    return [
+      $this->billing_info['email'] => $this->billing_info['first_name'] . ' ' . $this->billing_info['last_name']
+    ];
+  }
+
+  public function sendNotification(string $type, Invoice|null $invoice = null)
+  {
+    $this->notify(new SubscriptionNotification($type, $this, $invoice));
+  }
 }

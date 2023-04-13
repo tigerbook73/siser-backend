@@ -686,7 +686,7 @@ class DigitalRiverService
   {
     $fileLinkRequest = new DrFileLinkRequest();
     $fileLinkRequest->setFileId($fileId);
-    $fileLinkRequest->setExpiresTime($expiresTime->toIso8601ZuluString());
+    $fileLinkRequest->setExpiresTime($expiresTime->toIso8601ZuluString()); // @phpstan-ignore-line
 
     try {
       return $this->fileLinkApi->createFileLinks($fileLinkRequest);

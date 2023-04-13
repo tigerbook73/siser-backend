@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LdsController;
+use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,13 +43,22 @@ if (!$role || $role == 'customer') {
 }
 
 /**
- * DR test
+ * Backend Test
  */
 if ($testCode) {
+
   Route::get('/be-test/dr', function () {
     return view('dr-test');
   });
+
+  Route::get('/be-test/mail/{type}', [TestController::class, 'sendMail']);
+  Route::get('/be-test/notification/{type}', [TestController::class, 'viewNotification']);
 }
+
+//
+// TODO: remove: test mail sending
+// 
+
 
 
 /**

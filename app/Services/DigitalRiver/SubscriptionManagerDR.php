@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
@@ -31,27 +32,22 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $this->eventHandlers = [
       // order events
-      'order.accepted'                    => ['class' => DrOrder::class, 'handler' => 'onOrderAccepted'],
-      'order.blocked'                     => ['class' => DrOrder::class, 'handler' => 'onOrderBlocked'],
-      'order.cancelled'                   => ['class' => DrOrder::class, 'handler' => 'onOrderCancelled'],
-      'order.charge.failed'               => ['class' => DrOrder::class, 'handler' => 'onOrderChargeFailed'],
-      // 'order.pending_payment'             => ['class' => DrOrder::class, 'handler' => 'doNothing'],
-      // 'order.review_opened'               => ['class' => DrOrder::class, 'handler' => 'doNothing'],
-      // 'order.fulfilled'                   => ['class' => DrOrder::class, 'handler' => 'doNothing'],
-      'order.complete'                    => ['class' => DrOrder::class, 'handler' => 'onOrderComplete'],
-      'order.invoice.created'             => ['class' => 'array', 'handler' => 'onOrderInvoiceCreated'],
-      'order.chargeback'                  => ['class' => DrOrder::class, 'handler' => 'onOrderChargeback'],
+      'order.accepted'              => ['class' => DrOrder::class,          'handler' => 'onOrderAccepted'],
+      'order.blocked'               => ['class' => DrOrder::class,          'handler' => 'onOrderBlocked'],
+      'order.cancelled'             => ['class' => DrOrder::class,          'handler' => 'onOrderCancelled'],
+      'order.charge.failed'         => ['class' => DrOrder::class,          'handler' => 'onOrderChargeFailed'],
+      'order.complete'              => ['class' => DrOrder::class,          'handler' => 'onOrderComplete'],
+      'order.invoice.created'       => ['class' => 'array',                 'handler' => 'onOrderInvoiceCreated'],
+      'order.chargeback'            => ['class' => DrOrder::class,          'handler' => 'onOrderChargeback'],
 
-      // refund
+      // TODO: refund
       // 
 
-      // subscription
-      // 'subscription.created'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
-      // 'subscription.deleted'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
-      'subscription.extended'             => ['class' => 'array', 'handler' => 'onSubscriptionExtended'],
-      'subscription.failed'               => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionFailed'],
-      'subscription.payment_failed'       => ['class' => 'array', 'handler' => 'onSubscriptionPaymentFailed'],
-      'subscription.reminder'             => ['class' => 'array', 'handler' => 'onSubscriptionReminder'],
+      'subscription.extended'       => ['class' => 'array',                 'handler' => 'onSubscriptionExtended'],
+      'subscription.failed'         => ['class' => DrSubscription::class,   'handler' => 'onSubscriptionFailed'],
+      'subscription.payment_failed' => ['class' => 'array',                 'handler' => 'onSubscriptionPaymentFailed'],
+      'subscription.reminder'       => ['class' => 'array',                 'handler' => 'onSubscriptionReminder'],
+      // TODO: 
       // 'subscription.updated'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
     ];
   }
@@ -169,7 +165,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->save();
 
       // send notification
-      // ...
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
 
       return $subscription;
     } catch (\Throwable $th) {
@@ -272,7 +268,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     $eventInfo = ['id' => $event['id'], 'type' => $event['type']];
     if (DrEvent::find($event['id'])) {
-      Log::info('DR duplicated event received:', $eventInfo);
+      Log::info('DR event duplicated:', $eventInfo);
       return true;
     }
 
@@ -301,7 +297,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   /**
    * order event handlers
    */
-  protected function validateOrder(DrOrder $order, array $options = ['first_order' => true]): Subscription|null
+  protected function validateOrder(DrOrder $order, array $options = ['be_first' => true]): Subscription|null
   {
     // must be a subscription order
     $drSubscriptionId = $order->getItems()[0]->getSubscriptionInfo()?->getSubscriptionId();
@@ -310,24 +306,17 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    // must have upstream subscription id
-    $subscriptionId = $order->getMetadata()['subscription_id'] ?? null;
-    if (!$subscriptionId) {
-      Log::warning(__FUNCTION__ . 'skip order that does not contains upstream id');
-      return null;
-    }
-
     // validate the subscription
-    $subscription = Subscription::find($subscriptionId);
+    $subscription = Subscription::where('dr->subscription_id', $drSubscriptionId)->first();
     if (!$subscription) {
-      Log::warning(__FUNCTION__ . 'skip invalid subscription', ['object' => $order]);
+      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['object' => $order]);
       return null;
     }
 
     // only process the first order
-    if ($options['first_order'] ?? false) {
+    if ($options['be_first'] ?? false) {
       if (!isset($subscription->dr['order_id']) || $subscription->dr['order_id'] != $order->getId()) {
-        Log::warning(__FUNCTION__ . 'skip non-first subscription', ['object' => $order]);
+        Log::warning(__FUNCTION__ . ': skip non-first subscription', ['object' => $order]);
         return null;
       }
     }
@@ -345,7 +334,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -370,7 +359,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -380,9 +369,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->stop_reason = "first order being blocked";
     $subscription->save();
 
-    // TODO: send notification to customer
-    // ...
-
+    // no notification required
     return $subscription;
   }
 
@@ -396,7 +383,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -418,7 +405,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // must be in pending status
     if ($subscription->status != 'pending') {
-      Log::info(__FUNCTION__ . 'skip subscription not in pending');
+      Log::info(__FUNCTION__ . ': skip subscription not in pending');
       return null;
     }
 
@@ -442,7 +429,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // must be in processing status
     if ($subscription->status != 'processing') {
-      Log::info(__FUNCTION__ . 'skip subscription not in processing');
+      Log::info(__FUNCTION__ . ': skip subscription not in processing');
       return null;
     }
 
@@ -476,26 +463,18 @@ class SubscriptionManagerDR implements SubscriptionManager
       $user->save();
     });
 
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_CONFIRMED);
+
     return $subscription;
   }
 
   public function onOrderInvoiceCreated(array $orderInvoice): Subscription|null
   {
-    // get dr order
+    // validate order
     $order = $this->drService->getOrder($orderInvoice['orderId']);
-
-    // must have upstream subscription id
-    $subscriptionId = $order->getMetadata()['subscription_id'] ?? null;
-    if (!$subscriptionId) {
-      Log::warning(__FUNCTION__ . 'skip order invoice that does not contains upstream id');
-      return null;
-    }
-
-    // validate the subscription 
-    /** @var Subscription|null $subscription */
-    $subscription = Subscription::find($subscriptionId);
+    $subscription = $this->validateOrder($order, []);
     if (!$subscription) {
-      Log::warning(__FUNCTION__ . 'skip invalid subscription', ['object' => $order]);
       return null;
     }
 
@@ -522,22 +501,26 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->invoice_date = now();
     $invoice->invoice_date = now();
     $invoice->pdf_file = $fileLink->getUrl();
-    $invoice->dr = ['file_id' => $orderInvoice['fileId']];
+    $invoice->dr = [
+      'order_id'  => $orderInvoice['orderId'],
+      'file_id'   => $orderInvoice['fileId'],
+    ];
     $invoice->status = 'completed';
     $invoice->save();
 
-    // TODO: sent invoice pdf to customer
+    // sent notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PDF, $invoice);
 
     return $subscription;
   }
 
   public function onOrderChargeback(DrOrder $order): Subscription|null
   {
-    $subscription = $this->validateOrder($order, ['first_order' => false]);
+    $subscription = $this->validateOrder($order, []);
 
     // must be in active status
     if ($subscription->status != 'active') {
-      Log::info(__FUNCTION__ . 'skip subscription not in active status');
+      Log::info(__FUNCTION__ . ': skip subscription not in active status');
       return null;
     }
 
@@ -565,22 +548,10 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   protected function validateSubscription(DrSubscription $drSubscription): Subscription|null
   {
-    // validate dr subscription
-    $subscriptionId = $drSubscription->getItems()[0]->getMetadata()['subscription_id'] ?? null;
-    if (!$subscriptionId) {
-      Log::warning(__FUNCTION__ . 'skip subscription with invalid meta data', ['object' => $drSubscription]);
-      return null;
-    }
-
     // validate the subscription
-    $subscription = Subscription::find($subscriptionId);
+    $subscription = Subscription::where('dr->subscription_id', $drSubscription->getId())->first();
     if (!$subscription) {
-      Log::warning(__FUNCTION__ . 'skip invalid subscription', ['object' => $drSubscription]);
-      return null;
-    }
-
-    if ($subscription->dr['subscription_id'] != $drSubscription->getId()) {
-      Log::warning(__FUNCTION__ . 'skip mismatch subscription', ['object' => $drSubscription]);
+      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['object' => $drSubscription]);
       return null;
     }
 
@@ -589,11 +560,17 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   public function onSubscriptionExtended(array $event): Subscription|null
   {
+    /** @var DrSubscription $drSubscription */
     $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
     // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
+      return null;
+    }
+
+    if ($subscription->status != 'active') {
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
       return null;
     }
 
@@ -604,7 +581,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->next_invoice_date = Carbon::parse($drSubscription->getNextInvoiceDate());
     $subscription->save();
 
-    // TODO: notification customer (extented and next invoice date)
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED);
 
     return $subscription;
   }
@@ -616,13 +594,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    if (!$subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . 'skip inactive subscription', ['object' => $drSubscription]);
+    if ($subscription->status != 'active') {
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
       return null;
     }
 
     // stop subscription data
-    $subscription->stop('failed', '');
+    $subscription->stop('failed', 'charge failed');
 
     // activate default subscription
     $user = $subscription->user;
@@ -634,7 +612,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
     $user->save();
 
-    // TODO: notify the customer
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED);
 
     return $subscription;
   }
@@ -649,18 +628,16 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    if (!$subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . 'skip inactive subscription', ['object' => $drSubscription]);
+    if ($subscription->status != 'active') {
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
       return null;
     }
 
     $subscription->sub_status = 'overdue';
     $subscription->save();
 
-    // notify the customer
-    // credit card info
-    // ask user to check their payment method
-
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_OVERDUE);
 
     return $subscription;
   }
@@ -675,12 +652,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    if (!$subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . 'skip inactive subscription', ['object' => $drSubscription]);
+    if ($subscription->status != 'active') {
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
       return null;
     }
-    // send reminder to customer
-    // notifyu customer if credit card to be expired
+
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
 
     return $subscription;
   }
