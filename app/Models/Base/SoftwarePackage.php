@@ -43,7 +43,7 @@ class SoftwarePackage extends Model
   protected $table = 'software_packages';
 
   protected $casts = [
-    'released_date' => 'date',
+    'released_date' => 'datetime',
     'force_update' => 'bool',
     'release_notes_text' => 'json'
   ];

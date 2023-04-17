@@ -71,10 +71,11 @@ return new class extends Migration
       $table->decimal('total_amount')->default(0.0)->comment('subtotal + total_tax');
       $table->unsignedInteger('subscription_level')->default(0);
       $table->unsignedInteger('current_period')->default(0)->comment('0 - not started yet');
-      $table->date('start_date')->nullable()->change();
-      $table->date('current_period_start_date')->nullable();
-      $table->date('current_period_end_date')->nullable();
-      $table->date('next_invoice_date')->nullable();
+      $table->datetime('start_date')->nullable()->change();
+      $table->datetime('end_date')->nullable()->change();
+      $table->datetime('current_period_start_date')->nullable();
+      $table->datetime('current_period_end_date')->nullable();
+      $table->datetime('next_invoice_date')->nullable();
       $table->json('dr')->nullable()->comment('{
         "checkout_id": "dr_checkout_id",
         "checkout_payment_session_id": "dr_checkout_payment_session_id",

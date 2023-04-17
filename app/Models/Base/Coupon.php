@@ -42,8 +42,8 @@ class Coupon extends Model
     'percentage_off' => 'float',
     'period' => 'int',
     'condition' => 'json',
-    'start_date' => 'date',
-    'end_date' => 'date'
+    'start_date' => 'datetime',
+    'end_date' => 'datetime'
   ];
 
   protected $fillable = [

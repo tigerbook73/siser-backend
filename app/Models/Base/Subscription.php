@@ -64,8 +64,8 @@ class Subscription extends Model
     'user_id' => 'int',
     'plan_id' => 'int',
     'price' => 'float',
-    'start_date' => 'date',
-    'end_date' => 'date',
+    'start_date' => 'datetime',
+    'end_date' => 'datetime',
     'coupon_id' => 'int',
     'billing_info' => 'json',
     'plan_info' => 'json',
@@ -77,9 +77,9 @@ class Subscription extends Model
     'total_amount' => 'float',
     'subscription_level' => 'int',
     'current_period' => 'int',
-    'current_period_start_date' => 'date',
-    'current_period_end_date' => 'date',
-    'next_invoice_date' => 'date',
+    'current_period_start_date' => 'datetime',
+    'current_period_end_date' => 'datetime',
+    'next_invoice_date' => 'datetime',
     'dr' => 'json'
   ];
 

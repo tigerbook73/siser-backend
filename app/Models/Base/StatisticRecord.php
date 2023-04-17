@@ -28,7 +28,7 @@ class StatisticRecord extends Model
   public $timestamps = false;
 
   protected $casts = [
-    'date' => 'date',
+    'date' => 'datetime',
     'record' => 'json'
   ];
 

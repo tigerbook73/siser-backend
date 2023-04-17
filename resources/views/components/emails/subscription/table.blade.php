@@ -32,28 +32,34 @@ $stopped
     </tr>
     <tr>
       <td>Start Date</td>
-      <td>{{ date("Y-m-d", strtotime($subscription->start_date)) }}</td>
+      <td>{{ $subscription->start_date->toDateTimeString() }}</td>
     </tr>
     <tr>
       <td>End Date</td>
-      <td>{{ $subscription->end_date ? date('Y-m-d', strtotime($subscription->end_date)) : '' }}</td>
+      <td>{{ $subscription->end_date ? $subscription->end_date->toDateTimeString() : '' }}</td>
     </tr>
+    @if ($subscription->subscription_level > 1)
     <tr>
       <td>Current Period No.</td>
       <td>{{ $subscription->current_period }}</td>
     </tr>
+    @endif
+    @if ($subscription->current_period_start_date)
     <tr>
       <td>Current Period Start Date</td>
-      <td>{{ $subscription->current_period_start_date }}</td>
+      <td>{{ $subscription->current_period_start_date->toDateTimeString() }}</td>
     </tr>
+    @endif
+    @if ($subscription->current_period_end_date)
     <tr>
       <td>Current Period End Date</td>
-      <td>{{ $subscription->current_period_end_date }}</td>
+      <td>{{ $subscription->current_period_end_date->toDateTimeString() }}</td>
     </tr>
+    @endif
     @if ($subscription->sub_status == 'cancelling')
     <tr>
       <td>To be terminated at</td>
-      <td>{{ $subscription->current_period_end_date }}</td>
+      <td>{{ $subscription->current_period_end_date->toDateTimeString() }}</td>
     </tr>
     @endif
     @if ($subscription->status == 'stopped' || $subscription->status == 'failed')
@@ -62,7 +68,7 @@ $stopped
       <td>{{ $subscription->stop_reason }}</td>
     </tr>
     @endif
-    @if ($subscription->status == 'active')
+    @if ($subscription->subscription_level > 1 && $subscription->status == 'active')
     <tr>
       <td>Next invoice date</td>
       <td>{{ $subscription->next_invoice_date }}</td>

@@ -465,7 +465,6 @@ return [
         'email_verified_at',
         'remember_token',
       ],
-
     ],
   ],
 

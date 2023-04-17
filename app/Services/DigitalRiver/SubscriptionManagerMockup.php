@@ -310,7 +310,6 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $invoice->total_tax = $subscription->total_tax;
     $invoice->total_amount = $subscription->total_amount;
     $invoice->invoice_date = now();
-    $invoice->invoice_date = now();
     $invoice->pdf_file = '/robots.txt';
     $invoice->dr = ['file_id' => 'file_id_' . uuid_create()];
     $invoice->dr = [

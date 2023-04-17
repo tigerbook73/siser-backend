@@ -499,7 +499,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->total_tax = $subscription->total_tax;
     $invoice->total_amount = $subscription->total_amount;
     $invoice->invoice_date = now();
-    $invoice->invoice_date = now();
     $invoice->pdf_file = $fileLink->getUrl();
     $invoice->dr = [
       'order_id'  => $orderInvoice['orderId'],

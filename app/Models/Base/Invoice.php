@@ -55,7 +55,7 @@ class Invoice extends Model
     'subtotal' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
-    'invoice_date' => 'date',
+    'invoice_date' => 'datetime',
     'dr' => 'json'
   ];
 
