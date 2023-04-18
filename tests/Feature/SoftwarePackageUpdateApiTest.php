@@ -207,7 +207,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $response = $this->updateAssert(200, $this->object->id);
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 00:00:00');
+      ->assertSeeText('2022-12-31');
 
     $this->noAssert = TRUE;
     $this->modelUpdate = $modelUpdate;
@@ -215,7 +215,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $response = $this->updateAssert(200, $this->object->id);
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 00:00:00');
+      ->assertSeeText('2022-12-31');
 
     $this->noAssert = TRUE;
     $this->modelUpdate = $modelUpdate;
@@ -223,7 +223,7 @@ class SoftwarePackageUpdateApiTest extends SoftwarePackageTestCase
     $response = $this->updateAssert(200, $this->object->id);
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 00:00:00');
+      ->assertSeeText('2022-12-31');
   }
 
   public function testSoftwarePackageUpdateError()

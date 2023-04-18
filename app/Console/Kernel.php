@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Artisan;
 
 class Kernel extends ConsoleKernel
 {
@@ -17,7 +18,10 @@ class Kernel extends ConsoleKernel
   {
     // $schedule->command('inspire')->hourly();
 
-    $schedule->command('auth:clear-resets')->everyFifteenMinutes();
+    // $schedule->command('auth:clear-resets')->everyFifteenMinutes();
+
+    $schedule->call(fn () => Artisan::queue('subscription:clean-draft'))->everyThirtyMinutes();
+    $schedule->call(fn () => Artisan::queue('subscription:stop-cancelled'))->everyThirtyMinutes();
   }
 
   /**

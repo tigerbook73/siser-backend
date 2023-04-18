@@ -35,7 +35,7 @@ class SubscriptionStopCoupon extends Command
    */
   public function handle()
   {
-    $maxCount = 30;
+    $maxCount = 100;
     $dryRun = $this->option('dry-run');
 
     /** @var Subscription[]|Collection $subscriptions */

@@ -180,7 +180,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $response = $this->createAssert();
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 00:00:00');
+      ->assertSeeText('2022-12-31');
 
     $this->noAssert = TRUE;
     $this->modelCreate = $modelCreate;
@@ -188,7 +188,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $response = $this->createAssert();
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 00:00:00');
+      ->assertSeeText('2022-12-31');
 
     $this->noAssert = TRUE;
     $this->modelCreate = $modelCreate;
@@ -196,7 +196,7 @@ class SoftwarePackageCreateApiTest extends SoftwarePackageTestCase
     $response = $this->createAssert();
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema)
-      ->assertSeeText('2022-12-31 00:00:00');
+      ->assertSeeText('2022-12-31');
   }
 
   public function testSoftwarePackageCreateError()

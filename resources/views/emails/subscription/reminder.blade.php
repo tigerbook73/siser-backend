@@ -1,6 +1,6 @@
 <x-emails.subscription.layout :$subscription>
   This is a curtesy reminder that your monthly subscription renewal is soon to be due on
-  {{ date("Y-m-d", strtotime($subscription->next_invoice_date)) }}.<br />
+  {{ $subscription->next_invoice_date->toDateTimeString() }}.<br />
   <br />
   Below is a table that briefs the subscription you are currently subscribing:<br />
   
