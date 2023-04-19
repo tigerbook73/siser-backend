@@ -14,7 +14,8 @@ return new class extends Migration
   public function up()
   {
     Schema::create('dr_events', function (Blueprint $table) {
-      $table->string('id')->primary();
+      $table->id();
+      $table->string('event_id')->unique();
       $table->string('type');
       $table->foreignId('subscription_id')->nullable();
       $table->timestamps();

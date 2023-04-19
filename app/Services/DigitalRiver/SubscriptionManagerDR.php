@@ -267,7 +267,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   public function webhookHandler(array $event): bool
   {
     $eventInfo = ['id' => $event['id'], 'type' => $event['type']];
-    if (DrEvent::find($event['id'])) {
+    if (DrEvent::exists($event['id'])) {
       Log::info('DR event duplicated:', $eventInfo);
       return true;
     }
