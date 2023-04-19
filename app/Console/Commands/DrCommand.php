@@ -11,7 +11,6 @@ use DigitalRiver\ApiSdk\Model\Order;
 use DigitalRiver\ApiSdk\Model\Plan;
 use DigitalRiver\ApiSdk\Model\Subscription;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
 
 class DrCommand extends Command
 {
@@ -51,7 +50,6 @@ class DrCommand extends Command
       $this->info('  clear:           try to clear all test data');
       $this->info('  enable-hook:     enable webhook');
       $this->info('  disable-hook:    disable webhook');
-      $this->info('  generate-key:    update magic key');
       return 0;
     }
 
@@ -69,7 +67,7 @@ class DrCommand extends Command
         return $this->enableWebhook(false);
 
       default:
-        $this->error("Invalid subcmd: ${subcmd}");
+        $this->error("Invalid subcmd: {$subcmd}");
         return -1;
     }
   }
