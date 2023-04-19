@@ -29,9 +29,9 @@ elif [ "$role" = "queue" ]; then
 
   echo "start queue service ..."
   while [ true ]; do
-      echo "run queue worker ..."
-      runuser -u www-data -- php /var/www/html/artisan queue:work --tries=3 --timeout=180 --max-jobs=1000
-      echo "queue worker exits"
+    echo "run queue worker ..."
+    runuser -u www-data -- php /var/www/html/artisan queue:work --tries=3 --timeout=180 --max-jobs=1000
+    echo "queue worker exits"
   done
 
 elif [ "$role" = "scheduler" ]; then
