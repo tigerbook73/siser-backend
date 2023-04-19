@@ -88,7 +88,10 @@ class SubscriptionStopCancelled extends Command
       $this->info('There are more subscriptions to process');
     }
 
-    Log::info("Artisan: subscription:stop-cancelled: stop {$subscriptions->count()} cancelled subscriptions.");
+    if (!$dryRun) {
+      Log::info("Artisan: subscription:stop-cancelled: stop {$subscriptions->count()} cancelled subscriptions.");
+    }
+
     return Command::SUCCESS;
   }
 }

@@ -72,7 +72,10 @@ class SubscriptionCleanDraft extends Command
       $this->info('There are more subscriptions to process');
     }
 
-    Log::info("Artisan: subscription:clean-draft: clean {$subscriptions->count()} draft subscriptions.");
+    if (!$dryRun) {
+      Log::info("Artisan: subscription:clean-draft: clean {$subscriptions->count()} draft subscriptions.");
+    }
+
     return Command::SUCCESS;
   }
 }

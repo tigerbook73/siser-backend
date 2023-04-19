@@ -69,7 +69,10 @@ class SubscriptionUpdatePlan extends Command
       $this->info('There are more subscriptions to process');
     }
 
-    Log::info("Artisan: subscription:update-plan: update {$subscriptions->count()} subscriptions' coupon.");
+    if (!$dryRun) {
+      Log::info("Artisan: subscription:update-plan: update {$subscriptions->count()} subscriptions' coupon.");
+    }
+
     return Command::SUCCESS;
   }
 }
