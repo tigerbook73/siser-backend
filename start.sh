@@ -38,7 +38,7 @@ elif [ "$role" = "scheduler" ]; then
 
   echo "start scheduler service ..."
   while [ true ]; do
-    runuser -u www-data -- php /var/www/html/artisan schedule:run >>/dev/null 2>&1 &
+    runuser -u www-data -- php /var/www/html/artisan schedule:run &
     sleep 60
   done
 

@@ -6,6 +6,7 @@ use App\Models\Subscription;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionUpdatePlan extends Command
 {
@@ -55,7 +56,7 @@ class SubscriptionUpdatePlan extends Command
     $this->info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
-      $this->info("  deleting subscription: id=$subscription->id");
+      $this->info("  updating subscription: id=$subscription->id");
       if (!$dryRun) {
         // TODO: processing subscriptions
         usleep(1_000_000 / 20);
@@ -65,9 +66,10 @@ class SubscriptionUpdatePlan extends Command
     $this->info("Process {$subscriptions->count()} subscriptions ... Done!");
 
     if ($moreItems) {
-      $this->info('There are more items to process');
+      $this->info('There are more subscriptions to process');
     }
 
+    Log::info("Artisan: subscription:update-plan: update {$subscriptions->count()} subscriptions' coupon.");
     return Command::SUCCESS;
   }
 }

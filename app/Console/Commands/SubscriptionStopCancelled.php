@@ -7,6 +7,7 @@ use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionStopCancelled extends Command
 {
@@ -53,14 +54,14 @@ class SubscriptionStopCancelled extends Command
     }
 
     if ($subscriptions->count() <= 0) {
-      $this->info('There is no cancelling subscription to stop.');
+      $this->info('There is no subscriptions to process.');
       return Command::SUCCESS;
     }
 
-    $this->info("Clear {$subscriptions->count()} draft subscriptions ...");
+    $this->info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
-      $this->info("  Stopping subscription: id=$subscription->id");
+      $this->info("  stopping subscription: id=$subscription->id");
       if (!$dryRun) {
         // stop subscription data
         $subscription->stop('stopped', 'cancelled');
@@ -81,12 +82,13 @@ class SubscriptionStopCancelled extends Command
       }
     }
 
-    $this->info("Clear {$subscriptions->count()} draft subscriptions ... Done!");
+    $this->info("Process {$subscriptions->count()} subscriptions ... Done!");
 
     if ($moreItems) {
-      $this->info('There are more items to process');
+      $this->info('There are more subscriptions to process');
     }
 
+    Log::info("Artisan: subscription:stop-cancelled: stop {$subscriptions->count()} cancelled subscriptions.");
     return Command::SUCCESS;
   }
 }

@@ -6,6 +6,7 @@ use App\Models\Subscription;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionCleanDraft extends Command
 {
@@ -51,11 +52,11 @@ class SubscriptionCleanDraft extends Command
     }
 
     if ($subscriptions->count() <= 0) {
-      $this->info('There is no draft subscription to clean.');
+      $this->info('There is no subscriptions to process.');
       return Command::SUCCESS;
     }
 
-    $this->info("Clear {$subscriptions->count()} draft subscriptions ...");
+    $this->info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
       $this->info("  deleting subscription: id=$subscription->id");
@@ -65,12 +66,13 @@ class SubscriptionCleanDraft extends Command
       }
     }
 
-    $this->info("Clear {$subscriptions->count()} draft subscriptions ... Done!");
+    $this->info("Process {$subscriptions->count()} subscriptions ... Done!");
 
     if ($moreItems) {
-      $this->info('There are more items to process');
+      $this->info('There are more subscriptions to process');
     }
 
+    Log::info("Artisan: subscription:clean-draft: clean {$subscriptions->count()} draft subscriptions.");
     return Command::SUCCESS;
   }
 }
