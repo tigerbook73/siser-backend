@@ -69,7 +69,7 @@ return new class extends Migration
       $table->decimal('subtotal')->default(0.0)->comment('price + processing_fee');
       $table->decimal('total_tax')->default(0.0)->comment('based on latest invoice');
       $table->decimal('total_amount')->default(0.0)->comment('subtotal + total_tax');
-      $table->unsignedInteger('subscription_level')->default(0);
+      $table->unsignedInteger('subscription_level')->default(1);
       $table->unsignedInteger('current_period')->default(0)->comment('0 - not started yet');
       $table->datetime('start_date')->nullable()->change();
       $table->datetime('end_date')->nullable()->change();
