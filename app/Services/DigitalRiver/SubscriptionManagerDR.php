@@ -13,6 +13,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
+use DigitalRiver\ApiSdk\ApiException as DrApiException;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
@@ -116,10 +117,20 @@ class SubscriptionManagerDR implements SubscriptionManager
   public function deleteSubscription(Subscription $subscription): bool
   {
     try {
-      $this->drService->deleteCheckout($subscription->dr['checkout_id']);
+      if (isset($subscription->dr['checkout_id'])) {
+        $this->drService->deleteCheckoutAsync($subscription->dr['checkout_id']);
+      }
+      if (isset($subscription->dr['subscription_id'])) {
+        $this->drService->deleteSubscriptionAsync($subscription->dr['subscription_id']);
+      }
     } catch (\Throwable $th) {
       throw $th;
     }
+
+    if ($subscription->status != 'draft') {
+      throw new Exception('Try to delete subscription not in draft status', 500);
+    }
+
     return $subscription->delete();
   }
 
@@ -151,6 +162,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       // Notice: notification will be sent when $subscription become active, but not here
 
       return $subscription;
+    } catch (DrApiException $th) {
+      $body = $th->getResponseObject()->getErrors()[0];
+      throw (new Exception("{$body->getCode()}: {$body->getMessage()}", $th->getCode()));
     } catch (\Throwable $th) {
       throw $th;
     }

@@ -470,6 +470,11 @@ class DigitalRiverService
     }
   }
 
+  public function deleteCheckoutAsync(string|int $id)
+  {
+    return $this->checkoutApi->deleteCheckoutsAsync((string)$id);
+  }
+
   public function attachCheckoutSource(string|int $id, string|int $sourceId): DrSource
   {
     try {
@@ -587,6 +592,11 @@ class DigitalRiverService
       Log::warning('DRAPI:' . $th->getMessage());
       return false;
     }
+  }
+
+  public function deleteSubscriptionAsync(string|int $id)
+  {
+    return $this->subscriptionApi->deleteSubscriptionsAsync($id);
   }
 
   public function updateSubscriptionSource(string|int $id, string|int $sourceId)
