@@ -44,6 +44,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $current_period_end_date
  * @property Carbon|null $next_invoice_date
  * @property array|null $dr
+ * @property string|null $dr_subscription_id
  * @property string|null $stop_reason
  * @property string $sub_status
  * 
@@ -106,6 +107,7 @@ class Subscription extends Model
     'current_period_end_date',
     'next_invoice_date',
     'dr',
+    'dr_subscription_id',
     'stop_reason',
     'sub_status'
   ];

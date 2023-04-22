@@ -79,11 +79,12 @@ class SubscriptionManagerMockup implements SubscriptionManager
   public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription
   {
     // update subscription
+    $subscription->dr_subscription_id = 'subscription_id_' . uuid_create();
     $subscription->dr = [
-      'checkout_id' => $subscription->dr['checkout_id'],
+      'checkout_id'                 => $subscription->dr['checkout_id'],
       'checkout_payment_session_id' => $subscription->dr['checkout_payment_session_id'],
-      'order_id' => 'order_id_' . uuid_create(),
-      'subscription_id' => 'subscription_id_' . uuid_create(),
+      'order_id'                    => 'order_id_' . uuid_create(),
+      'subscription_id'             => $subscription->dr_subscription_id,
     ];
     $subscription->status = 'pending';
     $subscription->sub_status = 'normal';

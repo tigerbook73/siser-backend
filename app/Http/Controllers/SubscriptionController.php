@@ -160,7 +160,7 @@ class SubscriptionController extends SimpleController
     }
 
     /** @var Subscription|null $pendingSubscription */
-    $pendingSubscription = $this->user->subscriptions()->where('status', 'pending')->first();
+    $pendingSubscription = $this->user->subscriptions()->whereIn('status', ['pending', 'processing'])->first();
     if ($pendingSubscription) {
       return response()->json(['message' => 'There is an pending subscription'], 400);
     }

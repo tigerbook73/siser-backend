@@ -14,6 +14,7 @@ class SubscriptionNotification extends Notification
 {
   use Queueable;
 
+  public const NOTIF_ABORTED      = 'subscription.aborted';
   public const NOTIF_CANCELLED    = 'subscription.cancelled';
   public const NOTIF_CONFIRMED    = 'subscription.confirmed';
   public const NOTIF_EXTENDED     = 'subscription.extended';
@@ -25,42 +26,16 @@ class SubscriptionNotification extends Notification
   public const NOTIF_UPDATED      = 'subscription.updated';
 
   static public $types = [
-    self::NOTIF_INVOICE_PDF => [
-      'subject' => "Invoice PDF",
-      'view' => null, // null => same as key
-    ],
-    self::NOTIF_CONFIRMED => [
-      'subject' => "Subscription Confirmed",
-      'view' => null,
-    ],
-    self::NOTIF_CANCELLED => [
-      'subject' => "Subscription Cancelled",
-      'view' => null,
-    ],
-    self::NOTIF_EXTENDED => [
-      'subject' => "Subscription Extended",
-      'view' => null,
-    ],
-    self::NOTIF_FAILED => [
-      'subject' => "Subscription Failed",
-      'view' => null,
-    ],
-    self::NOTIF_OVERDUE => [
-      'subject' => "Subscription Overdue",
-      'view' => null,
-    ],
-    self::NOTIF_REMINDER => [
-      'subject' => "Subscription Renew Reminder",
-      'view' => null,
-    ],
-    self::NOTIF_TERMINATED => [
-      'subject' => "Subscription Terminated",
-      'view' => null,
-    ],
-    self::NOTIF_UPDATED => [
-      'subject' => "Subscription Updated",
-      'view' => null,
-    ],
+    self::NOTIF_ABORTED       => ['subject' => "Subscription Aborted",        'view' => null],
+    self::NOTIF_CANCELLED     => ['subject' => "Subscription Cancelled",      'view' => null],
+    self::NOTIF_CONFIRMED     => ['subject' => "Subscription Confirmed",      'view' => null],
+    self::NOTIF_EXTENDED      => ['subject' => "Subscription Extended",       'view' => null],
+    self::NOTIF_FAILED        => ['subject' => "Subscription Failed",         'view' => null],
+    self::NOTIF_INVOICE_PDF   => ['subject' => "Invoice PDF",                 'view' => null],
+    self::NOTIF_OVERDUE       => ['subject' => "Subscription Overdue",        'view' => null],
+    self::NOTIF_REMINDER      => ['subject' => "Subscription Renew Reminder", 'view' => null],
+    self::NOTIF_TERMINATED    => ['subject' => "Subscription Terminated",     'view' => null],
+    self::NOTIF_UPDATED       => ['subject' => "Subscription Updated",        'view' => null],
   ];
 
   /**
