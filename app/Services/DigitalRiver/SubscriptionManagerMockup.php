@@ -377,7 +377,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
     }
 
     // stop subscription data
-    $subscription->stop('failed', 'charge failed');
+    $subscription->stop('failed', 'renew charge failed');
 
     // activate default subscription
     $user = $subscription->user;

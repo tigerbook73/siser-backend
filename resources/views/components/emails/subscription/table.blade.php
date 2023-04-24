@@ -32,7 +32,7 @@ $stopped
     </tr>
     <tr>
       <td>Start Date</td>
-      <td>{{ $subscription->start_date->toDateTimeString() }}</td>
+      <td>{{ $subscription->start_date ? $subscription->start_date->toDateTimeString() : '' }}</td>
     </tr>
     <tr>
       <td>End Date</td>

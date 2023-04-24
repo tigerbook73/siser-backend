@@ -95,15 +95,17 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->sub_status                 = 'normal';
 
     $subscription->save();
+    Log::info("Subscription: $subscription->id: $subscription->status: create subscription (init)");
 
     // create checkout
     try {
       $checkout = $this->drService->createCheckout($subscription);
     } catch (\Throwable $th) {
       $subscription->delete();
+      Log::info("Subscription: $subscription->id: $subscription->status: delete subscription (init)");
       throw $th;
     }
-    Log::info("Subscription: $subscription->id: create checkout");
+    Log::info("Subscription: $subscription->id: $subscription->status: create dr-checkout");
 
     // update subscription
     $subscription->subtotal = $checkout->getSubtotal();
@@ -114,27 +116,30 @@ class SubscriptionManagerDR implements SubscriptionManager
       'checkout_payment_session_id' => $checkout->getPayment()->getSession()->getId(),
     ];
     $subscription->save();
+    Log::info("Subscription: $subscription->id: $subscription->status: create subscription (with dr-checkout)");
 
     return $subscription;
   }
 
   public function deleteSubscription(Subscription $subscription): bool
   {
-    try {
-      if (isset($subscription->dr['checkout_id'])) {
-        $this->drService->deleteCheckoutAsync($subscription->dr['checkout_id']);
-      }
-      if (isset($subscription->dr_subscription_id)) {
-        $this->drService->deleteSubscriptionAsync($subscription->dr_subscription_id);
-      }
-    } catch (\Throwable $th) {
-      throw $th;
-    }
-
     if ($subscription->status != 'draft') {
       throw new Exception('Try to delete subscription not in draft status', 500);
     }
 
+    try {
+      if (isset($subscription->dr['checkout_id'])) {
+        $this->drService->deleteCheckoutAsync($subscription->dr['checkout_id']);
+        Log::info("Subscription: $subscription->id: $subscription->status: delete dr-checkout");
+      }
+      if (isset($subscription->dr_subscription_id)) {
+        $this->drService->deleteSubscriptionAsync($subscription->dr_subscription_id);
+        Log::info("Subscription: $subscription->id: $subscription->status: delete dr-subscription");
+      }
+    } catch (\Throwable $th) {
+    }
+
+    Log::info("Subscription: $subscription->id: $subscription->status: delete subscription");
     return $subscription->delete();
   }
 
@@ -143,14 +148,17 @@ class SubscriptionManagerDR implements SubscriptionManager
     try {
       // attach source_id to checkout
       $this->drService->attachCheckoutSource($subscription->dr['checkout_id'], $paymentMethod->dr['source_id']);
+      Log::info("Subscription: $subscription->id: $subscription->status: attach dr-source to dr-checkout");
 
       // update checkout terms
       if ($terms) {
         $this->drService->updateCheckoutTerms($subscription->dr['checkout_id'], $terms);
+        Log::info("Subscription: $subscription->id: $subscription->status: update dr-checkout terms");
       }
 
       // convert checkout to order
       $order = $this->drService->convertCheckoutToOrder($subscription->dr['checkout_id']);
+      Log::info("Subscription: $subscription->id: $subscription->status: convert dr-checkout to dr-order");
 
       // update subscription
       $subscription->dr_subscription_id = $order->getItems()[0]->getSubscriptionInfo()->getSubscriptionId();
@@ -164,10 +172,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->status = 'pending';
       $subscription->sub_status = 'normal';
       $subscription->save();
-
-      if ($order->getState() == 'accepted') {
-        $this->onOrderAccepted($order);
-      }
+      Log::info("Subscription: $subscription->id: $subscription->status: pay subscription");
 
       return $subscription;
     } catch (DrApiException $th) {
@@ -182,9 +187,12 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     try {
       $this->drService->cancelSubscription($subscription->dr_subscription_id);
+      Log::info("Subscription: $subscription->id: $subscription->status: cancel dr-subscription");
+
       $subscription->sub_status = 'cancelling';
       $subscription->next_invoice_date = null;
       $subscription->save();
+      Log::info("Subscription: $subscription->id: $subscription->status: cancel subscription");
 
       // send notification
       $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
@@ -205,8 +213,10 @@ class SubscriptionManagerDR implements SubscriptionManager
       $customer = $this->drService->createCustomer($billingInfo);
       $user->dr = ['customer_id' => $customer->getId()];
       $user->save();
+      Log::info("Customer: $user->id: create dr-customer billing information");
     } else {
       $customer = $this->drService->updateCustomer($user->dr['customer_id'], $billingInfo);
+      Log::info("Customer: $user->id: update dr-customer billing information");
     }
 
     return $customer;
@@ -229,6 +239,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // attach source to customer
     $this->drService->attachCustomerSource($user->dr['customer_id'], $source->getId());
+    Log::info("Customer: $user->id: attach dr-source to dr-customer");
 
     // attach source to active subscription
 
@@ -238,13 +249,15 @@ class SubscriptionManagerDR implements SubscriptionManager
       ->where('subscription_level', '>', 1)
       ->first();
     if ($subscription) {
-      $this->drService->updateSubscriptionSource($subscription->dr['source_id'], $source->getId());
+      $this->drService->updateSubscriptionSource($subscription->dr_subscription_id, $source->getId());
+      Log::info("Subscription: $subscription->id: $subscription->status: attach new dr-source to dr-subscription");
     }
 
     // deatch previous source
     if ($previousSourceId) {
       try {
         $this->drService->dettachCustomerSource($user->dr['customer_id'], $previousSourceId);
+        Log::info("Subscription: $subscription->id: $subscription->status: detach old dr-source from dr-subscription");
       } catch (\Throwable $th) {
       }
     }
@@ -262,14 +275,16 @@ class SubscriptionManagerDR implements SubscriptionManager
       'brand'             => $source->getCreditCard()->getBrand(),
     ] : null;
 
-    DB::transaction(function () use ($paymentMethod, $source, $subscription,) {
+    DB::transaction(function () use ($user, $paymentMethod, $source, $subscription,) {
       $paymentMethod->save();
+      Log::info("Customer: $user->id: update payment-method");
 
       if ($subscription) {
         $subscriptionDr = $subscription->dr;
         $subscriptionDr['source_id'] = $source->getId();
         $subscription->dr = $subscriptionDr;
         $subscription->save();
+        Log::info("Subscription: $subscription->id: $subscription->status: update subscription.dr.source_id");
       }
     });
 
@@ -360,13 +375,25 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    Log::info("Subscription: $subscription->id: $subscription->status: order.accepted");
+
     // fulfill order
-    $this->drService->fulfillOrder($order->getId());
+    try {
+      $this->drService->fulfillOrder($order->getId());
+      Log::info("Subscription: $subscription->id: $subscription->status: fulfill dr-order");
+    } catch (\Throwable $th) {
+      $subscription->stop('failed', 'fulfill first order failed');
+      Log::info("Subscription: $subscription->id: $subscription->status: fulfill dr-order failed");
+
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
+      return null;
+    }
 
     // update subscription status
     $subscription->status = 'processing';
     $subscription->sub_status = 'normal';
     $subscription->save();
+    Log::info("Subscription: $subscription->id: $subscription->status: fulfill subscription");
 
     return $subscription;
   }
@@ -386,10 +413,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // update subscription status
-    $subscription->status = 'failed';
-    $subscription->sub_status = 'normal';
-    $subscription->stop_reason = "first order being blocked";
-    $subscription->save();
+    $subscription->stop('failed', 'first order being blocked');
+    Log::info("Subscription: $subscription->id: $subscription->status: order.blocked");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
@@ -411,10 +436,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $subscription->status = 'failed';
-    $subscription->sub_status = 'normal';
-    $subscription->stop_reason = "first order being cancelled";
-    $subscription->save();
+    $subscription->stop('failed', 'first order being cancelled');
+    Log::info("Subscription: $subscription->id: $subscription->status: order.cancelled");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
@@ -436,10 +459,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $subscription->status = 'failed';
-    $subscription->sub_status = 'normal';
-    $subscription->stop_reason = "first order failed";
-    $subscription->save();
+    $subscription->stop('failed', 'first order failed');
+    Log::info("Subscription: $subscription->id: $subscription->status: order.charge.failed");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
@@ -455,6 +476,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+
+    Log::info("Subscription: $subscription->id: $subscription->status: order.charge.capture.complete");
 
     // do nothing, just wait for order.complete event
 
@@ -476,10 +499,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $subscription->status = 'failed';
-    $subscription->sub_status = 'normal';
-    $subscription->stop_reason = "first order charge capture failed";
-    $subscription->save();
+    $subscription->stop('failed', 'first order charge capture failed');
+    Log::info("Subscription: $subscription->id: $subscription->status: order.charge.capture.failed");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
@@ -503,8 +524,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    Log::info("Subscription: $subscription->id: $subscription->status: order.complete");
+
     // activate dr subscription
     $drSubscription = $this->drService->activateSubscription($subscription->dr_subscription_id);
+    Log::info("Subscription: $subscription->id: $subscription->status: activate dr-subscription");
 
     // stop previous subscription and start new subscription
     DB::transaction(function () use ($subscription, $drSubscription) {
@@ -531,6 +555,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       // update user subscription level and license_count
       $user->subscription_level = $subscription->subscription_level;
       $user->save();
+
+      Log::info("Subscription: $subscription->id: $subscription->status: activate subscription");
     });
 
     // send notification
@@ -548,8 +574,16 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    // create invoice pdf download link
+    if ($subscription->status != 'active') {
+      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created");
+      return null;
+    }
+
+    Log::info("Subscription: $subscription->id: $subscription->status: order.invoice.created");
+
+    // create invoice pdf download link TODO: avoid duplicated invoice
     $fileLink = $this->drService->createFileLink($orderInvoice['fileId'], now()->addYear());
+    Log::info("Subscription: $subscription->id: $subscription->status: create dr-invoice-file-link");
 
     $invoice = new Invoice();
     $invoice->user_id = $subscription->user_id;
@@ -576,6 +610,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     ];
     $invoice->status = 'completed';
     $invoice->save();
+    Log::info("Subscription: $subscription->id: $subscription->status: create period invoice"); // TODO: period
 
     // sent notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PDF, $invoice);
@@ -593,9 +628,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    Log::info("Subscription: $subscription->id: $subscription->status: order.chargeback");
+
     DB::transaction(function () use ($subscription) {
 
       $subscription->stop('failed', 'charge back');
+      Log::info("Subscription: $subscription->id: $subscription->status: charge back:");
+
       $user = $subscription->user;
 
       // TODO: refactor
@@ -649,6 +688,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->current_period_end_date = Carbon::parse($drSubscription->getCurrentPeriodEndDate());
     $subscription->next_invoice_date = Carbon::parse($drSubscription->getNextInvoiceDate());
     $subscription->save();
+    Log::info("Subscription: $subscription->id: $subscription->status: subscription extended");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED);
@@ -669,7 +709,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // stop subscription data
-    $subscription->stop('failed', 'charge failed');
+    $subscription->stop('failed', ' renew charge failed');
+    Log::info("Subscription: $subscription->id: $subscription->status: subscription stoped");
 
     // activate default subscription
     $user = $subscription->user;
@@ -680,6 +721,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $user->subscription_level = 0;
     }
     $user->save();
+    Log::info("User: $user->id: update user subscription_level to $user->subscription_level");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED);
@@ -704,6 +746,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $subscription->sub_status = 'overdue';
     $subscription->save();
+    Log::info("Subscription: $subscription->id: $subscription->status: subscription.payment.failed");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_OVERDUE);
@@ -725,6 +768,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
       return null;
     }
+
+    Log::info("Subscription: $subscription->id: $subscription->status: subscription.reminer");
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
