@@ -42,6 +42,9 @@ class Subscription {
     /** @var float $subtotal */
     public $subtotal = 0;
 
+    /** @var float $tax_rate */
+    public $tax_rate = 0;
+
     /** @var float $total_tax */
     public $total_tax = 0;
 
@@ -68,6 +71,9 @@ class Subscription {
 
     /** @var \DateTime $next_invoice_date */
     public $next_invoice_date;
+
+    /** @var \Tests\Models\SubscriptionNextInvoice $next_invoice */
+    public $next_invoice;
 
     /** @var \Tests\Models\SubscriptionDR $dr */
     public $dr;

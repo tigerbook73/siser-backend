@@ -21,17 +21,23 @@ class Invoice {
     /** @var int $period */
     public $period = 0;
 
+    /** @var \DateTime $period_start_date */
+    public $period_start_date;
+
+    /** @var \DateTime $period_end_date */
+    public $period_end_date;
+
     /** @var string $currency */
     public $currency = "";
 
-    /** @var \Tests\Models\InvoicePlan $plan */
-    public $plan;
+    /** @var \Tests\Models\Plan $plan_info */
+    public $plan_info;
 
-    /** @var \Tests\Models\InvoiceCoupon $coupon */
-    public $coupon;
+    /** @var \Tests\Models\Coupon $coupon_info */
+    public $coupon_info;
 
-    /** @var \Tests\Models\ProcessingFee $processing_fee */
-    public $processing_fee;
+    /** @var \Tests\Models\ProcessingFee $processing_fee_info */
+    public $processing_fee_info;
 
     /** @var float $subtotal price - discount + processing_fee*/
     public $subtotal = 0;
@@ -47,6 +53,9 @@ class Invoice {
 
     /** @var string $pdf_file */
     public $pdf_file = "";
+
+    /** @var \Tests\Models\InvoiceDR $dr */
+    public $dr;
 
     /** @var string $status */
     public $status = "";
