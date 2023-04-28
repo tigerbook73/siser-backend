@@ -293,6 +293,8 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $invoice->user_id = $subscription->user_id;
     $invoice->subscription_id = $subscription->id;
     $invoice->period = $subscription->current_period;
+    $invoice->period_start_date = $subscription->current_period_start_date;
+    $invoice->period_end_date = $subscription->current_period_end_date;
     $invoice->currency = $subscription->currency;
     $invoice->plan_info = $subscription->plan_info;
     $invoice->coupon_info = $subscription->coupon_info;

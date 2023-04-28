@@ -112,8 +112,7 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Customer is not created'], 400);
     }
 
-    /** @var Subscription|null $pendingSubscription */
-    $pendingSubscription = $this->user->subscriptions()->where('status', 'pending')->first();
+    $pendingSubscription = $this->user->getPendingOrProcessingSubscription();
     if ($pendingSubscription) {
       return response()->json(['message' => 'There is an pending subscription'], 400);
     }
@@ -159,8 +158,7 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Subscripiton not found'], 404);
     }
 
-    /** @var Subscription|null $pendingSubscription */
-    $pendingSubscription = $this->user->subscriptions()->whereIn('status', ['pending', 'processing'])->first();
+    $pendingSubscription = $this->user->getPendingOrProcessingSubscription();
     if ($pendingSubscription) {
       return response()->json(['message' => 'There is an pending subscription'], 400);
     }
@@ -185,7 +183,7 @@ class SubscriptionController extends SimpleController
     $this->validateUser();
 
     /** @var Subscription|null $activeSubscription */
-    $activeSubscription = $this->user->subscriptions()->where('status', 'active')->find($id);
+    $activeSubscription = $this->user->getActivePaidSubscription();
     if (!$activeSubscription) {
       return response()->json(['message' => 'Subscripiton not found'], 404);
     }

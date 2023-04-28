@@ -44,37 +44,23 @@ class Machine extends BaseMachine
   protected function attachUser(User $user)
   {
     // create subscription if required and update license count for user
-    if (
-      $user->subscriptions()
-      ->whereIn('status', ['active'])
-      ->whereRelation('plan', 'catagory', 'machine')
-      ->count() <= 0
-    ) {
+    if (!$user->getActiveSubscription()) {
       Subscription::createBasicMachineSubscription($user);
-
       $user->subscription_level = 1;
-      $user->license_count = GeneralConfiguration::getMachineLicenseUnit();
-    } else {
-      $user->license_count += GeneralConfiguration::getMachineLicenseUnit();
     }
-
+    $user->license_count = $user->machines()->count() * GeneralConfiguration::getMachineLicenseUnit();
     $user->save();
   }
 
   protected function detachUser(User $user)
   {
     /** @var Subscription|null $subscription */
-    $subscription = $user->subscriptions()
-      ->whereIn('status', ['active'])
-      ->whereRelation('plan', 'catagory', 'machine')
-      ->first();
+    $subscription = $user->getActiveSubscription();
     if ($subscription) {
-      $user->license_count -= GeneralConfiguration::getMachineLicenseUnit();
+      $user->license_count = $user->machines()->count() * GeneralConfiguration::getMachineLicenseUnit();
       if ($user->license_count <= 0) {
         // TODO: more to be considered if PRO plan support (e.g. when to stop)
-        $subscription->end_date = today();
-        $subscription->status = 'inactive';
-        $subscription->save();
+        $subscription->stop('stopped', 'all machine detached');
 
         // refresh user
         $user->subscription_level = 0;

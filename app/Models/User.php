@@ -139,6 +139,14 @@ class User extends UserWithTrait
       ->first();
   }
 
+  public function getPendingOrProcessingSubscription(): Subscription|null
+  {
+    return $this->subscriptions()
+      ->whereIn('status', ['pending', 'processing'])
+      ->where('subscription_level', '>', 1)
+      ->first();
+  }
+
   public function updateSubscriptionLevel()
   {
     $subscription = $this->getActiveSubscription();
