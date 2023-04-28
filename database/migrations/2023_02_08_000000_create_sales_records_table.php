@@ -20,12 +20,12 @@ return new class extends Migration
     Schema::create('statistic_records', function (Blueprint $table) {
       $table->id();
       $table->date('date');
-      $table->json('record')->comment('{
+      $table->json('record')->comment(json_encode(json_decode('{
         "user": 2356,
         "machine": 1550,
         "licensed_user": 1550,
-        "licensed_user_1": 1550,
-      }');
+        "licensed_user_1": 1550
+      }')));
     });
   }
 

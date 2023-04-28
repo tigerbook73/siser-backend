@@ -16,7 +16,7 @@ return new class extends Migration
   {
     Schema::table('subscriptions', function (Blueprint $table) {
       $table->foreignId('coupon_id')->nullable()->constrained();
-      $table->json('billing_info')->nullable()->comment('{
+      $table->json('billing_info')->nullable()->comment(json_encode(json_decode('{
         "first_name": "string",
         "last_name": "string",
         "phone": "string",
@@ -34,8 +34,8 @@ return new class extends Migration
           "type": "string",
           "value": "string"
         }
-      }');
-      $table->json('plan_info')->nullable()->comment('{
+      }')));
+      $table->json('plan_info')->nullable()->comment(json_encode(json_decode('{
         "id": 0,
         "name": "LDS Machine Basic",
         "catagory": "machine",
@@ -48,8 +48,8 @@ return new class extends Migration
           "currency": "USD",
           "price": 9.98
         }
-      }');
-      $table->json('coupon_info')->nullable()->comment('{
+      }')));
+      $table->json('coupon_info')->nullable()->comment(json_encode(json_decode('{
         "id": 0,
         "code": "string",
         "description": "string",
@@ -59,12 +59,12 @@ return new class extends Migration
           "upgrade_only": true
         },
         "percentage_off": 20,
-        "period": 6,
-      }');
-      $table->json('processing_fee_info')->nullable()->comment('{
+        "period": 6
+      }')));
+      $table->json('processing_fee_info')->nullable()->comment(json_encode(json_decode('{
         "explicit_processing_fee": true,
-        "processing_fee_rate": 2.0,
-      }');
+        "processing_fee_rate": 2.0
+      }')));
       $table->decimal('price')->comment('beautified subscription price, may or may not include processing fee')->change();
       $table->decimal('processing_fee')->default(0.0)->comment('valid when explicit_processing_fee is true');
       $table->decimal('subtotal')->default(0.0)->comment('price + processing_fee');
@@ -78,7 +78,7 @@ return new class extends Migration
       $table->datetime('current_period_start_date')->nullable();
       $table->datetime('current_period_end_date')->nullable();
       $table->datetime('next_invoice_date')->nullable();
-      $table->json('next_invoice')->nullable()->comment('{
+      $table->json('next_invoice')->nullable()->comment(json_encode(json_decode('{
         "plan_info": {},
         "coupon_info": {},
         "processing_fee_info": {},
@@ -89,14 +89,14 @@ return new class extends Migration
         "total_tax": 1.02,
         "total_amount": 11.22,
         "current_period_start_date": "date-time",
-        "current_period_end_date": "date-time",
-      }');
-      $table->json('dr')->nullable()->comment('{
+        "current_period_end_date": "date-time"
+      }')));
+      $table->json('dr')->nullable()->comment(json_encode(json_decode('{
         "checkout_id": "dr_checkout_id",
         "checkout_payment_session_id": "dr_checkout_payment_session_id",
         "order_id": "dr_first_order_id",
-        "subscription_id": "dr_subscription_id",
-      }');
+        "subscription_id": "dr_subscription_id"
+      }')));
       $table->string('dr_subscription_id')->nullable();
       $table->string('stop_reason')->nullable()->comment('[renew-failed, cancelled, new-subscurition]');
       $table->string('status')->comment('[draft, pending, failed, processing, active, stopped]')->change();

@@ -29,11 +29,11 @@ return new class extends Migration
       $table->decimal('total_amount');
       $table->date('invoice_date');
       $table->string('pdf_file')->nullable();
-      $table->json('dr')->comment('{
+      $table->json('dr')->comment(json_encode(json_decode('{
         "order_id": "dr_order_id",
         "invoice_id": "dr_invoice_id",
-        "file_id":  "dr_file_id",
-      }');
+        "file_id":  "dr_file_id"
+      }')));
       $table->string('dr_invoice_id')->nullable();
       $table->string('dr_order_id')->nullable();
       $table->string('status')->comment('[ open, overdue, completing -- wait invoice-pdf, failed, completed ]');

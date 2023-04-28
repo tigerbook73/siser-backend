@@ -19,11 +19,11 @@ return new class extends Migration
       $table->string('description')->nullable();
       $table->decimal('percentage_off');
       $table->unsignedInteger('period')->comment('0 means forever');
-      $table->json('condition')->comment('{
+      $table->json('condition')->comment(json_encode(json_decode('{
         "new_customer_only": true,
         "new_subscription_only": true,
         "upgrade_only": true
-      }');
+      }')));
       $table->date('start_date');
       $table->date('end_date')->default('2099-12-31');
       $table->string('status')->comment('[draft, active, inactive]');

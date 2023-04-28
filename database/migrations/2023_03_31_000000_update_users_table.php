@@ -14,9 +14,9 @@ return new class extends Migration
   public function up()
   {
     Schema::table('users', function (Blueprint $table) {
-      $table->json('dr')->nullable()->comment('{
-        "customer_id": "dr_customer_id",
-      }');
+      $table->json('dr')->nullable()->comment(json_encode(json_decode('{
+        "customer_id": "dr_customer_id"
+      }')));
     });
   }
 

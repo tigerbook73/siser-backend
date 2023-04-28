@@ -21,18 +21,18 @@ return new class extends Migration
       $table->string('phone')->nullable();
       $table->string('organization')->nullable();
       $table->string('email');
-      $table->json('address')->comment('{
+      $table->json('address')->comment(json_encode(json_decode('{
         "line1": "10380 Bren Rd W",
         "line2": "string",
         "city": "Minnetonka",
         "postcode": "55129",
         "state": "MN",
         "country": "US"
-      }');
-      $table->json('tax_id')->nullable()->comment('{
+      }')));
+      $table->json('tax_id')->nullable()->comment(json_encode(json_decode('{
         "type": "string",
         "value": "string"
-      }');
+      }')));
 
       $table->timestamps();
     });
