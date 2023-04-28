@@ -135,11 +135,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
 
     // attach source to active subscription
 
-    /** @var Subscription|null $subscription */
-    $subscription = $user->subscriptions()
-      ->where('status', 'active')
-      ->where('subscription_level', '>', 1)
-      ->first();
+    $subscription = $user->getActivePaidSubscription();
 
     // deatch previous source
 
@@ -298,21 +294,15 @@ class SubscriptionManagerMockup implements SubscriptionManager
     $invoice->subscription_id = $subscription->id;
     $invoice->period = $subscription->current_period;
     $invoice->currency = $subscription->currency;
-    $invoice->plan = [
-      "name" => $subscription->plan_info['name'],
-      "price" => $subscription->plan_info['price']['price'],
-    ];
-    $invoice->coupon = $subscription->coupon_info ? [
-      "code" => $subscription->coupon_info['code'],
-      "percentage_off" => $subscription->coupon_info['percentage_off'],
-    ] : null;
-    $invoice->processing_fee = $subscription->processing_fee_info;
+    $invoice->plan_info = $subscription->plan_info;
+    $invoice->coupon_info = $subscription->coupon_info;
+    $invoice->processing_fee_info = $subscription->processing_fee_info;
     $invoice->subtotal = $subscription->subtotal;
     $invoice->total_tax = $subscription->total_tax;
     $invoice->total_amount = $subscription->total_amount;
     $invoice->invoice_date = now();
-    $invoice->pdf_file = '/robots.txt';
     $invoice->dr = ['file_id' => 'file_id_' . uuid_create()];
+    $invoice->pdf_file = '/robots.txt';
     $invoice->dr = [
       'order_id'  => 'order_id_' . uuid_create(),
       'file_id'   => 'file_id_' . uuid_create(),
@@ -336,15 +326,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
 
     $subscription->stop('failed', 'charge back');
     $user = $subscription->user;
-
-    // TODO: refactor
-    if ($user->machines()->count() > 0) {
-      $basicSubscription = Subscription::createBasicMachineSubscription($user);
-      $user->subscription_level = $basicSubscription->subscription_level;
-    } else {
-      $user->subscription_level = 0;
-    }
-    $user->save();
+    $user->updateSubscriptionLevel();
 
     return $subscription;
   }
@@ -381,13 +363,7 @@ class SubscriptionManagerMockup implements SubscriptionManager
 
     // activate default subscription
     $user = $subscription->user;
-    if ($user->machines()->count() > 0) {
-      $basicSubscription = Subscription::createBasicMachineSubscription($user);
-      $user->subscription_level = $basicSubscription->subscription_level;
-    } else {
-      $user->subscription_level = 0;
-    }
-    $user->save();
+    $user->updateSubscriptionLevel();
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED);

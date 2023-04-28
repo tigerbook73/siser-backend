@@ -129,4 +129,28 @@ class User extends UserWithTrait
       ->where('subscription_level', '>', 1)
       ->first();
   }
+
+  public function getActiveLiveSubscription(): Subscription|null
+  {
+    return $this->subscriptions()
+      ->where('status', 'active')
+      ->whereNot('sub_status', 'cancelling')
+      ->where('subscription_level', '>', 1)
+      ->first();
+  }
+
+  public function updateSubscriptionLevel()
+  {
+    $subscription = $this->getActiveSubscription();
+    if (!$subscription) {
+      if ($this->machines()->count() > 0) {
+        $subscription = Subscription::createBasicMachineSubscription($this);
+      }
+    }
+
+    $this->subscription_level = ($subscription) ? $subscription->subscription_level : 0;
+    $this->save();
+
+    return $this;
+  }
 }

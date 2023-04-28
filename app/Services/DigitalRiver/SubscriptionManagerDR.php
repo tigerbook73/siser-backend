@@ -15,6 +15,7 @@ use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
 use DigitalRiver\ApiSdk\ApiException as DrApiException;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
+use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
@@ -41,19 +42,28 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.charge.capture.complete' => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureComplete'],
       'order.charge.capture.failed'   => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureFailed'],
       'order.complete'                => ['class' => DrOrder::class,        'handler' => 'onOrderComplete'],
-      'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
       'order.chargeback'              => ['class' => DrOrder::class,        'handler' => 'onOrderChargeback'],
+
+      // invoice
+      'invoice.open'                  => ['class' => DrInvoice::class,      'handler' => 'onInvoiceOpen'],
+      'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
 
       // TODO: refund
       // 
 
-      'subscription.extended'       => ['class' => 'array',                 'handler' => 'onSubscriptionExtended'],
-      'subscription.failed'         => ['class' => DrSubscription::class,   'handler' => 'onSubscriptionFailed'],
-      'subscription.payment_failed' => ['class' => 'array',                 'handler' => 'onSubscriptionPaymentFailed'],
-      'subscription.reminder'       => ['class' => 'array',                 'handler' => 'onSubscriptionReminder'],
-      // TODO: 
-      // 'subscription.updated'              => ['class' => DrSubscription::class, 'handler' => 'doNothing'],
+      'subscription.extended'         => ['class' => 'array',               'handler' => 'onSubscriptionExtended'],
+      'subscription.failed'           => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionFailed'],
+      'subscription.payment_failed'   => ['class' => 'array',               'handler' => 'onSubscriptionPaymentFailed'],
+      'subscription.reminder'         => ['class' => 'array',               'handler' => 'onSubscriptionReminder'],
     ];
+  }
+
+  protected function fillSubscriptionAmount(Subscription $subscription, DrCheckout|DrOrder|DrInvoice $drOrder)
+  {
+    $subscription->subtotal = $drOrder->getSubtotal();
+    $subscription->tax_rate = $drOrder->getItems()[0]->getTax()->getRate();
+    $subscription->total_tax = $drOrder->getTotalTax();
+    $subscription->total_amount = $drOrder->getTotalAmount();
   }
 
   public function createSubscription(User $user, Plan $plan, Coupon|null $coupon): Subscription
@@ -108,9 +118,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     Log::info("Subscription: $subscription->id: $subscription->status: create dr-checkout");
 
     // update subscription
-    $subscription->subtotal = $checkout->getSubtotal();
-    $subscription->total_tax = $checkout->getTotalTax();
-    $subscription->total_amount = $checkout->getTotalAmount();
+    $this->fillSubscriptionAmount($subscription, $checkout);
     $subscription->dr = [
       'checkout_id' => $checkout->getId(),
       'checkout_payment_session_id' => $checkout->getPayment()->getSession()->getId(),
@@ -118,6 +126,20 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->save();
     Log::info("Subscription: $subscription->id: $subscription->status: create subscription (with dr-checkout)");
 
+    return $subscription;
+  }
+
+  /** TODO: update: price/coupon/tax */
+  public function updateSubscription(Subscription $subscription): Subscription
+  {
+    /*
+    NOTE: subscrption can not be updated between remindered and extended
+    */
+
+    /*
+    1. update $subscription.next_invoice
+    2. update drSubscription
+    */
     return $subscription;
   }
 
@@ -191,6 +213,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       $subscription->sub_status = 'cancelling';
       $subscription->next_invoice_date = null;
+      $subscription->next_invoice = null;
       $subscription->save();
       Log::info("Subscription: $subscription->id: $subscription->status: cancel subscription");
 
@@ -244,10 +267,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // attach source to active subscription
 
     /** @var Subscription|null $subscription */
-    $subscription = $user->subscriptions()
-      ->where('status', 'active')
-      ->where('subscription_level', '>', 1)
-      ->first();
+    $subscription = $user->getActiveLiveSubscription();
     if ($subscription) {
       $this->drService->updateSubscriptionSource($subscription->dr_subscription_id, $source->getId());
       Log::info("Subscription: $subscription->id: $subscription->status: attach new dr-source to dr-subscription");
@@ -516,8 +536,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    // TODO: for non first order, update subscription's total_tax/total_amount
-
     // must be in processing status
     if ($subscription->status != 'processing') {
       Log::info(__FUNCTION__ . ': skip subscription not in processing');
@@ -531,7 +549,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     Log::info("Subscription: $subscription->id: $subscription->status: activate dr-subscription");
 
     // stop previous subscription and start new subscription
-    DB::transaction(function () use ($subscription, $drSubscription) {
+    DB::transaction(function () use ($order, $subscription, $drSubscription) {
       $user = $subscription->user;
 
       // stop previous subscription
@@ -541,6 +559,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       }
 
       // active current subscription
+      $this->fillSubscriptionAmount($subscription, $order);
+
       $subscription->start_date = now();
       $subscription->current_period = 1;
       $subscription->current_period_start_date = now();
@@ -550,11 +570,14 @@ class SubscriptionManagerDR implements SubscriptionManager
         $drSubscription->getNextInvoiceDate() ? Carbon::parse($drSubscription->getNextInvoiceDate()) : null;
       $subscription->status = 'active';
       $subscription->sub_status = 'normal';
+      $subscription->fillNextInvoice();
       $subscription->save();
 
-      // update user subscription level and license_count
-      $user->subscription_level = $subscription->subscription_level;
-      $user->save();
+      // create invoice
+      $this->createFirstInvoice($subscription);
+
+      // update user subscription level
+      $user->updateSubscriptionLevel();
 
       Log::info("Subscription: $subscription->id: $subscription->status: activate subscription");
     });
@@ -574,43 +597,31 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    // validate subscription
     if ($subscription->status != 'active') {
       Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created");
       return null;
     }
 
+    // skip duplicated invoice
+    $invoice = $subscription->getActiveInvoice();
+    if ($invoice && $invoice->pdf_file) {
+      Log::info("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
+      return null;
+    }
+
     Log::info("Subscription: $subscription->id: $subscription->status: order.invoice.created");
 
-    // create invoice pdf download link TODO: avoid duplicated invoice
+    // create invoice pdf download link
     $fileLink = $this->drService->createFileLink($orderInvoice['fileId'], now()->addYear());
     Log::info("Subscription: $subscription->id: $subscription->status: create dr-invoice-file-link");
 
-    $invoice = new Invoice();
-    $invoice->user_id = $subscription->user_id;
-    $invoice->subscription_id = $subscription->id;
-    $invoice->period = $subscription->current_period;
-    $invoice->currency = $subscription->currency;
-    $invoice->plan = [
-      "name" => $subscription->plan_info['name'],
-      "price" => $subscription->plan_info['price']['price'],
-    ];
-    $invoice->coupon = $subscription->coupon_info ? [
-      "code" => $subscription->coupon_info['code'],
-      "percentage_off" => $subscription->coupon_info['percentage_off'],
-    ] : null;
-    $invoice->processing_fee = $subscription->processing_fee_info;
-    $invoice->subtotal = $subscription->subtotal;
-    $invoice->total_tax = $subscription->total_tax;
-    $invoice->total_amount = $subscription->total_amount;
-    $invoice->invoice_date = now();
+    // update invoice
     $invoice->pdf_file = $fileLink->getUrl();
-    $invoice->dr = [
-      'order_id'  => $orderInvoice['orderId'],
-      'file_id'   => $orderInvoice['fileId'],
-    ];
+    $invoice->setFileId($orderInvoice['fileId']);
     $invoice->status = 'completed';
     $invoice->save();
-    Log::info("Subscription: $subscription->id: $subscription->status: create period invoice"); // TODO: period
+    Log::info("Subscription: $subscription->id: $subscription->status: update invoice.pdf_file");
 
     // sent notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PDF, $invoice);
@@ -636,16 +647,116 @@ class SubscriptionManagerDR implements SubscriptionManager
       Log::info("Subscription: $subscription->id: $subscription->status: charge back:");
 
       $user = $subscription->user;
-
-      // TODO: refactor
-      if ($user->machines()->count() > 0) {
-        $basicSubscription = Subscription::createBasicMachineSubscription($user);
-        $user->subscription_level = $basicSubscription->subscription_level;
-      } else {
-        $user->subscription_level = 0;
-      }
-      $user->save();
+      $user->updateSubscriptionLevel();
+      Log::info("User: $user->id: update user subscription_level to $user->subscription_level");
     });
+
+    return $subscription;
+  }
+
+  /**
+   * invoice event handler
+   */
+  protected function validateInvoice(DrInvoice $invoice): Subscription|null
+  {
+    // must be a subscription invoice
+    $drSubscriptionId = $invoice->getItems()[0]->getSubscriptionInfo()?->getSubscriptionId();
+    if (!$drSubscriptionId) {
+      Log::warning(__FUNCTION__ . ': skip invoice that does not contains an subscription id');
+      return null;
+    }
+
+    // validate the subscription
+    $subscription = Subscription::where('dr_subscription_id', $drSubscriptionId)->first();
+    if (!$subscription) {
+      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['object' => $invoice]);
+      return null;
+    }
+
+    // only process the active subscription
+    if ($subscription->status != 'active') {
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $invoice]);
+      return null;
+    }
+
+    return $subscription;
+  }
+
+  public function createFirstInvoice(Subscription $subscription): Invoice
+  {
+    $invoice = new Invoice();
+
+    $invoice->user_id             = $subscription->user_id;
+    $invoice->subscription_id     = $subscription->id;
+    $invoice->currency            = $subscription->currency;
+
+    $invoice->period              = $subscription->current_period;
+    $invoice->period_start_date   = $subscription->current_period_start_date;
+    $invoice->period_end_date     = $subscription->current_period_end_date;
+
+    $invoice->plan_info           = $subscription->plan_info;
+    $invoice->coupon_info         = $subscription->coupon_info;
+    $invoice->processing_fee_info = $subscription->processing_fee_info;
+
+    $invoice->subtotal            = $subscription->subtotal;
+    $invoice->total_tax           = $subscription->total_tax;
+    $invoice->total_amount        = $subscription->total_amount;
+    $invoice->invoice_date        = now();
+    $invoice->setOrderId($subscription->dr['order_id']);
+    $invoice->status              = 'completing';
+    $invoice->save();
+
+    return $invoice;
+  }
+
+  public function createRenewInvoice(Subscription $subscription, DrInvoice $drInvoice): Invoice
+  {
+    if ($subscription->invoices()->where('period', $subscription->current_period + 1)->count()) {
+      throw new Exception('Try to create duplicated invoice', 500);
+    }
+
+    $invoice = new Invoice();
+    $invoice->user_id             = $subscription->user_id;
+    $invoice->subscription_id     = $subscription->id;
+    $invoice->currency            = $subscription->currency;
+
+    $invoice->period              = $subscription->current_period + 1;
+    $invoice->period_start_date   = $subscription->next_invoice['current_period_start_date'];
+    $invoice->period_end_date     = $subscription->next_invoice['current_period_end_date'];
+
+    $invoice->plan_info           = $subscription->next_invoice['plan_info'];
+    $invoice->coupon_info         = $subscription->next_invoice['coupon_info'];
+    $invoice->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
+
+    $invoice->subtotal            = $drInvoice->getSubtotal();
+    $invoice->total_tax           = $drInvoice->getTotalTax();
+    $invoice->total_amount        = $drInvoice->getTotalAmount();
+    $invoice->invoice_date        = Carbon::parse($drInvoice->getUpdatedTime());
+    $invoice->status              = 'open';
+    $invoice->setInvoiceId($drInvoice->getId());
+    $invoice->save();
+
+    return $invoice;
+  }
+
+  public function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
+  {
+    $subscription = $this->validateInvoice($drInvoice);
+    if ($subscription->getActiveInvoice()) {
+      Log::warning(__FUNCTION__ . ': this is existing active invoice', ['object' => $drInvoice]);
+    }
+
+    $next_invoice = $subscription->next_invoice;
+
+    $next_invoice['subtotal'] = $drInvoice->getSubtotal();
+    $next_invoice['tax_rate'] = $drInvoice->getItems()[0]->getTax()->getRate();
+    $next_invoice['total_tax'] = $drInvoice->getTotalTax();
+    $next_invoice['total_amount'] = $drInvoice->getTotalAmount();
+    $subscription->next_invoice = $next_invoice;
+    $subscription->save();
+
+    $this->createRenewInvoice($subscription, $drInvoice);
+    Log::info("Subscription: $subscription->id: $subscription->status: create period invoice");
 
     return $subscription;
   }
@@ -670,7 +781,8 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     /** @var DrSubscription $drSubscription */
     $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
-    // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+    /** @var DrInvoice $drInvoice */
+    $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
@@ -683,12 +795,25 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // update subscription data
+    $this->fillSubscriptionAmount($subscription, $drInvoice);
     $subscription->current_period = $subscription->current_period + 1; // TODO: more to check
     $subscription->current_period_start_date = $subscription->current_period_end_date;
     $subscription->current_period_end_date = Carbon::parse($drSubscription->getCurrentPeriodEndDate());
     $subscription->next_invoice_date = Carbon::parse($drSubscription->getNextInvoiceDate());
+
+    $subscription->plan_info = $subscription->next_invoice['plan_info'];
+    $subscription->coupon_info = $subscription->next_invoice['coupon_info'];
+    $subscription->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
+
+    $subscription->fillNextInvoice();
     $subscription->save();
     Log::info("Subscription: $subscription->id: $subscription->status: subscription extended");
+
+    // update invoice
+    $invoice = $subscription->getActiveInvoice();
+    $invoice->setOrderId($drInvoice->getOrderId());
+    $invoice->status = 'completing';
+    $invoice->save();
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED);
@@ -712,15 +837,17 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->stop('failed', ' renew charge failed');
     Log::info("Subscription: $subscription->id: $subscription->status: subscription stoped");
 
-    // activate default subscription
-    $user = $subscription->user;
-    if ($user->machines()->count() > 0) {
-      $basicSubscription = Subscription::createBasicMachineSubscription($user);
-      $user->subscription_level = $basicSubscription->subscription_level;
-    } else {
-      $user->subscription_level = 0;
+    // stop invoice
+    $invoice = $subscription->getActiveInvoice();
+    if ($invoice) {
+      $invoice->status = 'failed';
+      $invoice->save();
+      Log::info("Subscription: $subscription->id: $subscription->status: update invoice to failed");
     }
-    $user->save();
+
+    // update user subscription level
+    $user = $subscription->user;
+    $user->updateSubscriptionLevel();
     Log::info("User: $user->id: update user subscription_level to $user->subscription_level");
 
     // send notification
@@ -732,7 +859,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   public function onSubscriptionPaymentFailed(array $event): Subscription|null
   {
     $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
-    // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+    $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
@@ -747,6 +874,14 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->sub_status = 'overdue';
     $subscription->save();
     Log::info("Subscription: $subscription->id: $subscription->status: subscription.payment.failed");
+
+    // overdue invoice
+    $invoice = $subscription->getActiveInvoice();
+    if ($invoice) {
+      $invoice->status = 'overdue';
+      $invoice->save();
+      Log::info("Subscription: $subscription->id: $subscription->status: invoice failed");
+    }
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_OVERDUE);
@@ -776,21 +911,4 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     return $subscription;
   }
-
-  /**
-   * helper function
-   */
-
-  public function activateDefaultSubscription(User $user)
-  {
-    if ($user->machines()->count() > 0) {
-      $basicSubscription = Subscription::createBasicMachineSubscription($user);
-      $user->subscription_level = $basicSubscription->subscription_level;
-    } else {
-      $user->subscription_level = 0;
-    }
-    $user->save();
-  }
-
-  // TODO: stop subscription when end-date comes.
 }

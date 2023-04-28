@@ -67,14 +67,7 @@ class SubscriptionStopCancelled extends Command
         $subscription->stop('stopped', 'cancelled');
 
         // activate default subscription
-        $user = $subscription->user;
-        if ($user->machines()->count() > 0) {
-          $basicSubscription = Subscription::createBasicMachineSubscription($user);
-          $user->subscription_level = $basicSubscription->subscription_level;
-        } else {
-          $user->subscription_level = 0;
-        }
-        $user->save();
+        $subscription->user->updateSubscriptionLevel();
 
         // send notification
         $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);

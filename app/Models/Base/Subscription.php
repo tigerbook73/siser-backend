@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $processing_fee_info
  * @property float $processing_fee
  * @property float $subtotal
+ * @property float $tax_rate
  * @property float $total_tax
  * @property float $total_amount
  * @property int $subscription_level
@@ -43,6 +44,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $current_period_start_date
  * @property Carbon|null $current_period_end_date
  * @property Carbon|null $next_invoice_date
+ * @property array|null $next_invoice
  * @property array|null $dr
  * @property string|null $dr_subscription_id
  * @property string|null $stop_reason
@@ -74,6 +76,7 @@ class Subscription extends Model
     'processing_fee_info' => 'json',
     'processing_fee' => 'float',
     'subtotal' => 'float',
+    'tax_rate' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
     'subscription_level' => 'int',
@@ -81,6 +84,7 @@ class Subscription extends Model
     'current_period_start_date' => 'datetime',
     'current_period_end_date' => 'datetime',
     'next_invoice_date' => 'datetime',
+    'next_invoice' => 'json',
     'dr' => 'json'
   ];
 
@@ -99,6 +103,7 @@ class Subscription extends Model
     'processing_fee_info',
     'processing_fee',
     'subtotal',
+    'tax_rate',
     'total_tax',
     'total_amount',
     'subscription_level',
@@ -106,6 +111,7 @@ class Subscription extends Model
     'current_period_start_date',
     'current_period_end_date',
     'next_invoice_date',
+    'next_invoice',
     'dr',
     'dr_subscription_id',
     'stop_reason',

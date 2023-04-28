@@ -67,6 +67,7 @@ return new class extends Migration
       $table->decimal('price')->comment('beautified subscription price, may or may not include processing fee')->change();
       $table->decimal('processing_fee')->default(0.0)->comment('valid when explicit_processing_fee is true');
       $table->decimal('subtotal')->default(0.0)->comment('price + processing_fee');
+      $table->decimal('tax_rate')->default(0.0);
       $table->decimal('total_tax')->default(0.0)->comment('based on latest invoice');
       $table->decimal('total_amount')->default(0.0)->comment('subtotal + total_tax');
       $table->unsignedInteger('subscription_level')->default(1);
@@ -76,6 +77,19 @@ return new class extends Migration
       $table->datetime('current_period_start_date')->nullable();
       $table->datetime('current_period_end_date')->nullable();
       $table->datetime('next_invoice_date')->nullable();
+      $table->json('next_invoice')->nullable()->comment('{
+        "plan_info": {},
+        "coupon_info": {},
+        "processing_fee_info": {},
+        "price": 10.0,
+        "processing_fee": 0.2,
+        "subtotal": 10.2,
+        "tax_rate": 0.1,
+        "total_tax": 1.02,
+        "total_amount": 11.22,
+        "current_period_start_date": "date-time",
+        "current_period_end_date": "date-time",
+      }');
       $table->json('dr')->nullable()->comment('{
         "checkout_id": "dr_checkout_id",
         "checkout_payment_session_id": "dr_checkout_payment_session_id",

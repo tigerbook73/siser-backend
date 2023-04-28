@@ -20,16 +20,20 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $user_id
  * @property int $subscription_id
  * @property int $period
+ * @property Carbon $period_start_date
+ * @property Carbon $period_end_date
  * @property string $currency
- * @property array $plan
- * @property array|null $coupon
- * @property array $processing_fee
+ * @property array $plan_info
+ * @property array|null $coupon_info
+ * @property array $processing_fee_info
  * @property float $subtotal
  * @property float $total_tax
  * @property float $total_amount
  * @property Carbon $invoice_date
  * @property string|null $pdf_file
  * @property array $dr
+ * @property string|null $dr_invoice_id
+ * @property string|null $dr_order_id
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -49,9 +53,11 @@ class Invoice extends Model
     'user_id' => 'int',
     'subscription_id' => 'int',
     'period' => 'int',
-    'plan' => 'json',
-    'coupon' => 'json',
-    'processing_fee' => 'json',
+    'period_start_date' => 'datetime',
+    'period_end_date' => 'datetime',
+    'plan_info' => 'json',
+    'coupon_info' => 'json',
+    'processing_fee_info' => 'json',
     'subtotal' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
@@ -63,16 +69,20 @@ class Invoice extends Model
     'user_id',
     'subscription_id',
     'period',
+    'period_start_date',
+    'period_end_date',
     'currency',
-    'plan',
-    'coupon',
-    'processing_fee',
+    'plan_info',
+    'coupon_info',
+    'processing_fee_info',
     'subtotal',
     'total_tax',
     'total_amount',
     'invoice_date',
     'pdf_file',
     'dr',
+    'dr_invoice_id',
+    'dr_order_id',
     'status'
   ];
 

@@ -24,6 +24,7 @@ class Subscription extends BaseSubscription
     'price'                     => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'processing_fee'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subtotal'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'tax_rate'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_tax'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_amount'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'start_date'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -33,6 +34,7 @@ class Subscription extends BaseSubscription
     'current_period_start_date' => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'current_period_end_date'   => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'next_invoice_date'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'next_invoice'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'dr'                        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'stop_reason'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status'                    => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -63,6 +65,7 @@ class Subscription extends BaseSubscription
       'price'                     => 0.0,
       'processing_fee'            => 0.0,
       'subtotal'                  => 0.0,
+      'tax_rate'                  => 0.0,
       'total_tax'                 => 0.0,
       'total_amount'              => 0.0,
       'subscription_level'        => 1,
@@ -72,9 +75,34 @@ class Subscription extends BaseSubscription
       'current_period_start_date' => null,
       'current_period_end_date'   => null,
       'next_invoice_date'         => null,
+      'next_invoice'              => null,
       'status'                    => 'active',
       'sub_status'                => 'normal',
     ]);
+  }
+
+  public function fillNextInvoice()
+  {
+    if ((config('dr.dr_mode') != 'prod')) {
+      $current_period_start_date = $this->current_period_start_date->addDays(2)->toDateTimeString();
+      $current_period_end_date = $this->current_period_end_date->addDays(2)->toDateTimeString();
+    } else {
+      $current_period_start_date = $this->current_period_start_date->addMonth()->toDateTimeString();
+      $current_period_end_date = $this->current_period_end_date->addMonth()->toDateTimeString();
+    }
+    $this->next_invoice = [
+      "plan_info" =>  $this->plan_info,
+      "coupon_info" => $this->coupon_info,
+      "processing_fee_info" => $this->processing_fee_info,
+      "price" => $this->price,
+      "processing_fee" => $this->processing_fee,
+      "subtotal" => $this->subtotal,
+      "tax_rate" => $this->tax_rate,
+      "total_tax" => $this->total_tax,
+      "total_amount" => $this->total_amount,
+      "current_period_start_date" => $current_period_start_date,
+      "current_period_end_date" => $current_period_end_date,
+    ];
   }
 
   public function stop(string $status, string $stopReason = '', string $subStatus = 'normal')
@@ -86,6 +114,11 @@ class Subscription extends BaseSubscription
     $this->end_date = $this->start_date ? now() : null;
     $this->next_invoice_date = null;
     $this->save();
+  }
+
+  public function getActiveInvoice(): Invoice|null
+  {
+    return $this->invoices()->whereIn('status', ['open', 'overdue', 'completing'])->first();
   }
 
   // public function activate($start_date = null, )

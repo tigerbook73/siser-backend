@@ -18,19 +18,12 @@ return new class extends Migration
       $table->foreignId('user_id')->constrained();
       $table->foreignId('subscription_id')->constrained();
       $table->unsignedInteger('period');
+      $table->datetime('period_start_date');
+      $table->datetime('period_end_date');
       $table->string('currency');
-      $table->json('plan')->comment('{
-        "name": "Premier Plan",
-        "price": 10.00
-      }');
-      $table->json('coupon')->nullable()->comment('{
-        "code": "coupon20",
-        "percentage_off": 20
-      }');
-      $table->json('processing_fee')->comment('{
-        "processing_fee_rate": 2,
-        "explicit_processing_fee": false
-      }');
+      $table->json('plan_info')->comment('same as subscription.plan_info');
+      $table->json('coupon_info')->nullable()->comment('same as subscription.coupon_info');
+      $table->json('processing_fee_info')->comment('same as subscription.processing_fee_info');
       $table->decimal('subtotal');
       $table->decimal('total_tax');
       $table->decimal('total_amount');
@@ -38,11 +31,17 @@ return new class extends Migration
       $table->string('pdf_file')->nullable();
       $table->json('dr')->comment('{
         "order_id": "dr_order_id",
-        "file_id":  "dr_invoice_id",
+        "invoice_id": "dr_invoice_id",
+        "file_id":  "dr_file_id",
       }');
-      $table->string('status')->comment('[ draft, open, overdue, failed, completed ]');
+      $table->string('dr_invoice_id')->nullable();
+      $table->string('dr_order_id')->nullable();
+      $table->string('status')->comment('[ open, overdue, completing -- wait invoice-pdf, failed, completed ]');
 
       $table->timestamps();
+
+      $table->unique('dr_invoice_id');
+      $table->unique('dr_order_id');
     });
   }
 

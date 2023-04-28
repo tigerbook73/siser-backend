@@ -5,11 +5,11 @@ namespace App\Console\Commands;
 use App\Models\GeneralConfiguration;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManagerDR;
-use DigitalRiver\ApiSdk\Model\Checkout;
-use DigitalRiver\ApiSdk\Model\Customer;
-use DigitalRiver\ApiSdk\Model\Order;
-use DigitalRiver\ApiSdk\Model\Plan;
-use DigitalRiver\ApiSdk\Model\Subscription;
+use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
+use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
+use DigitalRiver\ApiSdk\Model\Order as DrOrder;
+use DigitalRiver\ApiSdk\Model\Plan as DrPlan;
+use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use Illuminate\Console\Command;
 
 class DrCommand extends Command
@@ -109,7 +109,7 @@ class DrCommand extends Command
      */
     $this->info('Clear plans ...');
 
-    /** @var Plan[] $plans */
+    /** @var DrPlan[] $plans */
     $plans = $drService->planApi->listPlans(state: 'draft')->getData();
     foreach ($plans as $plan) {
       $this->info("  delete plan " . $plan->getId());
@@ -128,7 +128,7 @@ class DrCommand extends Command
 
     $this->info('Clear subscriptions ...');
 
-    /** @var Subscription[] $subscriptions */
+    /** @var DrSubscription[] $subscriptions */
     $subscriptions = $drService->subscriptionApi->listSubscriptions(state: 'draft')->getData();
     foreach ($subscriptions as $subscription) {
       $this->info("  delete subscription " . $subscription->getId());
@@ -143,7 +143,7 @@ class DrCommand extends Command
       $this->ignore(
         [$drService->subscriptionApi, 'updateSubscriptions'],
         $subscription->getId(),
-        new Subscription(['state' => 'cancelled'])
+        new DrSubscription(['state' => 'cancelled'])
       );
     }
 
@@ -157,7 +157,7 @@ class DrCommand extends Command
 
     $this->info('Clear checkouts ...');
 
-    // /** @var Checkout[] $checkouts */
+    // /** @var DrCheckout[] $checkouts */
     // $checkouts = $drService->checkoutApi->listCheckouts()->getData();
     // foreach ($checkouts as $checkout) {
     //   $this->ignore(
@@ -175,7 +175,7 @@ class DrCommand extends Command
 
     $this->info('Clear orders ...');
 
-    /** @var Order[] $orders */
+    /** @var DrOrder[] $orders */
     $orders = $drService->orderApi->listOrders(state: 'accepted')->getData();
     foreach ($orders as $order) {
       $this->info("  cancel order " . $order->getId());
@@ -191,7 +191,7 @@ class DrCommand extends Command
 
     $this->info('Clear customers ...');
 
-    /** @var Customer[] $customers */
+    /** @var DrCustomer[] $customers */
     $customers = $drService->customerApi->listCustomers()->getData();
     foreach ($customers as $customer) {
       foreach ($customer->getSources() ?? [] as $source) {
