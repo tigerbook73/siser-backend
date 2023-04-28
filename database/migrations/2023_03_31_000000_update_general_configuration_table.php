@@ -23,24 +23,27 @@ return new class extends Migration
     }
 
     // 
-    DB::table('general_configuration')->insert([
+    DB::table('general_configuration')->upsert(
       [
-        'name' => 'plan_reminder_offset_days',
-        'value' => json_encode($plan_reminder_offset_days),
+        [
+          'name' => 'plan_reminder_offset_days',
+          'value' => json_encode($plan_reminder_offset_days),
+        ],
+        [
+          'name' => 'plan_billing_offset_days',
+          'value' => json_encode($plan_billing_offset_days),
+        ],
+        [
+          'name' => 'plan_collection_period_days',
+          'value' => json_encode($plan_collection_period_days),
+        ],
+        [
+          'name' => 'siser_share_rate',
+          'value' => json_encode(47.5),
+        ],
       ],
-      [
-        'name' => 'plan_billing_offset_days',
-        'value' => json_encode($plan_billing_offset_days),
-      ],
-      [
-        'name' => 'plan_collection_period_days',
-        'value' => json_encode($plan_collection_period_days),
-      ],
-      [
-        'name' => 'siser_share_rate',
-        'value' => json_encode(47.5),
-      ],
-    ]);
+      ['name']
+    );
   }
 
   /**

@@ -57,30 +57,33 @@ return new class extends Migration
       ['id']
     );
 
-    DB::table('plans')->insert([
+    DB::table('plans')->upsert(
       [
-        'name'                => 'LDS Premier Plan',
-        'catagory'            => 'machine',
-        'description'         => 'LDS Premier Plan',
-        'subscription_level'  => 2,
-        'price_list'          => json_encode([
-          [
-            'country'         => 'US',
-            'currency'        => 'USD',
-            'price'           => 10.0
-          ],
-          [
-            'country'         => 'AU',
-            'currency'        => 'AUD',
-            'price'           => 14.0
-          ]
-        ]),
-        'url'                 => '',
-        'status'              => 'active',
-        'created_at'          => new Carbon(),
-        'updated_at'          => new Carbon(),
-      ]
-    ]);
+        [
+          'name'                => 'LDS Premier Plan',
+          'catagory'            => 'machine',
+          'description'         => 'LDS Premier Plan',
+          'subscription_level'  => 2,
+          'price_list'          => json_encode([
+            [
+              'country'         => 'US',
+              'currency'        => 'USD',
+              'price'           => 10.0
+            ],
+            [
+              'country'         => 'AU',
+              'currency'        => 'AUD',
+              'price'           => 14.0
+            ]
+          ]),
+          'url'                 => '',
+          'status'              => 'active',
+          'created_at'          => new Carbon(),
+          'updated_at'          => new Carbon(),
+        ]
+      ],
+      ['name']
+    );
   }
 
   /**
@@ -90,5 +93,16 @@ return new class extends Migration
    */
   public function down()
   {
+    Schema::table('plans', function (Blueprint $table) {
+      $table->dropUnique(['name']);
+      $table->dropIndex(['catagory']);
+      $table->dropIndex(['status']);
+
+      $table->dropColumn('price_list');
+
+      $table->string('contract_term')->nullable();
+      $table->json('price')->nullable();
+      $table->boolean('auto_renew')->default(true);
+    });
   }
 };

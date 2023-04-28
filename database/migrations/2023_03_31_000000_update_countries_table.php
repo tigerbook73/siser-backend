@@ -57,5 +57,13 @@ return new class extends Migration
    */
   public function down()
   {
+    Schema::table('countries', function (Blueprint $table) {
+      $table->renameColumn('code', 'country_code');
+      $table->renameColumn('name', 'country');
+      $table->dropColumn('currency');
+      $table->dropColumn('processing_fee_rate');
+      $table->dropColumn('explicit_processing_fee');
+      $table->dropTimestamps();
+    });
   }
 };

@@ -25,5 +25,8 @@ return new class extends Migration
    */
   public function down()
   {
+    Schema::table('lds_instances', function (Blueprint $table) {
+      $table->dropForeign(['lds_registration_id']);
+    });
   }
 };

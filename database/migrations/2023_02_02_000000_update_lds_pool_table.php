@@ -25,6 +25,8 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::dropIfExists('lds_pool');
+    Schema::table('lds_pools', function (Blueprint $table) {
+      $table->dropForeign(['user_id']);
+    });
   }
 };
