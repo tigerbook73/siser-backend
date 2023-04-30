@@ -44,17 +44,15 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.complete'                => ['class' => DrOrder::class,        'handler' => 'onOrderComplete'],
       'order.chargeback'              => ['class' => DrOrder::class,        'handler' => 'onOrderChargeback'],
 
-      // invoice
-      'invoice.open'                  => ['class' => DrInvoice::class,      'handler' => 'onInvoiceOpen'],
-      'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
-
-      // TODO: refund
-      // 
-
+      // subscription events
       'subscription.extended'         => ['class' => 'array',               'handler' => 'onSubscriptionExtended'],
       'subscription.failed'           => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionFailed'],
       'subscription.payment_failed'   => ['class' => 'array',               'handler' => 'onSubscriptionPaymentFailed'],
       'subscription.reminder'         => ['class' => 'array',               'handler' => 'onSubscriptionReminder'],
+
+      // invoice events: see Invoice.md for state machine
+      'invoice.open'                  => ['class' => DrInvoice::class,      'handler' => 'onInvoiceOpen'],
+      'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
     ];
   }
 
@@ -548,6 +546,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     $drSubscription = $this->drService->activateSubscription($subscription->dr_subscription_id);
     Log::info("Subscription: $subscription->id: $subscription->status: activate dr-subscription");
 
+    // cancel previous subscription
+    if ($previousSubscription = $subscription->user->getActiveLiveSubscription()) {
+      $this->cancelSubscription($previousSubscription);
+    }
+
     // stop previous subscription and start new subscription
     DB::transaction(function () use ($order, $subscription, $drSubscription) {
       $user = $subscription->user;
@@ -555,7 +558,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       // stop previous subscription
       $previousSubscription = $user->getActiveSubscription();
       if ($previousSubscription) {
-        $previousSubscription->stop('inactive', 'new subscrption activated');
+        $previousSubscription->stop('stopped', 'new subscrption activated');
       }
 
       // active current subscription
@@ -796,7 +799,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // update subscription data
     $this->fillSubscriptionAmount($subscription, $drInvoice);
-    $subscription->current_period = $subscription->current_period + 1; // TODO: more to check
+    $subscription->current_period = $subscription->current_period + 1;
     $subscription->current_period_start_date = $subscription->current_period_end_date;
     $subscription->current_period_end_date = Carbon::parse($drSubscription->getCurrentPeriodEndDate());
     $subscription->next_invoice_date = Carbon::parse($drSubscription->getNextInvoiceDate());
@@ -911,4 +914,11 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     return $subscription;
   }
+
+  /*
+  TODO: check data integrity
+
+  1. subscriptions in pending or processing status stay for a long period of time
+  2. there is open activity (one routing not completed)
+  */
 }
