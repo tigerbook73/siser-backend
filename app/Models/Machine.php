@@ -60,11 +60,10 @@ class Machine extends BaseMachine
       $user->license_count = $user->machines()->count() * GeneralConfiguration::getMachineLicenseUnit();
       if ($user->license_count <= 0) {
         // TODO: more to be considered if PRO plan support (e.g. when to stop)
-        $subscription->stop('stopped', 'all machine detached');
-
-        // refresh user
-        $user->subscription_level = 0;
-        $user->license_count = 0;
+        if ($subscription->subscription_level == 1) {
+          $subscription->stop('stopped', 'all machine detached');
+          $user->subscription_level = 0;
+        }
       }
       $user->save();
     }
