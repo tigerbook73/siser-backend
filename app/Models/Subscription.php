@@ -84,8 +84,8 @@ class Subscription extends BaseSubscription
   public function fillNextInvoice()
   {
     if ((config('dr.dr_mode') != 'prod')) {
-      $current_period_start_date = $this->current_period_start_date->addDays(2)->toDateTimeString();
-      $current_period_end_date = $this->current_period_end_date->addDays(2)->toDateTimeString();
+      $current_period_start_date = $this->current_period_start_date->addDays(config('dr.dr_test.interval_count'))->toDateTimeString();
+      $current_period_end_date = $this->current_period_end_date->addDays('dr.dr_test.interval_count')->toDateTimeString();
     } else {
       $current_period_start_date = $this->current_period_start_date->addMonth()->toDateTimeString();
       $current_period_end_date = $this->current_period_end_date->addMonth()->toDateTimeString();

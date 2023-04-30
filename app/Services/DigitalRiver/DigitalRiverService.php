@@ -214,11 +214,11 @@ class DigitalRiverService
     $planRequest->setTerms('These are the terms...');
     $planRequest->setContractBindingDays(10000);
     if (config('dr.dr_mode') != 'prod') {
-      $planRequest->setName('default-plan');
+      $planRequest->setName(config('dr.dr_test.name'));
       $planRequest->setInterval('day');
-      $planRequest->setIntervalCount(2);
+      $planRequest->setIntervalCount(config('dr.dr_test.interval_count'));
     } else {
-      $planRequest->setName('default-test-plan');
+      $planRequest->setName('default-plan');
       $planRequest->setInterval('day');
       $planRequest->setInterval('month');
       $planRequest->setIntervalCount(1);
