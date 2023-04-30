@@ -13,9 +13,9 @@ return new class extends Migration
   public function up()
   {
     if (config('dr.dr_mode') != 'prod') {
-      $plan_billing_offset_days = 0;
-      $plan_collection_period_days = 0;
-      $plan_reminder_offset_days = 1;
+      $plan_billing_offset_days = config('dr.dr_test.billing_offset_days');
+      $plan_collection_period_days = config('dr.dr_test.collection_period_days');
+      $plan_reminder_offset_days = config('dr.dr_test.reminder_offset_days');
     } else {
       $plan_billing_offset_days = 5;
       $plan_collection_period_days = 15;
