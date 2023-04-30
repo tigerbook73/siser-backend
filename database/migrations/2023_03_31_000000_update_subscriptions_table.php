@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Plan;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -111,11 +112,17 @@ return new class extends Migration
 
     // change susbscription to basic
     DB::table('subscriptions')
-      ->where('plan_id', '<>', config('siser.plan.default_machine_plan'))
+      ->where('plan_id', '<=', config('siser.plan.default_machine_plan'))
       ->update([
         'plan_id' => config('siser.plan.default_machine_plan'),
+        'plan_info' => Plan::find(config('siser.plan.default_machine_plan'))->toPublicPlan('US'),
+        'processing_fee_info'       => [
+          'explicit_processing_fee' => false,
+          'processing_fee_rate'     => 0,
+        ],
         'currency' => 'USD',
-        'price' => 0.00
+        'price' => 0.00,
+        'current_period' => 0,
       ]);
     // change 'inactive' => 'stopped'
     DB::table('subscriptions')
