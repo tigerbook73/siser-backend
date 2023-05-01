@@ -8,14 +8,17 @@ stateDiagram-v2
   [*]           --> Draft         : create
 
   Draft
-  Draft         --> Draft         : payment-rejected
-  Draft         --> Pending       : payment-accepted
-  Draft         --> Active        : payment-success
+  Draft         --> Pending       : order-created
   Draft         --> [*]           : timeout|delete / destory
+  Draft         --> [*]           : order-rejected
 
   Pending
-  Pending       --> Active        : payment-success
-  Pending       --> Failed        : payment-failed
+  Pending       --> Processing    : order-accepted
+  Pending       --> Failed        : failed/cancelled
+
+  Processing
+  Processing    --> Active        : payment-success
+  Processing    --> Failed        : payment-failed
 
   Active
   Active        --> Active        : renew-success
