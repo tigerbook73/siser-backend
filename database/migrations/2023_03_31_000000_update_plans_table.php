@@ -20,13 +20,13 @@ return new class extends Migration
       $table->dropColumn('price');
       $table->dropColumn('auto_renew');
 
-      $table->json('price_list')->comment('[
+      $table->json('price_list')->comment(json_encode(json_decode('[
         {
           "country": "US",
           "currency": "USD",
           "price": 9.98
         }
-      ]');
+      ]')));
 
       $table->unique('name');
       $table->index('catagory');

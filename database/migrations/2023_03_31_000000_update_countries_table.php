@@ -19,8 +19,8 @@ return new class extends Migration
       $table->renameColumn('country_code', 'code');
       $table->renameColumn('country', 'name');
       $table->string('currency');
-      $table->decimal('processing_fee_rate');
-      $table->boolean('explicit_processing_fee');
+      $table->decimal('processing_fee_rate')->default(0.0);
+      $table->boolean('explicit_processing_fee')->default(false);
       $table->timestamps();
     });
 
@@ -31,8 +31,6 @@ return new class extends Migration
           'code' => 'US',
           'name' => 'The United of America',
           'currency' => 'USD',
-          'processing_fee_rate' => 2.0,
-          'explicit_processing_fee' => true,
           'created_at' => new Carbon(),
           'updated_at' => new Carbon(),
         ],
@@ -40,8 +38,6 @@ return new class extends Migration
           'code' => 'AU',
           'name' => 'Australia',
           'currency' => 'AUD',
-          'processing_fee_rate' => 2.0,
-          'explicit_processing_fee' => true,
           'created_at' => new Carbon(),
           'updated_at' => new Carbon(),
         ],
