@@ -96,6 +96,7 @@ return new class extends Migration
         "checkout_id": "dr_checkout_id",
         "checkout_payment_session_id": "dr_checkout_payment_session_id",
         "order_id": "dr_first_order_id",
+        "source_id": "source_id",
         "subscription_id": "dr_subscription_id"
       }')));
       $table->string('dr_subscription_id')->nullable();

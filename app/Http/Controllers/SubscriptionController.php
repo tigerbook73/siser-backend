@@ -152,8 +152,7 @@ class SubscriptionController extends SimpleController
       'terms' => ['filled', 'string'],
     ]);
 
-    /** @var Subscription|null $draftSubscription */
-    $draftSubscription = $this->user->subscriptions()->where('status', 'draft')->find($id);
+    $draftSubscription = $this->user->getDraftSubscriptionById($id);
     if (!$draftSubscription) {
       return response()->json(['message' => 'Subscripiton not found'], 404);
     }

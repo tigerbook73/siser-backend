@@ -163,7 +163,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription->delete();
   }
 
-  public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription
+  public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string $terms = null): Subscription
   {
     try {
       // attach source_id to checkout
@@ -252,51 +252,40 @@ class SubscriptionManagerDR implements SubscriptionManager
     $paymentMethod = $user->payment_method()->first();
     $previousSourceId = $paymentMethod ? $paymentMethod->dr['source_id'] : null;
 
-    try {
-      $source = $this->drService->getSource($sourceId);
-    } catch (\Throwable $th) {
-      throw new Exception('invalid source id', 400);
+    if ($previousSourceId == $sourceId) {
+      return $paymentMethod;
     }
 
     // attach source to customer
-    $this->drService->attachCustomerSource($user->dr['customer_id'], $source->getId());
+    $source = $this->drService->attachCustomerSource($user->dr['customer_id'], $sourceId);
     Log::info("Customer: $user->id: attach dr-source to dr-customer");
 
-    // attach source to active subscription
+    // deatch previous source
+    if ($previousSourceId) {
+      $this->drService->dettachCustomerSourceAsync($user->dr['customer_id'], $previousSourceId);
+      Log::info("Customer: $user->id: detach old dr-source from dr-customer");
+    }
 
-    /** @var Subscription|null $subscription */
+    // attach source to active subscription
     $subscription = $user->getActiveLiveSubscription();
     if ($subscription) {
       $this->drService->updateSubscriptionSource($subscription->dr_subscription_id, $source->getId());
       Log::info("Subscription: $subscription->id: $subscription->status: attach new dr-source to dr-subscription");
     }
 
-    // deatch previous source
-    if ($previousSourceId) {
-      try {
-        $this->drService->dettachCustomerSource($user->dr['customer_id'], $previousSourceId);
-        Log::info("Subscription: $subscription->id: $subscription->status: detach old dr-source from dr-subscription");
-      } catch (\Throwable $th) {
-      }
-    }
-
-    // create / update payment method
-    if (!$paymentMethod) {
-      $paymentMethod = new PaymentMethod();
-      $paymentMethod->id      = $user->id;
-      $paymentMethod->user_id = $user->id;
-    }
-    $paymentMethod->type          = $source->getType();
-    $paymentMethod->dr            = ['source_id' => $sourceId];
-    $paymentMethod->display_data  = ($source->getType() == 'creditCard') ?  [
-      'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
-      'brand'             => $source->getCreditCard()->getBrand(),
-    ] : null;
-
-    DB::transaction(function () use ($user, $paymentMethod, $source, $subscription,) {
+    $paymentMethod = $paymentMethod ?: new PaymentMethod(['user_id' => $user->id]);
+    DB::transaction(function () use ($user, $paymentMethod, $source, $subscription) {
+      // create / update payment method
+      $paymentMethod->type = $source->getType();
+      $paymentMethod->dr = ['source_id' => $source->getId()];
+      $paymentMethod->display_data = ($source->getType() == 'creditCard') ?  [
+        'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
+        'brand'             => $source->getCreditCard()->getBrand(),
+      ] : null;
       $paymentMethod->save();
       Log::info("Customer: $user->id: update payment-method");
 
+      // update active subscription
       if ($subscription) {
         $subscriptionDr = $subscription->dr;
         $subscriptionDr['source_id'] = $source->getId();

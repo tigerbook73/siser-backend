@@ -330,6 +330,11 @@ class DigitalRiverService
     }
   }
 
+  public function dettachCustomerSourceAsync(string|int $customerId, string|int $source_id)
+  {
+    return $this->customerApi->deleteCustomerSourceAsync((string)$customerId, (string)$source_id);
+  }
+
   /**
    * checkout
    */

@@ -115,6 +115,13 @@ class User extends UserWithTrait
       ->count() <= 0);
   }
 
+  public function getDraftSubscriptionById(int $id): Subscription|null
+  {
+    return $this->subscriptions()
+      ->where('status', 'draft')
+      ->find($id);
+  }
+
   public function getActiveSubscription(): Subscription|null
   {
     return $this->subscriptions()
