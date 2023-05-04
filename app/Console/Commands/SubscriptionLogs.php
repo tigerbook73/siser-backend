@@ -8,7 +8,7 @@ use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 
-class SubscriptionUpdatePlan extends Command
+class SubscriptionLogs extends Command
 {
   /**
    * The name and signature of the console command.

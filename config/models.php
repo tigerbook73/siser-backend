@@ -288,6 +288,7 @@ return [
     'except' => [
       'jobs',
       'failed_jobs',
+      'notifications',
       'password_resets',
       'personal_access_tokens',
       'migrations',
