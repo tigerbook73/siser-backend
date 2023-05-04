@@ -11,6 +11,12 @@ class Subscription extends BaseSubscription
 {
   use Notifiable;
 
+  public const DR_CHECKOUT_ID     = 'checkout_id';
+  public const DR_SESSION_ID      = 'checkout_payment_session_id';
+  public const DR_ORDER_ID        = 'order_id';
+  public const DR_SOURCE_ID       = 'source_id';
+  public const DR_SUBSCRIPTION_ID = 'subscription_id';
+
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'user_id'                   => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -103,6 +109,69 @@ class Subscription extends BaseSubscription
       "current_period_start_date" => $current_period_start_date,
       "current_period_end_date" => $current_period_end_date,
     ];
+  }
+
+  public function getDrAttr(string $attr): string|null
+  {
+    return $this->dr[$attr] ?? null;
+  }
+
+  public function getDrCheckoutId()
+  {
+    return $this->getDrAttr(self::DR_CHECKOUT_ID);
+  }
+
+  public function getDrOrderId()
+  {
+    return $this->getDrAttr(self::DR_ORDER_ID);
+  }
+
+  public function getDrSessionId()
+  {
+    return $this->getDrAttr(self::DR_SESSION_ID);
+  }
+
+  public function getDrSourceId()
+  {
+    return $this->getDrAttr(self::DR_SOURCE_ID);
+  }
+
+  public function getDrSubscriptionId()
+  {
+    return $this->getDrAttr(self::DR_SUBSCRIPTION_ID);
+  }
+
+  public function setDrAttr(string $attr, string $value)
+  {
+    $dr = $this->dr ?? [];
+    $dr[$attr] = $value;
+    $this->dr = $dr;
+    return $this;
+  }
+
+  public function setDrCheckoutId(string $checkout_id)
+  {
+    return $this->setDrAttr(self::DR_CHECKOUT_ID, $checkout_id);
+  }
+
+  public function setDrOrderId(string $order_id)
+  {
+    return $this->setDrAttr(self::DR_ORDER_ID, $order_id);
+  }
+
+  public function setDrSessionId(string $session_id)
+  {
+    return $this->setDrAttr(self::DR_SESSION_ID, $session_id);
+  }
+
+  public function setDrSourceId(string $source_id)
+  {
+    return $this->setDrAttr(self::DR_SOURCE_ID, $source_id);
+  }
+
+  public function setDrSubscriptionId(string $subscription_id)
+  {
+    return $this->setDrAttr(self::DR_SUBSCRIPTION_ID, $subscription_id);
   }
 
   public function stop(string $status, string $stopReason = '', string $subStatus = 'normal')

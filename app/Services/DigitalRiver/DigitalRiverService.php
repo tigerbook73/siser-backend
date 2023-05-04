@@ -319,7 +319,7 @@ class DigitalRiverService
     }
   }
 
-  public function dettachCustomerSource(string|int $customerId, string|int $source_id): bool
+  public function detachCustomerSource(string|int $customerId, string|int $source_id): bool
   {
     try {
       $this->customerApi->deleteCustomerSource((string)$customerId, (string)$source_id);
@@ -330,7 +330,7 @@ class DigitalRiverService
     }
   }
 
-  public function dettachCustomerSourceAsync(string|int $customerId, string|int $source_id)
+  public function detachCustomerSourceAsync(string|int $customerId, string|int $source_id)
   {
     return $this->customerApi->deleteCustomerSourceAsync((string)$customerId, (string)$source_id);
   }

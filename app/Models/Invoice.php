@@ -6,6 +6,9 @@ use App\Models\Base\Invoice as BaseInvoice;
 
 class Invoice extends BaseInvoice
 {
+  public const DR_FILE_ID     = 'file_id';
+  public const DR_INVOICE_ID  = 'invoice_id';
+  public const DR_ORDER_ID    = 'order_id';
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -28,32 +31,46 @@ class Invoice extends BaseInvoice
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
 
-  public function setOrderId(string $drOrderId)
+  public function getDrAttr(string $attr): string|null
+  {
+    return $this->dr[$attr] ?? null;
+  }
+
+  public function getDrFileId()
+  {
+    return $this->getDrAttr(self::DR_FILE_ID);
+  }
+
+  public function getDrInvoiceId()
+  {
+    return $this->getDrAttr(self::DR_INVOICE_ID);
+  }
+
+  public function getDrOrderId()
+  {
+    return $this->getDrAttr(self::DR_ORDER_ID);
+  }
+
+  public function setDrAttr(string $attr, string $value)
   {
     $dr = $this->dr ?? [];
-    $dr['order_id'] = $drOrderId;
-
-    $this->dr_order_id = $drOrderId;
+    $dr[$attr] = $value;
     $this->dr = $dr;
     return $this;
   }
 
-  public function setInvoiceId(string $drInvoiceId)
+  public function setFileId(string $file_id)
   {
-    $dr = $this->dr ?? [];
-    $dr['invoice_id'] = $drInvoiceId;
-
-    $this->dr_invoice_id = $drInvoiceId;
-    $this->dr = $dr;
-    return $this;
+    return $this->setDrAttr(self::DR_FILE_ID, $file_id);
   }
 
-  public function setFileId(string $drFileId)
+  public function setInvoiceId(string $invoice_id)
   {
-    $dr = $this->dr ?? [];
-    $dr['file_id'] = $drFileId;
+    return $this->setDrAttr(self::DR_INVOICE_ID, $invoice_id);
+  }
 
-    $this->dr = $dr;
-    return $this;
+  public function setOrderId(string $order_id)
+  {
+    return $this->setDrAttr(self::DR_ORDER_ID, $order_id);
   }
 }

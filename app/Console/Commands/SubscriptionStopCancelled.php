@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\CriticalSection;
 use App\Models\Subscription;
 use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\SubscriptionManager;
@@ -68,6 +69,8 @@ class SubscriptionStopCancelled extends Command
 
         // activate default subscription
         $subscription->user->updateSubscriptionLevel();
+
+        CriticalSection::single($subscription, 'subscription:stop-cancelled', 'stop cancelled subscription');
 
         // send notification
         $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);

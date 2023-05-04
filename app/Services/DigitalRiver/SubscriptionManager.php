@@ -31,6 +31,7 @@ interface SubscriptionManager
 
   /**
    * webhook event handler
+   * @return bool true: event processed, false: event not processed
    */
   public function webhookHandler(array $event): bool;
 }
