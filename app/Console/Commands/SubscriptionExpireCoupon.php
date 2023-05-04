@@ -8,21 +8,21 @@ use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
-class SubscriptionStopCoupon extends Command
+class SubscriptionExpireCoupon extends Command
 {
   /**
    * The name and signature of the console command.
    *
    * @var string
    */
-  protected $signature = 'subscription:stop-coupon {--dry-run : Dry run}';
+  protected $signature = 'subscription:expire-coupon {--dry-run : Dry run}';
 
   /**
    * The console command description.
    *
    * @var string
    */
-  protected $description = 'stop terminated subscriptions\' plans';
+  protected $description = 'expire subscriptions\'s counpon';
 
   public function __construct(public SubscriptionManager $manager)
   {
@@ -70,7 +70,7 @@ class SubscriptionStopCoupon extends Command
     }
 
     if (!$dryRun) {
-      Log::info("Artisan: subscription:stop-coupon: update {$subscriptions->count()} subscriptions' coupon.");
+      Log::info("Artisan: subscription:expire-coupon: update {$subscriptions->count()} subscriptions' coupon.");
     }
 
     return Command::SUCCESS;
