@@ -38,8 +38,8 @@ abstract class ApiTestCase extends TestCase
   protected $noAssertAways = false;
 
   /** @var User|AdminUser|null $user */
-  public ?string $role = null;
   public $user = null;
+  public ?string $role = null;
 
 
   protected function setUp(): void

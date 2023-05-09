@@ -269,10 +269,10 @@ class DigitalRiverService
   /**
    * customer
    */
-  public function getCustomer(string|int $id): DrCustomer
+  public function getCustomer(string $id): DrCustomer
   {
     try {
-      return $this->customerApi->retrieveCustomers((string)$id);
+      return $this->customerApi->retrieveCustomers($id);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -295,7 +295,7 @@ class DigitalRiverService
     }
   }
 
-  public function updateCustomer(string|int $id, BillingInfo $billingInfo): DrCustomer
+  public function updateCustomer(string $id, BillingInfo $billingInfo): DrCustomer
   {
     $customerRequest = new DrUpdateCustomerRequest();
     $customerRequest->setEmail($billingInfo->email);
@@ -309,20 +309,20 @@ class DigitalRiverService
     }
   }
 
-  public function attachCustomerSource(string|int $customerId, string|int $source_id): DrSource
+  public function attachCustomerSource(string $customerId, string $source_id): DrSource
   {
     try {
-      return $this->customerApi->createCustomerSource((string)$customerId, (string)$source_id);
+      return $this->customerApi->createCustomerSource($customerId, $source_id);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
     }
   }
 
-  public function detachCustomerSource(string|int $customerId, string|int $source_id): bool
+  public function detachCustomerSource(string $customerId, string $source_id): bool
   {
     try {
-      $this->customerApi->deleteCustomerSource((string)$customerId, (string)$source_id);
+      $this->customerApi->deleteCustomerSource($customerId, $source_id);
       return true;
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
@@ -330,18 +330,19 @@ class DigitalRiverService
     }
   }
 
-  public function detachCustomerSourceAsync(string|int $customerId, string|int $source_id)
+  public function detachCustomerSourceAsync(string $customerId, string $source_id)
   {
-    return $this->customerApi->deleteCustomerSourceAsync((string)$customerId, (string)$source_id);
+    $this->customerApi->deleteCustomerSourceAsync($customerId, $source_id);
+    return true;
   }
 
   /**
    * checkout
    */
-  public function getCheckout(string|int $id): DrCheckout
+  public function getCheckout(string $id): DrCheckout
   {
     try {
-      return $this->checkoutApi->retrieveCheckouts((string)$id);
+      return $this->checkoutApi->retrieveCheckouts($id);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -412,7 +413,6 @@ class DigitalRiverService
     return $items;
   }
 
-
   public function createCheckout(Subscription $subscription): DrCheckout
   {
     // checkout
@@ -440,10 +440,10 @@ class DigitalRiverService
     }
   }
 
-  public function updateCheckoutTerms(string|int $checkoutId, string $terms): DrCheckout
+  public function updateCheckoutTerms(string $checkoutId, string $terms): DrCheckout
   {
     try {
-      $checkout = $this->getCheckout((string)$checkoutId);
+      $checkout = $this->getCheckout($checkoutId);
 
 
       $items = [];
@@ -464,10 +464,10 @@ class DigitalRiverService
     }
   }
 
-  public function deleteCheckout(string|int $id): bool
+  public function deleteCheckout(string $id): bool
   {
     try {
-      $this->checkoutApi->deleteCheckouts((string)$id);
+      $this->checkoutApi->deleteCheckouts($id);
       return true;
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
@@ -475,15 +475,16 @@ class DigitalRiverService
     }
   }
 
-  public function deleteCheckoutAsync(string|int $id)
+  public function deleteCheckoutAsync(string $id)
   {
-    return $this->checkoutApi->deleteCheckoutsAsync((string)$id);
+    $this->checkoutApi->deleteCheckoutsAsync($id);
+    return true;
   }
 
-  public function attachCheckoutSource(string|int $id, string|int $sourceId): DrSource
+  public function attachCheckoutSource(string $id, string $sourceId): DrSource
   {
     try {
-      return $this->checkoutApi->attachSourceToCheckout((string)$id, (string)$sourceId);
+      return $this->checkoutApi->attachSourceToCheckout($id, $sourceId);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -493,10 +494,10 @@ class DigitalRiverService
   /**
    * source
    */
-  public function getSource(string|int $id): DrSource
+  public function getSource(string $id): DrSource
   {
     try {
-      return $this->sourceApi->retrieveSources((string)$id);
+      return $this->sourceApi->retrieveSources($id);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -506,17 +507,17 @@ class DigitalRiverService
   /**
    * order
    */
-  public function getOrder(string|int $id): DrOrder
+  public function getOrder(string $id): DrOrder
   {
     try {
-      return $this->orderApi->retrieveOrders((string)$id);
+      return $this->orderApi->retrieveOrders($id);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
     }
   }
 
-  public function convertCheckoutToOrder(string|int $checkoutId): DrOrder
+  public function convertCheckoutToOrder(string $checkoutId): DrOrder
   {
     try {
       $orderRequest = new DrOrderRequest();
@@ -528,7 +529,7 @@ class DigitalRiverService
     }
   }
 
-  public function fulfillOrder(string|int $orderId, DrOrder $order = null, bool $cancel = false): DrFulfillment
+  public function fulfillOrder(string $orderId, DrOrder $order = null, bool $cancel = false): DrFulfillment
   {
     try {
       $order = $order ?? $this->getOrder($orderId);
@@ -565,7 +566,7 @@ class DigitalRiverService
   /**
    * subscription
    */
-  public function getSubscription(string|int $id): DrSubscription
+  public function getSubscription(string $id): DrSubscription
   {
     try {
       return $this->subscriptionApi->retrieveSubscriptions($id);
@@ -575,20 +576,20 @@ class DigitalRiverService
     }
   }
 
-  public function activateSubscription(string|int $id): DrSubscription
+  public function activateSubscription(string $id): DrSubscription
   {
     $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
     $updateSubscriptionRequest->setState('active');
 
     try {
-      return $this->subscriptionApi->updateSubscriptions((string)$id, $updateSubscriptionRequest);
+      return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
     }
   }
 
-  public function deleteSubscription(string|int $id): bool
+  public function deleteSubscription(string $id): bool
   {
     try {
       $this->subscriptionApi->deleteSubscriptions($id);
@@ -599,18 +600,19 @@ class DigitalRiverService
     }
   }
 
-  public function deleteSubscriptionAsync(string|int $id)
+  public function deleteSubscriptionAsync(string $id)
   {
-    return $this->subscriptionApi->deleteSubscriptionsAsync($id);
+    $this->subscriptionApi->deleteSubscriptionsAsync($id);
+    return true;
   }
 
-  public function updateSubscriptionSource(string|int $id, string|int $sourceId)
+  public function updateSubscriptionSource(string $id, string $sourceId)
   {
     $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
     $updateSubscriptionRequest->setSourceId($sourceId);
 
     try {
-      return $this->subscriptionApi->updateSubscriptions((string)$id, $updateSubscriptionRequest);
+      return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -654,29 +656,29 @@ class DigitalRiverService
     return $items;
   }
 
-  public function updateSubscriptionItems(string|int $id, Subscription $subscription)
+  public function updateSubscriptionItems(string $id, Subscription $subscription)
   {
-    // subscription.items[0]
+    // subscription.items[0] TODO: fillNextInvoice items
     $items[] = $this->fillSubscriptionItems($subscription);
 
     $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
     $updateSubscriptionRequest->setItems($items);
 
     try {
-      return $this->subscriptionApi->updateSubscriptions((string)$id, $updateSubscriptionRequest);
+      return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
     }
   }
 
-  public function cancelSubscription(string|int $id)
+  public function cancelSubscription(string $id)
   {
     $updateSubscriptionRequest = new DrUpdateSubscriptionRequest();
     $updateSubscriptionRequest->setState('cancelled');
 
     try {
-      return $this->subscriptionApi->updateSubscriptions((string)$id, $updateSubscriptionRequest);
+      return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -697,7 +699,7 @@ class DigitalRiverService
     }
   }
 
-  public function createFileLink(string|int $fileId, Carbon $expiresTime): DrFileLink
+  public function createFileLink(string $fileId, Carbon $expiresTime): DrFileLink
   {
     $fileLinkRequest = new DrFileLinkRequest();
     $fileLinkRequest->setFileId($fileId);

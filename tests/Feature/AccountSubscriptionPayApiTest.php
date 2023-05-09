@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Coupon;
 use App\Models\Plan;
+use App\Models\Subscription;
 
 class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
 {
@@ -19,7 +20,18 @@ class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
       "plan_id"   => $plan->id
     ]);
 
-    $response = $this->postJson($this->baseUrl . '/' . $createResponse->json()['id'] . '/pay');
+    /**
+     * mock up functions
+     */
+    $subscription = Subscription::find($createResponse->json()['id']);
+    $this->mockAttachCheckoutSource();
+    $this->mockUpdateCheckoutTerms($subscription);
+    $this->mockConvertCheckoutToOrder($subscription);
+
+    $response = $this->postJson(
+      $this->baseUrl . '/' . $createResponse->json()['id'] . '/pay',
+      ['terms' => 'This is test terms ...']
+    );
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema);
 

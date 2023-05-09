@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\GeneralConfiguration;
 use App\Services\DigitalRiver\DigitalRiverService;
-use App\Services\DigitalRiver\SubscriptionManagerDR;
+use App\Services\DigitalRiver\SubscriptionManager;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
@@ -27,6 +27,14 @@ class DrCommand extends Command
    * @var string
    */
   protected $description = 'initialize prebuild data in DigitalRiver.';
+
+
+  public function __construct(
+    public SubscriptionManager $manager,
+    public DigitalRiverService $drService
+  ) {
+    parent::__construct();
+  }
 
   /**
    * Execute the console command.
@@ -74,15 +82,13 @@ class DrCommand extends Command
 
   public function init()
   {
-    $drService = new DigitalRiverService();
-
     // create / update default plan
     $this->info("Create or update default plan ...");
     try {
-      $defaultPlan = $drService->getDefaultPlan();
-      $defaultPlan = $drService->updateDefaultPlan(GeneralConfiguration::getConfiguration());
+      $defaultPlan = $this->drService->getDefaultPlan();
+      $defaultPlan = $this->drService->updateDefaultPlan(GeneralConfiguration::getConfiguration());
     } catch (\Throwable $th) {
-      $defaultPlan = $drService->createDefaultPlan(GeneralConfiguration::getConfiguration());
+      $defaultPlan = $this->drService->createDefaultPlan(GeneralConfiguration::getConfiguration());
     }
     $this->info("Default Plan: {$defaultPlan->getId()}");
     $this->info("Create or update default plan ... done!");
@@ -92,29 +98,25 @@ class DrCommand extends Command
 
   public function enableWebhook(bool $enable)
   {
-    $drService = new SubscriptionManagerDR();
-
     // create / update hook
     $this->info('Update default webhooks ...');
-    $drService->updateDefaultWebhook($enable);
+    $this->manager->updateDefaultWebhook($enable);
     $this->info('Update default webhooks ... done');
   }
 
   public function clear()
   {
-    $drService = new DigitalRiverService();
-
     /**
      * clear plans
      */
     $this->info('Clear plans ...');
 
     /** @var DrPlan[] $plans */
-    $plans = $drService->planApi->listPlans(state: 'draft')->getData();
+    $plans = $this->drService->planApi->listPlans(state: 'draft')->getData();
     foreach ($plans as $plan) {
       $this->info("  delete plan " . $plan->getId());
       $this->ignore(
-        [$drService->planApi, 'deletePlans'],
+        [$this->drService->planApi, 'deletePlans'],
         $plan->getId()
       );
     }
@@ -129,19 +131,19 @@ class DrCommand extends Command
     $this->info('Clear subscriptions ...');
 
     /** @var DrSubscription[] $subscriptions */
-    $subscriptions = $drService->subscriptionApi->listSubscriptions(state: 'draft')->getData();
+    $subscriptions = $this->drService->subscriptionApi->listSubscriptions(state: 'draft')->getData();
     foreach ($subscriptions as $subscription) {
       $this->info("  delete subscription " . $subscription->getId());
       $this->ignore(
-        [$drService->subscriptionApi, 'deleteSubscriptions'],
+        [$this->drService->subscriptionApi, 'deleteSubscriptions'],
         $subscription->getId()
       );
     }
-    $subscriptions = $drService->subscriptionApi->listSubscriptions(state: 'active')->getData();
+    $subscriptions = $this->drService->subscriptionApi->listSubscriptions(state: 'active')->getData();
     foreach ($subscriptions as $subscription) {
       $this->info("  cancel subscription " . $subscription->getId());
       $this->ignore(
-        [$drService->subscriptionApi, 'updateSubscriptions'],
+        [$this->drService->subscriptionApi, 'updateSubscriptions'],
         $subscription->getId(),
         new DrSubscription(['state' => 'cancelled'])
       );
@@ -158,10 +160,10 @@ class DrCommand extends Command
     $this->info('Clear checkouts ...');
 
     // /** @var DrCheckout[] $checkouts */
-    // $checkouts = $drService->checkoutApi->listCheckouts()->getData();
+    // $checkouts = $this->drService->checkoutApi->listCheckouts()->getData();
     // foreach ($checkouts as $checkout) {
     //   $this->ignore(
-    //     [$drService->checkoutApi, 'deleteCheckouts'],
+    //     [$this->drService->checkoutApi, 'deleteCheckouts'],
     //     $checkout->getId()
     //   );
     // }
@@ -176,10 +178,10 @@ class DrCommand extends Command
     $this->info('Clear orders ...');
 
     /** @var DrOrder[] $orders */
-    $orders = $drService->orderApi->listOrders(state: 'accepted')->getData();
+    $orders = $this->drService->orderApi->listOrders(state: 'accepted')->getData();
     foreach ($orders as $order) {
       $this->info("  cancel order " . $order->getId());
-      $drService->fulfillOrder(orderId: $order->getId(), cancel: true);
+      $this->drService->fulfillOrder(orderId: $order->getId(), cancel: true);
     }
 
     $this->info('Clear orders ...');
@@ -192,19 +194,19 @@ class DrCommand extends Command
     $this->info('Clear customers ...');
 
     /** @var DrCustomer[] $customers */
-    $customers = $drService->customerApi->listCustomers()->getData();
+    $customers = $this->drService->customerApi->listCustomers()->getData();
     foreach ($customers as $customer) {
       foreach ($customer->getSources() ?? [] as $source) {
         $this->info("  delete customer source " . $source->getId());
         $this->ignore(
-          [$drService->customerApi, 'deleteCustomerSource'],
+          [$this->drService->customerApi, 'deleteCustomerSource'],
           $customer->getId(),
           $source->getId()
         );
       };
       $this->info("  delete customer " . $customer->getId());
       $this->ignore(
-        [$drService->customerApi, 'deleteCustomers'],
+        [$this->drService->customerApi, 'deleteCustomers'],
         $customer->getId()
       );
     }

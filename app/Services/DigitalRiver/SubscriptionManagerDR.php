@@ -20,20 +20,17 @@ use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
-use DigitalRiver\ApiSdk\ObjectSerializer;
+use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class SubscriptionManagerDR implements SubscriptionManager
 {
-  public $drService;
   public $eventHandlers = [];
 
-  public function __construct()
+  public function __construct(public DigitalRiverService $drService)
   {
-    $this->drService = new DigitalRiverService();
-
     $this->eventHandlers = [
       // order events
       'order.accepted'                => ['class' => DrOrder::class,        'handler' => 'onOrderAccepted'],
@@ -141,7 +138,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  /** TODO: update: price/coupon/tax */
+  /** TODO: update: price/coupon/tax/items */
   public function updateSubscription(Subscription $subscription): Subscription
   {
     /*
@@ -149,7 +146,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     */
 
     /*
-    1. update $subscription.next_invoice
+    1. update $subscription.next_invoice (include items)
     2. update drSubscription
     */
     return $subscription;
@@ -384,7 +381,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $eventHandler = $this->eventHandlers[$event['type']] ?? null;
     if ($eventHandler && method_exists($this, $eventHandler['handler'])) {
       try {
-        $object = ObjectSerializer::deserialize($event['data']['object'], $eventHandler['class']);
+        $object = DrObjectSerializer::deserialize($event['data']['object'], $eventHandler['class']);
         $handler = $eventHandler['handler'];
         $subscription = $this->$handler($object);
         $eventInfo['subscription_id'] = $subscription?->id;
@@ -431,7 +428,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderAccepted(DrOrder $order): Subscription|null
+  protected function onOrderAccepted(DrOrder $order): Subscription|null
   {
     // validate the order
     $subscription = $this->validateOrder($order);
@@ -480,7 +477,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderBlocked(DrOrder $order): Subscription|null
+  protected function onOrderBlocked(DrOrder $order): Subscription|null
   {
     // validate the order
     $subscription = $this->validateOrder($order);
@@ -506,7 +503,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderCancelled(DrOrder $order): Subscription|null
+  protected function onOrderCancelled(DrOrder $order): Subscription|null
   {
     // validate the order
     $subscription = $this->validateOrder($order);
@@ -531,7 +528,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderChargeFailed(DrOrder $order): Subscription|null
+  protected function onOrderChargeFailed(DrOrder $order): Subscription|null
   {
     // validate the order
     $subscription = $this->validateOrder($order);
@@ -556,7 +553,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderChargeCaptureComplete(DrCharge $charge): Subscription|null
+  protected function onOrderChargeCaptureComplete(DrCharge $charge): Subscription|null
   {
     // validate the order
     $order = $this->drService->getOrder($charge->getOrderId());
@@ -572,7 +569,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderChargeCaptureFailed(DrCharge $charge): Subscription|null
+  protected function onOrderChargeCaptureFailed(DrCharge $charge): Subscription|null
   {
     // validate the order
     $order = $this->drService->getOrder($charge->getOrderId());
@@ -598,7 +595,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderComplete(DrOrder $order): Subscription|null
+  protected function onOrderComplete(DrOrder $order): Subscription|null
   {
     // validate the order
     $subscription = $this->validateOrder($order);
@@ -671,7 +668,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderInvoiceCreated(array $orderInvoice): Subscription|null
+  protected function onOrderInvoiceCreated(array $orderInvoice): Subscription|null
   {
     // validate order
     $order = $this->drService->getOrder($orderInvoice['orderId']);
@@ -718,7 +715,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onOrderChargeback(DrOrder $order): Subscription|null
+  protected function onOrderChargeback(DrOrder $order): Subscription|null
   {
     $subscription = $this->validateOrder($order, []);
 
@@ -773,7 +770,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function createFirstInvoice(Subscription $subscription): Invoice
+  protected function createFirstInvoice(Subscription $subscription): Invoice
   {
     $invoice = new Invoice();
 
@@ -800,7 +797,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
-  public function createRenewInvoice(Subscription $subscription, DrInvoice $drInvoice): Invoice
+  protected function createRenewInvoice(Subscription $subscription, DrInvoice $drInvoice): Invoice
   {
     if ($subscription->invoices()->where('period', $subscription->current_period + 1)->count()) {
       throw new Exception('Try to create duplicated invoice', 500);
@@ -830,7 +827,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
-  public function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
+  protected function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
   {
     $subscription = $this->validateInvoice($drInvoice);
     if ($subscription->getActiveInvoice()) {
@@ -870,12 +867,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionExtended(array $event): Subscription|null
+  protected function onSubscriptionExtended(array $event): Subscription|null
   {
     /** @var DrSubscription $drSubscription */
-    $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
+    $drSubscription = DrObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
     /** @var DrInvoice $drInvoice */
-    $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+    $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
@@ -920,7 +917,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionFailed(DrSubscription $drSubscription): Subscription|null
+  protected function onSubscriptionFailed(DrSubscription $drSubscription): Subscription|null
   {
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
@@ -963,10 +960,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionPaymentFailed(array $event): Subscription|null
+  protected function onSubscriptionPaymentFailed(array $event): Subscription|null
   {
-    $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
-    $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+    $drSubscription = DrObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
+    // $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
@@ -1003,10 +1000,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function onSubscriptionReminder(array $event): Subscription|null
+  protected function onSubscriptionReminder(array $event): Subscription|null
   {
-    $drSubscription = ObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
-    // $drInvoice = ObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+    $drSubscription = DrObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
+    // $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription);
     if (!$subscription) {
@@ -1031,7 +1028,8 @@ class SubscriptionManagerDR implements SubscriptionManager
   /*
   TODO: check data integrity
 
-  1. subscriptions in pending or processing status stay for a long period of time
-  2. there is open activity (one routing not completed)
+  x 1. subscriptions in pending or processing status stay for a long period of time
+  x 2. there is open activity (one routing not completed)
+  3. TODO: check event history, find missing event
   */
 }

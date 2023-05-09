@@ -4,10 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\PaymentMethod;
 use Tests\ApiTestCase;
+use Tests\DR\DrTestTrait;
 use Tests\Models\PaymentMethod as ModelsPaymentMethod;
+use Tests\Trait\TestCreateTrait;
 
 class AccountPaymentMethodTestCase extends ApiTestCase
 {
+  use DrTestTrait, TestCreateTrait;
+
   public string $baseUrl = '/api/v1/account';
   public string $model = PaymentMethod::class;
 
@@ -33,29 +37,5 @@ class AccountPaymentMethodTestCase extends ApiTestCase
       // ],
       'dr' => ['source_id'   => 'digital-river-source-id-visa'],
     ];
-  }
-
-  public function createBillingInfo()
-  {
-    $response = $this->postJson('/api/v1/account/billing-info', [
-      'first_name'    => 'first_name',
-      'last_name'     => 'last_name',
-      'phone'         => '',
-      'organization'  => '',
-      'email'         => 'test-case@me.com',
-      'address' => [
-        'line1'       => '328 Reserve Road,  VIC',
-        'line2'       => '',
-        'city'        => 'Cheltenham',
-        'postcode'    => '3192',
-        'state'       => 'VIC',
-        'country'     => 'AU',
-      ]
-    ]);
-
-    // refresh authenticated user data
-    $this->user->refresh();
-
-    return $response;
   }
 }

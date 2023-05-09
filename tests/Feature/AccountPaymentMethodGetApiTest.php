@@ -15,6 +15,11 @@ class AccountPaymentMethodGetApiTest extends AccountPaymentMethodTestCase
     $response = $this->getJson("{$this->baseUrl}/payment-method");
     $response->assertStatus(200)->assertJson([]);
 
+    /**
+     * mock up functions
+     */
+    $this->mockAttachCustomerSource();
+
     // create payment method
     $response = $this->postJson("{$this->baseUrl}/payment-method", $this->modelUpdate);
 
