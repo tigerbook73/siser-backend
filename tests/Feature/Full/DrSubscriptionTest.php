@@ -5,7 +5,6 @@ namespace Tests\Feature\Full;
 use App\Models\Subscription;
 use Carbon\Carbon;
 use Tests\DR\DrApiTestCase;
-use Tests\DR\DrTestTrait;
 
 class DrSubscriptionTest extends DrApiTestCase
 {
