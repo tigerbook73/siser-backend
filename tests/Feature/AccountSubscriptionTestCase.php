@@ -23,8 +23,6 @@ use Tests\Models\Subscription as ModelsSubscription;
 
 class AccountSubscriptionTestCase extends DrApiTestCase
 {
-  use DrTestTrait;
-
   public string $baseUrl = '/api/v1/account/subscriptions';
   public string $model = Subscription::class;
 

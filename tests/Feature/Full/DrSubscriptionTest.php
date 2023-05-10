@@ -11,8 +11,6 @@ class DrSubscriptionTest extends DrApiTestCase
 {
   public ?string $role = 'customer';
 
-  use DrTestTrait;
-
   /**
    * the following is subscription path
    */

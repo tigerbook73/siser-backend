@@ -10,8 +10,6 @@ use Tests\Models\PaymentMethod as ModelsPaymentMethod;
 
 class AccountPaymentMethodTestCase extends DrApiTestCase
 {
-  use DrTestTrait;
-
   public string $baseUrl = '/api/v1/account';
   public string $model = PaymentMethod::class;
 

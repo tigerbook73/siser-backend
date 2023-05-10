@@ -15,12 +15,9 @@ use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
-use Tests\TestCase;
 
-class DrTestTraitTest extends TestCase
+class DrApiTest extends DrApiTestCase
 {
-  use DrTestTrait;
-
   public function testDrTrait()
   {
     /** @var DigitalRiverService $drService */
