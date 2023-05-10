@@ -11,7 +11,7 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
 
   public function testAccountSubscriptionCreateOk()
   {
-    $this->createBillingInfo();
+    $this->createOrUpdateBillingInfo();
 
     $plan = Plan::public()->first();
     $response = $this->createSubscription([
@@ -25,7 +25,7 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
 
   public function testAccountSubscriptionCreateOk2()
   {
-    $this->createBillingInfo();
+    $this->createOrUpdateBillingInfo();
 
     $plan = Plan::public()->first();
     $coupon = Coupon::public()->first();

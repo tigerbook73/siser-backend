@@ -41,7 +41,7 @@ class DrTestHelper
   public function createCheckout(Subscription $subscription, string $id = null)
   {
     $checkout = DrFakeObject::checkout();
-    $checkout->setId($id ?: $this->uuid());
+    $checkout->setId($id ?? $subscription->dr['checkout_id'] ?? $this->uuid());
 
     $checkout->setCustomerId($subscription->user->dr['customer_id'] ?? $this->uuid());
     $checkout->setEmail($subscription->billing_info['email']);
@@ -54,7 +54,7 @@ class DrTestHelper
     $checkout->setTotalTax($checkout->getSubtotal() * 0.1);
     $checkout->setTotalAmount($checkout->getSubtotal() + $checkout->getTotalTax());
 
-    $checkout->getPayment()->getSession()->setId($id ?: $this->uuid());
+    $checkout->getPayment()->getSession()->setId($id ?? $subscription->dr['checkout_payment_session_id'] ?? $this->uuid());
 
     return $checkout;
   }
@@ -84,13 +84,14 @@ class DrTestHelper
     $invoice->getItems()[0]->getTax()->setRate(0.1);
     $invoice->setTotalTax($invoice->getSubtotal() * 0.1);
     $invoice->setTotalAmount($invoice->getSubtotal() + $invoice->getTotalTax());
+    $invoice->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
     return $invoice;
   }
 
   public function createOrder($subscription, string $id = null, string $state = null)
   {
     $order = DrFakeObject::order();
-    $order->setId($id ?: $this->uuid());
+    $order->setId($id ?? $subscription->dr['order_id'] ?? $this->uuid());
 
     $order->setSubtotal($subscription->price + $subscription->processing_fee);
     $order->getItems()[0]->getTax()->setRate(0.1);
@@ -129,7 +130,7 @@ class DrTestHelper
     }
 
     $drSubscripiton = DrFakeObject::subscription();
-    $drSubscripiton->setId($id ?: $this->uuid())
+    $drSubscripiton->setId($id ?? $subscription->dr['subscription_id'] ?? $this->uuid())
       ->setCurrentPeriodEndDate(
         $periodStart
           ->addDays(config('dr.dr_test.interval_count'))
@@ -147,14 +148,11 @@ class DrTestHelper
 
   public function createEvent(string $eventType, object|array $object, string $id = null): array
   {
-    $data = new EventData();
-    $data->setObject($object);
-
-    $event = new Event();
-    $event->setId($id ?? $this->uuid())
+    $data = (new EventData())->setObject($object);
+    $event = (new Event())->setId($id ?? $this->uuid())
       ->setType($eventType)
-      ->setData($object);
+      ->setData($data);
 
-    return (array)$event;
+    return json_decode(json_encode($event->jsonSerialize()), true);
   }
 }

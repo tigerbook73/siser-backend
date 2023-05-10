@@ -25,13 +25,23 @@ trait DrTestTrait
   public MockInterface $drMock;
 
   /**
-   * interface requirect 
+   * interface required 
    *
    * @param  string  $abstract
    * @param  \Closure|null  $mock
    * @return \Mockery\MockInterface
    */
   abstract protected function mock($abstract, Closure $mock = null);
+  /**
+   * interface required
+   *
+   * @param  string  $uri
+   * @param  array  $data
+   * @param  array  $headers
+   * @return \Illuminate\Testing\TestResponse
+   */
+  abstract public function postJson($uri, array $data = [], array $headers = []);
+
 
   /**
    * This mothod will be called by setUp()
@@ -138,7 +148,7 @@ trait DrTestTrait
     return $this;
   }
 
-  public function mockUpdateCheckoutTerms(DrCheckout|Subscription $object = null): self
+  public function mockUpdateCheckoutTerms(DrCheckout|Subscription $object): self
   {
     $checkout = $object instanceof DrCheckout ? $object : null;
     $subscription = $object instanceof Subscription ? $object : null;
@@ -210,7 +220,7 @@ trait DrTestTrait
     return $this;
   }
 
-  public function mockConvertCheckoutToOrder(DrOrder|Subscription $object = null, string $state = null): self
+  public function mockConvertCheckoutToOrder(DrOrder|Subscription $object, string $state = null): self
   {
     $order = ($object instanceof DrOrder) ? $object : null;
     $subscription = ($object instanceof Subscription) ? $object : null;
@@ -233,7 +243,7 @@ trait DrTestTrait
       ->once()
       ->andReturnUsing(
         fn (string $orderId, DrOrder $order = null, bool $cancel = false) =>
-        $order ?? $this->drHelper->createFulfillment()
+        $fulfillment ?? $this->drHelper->createFulfillment()
       );
 
     return $this;
@@ -348,7 +358,7 @@ trait DrTestTrait
 
   public function sendOrderAccepted(DrOrder $drOrder, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.accepted', $drOrder, $eventId)
     );
@@ -356,7 +366,7 @@ trait DrTestTrait
 
   public function sendOrderBlocked(DrOrder $drOrder, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.blocked', $drOrder, $eventId)
     );
@@ -364,7 +374,7 @@ trait DrTestTrait
 
   public function sendOrderCancelled(DrOrder $drOrder, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.cancelled', $drOrder, $eventId)
     );
@@ -372,7 +382,7 @@ trait DrTestTrait
 
   public function sendOrderChargeFailed(DrOrder $drOrder, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.charge.failed', $drOrder, $eventId)
     );
@@ -380,7 +390,7 @@ trait DrTestTrait
 
   public function sendOrderChargeCaptureComplete(DrCharge $drCharge, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.charge.capture.complete', $drCharge, $eventId)
     );
@@ -388,7 +398,7 @@ trait DrTestTrait
 
   public function sendOrderChargeCaptureFailed(DrCharge $drCharge, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.charge.capture.failed', $drCharge, $eventId)
     );
@@ -396,7 +406,7 @@ trait DrTestTrait
 
   public function sendOrderComplete(DrOrder $drOrder, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.complete', $drOrder, $eventId)
     );
@@ -404,7 +414,7 @@ trait DrTestTrait
 
   public function sendOrderChargeback(DrOrder $drOrder, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('order.chargeback', $drOrder, $eventId)
     );
@@ -412,7 +422,7 @@ trait DrTestTrait
 
   public function sendSubscriptionExtended(DrSubscription $drSubscription, DrInvoice $drInvoice, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('subscription.extended', ['subscription' => $drSubscription, 'invoice' => $drInvoice], $eventId)
     );
@@ -420,7 +430,7 @@ trait DrTestTrait
 
   public function sendSubscriptionFailed(DrSubscription $drSubscripiton, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('subscription.failed', $drSubscripiton, $eventId)
     );
@@ -428,7 +438,7 @@ trait DrTestTrait
 
   public function sendSubscriptionPaymentFailed(DrSubscription $drSubscription, DrInvoice $drInvoice = null, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('subscription.payment_failed', ['subscription' => $drSubscription, 'invoice' => $drInvoice], $eventId)
     );
@@ -436,7 +446,7 @@ trait DrTestTrait
 
   public function sendSubscriptionReminder(DrSubscription $drSubscription, DrInvoice $drInvoice = null, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('subscription.reminder', ['subscription' => $drSubscription, 'invoice' => $drInvoice], $eventId)
     );
@@ -444,7 +454,7 @@ trait DrTestTrait
 
   public function sendInvoiceOpen(DrInvoice $drInvoice, string $eventId = null)
   {
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('invoice.open', $drInvoice, $eventId)
     );
@@ -453,7 +463,7 @@ trait DrTestTrait
   public function sendOrderInvoiceCreated(DrOrder|string $drOrder, string $eventId = null)
   {
     $orderId = $drOrder instanceof DrOrder ? $drOrder->getId() : $drOrder;
-    $this->post(
+    return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent(
         'order.invoice.created',

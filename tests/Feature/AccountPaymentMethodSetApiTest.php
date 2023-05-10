@@ -8,7 +8,7 @@ class AccountPaymentMethodSetApiTest extends AccountPaymentMethodTestCase
 
   public function testAccountPaymentMethodSetOk()
   {
-    $this->createBillingInfo();
+    $this->createOrUpdateBillingInfo();
 
     /**
      * mock up functions
