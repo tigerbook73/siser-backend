@@ -61,11 +61,60 @@ class DrSubscriptionTest extends DrApiTestCase
     return $this->onOrderAccept(Subscription::find($response->json('id')));
   }
 
+  public function test_pending_to_failed_blocked()
+  {
+    $response = $this->test_draft_to_pending();
+
+    return $this->onOrderBlocked(Subscription::find($response->json('id')));
+  }
+
+  public function test_pending_to_failed_cancelled()
+  {
+    $response = $this->test_draft_to_pending();
+
+    return $this->onOrderCancelled(Subscription::find($response->json('id')));
+  }
+
+  public function test_pending_to_failed_charge_failed()
+  {
+    $response = $this->test_draft_to_pending();
+
+    return $this->onOrderChargeFailed(Subscription::find($response->json('id')));
+  }
+
+  public function test_pending_to_failed_capture_failed()
+  {
+    $response = $this->test_draft_to_pending();
+
+    return $this->onOrderChargeCaptureFailed(Subscription::find($response->json('id')));
+  }
+
   public function test_processing_to_active_invoice_completing()
   {
     $subscription = $this->test_pending_to_processing();
 
     return $this->onOrderComplete($subscription);
+  }
+
+  public function test_processing_to_failed_blocked()
+  {
+    $subscription = $this->test_pending_to_processing();
+
+    return $this->onOrderBlocked($subscription);
+  }
+
+  public function test_processing_to_failed_cancelled()
+  {
+    $subscription = $this->test_pending_to_processing();
+
+    return $this->onOrderCancelled($subscription);
+  }
+
+  public function test_processing_to_failed_charge_failed()
+  {
+    $subscription = $this->test_pending_to_processing();
+
+    return $this->onOrderChargeFailed($subscription);
   }
 
   public function test_active_invoice_completing_to_active_invoice_completed()
@@ -94,5 +143,33 @@ class DrSubscriptionTest extends DrApiTestCase
     $subscription = $this->test_active_invoice_completed_to_active_invoice_open();
 
     return $this->onSubscriptionExtended($subscription);
+  }
+
+  public function test_active_invoice_overdue_to_active_invoice_completing()
+  {
+    $subscription = $this->test_active_invoice_open_to_active_invoice_overdue();
+
+    return $this->onSubscriptionExtended($subscription);
+  }
+
+  public function test_active_invoice_open_to_failed()
+  {
+    $subscription = $this->test_active_invoice_completed_to_active_invoice_open();
+
+    return $this->onSubscriptionFailed($subscription);
+  }
+
+  public function test_active_invoice_overdue_to_failed()
+  {
+    $subscription = $this->test_active_invoice_open_to_active_invoice_overdue();
+
+    return $this->onSubscriptionFailed($subscription);
+  }
+
+  public function test_active_invoice_completing_to_stop()
+  {
+    $subscription = $this->test_active_invoice_open_to_active_invoice_overdue();
+
+    return $this->onSubscriptionFailed($subscription);
   }
 }

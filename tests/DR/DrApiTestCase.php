@@ -647,17 +647,16 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
-    $invoice = $subscription->getActiveInvoice();
 
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'active');
-    $this->assertTrue($invoice->status == 'completing');
+    $this->assertTrue($subscription->getActiveInvoice()->status == 'completing');
 
     return $subscription;
   }
 
-  private function onPaymentFailed(Subscription $subscription, string $type)
+  private function onOrderFailed(Subscription $subscription, string $type)
   {
     // prepare
     $this->assertTrue($subscription->status == 'processing' || $subscription->status == 'pending');
@@ -692,22 +691,41 @@ class DrApiTestCase extends ApiTestCase
 
   public function onOrderBlocked(Subscription $subscription)
   {
-    return $this->onPaymentFailed($subscription, 'order.blocked');
+    return $this->onOrderFailed($subscription, 'order.blocked');
   }
 
   public function onOrderCancelled(Subscription $subscription)
   {
-    return $this->onPaymentFailed($subscription, 'order.cancelled');
+
+
+    return $this->onOrderFailed($subscription, 'order.cancelled');
   }
 
   public function onOrderChargeFailed(Subscription $subscription)
   {
-    return $this->onPaymentFailed($subscription, 'order.charge.failed');
+    return $this->onOrderFailed($subscription, 'order.charge.failed');
   }
 
   public function onOrderChargeCaptureFailed(Subscription $subscription)
   {
-    return $this->onPaymentFailed($subscription, 'order.charge.capture.failed');
+    // prepare
+    $this->assertTrue($subscription->status == 'processing' || $subscription->status == 'pending');
+
+    // mock up
+    $this->mockGetOrder($subscription);
+
+    // call api
+    $order = $this->drHelper->createCharge($subscription->dr['order_id'], DrCharge::STATE_FAILED);
+    $response = $this->sendOrderChargeCaptureFailed($order);
+
+    // refresh data
+    $subscription->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertTrue($subscription->status == 'failed');
+
+    return $subscription;
   }
 
   public function onOrderInvoiceCompleted(Subscription $subscription)
@@ -749,12 +767,11 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
-    $invoice = $subscription->getActiveInvoice();
 
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'normal');
-    $this->assertTrue($invoice->status == 'open');
+    $this->assertTrue($subscription->getActiveInvoice()->status == 'open');
 
     return $subscription;
   }
@@ -769,12 +786,11 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
-    $invoice = $subscription->getActiveInvoice();
 
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'normal');
-    $this->assertTrue($invoice == null);
+    $this->assertTrue($$subscription->getActiveInvoice() == null);
 
     return $subscription;
   }
@@ -789,12 +805,11 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
-    $invoice = $subscription->getActiveInvoice();
 
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'overdue');
-    $this->assertTrue($invoice->status == 'overdue');
+    $this->assertTrue($subscription->getActiveInvoice()->status == 'overdue');
 
     return $subscription;
   }
@@ -803,6 +818,7 @@ class DrApiTestCase extends ApiTestCase
   {
     // prepare
     $this->assertTrue($subscription->status == 'active');
+    $invoice = $subscription->getActiveInvoice();
 
     // call api
     $response = $this->sendSubscriptionExtended(
@@ -812,7 +828,7 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
-    $invoice = $subscription->getActiveInvoice();
+    $invoice->refresh();
 
     // assert
     $response->assertSuccessful();
@@ -826,18 +842,20 @@ class DrApiTestCase extends ApiTestCase
   {
     // prepare
     $this->assertTrue($subscription->status == 'active');
+    $invoice = $subscription->getActiveInvoice();
 
     // call api
     $response = $this->sendSubscriptionFailed($this->drHelper->createSubscription($subscription));
 
     // refresh data
     $subscription->refresh();
-    $invoice = $subscription->getActiveInvoice();
+    $invoice->refresh();
 
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'failed');
     $this->assertTrue($invoice->status == 'failed');
+    $this->assertTrue($subscription->user->getActiveSubscription()->subscription_level == 1);
 
     return $subscription;
   }

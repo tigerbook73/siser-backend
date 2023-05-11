@@ -679,14 +679,20 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // validate subscription
     if ($subscription->status != 'active') {
-      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created");
+      // TODO: warning to error
+      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created because subscription inactive");
       return null;
     }
 
     // skip duplicated invoice
     $invoice = $subscription->getActiveInvoice();
-    if ($invoice && $invoice->pdf_file) {
-      Log::info("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
+    if (!$invoice) {
+      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created because no active invoice");
+      return null;
+    }
+
+    if ($invoice->pdf_file) {
+      Log::warn("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
       return null;
     }
 
@@ -738,6 +744,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     });
 
     CriticalSection::single($subscription, __FUNCTION__, 'stop subscription, update user level');
+
+    // TODO: send notification to developer
 
     return $subscription;
   }
@@ -830,6 +838,11 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
   {
     $subscription = $this->validateInvoice($drInvoice);
+    if (!$subscription || $subscription->status != 'active') {
+      Log::warning(__FUNCTION__ . ': skip null or inactive subscription', ['object' => $drInvoice]);
+      return null;
+    }
+
     if ($subscription->getActiveInvoice()) {
       Log::warning(__FUNCTION__ . ': this is existing active invoice', ['object' => $drInvoice]);
     }
