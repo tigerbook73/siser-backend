@@ -134,7 +134,6 @@ class DrTestHelper
       ->setCurrentPeriodEndDate(
         $periodStart
           ->addDays(config('dr.dr_test.interval_count'))
-          ->subSecond()
         // ->toIso8601ZuluString()
       )
       ->setNextInvoiceDate(

@@ -919,6 +919,13 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
 
     $subscription->fillNextInvoice();
+
+    // if in some abnormal situation, this event comes after cancell subscripton operation
+    if ($subscription->sub_status == 'cancelling') {
+      $subscription->next_invoice_date = null;
+      $subscription->next_invoice = null;
+    }
+
     $subscription->save();
     Log::info("Subscription: $subscription->id: $subscription->status: subscription extended");
 

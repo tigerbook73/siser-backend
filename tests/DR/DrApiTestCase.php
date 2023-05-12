@@ -468,10 +468,10 @@ class DrApiTestCase extends ApiTestCase
   /**
    * the followinig are reusable simple test cases
    */
-  public function createOrUpdateBillingInfo()
+  public function createOrUpdateBillingInfo(array $data = null)
   {
     // prepare
-    $billingInfo = [
+    $data = $data ?? [
       'first_name'    => 'first_name',
       'last_name'     => 'last_name',
       'phone'         => '',
@@ -495,20 +495,26 @@ class DrApiTestCase extends ApiTestCase
     }
 
     // call api
-    $response = $this->postJson('/api/v1/account/billing-info', $billingInfo);
+    $response = $this->postJson('/api/v1/account/billing-info', $data);
 
     // refresh authenticated user data
     $this->user->refresh();
 
     // assert
-    $response->assertSuccessful()->assertJson($billingInfo);
+    $response->assertSuccessful()->assertJson($data);
     $this->assertTrue(isset($this->user->dr['customer_id']));
 
     return $response;
   }
 
-  public function createOrUpdatePaymentMethod()
+  public function createOrUpdatePaymentMethod(array $data = null)
   {
+    // prepare
+    $data = $data ?? [
+      'type' => 'creditCard',
+      'dr' => ['source_id' => 'digital-river-source-id-master'],
+    ];
+
     // mock up
     $this->mockAttachCustomerSource();
     if ($this->user->payment_method->dr['source_id'] ?? null) {
@@ -518,10 +524,7 @@ class DrApiTestCase extends ApiTestCase
       $this->mockUpdateSubscriptionSource($activeSubscripiton);
     }
 
-    $response = $this->postJson('/api/v1/account/payment-method', [
-      'type' => 'creditCard',
-      'dr' => ['source_id' => 'digital-river-source-id-master'],
-    ]);
+    $response = $this->postJson('/api/v1/account/payment-method',  $data);
 
     // refresh authenticated user data
     $this->user->refresh();
@@ -533,13 +536,16 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function createSubscription()
+  public function createSubscription(array $data = null)
   {
+    // prepare 
+    $data = $data ?? ['plan_id' => Plan::public()->first()->id];
+
     // mock up
     $this->mockCreateCheckout();
 
     // call api
-    $response = $this->postJson('/api/v1/account/subscriptions', ['plan_id' => Plan::public()->first()->id]);
+    $response = $this->postJson('/api/v1/account/subscriptions', $data);
 
     // refresh authenticated user data
     $this->user->refresh();
@@ -552,9 +558,11 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function deleteSubscription(int $id)
+  public function deleteSubscription(Subscription|int $subscription)
   {
-    $subscription = Subscription::find($id);
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $id = $subscription->id;
+
     // mock up
     if (isset($subscription->dr['checkout_id'])) {
       $this->mockDeleteCheckoutAsync();
@@ -577,10 +585,11 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function paySubscription(int $id, string $terms = 'this is test terms ...')
+  public function paySubscription(Subscription|int $subscription, string $terms = 'this is test terms ...')
   {
     // prepare
-    $subscription = $this->user->getDraftSubscriptionById($id);
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $id = $subscription->id;
 
     // mock up
     $this->mockAttachCheckoutSource();
@@ -589,7 +598,7 @@ class DrApiTestCase extends ApiTestCase
 
     // call api
     $response = $this->postJson(
-      "/api/v1/account/subscriptions/$subscription->id/pay",
+      "/api/v1/account/subscriptions/$id/pay",
       ['terms' => $terms]
     );
 
@@ -602,10 +611,12 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function cancelSubscription(int $id)
+  public function cancelSubscription(Subscription|int $subscription)
   {
     // prepare
-    $subscription = $this->user->getActivePaidSubscription($id);
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $id = $subscription->id;
+
     $invoice = $subscription->getActiveInvoice();
     $this->assertTrue($subscription->sub_status != 'cancelling');
 

@@ -14,8 +14,8 @@ return new class extends Migration
   public function up()
   {
     Schema::table('critical_sections', function (Blueprint $table) {
-      $table->boolean('to_notify')->default(true);
-      $table->index('to_notify');
+      $table->boolean('need_notify')->default(true);
+      $table->index('need_notify');
     });
   }
 
@@ -27,9 +27,9 @@ return new class extends Migration
   public function down()
   {
     Schema::table('critical_sections', function (Blueprint $table) {
-      $table->dropIndex(['to_notify']);
+      $table->dropIndex(['need_notify']);
 
-      $table->dropColumn('to_notify');
+      $table->dropColumn('need_notify');
     });
   }
 };
