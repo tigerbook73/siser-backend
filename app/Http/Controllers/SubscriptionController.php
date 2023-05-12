@@ -162,6 +162,11 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'There is an pending subscription'], 400);
     }
 
+    $activeSubscription = $this->user->getActivePaidSubscription();
+    if ($activeSubscription) {
+      return response()->json(['message' => 'There is an active subscription'], 400);
+    }
+
     /** @var PaymentMethod|null $paymentMethod */
     $paymentMethod = $this->user->payment_method;
     if (!$paymentMethod || !$paymentMethod->dr['source_id']) {

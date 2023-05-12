@@ -3,15 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\PaymentMethod;
-use Tests\ApiTestCase;
+use Tests\DR\DrApiTestCase;
 use Tests\DR\DrTestTrait;
 use Tests\Models\PaymentMethod as ModelsPaymentMethod;
-use Tests\Trait\TestCreateTrait;
 
-class AccountPaymentMethodTestCase extends ApiTestCase
+
+class AccountPaymentMethodTestCase extends DrApiTestCase
 {
-  use DrTestTrait, TestCreateTrait;
-
   public string $baseUrl = '/api/v1/account';
   public string $model = PaymentMethod::class;
 

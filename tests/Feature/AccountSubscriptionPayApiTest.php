@@ -12,8 +12,8 @@ class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
 
   public function testAccountSubscriptionPayOk()
   {
-    $this->createBillingInfo();
-    $this->createPaymentMethod();
+    $this->createOrUpdateBillingInfo();
+    $this->createOrUpdatePaymentMethod();
 
     $plan = Plan::public()->first();
     $createResponse = $this->createSubscription([

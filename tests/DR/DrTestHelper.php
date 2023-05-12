@@ -16,7 +16,7 @@ use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
-use Tests\DR\DrFakeObject;
+use Tests\DR\DrObject;
 
 
 /**
@@ -31,7 +31,7 @@ class DrTestHelper
 
   public function createCharge(string $order_id = null, string $state = null)
   {
-    $charge = DrFakeObject::charge();
+    $charge = DrObject::charge();
     $charge->setId($this->uuid())
       ->setOrderId($order_id ?: $this->uuid())
       ->setState($state ?: 'complete');
@@ -40,8 +40,8 @@ class DrTestHelper
 
   public function createCheckout(Subscription $subscription, string $id = null)
   {
-    $checkout = DrFakeObject::checkout();
-    $checkout->setId($id ?: $this->uuid());
+    $checkout = DrObject::checkout();
+    $checkout->setId($id ?? $subscription->dr['checkout_id'] ?? $this->uuid());
 
     $checkout->setCustomerId($subscription->user->dr['customer_id'] ?? $this->uuid());
     $checkout->setEmail($subscription->billing_info['email']);
@@ -54,14 +54,14 @@ class DrTestHelper
     $checkout->setTotalTax($checkout->getSubtotal() * 0.1);
     $checkout->setTotalAmount($checkout->getSubtotal() + $checkout->getTotalTax());
 
-    $checkout->getPayment()->getSession()->setId($id ?: $this->uuid());
+    $checkout->getPayment()->getSession()->setId($id ?? $subscription->dr['checkout_payment_session_id'] ?? $this->uuid());
 
     return $checkout;
   }
 
   public function createCustomer(string $id = null, BillingInfo $billingInfo = null)
   {
-    $customer = DrFakeObject::customer();
+    $customer = DrObject::customer();
     $customer->setId($id ?: $this->uuid());
     if ($billingInfo) {
       $customer->setEmail($billingInfo->email);
@@ -71,26 +71,27 @@ class DrTestHelper
 
   public function createFulfillment(string $id = null)
   {
-    $fulfillment = DrFakeObject::fulfillment();
+    $fulfillment = DrObject::fulfillment();
     $fulfillment->setId($id ?: $this->uuid());
     return $fulfillment;
   }
 
   public function createInvoice(Subscription $subscription, string $id = null)
   {
-    $invoice = DrFakeObject::invoice();
+    $invoice = DrObject::invoice();
     $invoice->setId($id ?: $this->uuid());
     $invoice->setSubtotal($subscription->price + $subscription->processing_fee);
     $invoice->getItems()[0]->getTax()->setRate(0.1);
     $invoice->setTotalTax($invoice->getSubtotal() * 0.1);
     $invoice->setTotalAmount($invoice->getSubtotal() + $invoice->getTotalTax());
+    $invoice->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
     return $invoice;
   }
 
   public function createOrder($subscription, string $id = null, string $state = null)
   {
-    $order = DrFakeObject::order();
-    $order->setId($id ?: $this->uuid());
+    $order = DrObject::order();
+    $order->setId($id ?? $subscription->dr['order_id'] ?? $this->uuid());
 
     $order->setSubtotal($subscription->price + $subscription->processing_fee);
     $order->getItems()[0]->getTax()->setRate(0.1);
@@ -104,7 +105,7 @@ class DrTestHelper
 
   public function createSource(string $id = null, string $type = null, string $lastFour = '9876', string $customerId = null)
   {
-    $source = DrFakeObject::source();
+    $source = DrObject::source();
     $source->setId($id ?: $this->uuid())
       ->setType($type ?: 'creditCard')
       ->setCreditCard((new DrCreditCard())
@@ -116,7 +117,7 @@ class DrTestHelper
 
   public function createFileLink(string $url = null)
   {
-    $fileLink = DrFakeObject::fileLInk();
+    $fileLink = DrObject::fileLink();
     $fileLink->setUrl($url ?: '/favicon.ico');
     return $fileLink;
   }
@@ -128,12 +129,11 @@ class DrTestHelper
       $periodStart = $periodStart->addDays(config('dr.dr_test.interval_count'));
     }
 
-    $drSubscripiton = DrFakeObject::subscription();
-    $drSubscripiton->setId($id ?: $this->uuid())
+    $drSubscripiton = DrObject::subscription();
+    $drSubscripiton->setId($id ?? $subscription->dr['subscription_id'] ?? $this->uuid())
       ->setCurrentPeriodEndDate(
         $periodStart
           ->addDays(config('dr.dr_test.interval_count'))
-          ->subSecond()
         // ->toIso8601ZuluString()
       )
       ->setNextInvoiceDate(
@@ -147,14 +147,11 @@ class DrTestHelper
 
   public function createEvent(string $eventType, object|array $object, string $id = null): array
   {
-    $data = new EventData();
-    $data->setObject($object);
-
-    $event = new Event();
-    $event->setId($id ?? $this->uuid())
+    $data = (new EventData())->setObject($object);
+    $event = (new Event())->setId($id ?? $this->uuid())
       ->setType($eventType)
-      ->setData($object);
+      ->setData($data);
 
-    return (array)$event;
+    return json_decode(json_encode($event->jsonSerialize()), true);
   }
 }

@@ -2,15 +2,13 @@
 
 namespace Tests\Feature;
 
-use stdClass;
-
 class AccountPaymentMethodGetApiTest extends AccountPaymentMethodTestCase
 {
   public ?string $role = 'customer';
 
   public function testAccountPaymentMethodGetOk()
   {
-    $this->createBillingInfo();
+    $this->createOrUpdateBillingInfo();
 
     $response = $this->getJson("{$this->baseUrl}/payment-method");
     $response->assertStatus(200)->assertJson([]);

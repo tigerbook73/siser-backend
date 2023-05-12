@@ -13,7 +13,7 @@ use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\ObjectSerializer  as DrObjectSerializer;
 
-class DrFakeObject
+class DrObject
 {
   static public function charge(): DrCharge
   {

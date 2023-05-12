@@ -244,15 +244,23 @@ class SubscriptionManagerDR implements SubscriptionManager
     try {
       $section = CriticalSection::open($subscription, __FUNCTION__, 'cancel dr-subscription');
 
-      $this->drService->cancelSubscription($subscription->dr_subscription_id);
+      $drSubscription = $this->drService->cancelSubscription($subscription->dr_subscription_id);
       Log::info("Subscription: $subscription->id: $subscription->status: cancel dr-subscription");
 
       $section->step('update subscription => cancelling');
+      $subscription->end_date =
+        $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
       $subscription->sub_status = 'cancelling';
       $subscription->next_invoice_date = null;
       $subscription->next_invoice = null;
       $subscription->save();
       Log::info("Subscription: $subscription->id: $subscription->status: cancel subscription");
+
+      $invoice = $subscription->getActiveInvoice();
+      if ($invoice && $invoice->status != 'completing') {
+        $invoice->status = 'void';
+        $invoice->save();
+      }
 
       $section->close();
 
@@ -679,14 +687,20 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // validate subscription
     if ($subscription->status != 'active') {
-      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created");
+      // TODO: warning to error
+      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created because subscription inactive");
       return null;
     }
 
     // skip duplicated invoice
     $invoice = $subscription->getActiveInvoice();
-    if ($invoice && $invoice->pdf_file) {
-      Log::info("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
+    if (!$invoice) {
+      Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created because no active invoice");
+      return null;
+    }
+
+    if ($invoice->pdf_file) {
+      Log::warning("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
       return null;
     }
 
@@ -738,6 +752,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     });
 
     CriticalSection::single($subscription, __FUNCTION__, 'stop subscription, update user level');
+
+    // TODO: send notification to developer
 
     return $subscription;
   }
@@ -830,6 +846,10 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
   {
     $subscription = $this->validateInvoice($drInvoice);
+    if (!$subscription) {
+      return null;
+    }
+
     if ($subscription->getActiveInvoice()) {
       Log::warning(__FUNCTION__ . ': this is existing active invoice', ['object' => $drInvoice]);
     }
@@ -898,6 +918,13 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
 
     $subscription->fillNextInvoice();
+
+    // if in some abnormal situation, this event comes after cancell subscripton operation
+    if ($subscription->sub_status == 'cancelling') {
+      $subscription->next_invoice_date = null;
+      $subscription->next_invoice = null;
+    }
+
     $subscription->save();
     Log::info("Subscription: $subscription->id: $subscription->status: subscription extended");
 
