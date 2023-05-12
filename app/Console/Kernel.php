@@ -20,8 +20,10 @@ class Kernel extends ConsoleKernel
 
     // $schedule->command('auth:clear-resets')->everyFifteenMinutes();
 
-    $schedule->call(fn () => Artisan::queue('subscription:clean-draft'))->everyThirtyMinutes();
-    $schedule->call(fn () => Artisan::queue('subscription:stop-cancelled'))->everyThirtyMinutes();
+    $schedule->call(fn () => Artisan::queue('subscription:clean-draft'))->cron('*/30 * * * *');
+    $schedule->call(fn () => Artisan::queue('subscription:stop-cancelled'))->cron('*/29 * * * *');
+    $schedule->call(fn () => Artisan::queue('subscription:warn-pending'))->cron('* */2 * * *');
+    $schedule->call(fn () => Artisan::queue('subscription:warn-unclosed'))->cron('*/57 * * * *');
   }
 
   /**

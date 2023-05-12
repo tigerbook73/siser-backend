@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property bool $to_notify
  *
  * @package App\Models\Base
  */
@@ -36,7 +37,8 @@ class CriticalSection extends Model
     'user_id' => 'int',
     'object_id' => 'int',
     'action' => 'json',
-    'steps' => 'json'
+    'steps' => 'json',
+    'to_notify' => 'bool'
   ];
 
   protected $fillable = [
@@ -45,6 +47,7 @@ class CriticalSection extends Model
     'object_id',
     'action',
     'steps',
-    'status'
+    'status',
+    'to_notify'
   ];
 }
