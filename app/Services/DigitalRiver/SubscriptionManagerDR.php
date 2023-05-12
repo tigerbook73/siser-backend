@@ -846,8 +846,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
   {
     $subscription = $this->validateInvoice($drInvoice);
-    if (!$subscription || $subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . ': skip null or inactive subscription', ['object' => $drInvoice]);
+    if (!$subscription) {
       return null;
     }
 
