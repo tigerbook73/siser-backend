@@ -47,7 +47,7 @@ class SubscriptionWarning extends Notification
     return (new MailMessage)
       ->subject("Subscription warning: $this->type")
       ->greeting('Hello!')
-      ->line('There are warning on subscriptions: [' . implode(', ', $this->subscriptionIds) . '] !');
+      ->line('There are warning on "' . $this->type .  '" : [' . implode(', ', $this->subscriptionIds) . '] !');
   }
 
   /**
