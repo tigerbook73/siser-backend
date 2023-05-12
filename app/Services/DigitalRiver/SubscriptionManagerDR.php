@@ -700,7 +700,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($invoice->pdf_file) {
-      Log::warn("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
+      Log::warning("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
       return null;
     }
 
