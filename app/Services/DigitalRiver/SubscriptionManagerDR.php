@@ -244,15 +244,23 @@ class SubscriptionManagerDR implements SubscriptionManager
     try {
       $section = CriticalSection::open($subscription, __FUNCTION__, 'cancel dr-subscription');
 
-      $this->drService->cancelSubscription($subscription->dr_subscription_id);
+      $drSubscription = $this->drService->cancelSubscription($subscription->dr_subscription_id);
       Log::info("Subscription: $subscription->id: $subscription->status: cancel dr-subscription");
 
       $section->step('update subscription => cancelling');
+      $subscription->end_date =
+        $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
       $subscription->sub_status = 'cancelling';
       $subscription->next_invoice_date = null;
       $subscription->next_invoice = null;
       $subscription->save();
       Log::info("Subscription: $subscription->id: $subscription->status: cancel subscription");
+
+      $invoice = $subscription->getActiveInvoice();
+      if ($invoice && $invoice->status != 'completing') {
+        $invoice->status = 'void';
+        $invoice->save();
+      }
 
       $section->close();
 

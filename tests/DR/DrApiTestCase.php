@@ -602,6 +602,30 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
+  public function cancelSubscription(int $id)
+  {
+    // prepare
+    $subscription = $this->user->getActivePaidSubscription($id);
+    $invoice = $subscription->getActiveInvoice();
+    $this->assertTrue($subscription->sub_status != 'cancelling');
+
+    // mock up
+    $this->mockCancelSubscription($subscription);
+
+    // call api
+    $response = $this->postJson("/api/v1/account/subscriptions/{$id}/cancel");
+
+    // refresh authenticated user data
+    $subscription->refresh();
+    $invoice->refresh();
+
+    // assert
+    $this->assertTrue($subscription->sub_status == 'cancelling');
+    $this->assertTrue(!$invoice || $invoice->status == 'void' || $invoice->status == 'completing');
+
+    return $response;
+  }
+
   public function onOrderAccept(Subscription $subscription): Subscription
   {
     // prepare

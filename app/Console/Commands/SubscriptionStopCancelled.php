@@ -44,7 +44,7 @@ class SubscriptionStopCancelled extends Command
     /** @var Subscription[]|Collection $subscriptions */
     $subscriptions = Subscription::where('status', 'active')
       ->where('sub_status', 'cancelling')
-      ->where('current_period_end_date', '<', now())
+      ->where('end_date', '<', now())
       ->limit($maxCount + 1)
       ->get();
 
