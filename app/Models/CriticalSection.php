@@ -46,6 +46,7 @@ class CriticalSection extends BaseCriticalSection
     }
 
     $section->status = $status;
+    $section->to_notify = ($status == 'open');
     $section->save();
     return $section;
   }
@@ -79,11 +80,20 @@ class CriticalSection extends BaseCriticalSection
   public function close($step = null): void
   {
     $this->status = 'closed';
+    $this->to_notify = false;
 
     if ($step) {
       $this->step($step);
     } else {
       $this->save();
     }
+  }
+
+  static public function unclosed()
+  {
+    return self::where('to_notify', true)
+      ->where('status', 'open')
+      ->where('updated_at', '<', now()->subMinutes(5))
+      ->get();
   }
 }

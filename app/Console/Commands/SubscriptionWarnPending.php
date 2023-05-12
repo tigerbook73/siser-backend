@@ -6,7 +6,6 @@ use App\Models\Subscription;
 use App\Notifications\SubscriptionWarning;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Collection;
 
 class SubscriptionWarnPending extends Command
 {
