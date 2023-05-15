@@ -40,8 +40,8 @@ class SubscriptionWarnPending extends Command
 
     /** @var int[] $subscriptionIds */
     $subscriptionIds = Subscription::select('id')
-      // ->whereIn('status', ['pending', 'processing'])
-      // ->where('updated_at', '<', now()->subMinutes(30))
+      ->whereIn('status', ['pending', 'processing'])
+      ->where('updated_at', '<', now()->subMinutes(30))
       ->get()
       ->map(fn ($model) => $model->id)
       ->all();
