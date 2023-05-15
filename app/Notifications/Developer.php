@@ -14,4 +14,9 @@ class Developer
   {
     $this->email = config('mail.developer');
   }
+
+  public function getKey()
+  {
+    return 1;
+  }
 }

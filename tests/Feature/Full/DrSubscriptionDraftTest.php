@@ -20,7 +20,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     return $this->createSubscription();
   }
 
-  public function test_draft_timeout()
+  public function test_draft_expired()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
     $this->init_draft();
