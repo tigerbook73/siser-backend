@@ -5,6 +5,7 @@ namespace Tests\DR;
 use App\Models\Base\BillingInfo;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\DigitalRiverService;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
@@ -18,6 +19,7 @@ use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
+use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use Tests\ApiTestCase;
 use Tests\DR\DrTestTrait;
@@ -625,6 +627,7 @@ class DrApiTestCase extends ApiTestCase
 
     // mock up
     $this->mockCancelSubscription($subscription);
+    Notification::fake();
 
     // call api
     $response = $this->postJson("/api/v1/account/subscriptions/{$id}/cancel");
@@ -637,6 +640,11 @@ class DrApiTestCase extends ApiTestCase
     $response->assertSuccessful();
     $this->assertTrue($subscription->sub_status == 'cancelling');
     $this->assertTrue(!$invoice || $invoice->status == 'void' || $invoice->status == 'completing');
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+    );
 
     return $response;
   }
@@ -676,6 +684,7 @@ class DrApiTestCase extends ApiTestCase
     if ($previousSubscription = $subscription->user->getActiveLiveSubscription()) {
       $this->mockCancelSubscription($previousSubscription);
     }
+    Notification::fake();
 
     // call api
     $response = $this->sendOrderComplete($this->drHelper->createOrder(
@@ -692,6 +701,11 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == 'active');
     $this->assertTrue($subscription->getActiveInvoice()->status == 'completing');
 
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CONFIRMED
+    );
+
     return $subscription;
   }
 
@@ -701,7 +715,7 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == 'processing' || $subscription->status == 'pending');
 
     // mock up
-    // null
+    Notification::fake();
 
     // call api
     if ($type == 'order.blocked') {
@@ -725,6 +739,11 @@ class DrApiTestCase extends ApiTestCase
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'failed');
 
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ABORTED
+    );
+
     return $subscription;
   }
 
@@ -735,8 +754,6 @@ class DrApiTestCase extends ApiTestCase
 
   public function onOrderCancelled(Subscription $subscription)
   {
-
-
     return $this->onOrderFailed($subscription, 'order.cancelled');
   }
 
@@ -753,6 +770,8 @@ class DrApiTestCase extends ApiTestCase
     // mock up
     $this->mockGetOrder($subscription);
 
+    Notification::fake();
+
     // call api
     $order = $this->drHelper->createCharge($subscription->dr['order_id'], DrCharge::STATE_FAILED);
     $response = $this->sendOrderChargeCaptureFailed($order);
@@ -763,6 +782,11 @@ class DrApiTestCase extends ApiTestCase
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'failed');
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ABORTED
+    );
 
     return $subscription;
   }
@@ -776,6 +800,7 @@ class DrApiTestCase extends ApiTestCase
     // mock up
     $this->mockGetOrder($subscription);
     $this->mockCreateFileLink();
+    Notification::fake();
 
     // call api
     $response = $this->sendOrderInvoiceCreated($this->drHelper->createOrder(
@@ -792,6 +817,11 @@ class DrApiTestCase extends ApiTestCase
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'normal');
     $this->assertTrue($invoice->status == 'completed');
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_INVOICE_PDF
+    );
 
     return $subscription;
   }
@@ -820,6 +850,9 @@ class DrApiTestCase extends ApiTestCase
     // prepare
     $this->assertTrue($subscription->status == 'active');
 
+    // mock up
+    Notification::fake();
+
     // call api
     $response = $this->sendSubscriptionReminder($this->drHelper->createSubscription($subscription));
 
@@ -831,6 +864,11 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'normal');
     $this->assertTrue($$subscription->getActiveInvoice() == null);
 
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
+    );
+
     return $subscription;
   }
 
@@ -838,6 +876,9 @@ class DrApiTestCase extends ApiTestCase
   {
     // prepare
     $this->assertTrue($subscription->status == 'active');
+
+    // mockup
+    Notification::fake();
 
     // call api
     $response = $this->sendSubscriptionPaymentFailed($this->drHelper->createSubscription($subscription));
@@ -850,6 +891,11 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'overdue');
     $this->assertTrue($subscription->getActiveInvoice()->status == 'overdue');
 
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_OVERDUE
+    );
+
     return $subscription;
   }
 
@@ -858,6 +904,9 @@ class DrApiTestCase extends ApiTestCase
     // prepare
     $this->assertTrue($subscription->status == 'active');
     $invoice = $subscription->getActiveInvoice();
+
+    // mock up
+    Notification::fake();
 
     // call api
     $response = $this->sendSubscriptionExtended(
@@ -874,6 +923,11 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == 'active' || $subscription->sub_status = 'normal');
     $this->assertTrue($invoice->status == 'completing');
 
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_EXTENDED
+    );
+
     return $subscription;
   }
 
@@ -882,6 +936,9 @@ class DrApiTestCase extends ApiTestCase
     // prepare
     $this->assertTrue($subscription->status == 'active');
     $invoice = $subscription->getActiveInvoice();
+
+    // mock up
+    Notification::fake();
 
     // call api
     $response = $this->sendSubscriptionFailed($this->drHelper->createSubscription($subscription));
@@ -895,6 +952,11 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == 'failed');
     $this->assertTrue($invoice->status == 'failed');
     $this->assertTrue($subscription->user->getActiveSubscription()->subscription_level == 1);
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_FAILED
+    );
 
     return $subscription;
   }
