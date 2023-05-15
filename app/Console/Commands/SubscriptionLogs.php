@@ -109,7 +109,11 @@ class SubscriptionLogs extends Command
         $section->action['status']
       );
 
-      $this->info($text);
+      if ($section->status != 'closed') {
+        $this->warn($text);
+      } else {
+        $this->info($text);
+      }
       foreach ($section->steps as $step) {
         $text = sprintf("  %s - %s", $step['time'], $step['step']);
         $this->info($text);

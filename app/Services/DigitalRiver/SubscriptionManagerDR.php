@@ -928,7 +928,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->save();
     Log::info("Subscription: $subscription->id: $subscription->status: subscription extended");
 
-    $section->step('update invoice');
+    $section->step('update invoice => completing');
 
     // update invoice
     $invoice = $subscription->getActiveInvoice();
