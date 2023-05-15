@@ -44,7 +44,7 @@ class SubscriptionWarnUnclosed extends Command
     $this->info('There are ' . count($ids) . ' unclosed critical section: [' . implode(', ', $ids) . '] !');
 
     if (!$dryRun && count($ids) > 0) {
-      SubscriptionWarning::notify('unclosed-critical-section', $ids);
+      SubscriptionWarning::notify(SubscriptionWarning::NOTIF_UNCLOSED_CRITICAL_SECTION, $ids);
       CriticalSection::whereIn('id', $ids)->update(['need_notify' => false]);
     }
 

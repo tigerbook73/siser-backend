@@ -49,7 +49,7 @@ class SubscriptionWarnPending extends Command
     $this->info('There are ' . count($subscriptionIds) . ' pending or processing subscriptions: [' . implode(', ', $subscriptionIds) . '] !');
 
     if (!$dryRun && count($subscriptionIds) > 0) {
-      SubscriptionWarning::notify('long-pending-subscription', $subscriptionIds);
+      SubscriptionWarning::notify(SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION, $subscriptionIds);
     }
 
     return Command::SUCCESS;

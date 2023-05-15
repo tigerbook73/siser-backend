@@ -13,6 +13,9 @@ class SubscriptionWarning extends Notification
 {
   use Queueable;
 
+  public const NOTIF_LONG_PENDING_SUBSCRIPTION    = 'long-pending-subscription';
+  public const NOTIF_UNCLOSED_CRITICAL_SECTION    = 'unclosed-critical-section';
+
   /**
    * Create a new notification instance.
    *
