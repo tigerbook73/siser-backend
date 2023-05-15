@@ -9,7 +9,8 @@ class AccountBillingInfoSetApiTest extends AccountBillingInfoTestCase
   public function testAccountBillingInfoSetOk()
   {
     // update
-    $response = $this->postJson("{$this->baseUrl}/billing-info", $this->modelUpdate);
+    $response = $this->createOrUpdateBillingInfo($this->modelUpdate);
+
     $response->assertSuccessful()
       ->assertJsonStructure($this->modelSchema)
       ->assertJson($this->modelUpdate);

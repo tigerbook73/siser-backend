@@ -3,11 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\BillingInfo;
-use Tests\ApiTestCase;
+use Tests\DR\DrApiTestCase;
 use Tests\Models\Address;
 use Tests\Models\BillingInfo as ModelsBillingInfo;
 
-class AccountBillingInfoTestCase extends ApiTestCase
+class AccountBillingInfoTestCase extends DrApiTestCase
 {
   public string $baseUrl = '/api/v1/account';
   public string $model = BillingInfo::class;
