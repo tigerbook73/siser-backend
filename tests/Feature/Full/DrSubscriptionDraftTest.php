@@ -25,10 +25,21 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     Carbon::setTestNow('2023-01-01 00:00:00');
     $this->init_draft();
 
-    Carbon::setTestNow('2023-01-01 00:31:00');
+    Carbon::setTestNow('2023-01-01 00:31:00');  // see app\Http\Kernel.php for timeout
     $this->artisan('subscription:clean-draft')->assertSuccessful();
 
     $this->assertTrue($this->user->subscriptions()->where('status', 'draft')->count() <= 0);
+  }
+
+  public function test_draft_timeout_not_expired()
+  {
+    Carbon::setTestNow('2023-01-01 00:00:00');
+    $this->init_draft();
+
+    Carbon::setTestNow('2023-01-01 00:29:00');
+    $this->artisan('subscription:clean-draft')->assertSuccessful();
+
+    $this->assertTrue($this->user->subscriptions()->where('status', 'draft')->count() > 0);
   }
 
   public function test_draft_delete()

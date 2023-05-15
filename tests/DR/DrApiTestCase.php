@@ -531,7 +531,8 @@ class DrApiTestCase extends ApiTestCase
 
     // assert 
     $response->assertSuccessful();
-    $this->assertTrue(isset($this->user->payment_method->dr['source_id']));
+    $this->assertTrue($this->user->payment_method->dr['source_id'] == $data['dr']['source_id']);
+    $this->assertTrue($this->user->payment_method->type == $data['type']);
 
     return $response;
   }
@@ -551,6 +552,7 @@ class DrApiTestCase extends ApiTestCase
     $this->user->refresh();
 
     // assert
+    $response->assertSuccessful();
     $subscription = $this->user->getDraftSubscriptionById($response->json('id'));
     $this->assertTrue(!!$subscription);
     $this->assertTrue($subscription->status == 'draft');
@@ -606,6 +608,7 @@ class DrApiTestCase extends ApiTestCase
     $subscription->refresh();
 
     // assert
+    $response->assertSuccessful();
     $this->assertTrue($subscription->status == 'pending');
 
     return $response;
@@ -631,6 +634,7 @@ class DrApiTestCase extends ApiTestCase
     $invoice->refresh();
 
     // assert
+    $response->assertSuccessful();
     $this->assertTrue($subscription->sub_status == 'cancelling');
     $this->assertTrue(!$invoice || $invoice->status == 'void' || $invoice->status == 'completing');
 
