@@ -66,7 +66,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     $this->drMock
       ->shouldReceive('attachCheckoutSource')
       ->once()
-      ->andThrow(new Exception('Test', 400));
+      ->andThrow(new Exception('Test', 444));
 
     // call api
     $response = $this->postJson(
@@ -78,7 +78,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     $subscription->refresh();
 
     // assert
-    $response->assertStatus(400);
+    $response->assertStatus(444);
     $this->assertTrue($subscription->status == 'draft');
     $this->assertDatabaseHas('critical_sections', [
       'type' => 'subscription',

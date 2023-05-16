@@ -4,8 +4,11 @@ namespace Tests\Feature\Full;
 
 use App\Models\Subscription;
 use App\Notifications\Developer;
+use App\Notifications\SubscriptionNotification;
 use App\Notifications\SubscriptionWarning;
 use Carbon\Carbon;
+use DigitalRiver\ApiSdk\Model\Order as DrOrder;
+use Exception;
 use Illuminate\Support\Facades\Notification;
 use Tests\DR\DrApiTestCase;
 
@@ -29,6 +32,46 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     $response = $this->init_pending();
 
     return $this->onOrderAccept(Subscription::find($response->json('id')));
+  }
+
+  public function test_pending_to_processing_error_fulfill()
+  {
+    $response = $this->init_pending();
+
+    /** @var Subscription $subscription */
+    $subscription = Subscription::find($response->json('id'));
+
+    // prepare
+    $this->assertTrue($subscription->status == 'pending');
+
+    // mock up
+    $this->drMock
+      ->shouldReceive('fulfillOrder')
+      ->once()
+      ->andThrow(new Exception('test', 444));
+
+    Notification::fake();
+
+    // call api
+    $response = $this->sendOrderAccepted($this->drHelper->createOrder(
+      $subscription,
+      $subscription->dr['order_id'],
+      DrOrder::STATE_ACCEPTED
+    ));
+
+    // refresh data
+    $subscription->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertTrue($subscription->status == 'failed');
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ABORTED
+    );
+
+    return $subscription;
   }
 
   public function test_pending_to_failed_blocked()
