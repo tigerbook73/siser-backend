@@ -22,8 +22,6 @@ use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use Tests\ApiTestCase;
-use Tests\DR\DrTestTrait;
-use Tests\Models\Subscription as ModelsSubscription;
 
 class DrApiTestCase extends ApiTestCase
 {

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Full;
 
-use App\Models\Subscription;
 use Carbon\Carbon;
+use Exception;
 use Tests\DR\DrApiTestCase;
 
 class DrSubscriptionDraftTest extends DrApiTestCase
@@ -54,5 +54,36 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     $response = $this->init_draft();
 
     $this->paySubscription($response->json('id'));
+  }
+
+  public function test_draft_pay_error_exception_open()
+  {
+    // prepare
+    $response = $this->init_draft();
+    $subscription = $this->user->getDraftSubscriptionById($response->json('id'));
+
+    // mockup 
+    $this->drMock
+      ->shouldReceive('attachCheckoutSource')
+      ->once()
+      ->andThrow(new Exception('Test', 400));
+
+    // call api
+    $response = $this->postJson(
+      "/api/v1/account/subscriptions/$subscription->id/pay",
+      ['terms' => 'This is test terms ...']
+    );
+
+    // refresh data
+    $subscription->refresh();
+
+    // assert
+    $response->assertStatus(400);
+    $this->assertTrue($subscription->status == 'draft');
+    $this->assertDatabaseHas('critical_sections', [
+      'type' => 'subscription',
+      'status' => 'open',
+      'object_id' => $subscription->id
+    ]);
   }
 }
