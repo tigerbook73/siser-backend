@@ -414,7 +414,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // must be a subscription order
     $drSubscriptionId = $order->getItems()[0]->getSubscriptionInfo()?->getSubscriptionId();
     if (!$drSubscriptionId) {
-      Log::warning(__FUNCTION__ . ': skip order that does not contains an subscription id');
+      Log::warning(__FUNCTION__ . ': skip order that does not contains an subscription id', ['object' => $order]);
       return null;
     }
 
@@ -741,19 +741,12 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     Log::info("Subscription: $subscription->id: $subscription->status: order.chargeback");
 
-    DB::transaction(function () use ($subscription) {
+    if ($subscription->sub_status != 'cancelling') {
+      $this->cancelSubscription($subscription);
+    }
 
-      $subscription->stop('failed', 'charge back');
-      Log::info("Subscription: $subscription->id: $subscription->status: charge back:");
 
-      $user = $subscription->user;
-      $user->updateSubscriptionLevel();
-      Log::info("User: $user->id: update user subscription_level to $user->subscription_level");
-    });
-
-    CriticalSection::single($subscription, __FUNCTION__, 'stop subscription, update user level');
-
-    // TODO: send notification to developer
+    CriticalSection::single($subscription, __FUNCTION__, 'chargeback, cancel subscription');
 
     return $subscription;
   }
