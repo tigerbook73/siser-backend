@@ -649,8 +649,11 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function onOrderAccept(Subscription $subscription): Subscription
+  public function onOrderAccept(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'pending');
 
@@ -674,8 +677,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onOrderComplete(Subscription $subscription): Subscription
+  public function onOrderComplete(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'processing');
 
@@ -709,8 +715,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  private function onOrderFailed(Subscription $subscription, string $type)
+  private function onOrderFailed(Subscription $subscription, string $type): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'processing' || $subscription->status == 'pending');
 
@@ -747,23 +756,26 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onOrderBlocked(Subscription $subscription)
+  public function onOrderBlocked(Subscription|int $subscription): Subscription
   {
     return $this->onOrderFailed($subscription, 'order.blocked');
   }
 
-  public function onOrderCancelled(Subscription $subscription)
+  public function onOrderCancelled(Subscription|int $subscription): Subscription
   {
     return $this->onOrderFailed($subscription, 'order.cancelled');
   }
 
-  public function onOrderChargeFailed(Subscription $subscription)
+  public function onOrderChargeFailed(Subscription|int $subscription): Subscription
   {
     return $this->onOrderFailed($subscription, 'order.charge.failed');
   }
 
-  public function onOrderChargeCaptureFailed(Subscription $subscription)
+  public function onOrderChargeCaptureFailed(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'processing' || $subscription->status == 'pending');
 
@@ -791,8 +803,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onOrderInvoiceCompleted(Subscription $subscription)
+  public function onOrderInvoiceCompleted(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'active');
     $invoice = $subscription->getActiveInvoice();
@@ -826,8 +841,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onInvoiceOpen(Subscription $subscription)
+  public function onInvoiceOpen(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'active');
 
@@ -845,8 +863,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onSubscriptionReminder(Subscription $subscription)
+  public function onSubscriptionReminder(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'active');
 
@@ -872,8 +893,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onSubscriptionPaymentFailed(Subscription $subscription)
+  public function onSubscriptionPaymentFailed(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'active');
 
@@ -899,8 +923,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onSubscriptionExtended(Subscription $subscription)
+  public function onSubscriptionExtended(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'active');
     $invoice = $subscription->getActiveInvoice();
@@ -931,8 +958,11 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
-  public function onSubscriptionFailed(Subscription $subscription)
+  public function onSubscriptionFailed(Subscription|int $subscription): Subscription
   {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
     // prepare
     $this->assertTrue($subscription->status == 'active');
     $invoice = $subscription->getActiveInvoice();
