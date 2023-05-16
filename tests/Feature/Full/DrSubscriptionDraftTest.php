@@ -56,7 +56,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     $this->paySubscription($response->json('id'));
   }
 
-  public function test_draft_pay_error_exception_open()
+  public function test_draft_to_pending_error_exception_open()
   {
     // prepare
     $response = $this->init_draft();
