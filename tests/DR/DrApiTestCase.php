@@ -936,7 +936,7 @@ class DrApiTestCase extends ApiTestCase
     // call api
     $response = $this->sendSubscriptionExtended(
       $this->drHelper->createSubscription($subscription),
-      $this->drHelper->createInvoice($subscription)
+      $this->drHelper->createInvoice($subscription, $invoice->getDrInvoiceId(), $this->drHelper->uuid())
     );
 
     // refresh data

@@ -90,7 +90,6 @@ return <<<EOD
   "attemptCount": 1,
   "chargeType": "merchant_initiated",
   "upstreamId": "bac657eb-d508-44f9-adeb-8f33bba40c06",
-  "orderId": "263412390336",
   "payment": {
       "charges": [
           {

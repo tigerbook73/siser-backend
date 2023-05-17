@@ -185,9 +185,15 @@ class Subscription extends BaseSubscription
     $this->save();
   }
 
-  public function getActiveInvoice(): Invoice|null
+  public function getActiveInvoice(string $orderId = null, string $invoiceId = null): Invoice|null
   {
-    return $this->invoices()->whereIn('status', ['open', 'overdue', 'completing'])->first();
+    $query = $this->invoices()->whereIn('status', ['open', 'overdue', 'completing']);
+    if ($orderId) {
+      $query->where('dr_order_id', $orderId);
+    } else if ($invoiceId) {
+      $query->where('dr_invoice_id', $invoiceId);
+    }
+    return $query->first();
   }
 
   // public function activate($start_date = null, )

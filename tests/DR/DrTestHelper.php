@@ -76,7 +76,7 @@ class DrTestHelper
     return $fulfillment;
   }
 
-  public function createInvoice(Subscription $subscription, string $id = null)
+  public function createInvoice(Subscription $subscription, string $id = null, string $order_id = null)
   {
     $invoice = DrObject::invoice();
     $invoice->setId($id ?: $this->uuid());
@@ -85,6 +85,9 @@ class DrTestHelper
     $invoice->setTotalTax($invoice->getSubtotal() * 0.1);
     $invoice->setTotalAmount($invoice->getSubtotal() + $invoice->getTotalTax());
     $invoice->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
+    if ($order_id) {
+      $invoice->setOrderId($order_id);
+    }
     return $invoice;
   }
 

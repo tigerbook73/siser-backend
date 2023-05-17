@@ -414,21 +414,21 @@ class SubscriptionManagerDR implements SubscriptionManager
     // must be a subscription order
     $drSubscriptionId = $order->getItems()[0]->getSubscriptionInfo()?->getSubscriptionId();
     if (!$drSubscriptionId) {
-      Log::warning(__FUNCTION__ . ': skip order that does not contains an subscription id', ['object' => $order]);
+      Log::warning(__FUNCTION__ . ': skip order that does not contains an subscription id', ['order_id' => $order->getId()]);
       return null;
     }
 
     // validate the subscription
     $subscription = Subscription::where('dr_subscription_id', $drSubscriptionId)->first();
     if (!$subscription) {
-      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['object' => $order]);
+      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['order_id' => $order->getId()]);
       return null;
     }
 
     // only process the first order
     if ($options['be_first'] ?? false) {
       if (!isset($subscription->dr['order_id']) || $subscription->dr['order_id'] != $order->getId()) {
-        Log::warning(__FUNCTION__ . ': skip non-first subscription', ['object' => $order]);
+        Log::warning(__FUNCTION__ . ': skip non-first subscription', ['order_id' => $order->getId()]);
         return null;
       }
     }
@@ -692,13 +692,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    // skip duplicated invoice
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getActiveInvoice($order->getId());
     if (!$invoice) {
       Log::warning("Subscription: $subscription->id: $subscription->status: skip order.invoice.created because no active invoice");
       return null;
     }
 
+    // skip duplicated invoice
     if ($invoice->pdf_file) {
       Log::warning("Subscription: $subscription->id: $subscription->status: invoice aready has pdf file");
       return null;
@@ -766,13 +766,13 @@ class SubscriptionManagerDR implements SubscriptionManager
     // validate the subscription
     $subscription = Subscription::where('dr_subscription_id', $drSubscriptionId)->first();
     if (!$subscription) {
-      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['object' => $invoice]);
+      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['invoice_id' => $invoice->getId()]);
       return null;
     }
 
     // only process the active subscription
     if ($subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $invoice]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['invoice_id' => $invoice->getId()]);
       return null;
     }
 
@@ -844,7 +844,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($subscription->getActiveInvoice()) {
-      Log::warning(__FUNCTION__ . ': this is existing active invoice', ['object' => $drInvoice]);
+      Log::warning(__FUNCTION__ . ': this is existing active invoice', ['invoice_id' => $drInvoice->getId()]);
     }
 
     $next_invoice = $subscription->next_invoice;
@@ -873,7 +873,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // validate the subscription
     $subscription = Subscription::where('dr_subscription_id', $drSubscription->getId())->first();
     if (!$subscription) {
-      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['object' => $drSubscription]);
+      Log::warning(__FUNCTION__ . ': skip invalid subscription', ['subscription_id' => $drSubscription->getId()]);
       return null;
     }
 
@@ -893,7 +893,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['subscription_id' => $drSubscription->getId()]);
       return null;
     }
 
@@ -924,7 +924,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->step('update invoice => completing');
 
     // update invoice
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getActiveInvoice(null, $drInvoice->getId());
     $invoice->setOrderId($drInvoice->getOrderId());
     $invoice->status = 'completing';
     $invoice->save();
@@ -945,7 +945,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['subscription_id' => $drSubscription->getId()]);
       return null;
     }
 
@@ -982,6 +982,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   protected function onSubscriptionPaymentFailed(array $event): Subscription|null
   {
+    /** @var DRSubscription $drSubscription */
     $drSubscription = DrObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
     // $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
@@ -991,7 +992,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['subscription_id' => $drSubscription->getId()]);
       return null;
     }
 
@@ -1022,6 +1023,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   protected function onSubscriptionReminder(array $event): Subscription|null
   {
+    /** @var DRSubscription $drSubscription */
     $drSubscription = DrObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
     // $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
@@ -1031,7 +1033,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($subscription->status != 'active') {
-      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['object' => $drSubscription]);
+      Log::warning(__FUNCTION__ . ': skip inactive subscription', ['subscription_id' => $drSubscription->getId()]);
       return null;
     }
 
@@ -1048,8 +1050,21 @@ class SubscriptionManagerDR implements SubscriptionManager
   /*
   TODO: check data integrity
 
-  x 1. subscriptions in pending or processing status stay for a long period of time
-  x 2. there is open activity (one routing not completed)
-  3. TODO: check event history, find missing event
+  x - subscriptions in pending or processing status stay for a long period of time
+  x - there is open activity (one routing not completed)
+    - order.accepted is missing                 => stay in pending (> 30 minutes)
+    - order.blocked is missing                  => stay in pending (> 30 minutes)
+    - order.cancelled is missing                => stay in pending (> 30 minutes)
+    - order.charge.failed is missing            => stay in pending (> 30 minutes)
+  x - order.charge.capture.complete is missing  => ok
+    - order.charge.capture.failed is missing    => staying in processing (> 30 minutes)
+    - order.complete is missing                 => staying in processing (> 30 minutes)
+    - order.chargeback is missing               => ... => periodicall check event.type
+    - subscription.extended is missing          => period_end expired
+    - subscription.failed is missing            => period_end expired
+    - subscription.payment_failed is missing    => ok => notification is missing
+    - subscription.reminder is missing          => ok => notification is missing
+    - invoice.open is missing                   => invoice is not created
+    - order.invoice.created is missing          => 
   */
 }
