@@ -66,11 +66,13 @@ class Invoice extends BaseInvoice
 
   public function setInvoiceId(string $invoice_id)
   {
+    $this->dr_invoice_id = $invoice_id;
     return $this->setDrAttr(self::DR_INVOICE_ID, $invoice_id);
   }
 
   public function setOrderId(string $order_id)
   {
+    $this->dr_order_id = $order_id;
     return $this->setDrAttr(self::DR_ORDER_ID, $order_id);
   }
 }
