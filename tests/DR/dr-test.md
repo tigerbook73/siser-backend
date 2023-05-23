@@ -37,11 +37,11 @@ stateDiagram-v2
   Active.Invoice.Completed  --> Active.Invoice.Open       : invoice.open
   Active.Invoice.Open
   
-  Active.Invoice.Open       --> Active.Invoice.Overdue    : subscription.payment.failed
+  Active.Invoice.Open       --> Active.Invoice.Pending    : subscription.payment.failed
   Active.Invoice.Open       --> Active.Invoice.Completing : subscription.extended
   
-  Active.Invoice.Overdue
-  Active.Invoice.Overdue    --> Active.Invoice.Completing : subscription.extended
+  Active.Invoice.Pending
+  Active.Invoice.Pending    --> Active.Invoice.Completing : subscription.extended
   }
   Active.Normal
   Active.Normal             --> Active.Cancelling         : cancel subscription
@@ -50,7 +50,7 @@ stateDiagram-v2
   Active.Cancelling         --> Active.Cancelling         : order.invoice.created
   }
 
-  Active.Invoice.Overdue    --> Failed                    : subscription.failed
+  Active.Invoice.Pending    --> Failed                    : subscription.failed
   Active.Cancelling         --> Stopped                   : subscription cancelling expired
 
   Failed

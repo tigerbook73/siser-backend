@@ -3,6 +3,9 @@
 namespace Tests\Feature\Full;
 
 use App\Models\Subscription;
+use App\Notifications\Developer;
+use App\Notifications\SubscriptionWarning;
+use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use Exception;
 use Illuminate\Support\Facades\Notification;
@@ -54,7 +57,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
 
     // assert
     $response->assertStatus(400);
-    $this->assertTrue($subscription->status == 'processing');
+    $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING);
     $this->assertTrue($subscription->getActiveInvoice() == null);
     $this->assertDatabaseHas('critical_sections', [
       'type' => 'subscription',
@@ -86,5 +89,38 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     $subscription = $this->init_processing();
 
     return $this->onOrderChargeFailed($subscription);
+  }
+
+  public function test_processing_expired()
+  {
+    Carbon::setTestNow('2023-01-01 00:00:00');
+    $response = $this->init_processing();
+
+    Notification::fake();
+
+    Carbon::setTestNow('2023-01-01 00:31:00');
+    $this->artisan('subscription:warn-pending')->assertSuccessful();
+
+    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PROCESSING)->count() > 0);
+
+    Notification::assertSentTo(
+      new Developer,
+      fn (SubscriptionWarning $notification) => $notification->type == SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION
+    );
+  }
+
+  public function test_processing_not_expired()
+  {
+    Carbon::setTestNow('2023-01-01 00:00:00');
+    $response = $this->init_processing();
+
+    Notification::fake();
+
+    Carbon::setTestNow('2023-01-01 00:29:00');
+    $this->artisan('subscription:warn-pending')->assertSuccessful();
+
+    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PROCESSING)->count() > 0);
+
+    Notification::assertNothingSent();
   }
 }

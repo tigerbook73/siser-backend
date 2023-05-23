@@ -11,11 +11,27 @@ class Subscription extends BaseSubscription
 {
   use Notifiable;
 
-  public const DR_CHECKOUT_ID     = 'checkout_id';
-  public const DR_SESSION_ID      = 'checkout_payment_session_id';
-  public const DR_ORDER_ID        = 'order_id';
-  public const DR_SOURCE_ID       = 'source_id';
-  public const DR_SUBSCRIPTION_ID = 'subscription_id';
+  // status
+  public const STATUS_ACTIVE                  = 'active';
+  public const STATUS_DRAFT                   = 'draft';
+  public const STATUS_FAILED                  = 'failed';
+  public const STATUS_PENDING                 = 'pending';
+  public const STATUS_PROCESSING              = 'processing';
+  public const STATUS_STOPPED                 = 'stopped';
+
+  // sub_status (when status is 'active')
+  public const SUB_STATUS_CANCELLING          = 'cancelling';
+  public const SUB_STATUS_INVOICE_COMPLETING  = 'invoice-completing';
+  public const SUB_STATUS_INVOICE_OPEN        = 'invoice-open';
+  public const SUB_STATUS_INVOICE_PENDING     = 'invoice-pending';
+  public const SUB_STATUS_NORMAL              = 'normal';
+
+  // dr attributes
+  public const DR_CHECKOUT_ID       = 'checkout_id';
+  public const DR_ORDER_ID          = 'order_id';
+  public const DR_SESSION_ID        = 'checkout_payment_session_id';
+  public const DR_SOURCE_ID         = 'source_id';
+  public const DR_SUBSCRIPTION_ID   = 'subscription_id';
 
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -82,8 +98,8 @@ class Subscription extends BaseSubscription
       'current_period_end_date'   => null,
       'next_invoice_date'         => null,
       'next_invoice'              => null,
-      'status'                    => 'active',
-      'sub_status'                => 'normal',
+      'status'                    => Subscription::STATUS_ACTIVE,
+      'sub_status'                => Subscription::SUB_STATUS_NORMAL,
     ]);
   }
 
@@ -171,10 +187,11 @@ class Subscription extends BaseSubscription
 
   public function setDrSubscriptionId(string $subscription_id)
   {
+    $this->dr_subscription_id = $subscription_id;
     return $this->setDrAttr(self::DR_SUBSCRIPTION_ID, $subscription_id);
   }
 
-  public function stop(string $status, string $stopReason = '', string $subStatus = 'normal')
+  public function stop(string $status, string $stopReason = '', string $subStatus = Subscription::SUB_STATUS_NORMAL)
   {
     $this->status = $status;
     $this->stop_reason = $stopReason;
@@ -185,26 +202,19 @@ class Subscription extends BaseSubscription
     $this->save();
   }
 
-  public function getActiveInvoice(string $orderId = null, string $invoiceId = null): Invoice|null
+  public function getActiveInvoice(): Invoice|null
   {
-    $query = $this->invoices()->whereIn('status', ['open', 'overdue', 'completing']);
-    if ($orderId) {
-      $query->where('dr_order_id', $orderId);
-    } else if ($invoiceId) {
-      $query->where('dr_invoice_id', $invoiceId);
+    if (!$this->active_invoice_id) {
+      return null;
+    } else {
+      return $this->invoices()->find($this->active_invoice_id);
     }
-    return $query->first();
   }
 
-  // public function activate($start_date = null, )
-  // {
-  //   $this->status = 'active';
-  //   $this->start_date = now();
-
-  //   $this->end_date = $this->start_date ? now() : null;
-  //   $this->next_invoice_date = null;
-  //   $this->save();
-  // }
+  public function getInvoiceByOrderId(string $orderId): Invoice|null
+  {
+    return $this->invoices()->where('dr_order_id', $orderId)->first();
+  }
 
   public function routeNotificationForMail($notification)
   {

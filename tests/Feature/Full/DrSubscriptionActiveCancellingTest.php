@@ -34,6 +34,6 @@ class DrSubscriptionActiveCancellingTest extends DrApiTestCase
     $this->artisan('subscription:stop-cancelled')->assertSuccessful();
 
     $subscription->refresh();
-    $this->assertTrue($subscription->status == 'stopped');
+    $this->assertTrue($subscription->status == Subscription::STATUS_STOPPED);
   }
 }

@@ -14,28 +14,28 @@ class SubscriptionNotification extends Notification
 {
   use Queueable;
 
-  public const NOTIF_ABORTED      = 'subscription.aborted';
-  public const NOTIF_CANCELLED    = 'subscription.cancelled';
-  public const NOTIF_CONFIRMED    = 'subscription.confirmed';
-  public const NOTIF_EXTENDED     = 'subscription.extended';
-  public const NOTIF_FAILED       = 'subscription.failed';
-  public const NOTIF_INVOICE_PDF  = 'subscription.invoice-pdf';
-  public const NOTIF_OVERDUE      = 'subscription.overdue';
-  public const NOTIF_REMINDER     = 'subscription.reminder';
-  public const NOTIF_TERMINATED   = 'subscription.terminated';
-  public const NOTIF_UPDATED      = 'subscription.updated';
+  public const NOTIF_ABORTED          = 'subscription.aborted';
+  public const NOTIF_CANCELLED        = 'subscription.cancelled';
+  public const NOTIF_CONFIRMED        = 'subscription.confirmed';
+  public const NOTIF_EXTENDED         = 'subscription.extended';
+  public const NOTIF_FAILED           = 'subscription.failed';
+  public const NOTIF_INVOICE_PDF      = 'subscription.invoice-pdf';
+  public const NOTIF_INVOICE_PENDING  = 'subscription.invoice-pending';
+  public const NOTIF_REMINDER         = 'subscription.reminder';
+  public const NOTIF_TERMINATED       = 'subscription.terminated';
+  public const NOTIF_UPDATED          = 'subscription.updated';
 
   static public $types = [
-    self::NOTIF_ABORTED       => ['subject' => "Subscription Aborted",        'view' => null],
-    self::NOTIF_CANCELLED     => ['subject' => "Subscription Cancelled",      'view' => null],
-    self::NOTIF_CONFIRMED     => ['subject' => "Subscription Confirmed",      'view' => null],
-    self::NOTIF_EXTENDED      => ['subject' => "Subscription Extended",       'view' => null],
-    self::NOTIF_FAILED        => ['subject' => "Subscription Failed",         'view' => null],
-    self::NOTIF_INVOICE_PDF   => ['subject' => "Invoice PDF",                 'view' => null],
-    self::NOTIF_OVERDUE       => ['subject' => "Subscription Overdue",        'view' => null],
-    self::NOTIF_REMINDER      => ['subject' => "Subscription Renew Reminder", 'view' => null],
-    self::NOTIF_TERMINATED    => ['subject' => "Subscription Terminated",     'view' => null],
-    self::NOTIF_UPDATED       => ['subject' => "Subscription Updated",        'view' => null],
+    self::NOTIF_ABORTED               => ['subject' => "Subscription Aborted",        'view' => null],
+    self::NOTIF_CANCELLED             => ['subject' => "Subscription Cancelled",      'view' => null],
+    self::NOTIF_CONFIRMED             => ['subject' => "Subscription Confirmed",      'view' => null],
+    self::NOTIF_EXTENDED              => ['subject' => "Subscription Extended",       'view' => null],
+    self::NOTIF_FAILED                => ['subject' => "Subscription Failed",         'view' => null],
+    self::NOTIF_INVOICE_PDF           => ['subject' => "Invoice PDF",                 'view' => null],
+    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription Payment Failed", 'view' => null],
+    self::NOTIF_REMINDER              => ['subject' => "Subscription Renew Reminder", 'view' => null],
+    self::NOTIF_TERMINATED            => ['subject' => "Subscription Terminated",     'view' => null],
+    self::NOTIF_UPDATED               => ['subject' => "Subscription Updated",        'view' => null],
   ];
 
   /**

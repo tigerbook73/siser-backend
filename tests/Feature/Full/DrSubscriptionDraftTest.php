@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Full;
 
+use App\Models\Subscription;
 use Carbon\Carbon;
 use Exception;
 use Tests\DR\DrApiTestCase;
@@ -28,7 +29,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     Carbon::setTestNow('2023-01-01 00:31:00');
     $this->artisan('subscription:clean-draft')->assertSuccessful();
 
-    $this->assertTrue($this->user->subscriptions()->where('status', 'draft')->count() <= 0);
+    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_DRAFT)->count() <= 0);
   }
 
   public function test_draft_timeout_not_expired()
@@ -39,7 +40,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     Carbon::setTestNow('2023-01-01 00:29:00');
     $this->artisan('subscription:clean-draft')->assertSuccessful();
 
-    $this->assertTrue($this->user->subscriptions()->where('status', 'draft')->count() > 0);
+    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_DRAFT)->count() > 0);
   }
 
   public function test_draft_delete()
@@ -79,7 +80,7 @@ class DrSubscriptionDraftTest extends DrApiTestCase
 
     // assert
     $response->assertStatus(444);
-    $this->assertTrue($subscription->status == 'draft');
+    $this->assertTrue($subscription->status == Subscription::STATUS_DRAFT);
     $this->assertDatabaseHas('critical_sections', [
       'type' => 'subscription',
       'status' => 'open',

@@ -550,12 +550,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/futurecorporation/digital-river-php.git",
-                "reference": "a7b000967f342cd235d79d18444dfd815a6c67c0"
+                "reference": "6ea77c73adecccd52960bed826d95f9bf9008c04"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/futurecorporation/digital-river-php/zipball/a7b000967f342cd235d79d18444dfd815a6c67c0",
-                "reference": "a7b000967f342cd235d79d18444dfd815a6c67c0",
+                "url": "https://api.github.com/repos/futurecorporation/digital-river-php/zipball/6ea77c73adecccd52960bed826d95f9bf9008c04",
+                "reference": "6ea77c73adecccd52960bed826d95f9bf9008c04",
                 "shasum": ""
             },
             "require": {
@@ -603,10 +603,10 @@
                 "sdk"
             ],
             "support": {
-                "source": "https://github.com/futurecorporation/digital-river-php/tree/main",
+                "source": "https://github.com/futurecorporation/digital-river-php/tree/develop",
                 "issues": "https://github.com/futurecorporation/digital-river-php/issues"
             },
-            "time": "2023-04-26T03:36:17+00:00"
+            "time": "2023-05-19T00:40:59+00:00"
         },
         {
             "name": "doctrine/cache",

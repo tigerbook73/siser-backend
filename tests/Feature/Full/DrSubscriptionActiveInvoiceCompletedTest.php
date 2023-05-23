@@ -24,10 +24,24 @@ class DrSubscriptionActiveInvoiceCompletedTest extends DrApiTestCase
     return $this->onOrderInvoiceCompleted($subscription);
   }
 
-  public function test_active_invoice_completed_to_active_invoice_open()
+  public function test_active_invoice_completed_to_active_invoice_completing()
   {
     $subscription = $this->init_active_invoice_completed();
 
-    return $this->onInvoiceOpen($subscription);
+    return $this->onSubscriptionExtended($subscription);
+  }
+
+  public function test_active_invoice_completed_to_active_invoice_pending()
+  {
+    $subscription = $this->init_active_invoice_completed();
+
+    return $this->onSubscriptionPaymentFailed($subscription);
+  }
+
+  public function test_active_invoice_completed_to_failed()
+  {
+    $subscription = $this->init_active_invoice_completed();
+
+    return $this->onSubscriptionFailed($subscription);
   }
 }

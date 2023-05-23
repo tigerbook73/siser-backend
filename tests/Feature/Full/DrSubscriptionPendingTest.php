@@ -42,7 +42,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     $subscription = Subscription::find($response->json('id'));
 
     // prepare
-    $this->assertTrue($subscription->status == 'pending');
+    $this->assertTrue($subscription->status == Subscription::STATUS_PENDING);
 
     // mock up
     $this->drMock
@@ -64,7 +64,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
 
     // assert
     $response->assertSuccessful();
-    $this->assertTrue($subscription->status == 'failed');
+    $this->assertTrue($subscription->status == Subscription::STATUS_FAILED);
 
     Notification::assertSentTo(
       $subscription,
@@ -112,7 +112,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     Carbon::setTestNow('2023-01-01 00:31:00');
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
-    $this->assertTrue($this->user->subscriptions()->where('status', 'pending')->count() > 0);
+    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PENDING)->count() > 0);
 
     Notification::assertSentTo(
       new Developer,
@@ -130,7 +130,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     Carbon::setTestNow('2023-01-01 00:29:00');
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
-    $this->assertTrue($this->user->subscriptions()->where('status', 'pending')->count() > 0);
+    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PENDING)->count() > 0);
 
     Notification::assertNothingSent();
   }

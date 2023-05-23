@@ -15,13 +15,13 @@ use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 
 class DrApiTest extends DrApiTestCase
 {
-  public function testDrTrait()
+  public function testDrApiMock()
   {
     /** @var DigitalRiverService $drService */
     $drService = $this->app->make(DigitalRiverService::class);
 
     /** @var Subscription $subscription */
-    $subscription = Subscription::where('status', 'active')->first();
+    $subscription = Subscription::where('status', Subscription::STATUS_ACTIVE)->first();
     $billingInfo = new BillingInfo([
       'first_name' => "User1",
       'last_name' => "Test",

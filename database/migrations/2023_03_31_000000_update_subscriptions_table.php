@@ -102,7 +102,7 @@ return new class extends Migration
       $table->string('dr_subscription_id')->nullable();
       $table->string('stop_reason')->nullable()->comment('[renew-failed, cancelled, new-subscurition]');
       $table->string('status')->comment('[draft, pending, failed, processing, active, stopped]')->change();
-      $table->string('sub_status')->comment('[normal, cancelling, overdue]')->default('normal');
+      $table->string('sub_status')->comment('[normal, cancelling, invoice-pending]')->default('normal');
 
       $table->index('subscription_level');
       $table->index('current_period');

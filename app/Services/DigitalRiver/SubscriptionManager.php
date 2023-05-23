@@ -37,7 +37,6 @@ interface SubscriptionManager
 
   /**
    * Webhook event handler
-   * @return bool true: event processed, false: event not processed
    */
-  public function webhookHandler(array $event): bool;
+  public function webhookHandler(array $event): \Illuminate\Http\JsonResponse;
 }

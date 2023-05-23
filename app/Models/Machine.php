@@ -61,7 +61,7 @@ class Machine extends BaseMachine
       if ($user->license_count <= 0) {
         // TODO: more to be considered if PRO plan support (e.g. when to stop)
         if ($subscription->subscription_level == 1) {
-          $subscription->stop('stopped', 'all machine detached');
+          $subscription->stop(Subscription::STATUS_STOPPED, 'all machine detached');
           $user->subscription_level = 0;
         }
       }

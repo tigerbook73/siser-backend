@@ -91,17 +91,17 @@ class DrTestHelper
     return $invoice;
   }
 
-  public function createOrder($subscription, string $id = null, string $state = null)
+  public function createOrder(Subscription $subscription, string $id = null, string $state = null)
   {
     $order = DrObject::order();
-    $order->setId($id ?? $subscription->dr['order_id'] ?? $this->uuid());
+    $order->setId($id ?? $subscription->getDrOrderId() ?? $this->uuid());
 
     $order->setSubtotal($subscription->price + $subscription->processing_fee);
     $order->getItems()[0]->getTax()->setRate(0.1);
     $order->setTotalTax($order->getSubtotal() * 0.1);
     $order->setTotalAmount($order->getSubtotal() + $order->getTotalTax());
 
-    $order->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
+    $order->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->getDrSubscriptionId() ?? $this->uuid());
     $order->setState($state ?: 'complete');
     return $order;
   }

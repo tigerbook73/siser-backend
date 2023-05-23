@@ -6,9 +6,18 @@ use App\Models\Base\Invoice as BaseInvoice;
 
 class Invoice extends BaseInvoice
 {
-  public const DR_FILE_ID     = 'file_id';
-  public const DR_INVOICE_ID  = 'invoice_id';
-  public const DR_ORDER_ID    = 'order_id';
+  // status -- see invoice.md
+  public const STATUS_COMPLETED     = 'completed';
+  public const STATUS_COMPLETING    = 'completing';
+  public const STATUS_FAILED        = 'failed';
+  public const STATUS_OPEN          = 'open';
+  public const STATUS_PENDING       = 'pending';
+  public const STATUS_VOID          = 'void';
+
+  // dr attributes
+  public const DR_FILE_ID           = 'file_id';
+  public const DR_INVOICE_ID        = 'invoice_id';
+  public const DR_ORDER_ID          = 'order_id';
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],

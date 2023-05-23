@@ -118,21 +118,21 @@ class User extends UserWithTrait
   public function getDraftSubscriptionById(int $id): Subscription|null
   {
     return $this->subscriptions()
-      ->where('status', 'draft')
+      ->where('status', Subscription::STATUS_DRAFT)
       ->find($id);
   }
 
   public function getActiveSubscription(): Subscription|null
   {
     return $this->subscriptions()
-      ->where('status', 'active')
+      ->where('status', Subscription::STATUS_ACTIVE)
       ->first();
   }
 
   public function getActivePaidSubscription(): Subscription|null
   {
     return $this->subscriptions()
-      ->where('status', 'active')
+      ->where('status', Subscription::STATUS_ACTIVE)
       ->where('subscription_level', '>', 1)
       ->first();
   }
@@ -140,8 +140,8 @@ class User extends UserWithTrait
   public function getActiveLiveSubscription(): Subscription|null
   {
     return $this->subscriptions()
-      ->where('status', 'active')
-      ->whereNot('sub_status', 'cancelling')
+      ->where('status', Subscription::STATUS_ACTIVE)
+      ->whereNot('sub_status', Subscription::SUB_STATUS_CANCELLING)
       ->where('subscription_level', '>', 1)
       ->first();
   }
@@ -149,7 +149,7 @@ class User extends UserWithTrait
   public function getPendingOrProcessingSubscription(): Subscription|null
   {
     return $this->subscriptions()
-      ->whereIn('status', ['pending', 'processing'])
+      ->whereIn('status', [Subscription::STATUS_PENDING, Subscription::STATUS_PROCESSING])
       ->where('subscription_level', '>', 1)
       ->first();
   }

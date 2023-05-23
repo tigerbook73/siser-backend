@@ -40,7 +40,7 @@ class SubscriptionCleanDraft extends Command
     $dryRun = $this->option('dry-run');
 
     /** @var Subscription[]|Collection $subscriptions */
-    $subscriptions = Subscription::where('status', 'draft')
+    $subscriptions = Subscription::where('status', Subscription::STATUS_DRAFT)
       ->where('created_at', '<', now()->subMinutes(30))
       ->limit($maxCount + 1)
       ->get();

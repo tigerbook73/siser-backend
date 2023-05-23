@@ -131,7 +131,7 @@ class SubscriptionController extends SimpleController
   {
     $this->validateUser();
 
-    $draftSubscription = $this->user->subscriptions()->where('status', 'draft')->find($id);
+    $draftSubscription = $this->user->subscriptions()->where('status', Subscription::STATUS_DRAFT)->find($id);
     if (!$draftSubscription) {
       return response()->json(['message' => 'Draft subscription not found!'], 404);
     }
@@ -192,7 +192,7 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Subscripiton not found'], 404);
     }
 
-    if ($activeSubscription->sub_status === 'cancelling') {
+    if ($activeSubscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
       return response()->json(['message' => 'Subscripiton is already on cancelling'], 422);
     }
 

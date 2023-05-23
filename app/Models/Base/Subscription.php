@@ -49,6 +49,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $dr_subscription_id
  * @property string|null $stop_reason
  * @property string $sub_status
+ * @property int|null $active_invoice_id
  * 
  * @property Coupon|null $coupon
  * @property Plan $plan
@@ -85,7 +86,8 @@ class Subscription extends Model
     'current_period_end_date' => 'datetime',
     'next_invoice_date' => 'datetime',
     'next_invoice' => 'json',
-    'dr' => 'json'
+    'dr' => 'json',
+    'active_invoice_id' => 'int'
   ];
 
   protected $fillable = [
@@ -115,7 +117,8 @@ class Subscription extends Model
     'dr',
     'dr_subscription_id',
     'stop_reason',
-    'sub_status'
+    'sub_status',
+    'active_invoice_id'
   ];
 
   public function coupon()

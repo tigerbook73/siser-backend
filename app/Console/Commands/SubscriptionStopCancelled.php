@@ -42,8 +42,8 @@ class SubscriptionStopCancelled extends Command
     $dryRun = $this->option('dry-run');
 
     /** @var Subscription[]|Collection $subscriptions */
-    $subscriptions = Subscription::where('status', 'active')
-      ->where('sub_status', 'cancelling')
+    $subscriptions = Subscription::where('status', Subscription::STATUS_ACTIVE)
+      ->where('sub_status', Subscription::SUB_STATUS_CANCELLING)
       ->where('end_date', '<', now())
       ->limit($maxCount + 1)
       ->get();
@@ -65,7 +65,7 @@ class SubscriptionStopCancelled extends Command
       $this->info("  stopping subscription: id=$subscription->id");
       if (!$dryRun) {
         // stop subscription data
-        $subscription->stop('stopped', 'cancelled');
+        $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled');
 
         // activate default subscription
         $subscription->user->updateSubscriptionLevel();

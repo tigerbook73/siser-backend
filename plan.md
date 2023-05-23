@@ -17,7 +17,7 @@ Backend
   + Subscription Reminder
   + Subscription Cancelled
   + Subscription Failed
-  + Subscription Overdue
+  + Subscription Payment Failed
   + Subscription Update (Coupon Expired)
   + Charge Back
 + Schedule Task
@@ -45,7 +45,7 @@ Backend
   + Subscription Reminder
   + Subscription Cancelled
   + Subscription Failed
-  + Subscription Overdue
+  + Subscription Payment Failed
   + Subscription Update (Coupon Expired)
 
 UI:

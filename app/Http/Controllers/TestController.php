@@ -19,7 +19,7 @@ class TestController extends Controller
   public function sendMail(string $type)
   {
     /** @var Subscription|null $subscription */
-    $subscription = Subscription::where('status', 'active')->first();
+    $subscription = Subscription::where('status', Subscription::STATUS_ACTIVE)->first();
     if (!$subscription) {
       return response('No test subscription, please create one active subscription first', 400);
     }
@@ -36,7 +36,7 @@ class TestController extends Controller
 
   public function viewNotification(string $type)
   {
-    $subscription = Subscription::where('status', 'active')->first();
+    $subscription = Subscription::where('status', Subscription::STATUS_ACTIVE)->first();
     if (!$subscription) {
       return response('No test subscription, please create one active subscription first', 400);
     }

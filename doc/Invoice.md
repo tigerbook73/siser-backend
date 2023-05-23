@@ -24,11 +24,11 @@ stateDiagram-v2
 
   Open
   Open          --> Failed          : subscription.failed
-  Open          --> Overdue         : subscription.payment_failed
+  Open          --> Pending         : subscription.payment_failed
   Open          --> Completing      : subscription.extended
 
-  Overdue       --> Failed          : subscription.failed
-  Overdue       --> Completing      : subscription.extended
+  Pending       --> Failed          : subscription.failed
+  Pending       --> Completing      : subscription.extended
   
   Completing
   Completing    --> Completed       : order.invoice.created

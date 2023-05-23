@@ -20,20 +20,6 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-use Illuminate\Support\Facades\Mail;
-use App\Models\Subscription;
-use App\Models\Invoice;
-use App\Mail\OrderAccepted;
-use App\Mail\OrderConfirmed;
-use App\Mail\InvoicePDF;
-use App\Mail\SubscriptionCancel;
-use App\Mail\SubscriptionReminder;
-use App\Mail\SubscriptionUpdate;
-use App\Mail\SubscriptionOverdue;
-use App\Mail\SubscriptionFailed;
-use App\Mail\SubscriptionExtended;
-use App\Mail\SubscriptionTerminated;
-
 
 /*
 |--------------------------------------------------------------------------
