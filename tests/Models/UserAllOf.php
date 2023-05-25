@@ -33,7 +33,7 @@ class UserAllOf {
     /** @var int $license_count */
     public $license_count = 0;
 
-    /** @var bool $black_listed */
-    public $black_listed = false;
+    /** @var bool $blacklisted */
+    public $blacklisted = false;
 
 }
