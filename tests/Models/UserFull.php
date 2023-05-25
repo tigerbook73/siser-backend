@@ -45,6 +45,9 @@ class UserFull {
     /** @var int $license_count */
     public $license_count = 0;
 
+    /** @var bool $black_listed */
+    public $black_listed = false;
+
     /** @var \Tests\Models\Machine[] $machines */
     public $machines = [];
 
