@@ -785,17 +785,26 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     $subscription = $this->validateOrder($order, [], __FUNCTION__: __FUNCTION__);
 
+    $section = CriticalSection::open($subscription, __FUNCTION__);
+
     if (
       $subscription->status == Subscription::STATUS_ACTIVE &&
       $subscription->sub_status != Subscription::SUB_STATUS_CANCELLING
     ) {
+      $section->step('stop active subscription');
+
       $this->cancelSubscription($subscription);
       DrLog::warning(__FUNCTION__, 'subscription cancelled', $subscription);
     }
 
-    // TODO: add user to black lists
+    $section->step('blacklist user');
 
-    CriticalSection::single($subscription, __FUNCTION__, 'chargeback, cancel subscription');
+    $user = $subscription->user;
+    $user->blacklisted = true;
+    $user->save();
+    DrLog::warning(__FUNCTION__, 'user blacklisted', $subscription);
+
+    $section->close();
 
     return $subscription;
   }

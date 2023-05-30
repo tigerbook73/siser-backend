@@ -204,8 +204,8 @@ if (!$role || $role == 'admin') {
     Route::get('/users/{id}', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'create'])->middleware('access:user.create');
     Route::post('/users/{id}', [UserController::class, 'refresh'])->middleware('access:user.refresh');
+    Route::post('/users/{id}/blacklist', [UserController::class, 'blacklist'])->middleware('access:user.blacklist');
 
-    Route::get('/users/{id}/full', [UserController::class, 'full'])->middleware('access:user.get');
     Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
   });
 }

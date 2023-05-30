@@ -67,6 +67,13 @@ class DrSubscriptionActiveInvoiceCompletingTest extends DrApiTestCase
     return $this->onSubscriptionFailed($subscription);
   }
 
+  public function test_active_invoice_completing_chargeback()
+  {
+    $subscription = $this->init_active_invoice_completing();
+
+    return $this->onOrderChargeback($subscription);
+  }
+
   public function test_active_invoice_completing_to_active_invoice_pending_error_same_invoice_id()
   {
     // preparing 1: to completing status

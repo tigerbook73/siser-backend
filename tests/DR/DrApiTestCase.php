@@ -704,6 +704,12 @@ class DrApiTestCase extends ApiTestCase
       $subscription,
       fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CONFIRMED
     );
+    if ($previousSubscription) {
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+      );
+    }
 
     return $subscription;
   }
@@ -976,6 +982,54 @@ class DrApiTestCase extends ApiTestCase
       $subscription,
       fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_FAILED
     );
+
+    return $subscription;
+  }
+
+  public function onOrderChargeback(Subscription|int $subscription): Subscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $previousStatus = $subscription->status;
+    $previousSubStatus = $subscription->sub_status;
+
+    // prepare
+    $this->assertNotNull($subscription);
+
+    // mock up
+    if (
+      $subscription->status == Subscription::STATUS_ACTIVE &&
+      $subscription->sub_status != Subscription::SUB_STATUS_CANCELLING
+    ) {
+      $this->mockCancelSubscription($subscription);
+    }
+    Notification::fake();
+
+    // call api
+    $response = $this->sendOrderChargeback($this->drHelper->createOrder(
+      $subscription,
+      null,
+      DrOrder::STATE_COMPLETE
+    ));
+
+    // refresh data
+    $subscription->refresh();
+    $this->user->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertTrue($this->user->blacklisted);
+    $this->assertTrue(
+      $subscription->status == Subscription::STATUS_ACTIVE && $subscription->sub_status == Subscription::SUB_STATUS_CANCELLING ||
+        $subscription->status != Subscription::STATUS_ACTIVE
+    );
+
+    if ($previousStatus == Subscription::STATUS_ACTIVE && $previousSubStatus != Subscription::SUB_STATUS_CANCELLING) {
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+      );
+    }
 
     return $subscription;
   }

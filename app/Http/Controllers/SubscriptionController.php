@@ -75,6 +75,10 @@ class SubscriptionController extends SimpleController
     $this->validateUser();
     $inputs = $this->validateCreate($request);
 
+    if ($this->user->blacklisted) {
+      return response()->json(['message' => 'User are blocked, please contact our support team.'], 400);
+    }
+
     /** @var Plan $plan */
     $plan = Plan::find($inputs['plan_id']);
     if ($plan->status !== 'active') {
@@ -151,6 +155,10 @@ class SubscriptionController extends SimpleController
     $inputs = $request->validate([
       'terms' => ['filled', 'string'],
     ]);
+
+    if ($this->user->blacklisted) {
+      return response()->json(['message' => 'User are blocked, please contact our support team.'], 400);
+    }
 
     $draftSubscription = $this->user->getDraftSubscriptionById($id);
     if (!$draftSubscription) {

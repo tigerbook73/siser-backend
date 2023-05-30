@@ -38,6 +38,30 @@ class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
     return $response;
   }
 
+  public function testAccountSubscriptionPayBlocked()
+  {
+    $this->createOrUpdateBillingInfo();
+    $this->createOrUpdatePaymentMethod();
+
+    $plan = Plan::public()->first();
+    $createResponse = $this->createSubscription([
+      "plan_id"   => $plan->id
+    ]);
+
+    // mock up
+    $this->user->blacklisted = true;
+    $this->user->save();
+
+    $subscription = Subscription::find($createResponse->json()['id']);
+    $response = $this->postJson(
+      $this->baseUrl . '/' . $subscription->id . '/pay',
+      ['terms' => 'This is test terms ...']
+    );
+    $response->assertStatus(400);
+
+    return $response;
+  }
+
   public function testMore()
   {
     $this->markTestIncomplete('more test cases to come');

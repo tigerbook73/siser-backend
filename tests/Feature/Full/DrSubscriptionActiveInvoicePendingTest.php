@@ -39,6 +39,20 @@ class DrSubscriptionActiveInvoicePendingTest extends DrApiTestCase
     return $this->onSubscriptionPaymentFailed($subscription);
   }
 
+  public function test_active_invoice_pending_to_cancelling()
+  {
+    $subscription = $this->init_active_invoice_pending();
+
+    return $this->cancelSubscription($subscription);
+  }
+
+  public function test_active_invoice_pending_chargeback()
+  {
+    $subscription = $this->init_active_invoice_pending();
+
+    return $this->onOrderChargeback($subscription);
+  }
+
   public function test_active_invoice_pending_to_failed()
   {
     $subscription = $this->init_active_invoice_pending();

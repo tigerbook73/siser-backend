@@ -40,6 +40,27 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
     return $response;
   }
 
+  public function testAccountSubscriptionCreateBlocked()
+  {
+    $this->createOrUpdateBillingInfo();
+
+    $plan = Plan::public()->first();
+    $coupon = Coupon::public()->first();
+
+    // mock up
+    $this->user->blacklisted = true;
+    $this->user->save();
+
+    $response = $this->postJson('/api/v1/account/subscriptions', [
+      "plan_id"     => $plan->id,
+      "coupon_id"   => $coupon->id
+    ]);
+
+    $response->assertStatus(400);
+
+    return $response;
+  }
+
   public function testMore()
   {
     $this->markTestIncomplete('more test cases to come');

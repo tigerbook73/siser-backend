@@ -58,30 +58,17 @@ class UserController extends SimpleController
     return response()->json($user->toResource('admin'));
   }
 
-  protected function full(int $id)
+  public function blacklist(Request $request, $id)
   {
-    $this->validateUser();
-
     /** @var User $user */
-    $user = $this->baseQuery()->findOrFail($id);
-    $subscriptions = $user->subscriptions()
-      ->whereIn('status', ['active'])
-      ->with('plan')->get();
-    $machines = $user->machines;
+    $user = User::findOrFail($id);
 
-    $result = $this->transformSingleResource($user);
-    $result['subscriptions'] = array_map(function ($subscription) {
-      return $subscription->toResource($this->userType);
-    }, $subscriptions->all());
-    $result['machines'] = array_map(function ($machine) {
-      return $machine->toResource($this->userType);
-    }, $machines->all());
+    $inputs = $request->validate([
+      'blacklisted'     => ['required', 'boolean'],
+    ]);
 
-    return  response()->json($result);
-  }
-
-  protected function fullByAccount()
-  {
-    return $this->full(auth('api')->user()->id);
+    $user->blacklisted = $inputs['blacklisted'];
+    $user->save();
+    return response()->json($user->toResource('admin'));
   }
 }

@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array|null $dr
+ * @property bool $blacklisted
  * 
  * @property BillingInfo $billing_info
  * @property Collection|Invoice[] $invoices
@@ -60,7 +61,8 @@ class User extends \Illuminate\Foundation\Auth\User
     'subscription_level' => 'int',
     'license_count' => 'int',
     'roles' => 'json',
-    'dr' => 'json'
+    'dr' => 'json',
+    'blacklisted' => 'bool'
   ];
 
   protected $fillable = [
@@ -77,7 +79,8 @@ class User extends \Illuminate\Foundation\Auth\User
     'subscription_level',
     'license_count',
     'roles',
-    'dr'
+    'dr',
+    'blacklisted'
   ];
 
   public function billing_info()
