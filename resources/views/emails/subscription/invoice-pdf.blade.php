@@ -1,10 +1,29 @@
 <x-emails.subscription.layout :$subscription>
-  Please find here is the download link for your <a href="{{ $invoice->pdf_file }}" target="_blank">invoice pdf</a>.<br />
+  Please find here the download link for your
+  <a href="{{ $invoice->pdf_file }}" target="_blank">invoice pdf</a> for your subscription
+  <b>{{$subscription->plan_info['name']}}</b
+  >.<br />
   <br />
-  Below is a table that briefs the subscription you are currently subscribing:
-
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  Here is a brief summary of your invoice:<br />
   <br />
-
-  If you have any questions or concerns about this order, feel free to reach out to our Customer Service anytime 9AM-5PM, Monday-Friday.
+  <x-emails.subscription.table
+    :$subscription
+    :$invoice
+    :fields="[
+    'name',
+    'period_start_date',
+    'period_end_date',
+    'currency',
+    'price',
+    'total_discount',
+    'subtotal',
+    'total_tax', 
+    'total_amount',
+  ]"
+  >
+  </x-emails.subscription.table>
+  <br />
+  You can check your subscription's details on our
+  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  <br />
 </x-emails.subscription.layout>

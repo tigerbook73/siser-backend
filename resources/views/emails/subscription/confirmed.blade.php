@@ -1,12 +1,27 @@
 <x-emails.subscription.layout :$subscription>
-  Thank you for making a decision to purchase a subscription from us!<br />
+  This is to inform you that your order for the subscription <b>{{$subscription->plan_info['name']}}</b> has been
+  confirmed!<br />
   <br />
-  Below is a table that briefs the subscription you have paid:<br />
-
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  Here is a brief summary of your subscription:<br />
   <br />
-
-  We would like to let you know that the status of your order is now confirmed.<br />
+  <x-emails.subscription.table
+    :$subscription
+    :$invoice
+    :fields="[
+      'order_id',
+      'name',
+      'start_date',
+      'currency',
+      'price',
+      'total_discount',
+      'subtotal',
+      'total_tax', 
+      'total_amount',
+    ]"
+  >
+  </x-emails.subscription.table>
   <br />
-  If you have any questions or concerns about this order, feel free to reach out to our Customer Service anytime 9AM-5PM, Monday-Friday.<br />
+  You can check your subscription's details on our
+  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  <br />
 </x-emails.subscription.layout>

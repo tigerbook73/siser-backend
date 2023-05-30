@@ -1,11 +1,21 @@
 <x-emails.subscription.layout :$subscription>
-  We are sorry to inform you that your purchase of the subscription <strong>{{ $subscription->plan_info["name"] }}</strong> is failed.<br />
+  This is to inform you that your purchase of the subscription
+  <b>{{ $subscription->plan_info["name"] }}</b> was cancelled. Please check your payment method and retry.<br />
   <br />
-  Please check your payment method and retry.<br />
-  <br>
-  Below is a table that briefs the subscription you tried to pay:<br />
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  Here is a brief summary of the subscription you are trying to purchase:<br />
   <br />
-
-  If you have any questions or concerns about this order, feel free to reach out to our Customer Service anytime 9AM-5PM, Monday-Friday.<br />
+  <x-emails.subscription.table
+    :$subscription
+    :$invoice
+    :fields="[
+      'name',
+      'currency',
+      'price',
+      'total_discount',
+      'subtotal',
+      'total_tax', 
+      'total_amount'
+    ]"
+  ></x-emails.subscription.table>
+  <br />
 </x-emails.subscription.layout>

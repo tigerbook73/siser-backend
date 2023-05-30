@@ -19,9 +19,16 @@
       .subscription-table,
       .subscription-table th,
       .subscription-table td {
-        padding: 0px 5px 0px 5px;
-        border: 1px solid black;
+        padding: 2px 5px 2px 5px;
+        border-top: 1px solid gray;
+        border-bottom: 1px solid gray;
         border-collapse: collapse;
+      }
+
+      .subscription-table {
+        min-width: 600px;
+        border-top: 2px solid black;
+        border-bottom: 2px solid black;
       }
 
       .subscription-table th {

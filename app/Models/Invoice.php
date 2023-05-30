@@ -7,11 +7,11 @@ use App\Models\Base\Invoice as BaseInvoice;
 class Invoice extends BaseInvoice
 {
   // status -- see invoice.md
-  public const STATUS_COMPLETED     = 'completed';
-  public const STATUS_COMPLETING    = 'completing';
-  public const STATUS_FAILED        = 'failed';
   public const STATUS_OPEN          = 'open';
   public const STATUS_PENDING       = 'pending';
+  public const STATUS_COMPLETING    = 'completing';
+  public const STATUS_COMPLETED     = 'completed';
+  public const STATUS_FAILED        = 'failed';
   public const STATUS_VOID          = 'void';
 
   // dr attributes

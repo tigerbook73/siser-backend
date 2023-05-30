@@ -1,12 +1,36 @@
 <x-emails.subscription.layout :$subscription>
-  This is a notification that your registered credit card with us for your monthly subscription remains decline for our
-  multiple debit attempts.<br />
+  We were unable to charge your
+  {!!
+    $subscription->user->payment_method->type == 'creditCard' ?
+      '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' :
+      '<b>' . ucfirst($subscription->user->payment_method->type) . '</b>'
+  !!}
+  for your subscription <b>{{$subscription->plan_info['name']}}</b
+  >.<br />
   <br />
-  Below is a table that briefs the subscription you are currently subscribing:<br />
-
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  To avoid disruptions to your subscription, please make sure
+  <a href="https://software.siser.com/account/payment-method">your registered payment method</a> has enough funds. <br />
   <br />
-  Please change or fill up your registered credit card with enough fund as soon as possible.<br />
+  Here is a brief summary of your subscription:<br />
   <br />
-  This will impact your current subscription to be canceled if our final notice being ignored.<br />
+  <x-emails.subscription.table
+    :$subscription
+    :$invoice
+    :fields="[
+    'name',
+    'period_start_date',
+    'period_end_date',
+    'currency',
+    'price',
+    'total_discount',
+    'subtotal',
+    'total_tax', 
+    'total_amount',
+  ]"
+  >
+  </x-emails.subscription.table>
+  <br />
+  You can check your subscription's details on our
+  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  <br />
 </x-emails.subscription.layout>

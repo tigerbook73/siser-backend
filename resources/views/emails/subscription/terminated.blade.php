@@ -1,11 +1,9 @@
 <x-emails.subscription.layout :$subscription>
-  Thank you for being a part of the {{ $subscription->plan_info["name"] }}.<br>
-  <br>
-  We want to let you know that your current subscription has been successfully terminated.<br>
-  <br>
-  Below is a table that briefs the subscription:<br />
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  This is to inform you that your subscription <b>{{ $subscription->plan_info["name"] }}</b> was terminated on
+  <b>{{$subscription->current_period_end_date->setTimezone('Australia/Melbourne')->toRfc850String()}}</b
+  >.<br />
   <br />
-
-  If this is caused by a fault please do not hesitate to contact us as soon as possible to have this rectifed.
+  You can check your subscription's details on our
+  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  <br />
 </x-emails.subscription.layout>

@@ -1,10 +1,27 @@
 <x-emails.subscription.layout :$subscription>
-  Thank you for your recent monthly payment for continuing a subscription.<br />
+  This is to confirm that your subscription <b>{{$subscription->plan_info['name']}}</b> has been successfully
+  renewed!<br />
   <br />
-  Below is a table that briefs the subscription you have paid:<br />
-
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  Here is a brief summary of your subscription:<br />
   <br />
-
-  As the payment was successful your current subscription has been extended for another month.
+  <x-emails.subscription.table
+    :$subscription
+    :$invoice
+    :fields="[
+      'name',
+      'period_start_date',
+      'period_end_date',
+      'currency',
+      'price',
+      'total_discount',
+      'subtotal',
+      'total_tax', 
+      'total_amount',
+    ]"
+  >
+  </x-emails.subscription.table>
+  <br />
+  You can check your subscription's details on our
+  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  <br />
 </x-emails.subscription.layout>

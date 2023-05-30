@@ -1,12 +1,27 @@
 <x-emails.subscription.layout :$subscription>
-  This is a notification that the automatic debit to your registered credit card for your monthly subscription did not go through successfully.<br />
+  This is to inform you that the renewal of your subscription <b>{{$subscription->plan_info['name']}}</b> failed, and
+  your subscription is terminated.<br />
   <br />
-  Below is a table that briefs the subscription you are currently subscribing:<br />
-
-  <x-emails.subscription.table :$subscription></x-emails.subscription.table>
+  Here is a brief summary of your subscription:<br />
   <br />
-
-  We will make another attempt to debit your credit card again prior to that you have the time to change or fill up fund for your credit card.<br />
+  <x-emails.subscription.table
+    :$subscription
+    :$invoice
+    :fields="[
+    'order_id',
+    'name',
+    'end_date',
+    'currency',
+    'price',
+    'total_discount',
+    'subtotal',
+    'total_tax', 
+    'total_amount',
+  ]"
+  >
+  </x-emails.subscription.table>
   <br />
-  If you have any questions or concerns about this order, feel free to reach out to our Customer Service anytime 9AM-5PM, Monday-Friday.
+  You can check your subscription's details on our
+  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  <br />
 </x-emails.subscription.layout>
