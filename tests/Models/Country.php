@@ -24,4 +24,7 @@ class Country {
     /** @var bool $explicit_processing_fee */
     public $explicit_processing_fee = false;
 
+    /** @var string $timezone */
+    public $timezone = "";
+
 }
