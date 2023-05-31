@@ -38,7 +38,9 @@ class TestController extends Controller
 
   public function viewNotification(string $type)
   {
-    $subscription = Subscription::where('status', Subscription::STATUS_ACTIVE)->first();
+    $subscription = Subscription::where('email', 'user1.test@iifuture.com')
+      ->where('status', Subscription::STATUS_ACTIVE)
+      ->first();
     if (!$subscription) {
       return response('No test subscription, please create one active subscription first', 400);
     }
