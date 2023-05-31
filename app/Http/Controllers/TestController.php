@@ -19,7 +19,8 @@ class TestController extends Controller
   public function sendMail(string $type)
   {
     /** @var Subscription|null $subscription */
-    $subscription = Subscription::where('email', 'user1.test@iifuture.com')
+    $subscription = User::where('email', 'user1.test@iifuture.com')->first()
+      ->subscriptions()
       ->where('status', Subscription::STATUS_ACTIVE)
       ->first();
     if (!$subscription) {
@@ -38,7 +39,9 @@ class TestController extends Controller
 
   public function viewNotification(string $type)
   {
-    $subscription = Subscription::where('email', 'user1.test@iifuture.com')
+    /** @var Subscription|null $subscription */
+    $subscription = User::where('email', 'user1.test@iifuture.com')->first()
+      ->subscriptions()
       ->where('status', Subscription::STATUS_ACTIVE)
       ->first();
     if (!$subscription) {
