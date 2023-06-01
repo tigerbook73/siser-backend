@@ -1,9 +1,8 @@
 <x-emails.subscription.layout :$subscription>
   This is to inform you that we've received your cancelling request for the subscription
-  <b>{{ $subscription->plan_info["name"] }}</b> on
-  <b>{{ now()->setTimezone('Australia/Melbourne')->toRfc850String() }}</b
+  <b>{{ $subscription->plan_info["name"] }}</b> on <b>{{ now()->setTimezone($timezone)->isoFormat('lll z') }}</b
   >. And your subscription will be terminated on
-  <b>{{$subscription->current_period_end_date->setTimezone('Australia/Melbourne')->toRfc850String()}}</b
+  <b>{{ $subscription->current_period_end_date->setTimezone($timezone)->isoFormat('lll z') }}</b
   >.<br />
   <br />
   Here is a brief summary of your subscription:<br />
@@ -21,6 +20,7 @@
       'total_amount',
       'end_date',
     ]"
+    :$timezone
   ></x-emails.subscription.table>
   <br />
   You can check your subscription's details on our

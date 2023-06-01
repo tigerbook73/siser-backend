@@ -1,4 +1,4 @@
-@props(['subscription', 'invoice' => null, 'fields'])
+@props(['subscription', 'invoice' => null, 'fields', 'timezone'])
 
 <div>
   <table class="subscription-table">
@@ -94,35 +94,35 @@
     @if (in_array('start_date', $fields))
     <tr>
       <td>Start Date</td>
-      <td>{{ $subscription->start_date ? $subscription->start_date->setTimezone('Australia/Melbourne')->toRfc850String() : '' }}</td>
+      <td>{{ $subscription->start_date ? $subscription->start_date->setTimezone($timezone)->isoFormat('lll z') : '' }}</td>
     </tr>
     @endif
 
     @if (in_array('end_date', $fields))
     <tr>
       <td>End Date</td>
-      <td>{{ $subscription->end_date ? $subscription->end_date->setTimezone('Australia/Melbourne')->toRfc850String() : '' }}</td>
+      <td>{{ $subscription->end_date ? $subscription->end_date->setTimezone($timezone)->isoFormat('lll z') : '' }}</td>
     </tr>
     @endif
 
     @if (in_array('period_start_date', $fields))
     <tr>
       <td>Period Start Date</td>
-      <td>{{ ($invoice?->period_start_date ?? $subscription->current_period_start_date)->setTimezone('Australia/Melbourne')->toRfc850String() }}</td>
+      <td>{{ ($invoice?->period_start_date ?? $subscription->current_period_start_date)->setTimezone($timezone)->isoFormat('lll z') }}</td>
     </tr>
     @endif
 
     @if (in_array('period_end_date', $fields))
     <tr>
       <td>Period End Date</td>
-      <td>{{ ($invoice?->period_end_date ?? $subscription->current_period_end_date)->setTimezone('Australia/Melbourne')->toRfc850String() }}</td>
+      <td>{{ ($invoice?->period_end_date ?? $subscription->current_period_end_date)->setTimezone($timezone)->isoFormat('lll z') }}</td>
     </tr>
     @endif
 
     @if (in_array('terminate_date', $fields))
     <tr>
       <td>To be terminated at</td>
-      <td>{{ $subscription->current_period_end_date->setTimezone('Australia/Melbourne')->toRfc850String() }}</td>
+      <td>{{ $subscription->current_period_end_date->setTimezone($timezone)->isoFormat('lll z') }}</td>
     </tr>
     @endif
 
@@ -136,7 +136,7 @@
     @if (in_array('next_invoice_date', $fields))
     <tr>
       <td>Next invoice date</td>
-      <td>{{ $subscription->next_invoice_date->setTimezone('Australia/Melbourne')->toRfc850String() }}</td>
+      <td>{{ $subscription->next_invoice_date->setTimezone($timezone)->isoFormat('lll z') }}</td>
     </tr>
     @endif
   </table>

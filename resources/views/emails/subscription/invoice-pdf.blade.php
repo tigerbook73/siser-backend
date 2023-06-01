@@ -1,7 +1,7 @@
 <x-emails.subscription.layout :$subscription>
   Please find here the download link for your
   <a href="{{ $invoice->pdf_file }}" target="_blank">invoice pdf</a> for your subscription
-  <b>{{$subscription->plan_info['name']}}</b
+  <b>{{ $subscription->plan_info['name'] }}</b
   >.<br />
   <br />
   Here is a brief summary of your invoice:<br />
@@ -19,7 +19,8 @@
     'subtotal',
     'total_tax', 
     'total_amount',
-  ]"
+    ]"
+    :$timezone
   >
   </x-emails.subscription.table>
   <br />

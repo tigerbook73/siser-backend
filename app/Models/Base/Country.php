@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $explicit_processing_fee
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string $timezone
  *
  * @package App\Models\Base
  */
@@ -41,6 +42,7 @@ class Country extends Model
     'name',
     'currency',
     'processing_fee_rate',
-    'explicit_processing_fee'
+    'explicit_processing_fee',
+    'timezone'
   ];
 }

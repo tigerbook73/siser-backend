@@ -1,5 +1,5 @@
 <x-emails.subscription.layout :$subscription>
-  This is to inform you that the renewal of your subscription <b>{{$subscription->plan_info['name']}}</b> failed, and
+  This is to inform you that the renewal of your subscription <b>{{ $subscription->plan_info['name'] }}</b> failed, and
   your subscription is terminated.<br />
   <br />
   Here is a brief summary of your subscription:<br />
@@ -17,7 +17,8 @@
     'subtotal',
     'total_tax', 
     'total_amount',
-  ]"
+    ]"
+    :$timezone
   >
   </x-emails.subscription.table>
   <br />

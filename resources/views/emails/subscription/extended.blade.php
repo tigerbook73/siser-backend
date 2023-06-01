@@ -1,5 +1,5 @@
 <x-emails.subscription.layout :$subscription>
-  This is to confirm that your subscription <b>{{$subscription->plan_info['name']}}</b> has been successfully
+  This is to confirm that your subscription <b>{{ $subscription->plan_info['name'] }}</b> has been successfully
   renewed!<br />
   <br />
   Here is a brief summary of your subscription:<br />
@@ -18,6 +18,7 @@
       'total_tax', 
       'total_amount',
     ]"
+    :$timezone
   >
   </x-emails.subscription.table>
   <br />

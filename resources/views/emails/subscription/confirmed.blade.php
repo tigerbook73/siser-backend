@@ -1,5 +1,5 @@
 <x-emails.subscription.layout :$subscription>
-  This is to inform you that your order for the subscription <b>{{$subscription->plan_info['name']}}</b> has been
+  This is to inform you that your order for the subscription <b>{{ $subscription->plan_info['name'] }}</b> has been
   confirmed!<br />
   <br />
   Here is a brief summary of your subscription:<br />
@@ -18,6 +18,7 @@
       'total_tax', 
       'total_amount',
     ]"
+    :$timezone
   >
   </x-emails.subscription.table>
   <br />

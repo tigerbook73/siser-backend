@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Country as BaseCountry;
+use App\Services\TimeZone;
 use Illuminate\Database\Eloquent\Builder;
 
 class Country extends BaseCountry
@@ -13,6 +14,7 @@ class Country extends BaseCountry
     'currency'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'processing_fee_rate'     => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'explicit_processing_fee' => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'timezone'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -25,5 +27,14 @@ class Country extends BaseCountry
   static public function findByCode(string $code): Country|null
   {
     return self::where('code', $code)->first();
+  }
+
+  protected function beforeCreate()
+  {
+    // update timezone
+    if (!$this->timezone) {
+      $this->timezone = TimeZone::default($this->code);
+      $this->save();
+    }
   }
 }

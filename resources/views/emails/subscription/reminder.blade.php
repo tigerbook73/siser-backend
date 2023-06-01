@@ -1,17 +1,15 @@
 <x-emails.subscription.layout :$subscription>
   This is a reminder that your
-  <b>{{$subscription->plan_info['name']}}</b>
+  <b>{{ $subscription->plan_info['name'] }}</b>
   subscription is set to renew on or after
-  <b>{{ $subscription->next_invoice_date->setTimezone('Australia/Melbourne')->toRfc850String() }}</b
+  <b>{{ $subscription->next_invoice_date->setTimezone($timezone)->isoFormat('lll z') }}</b
   >.<br />
   <br />
-  To ensure that your subscription continues without interruption, your
-  {!!
-    $subscription->user->payment_method->type == 'creditCard' ?
-      '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' :
-      '<b>' . ucfirst($subscription->user->payment_method->type) . '</b>'
-  !!}
-  will be charged {{$subscription->total_amount}} {{$subscription->currency}}.<br />
+  To ensure that your subscription continues without interruption, your {!! $subscription->user->payment_method->type ==
+  'creditCard' ? '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in
+  <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' : '<b
+    >' . ucfirst($subscription->user->payment_method->type) . '</b
+  >' !!} will be charged {{ $subscription->total_amount }} {{ $subscription->currency }}.<br />
   <br />
   Here is a brief summary of your subscription:<br />
   <br />
@@ -27,6 +25,7 @@
       'total_tax', 
       'total_amount'
     ]"
+    :$timezone
   ></x-emails.subscription.table>
   <br />
   You can check your subscription's details on our

@@ -1,15 +1,15 @@
 <x-emails.subscription.layout :$subscription>
-  We were unable to charge your
-  {!!
-    $subscription->user->payment_method->type == 'creditCard' ?
-      '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' :
-      '<b>' . ucfirst($subscription->user->payment_method->type) . '</b>'
-  !!}
-  for your subscription <b>{{$subscription->plan_info['name']}}</b
+  We were unable to charge your {!! $subscription->user->payment_method->type == 'creditCard' ? '<b
+    >' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b
+  >
+  card ending in <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' : '<b
+    >' . ucfirst($subscription->user->payment_method->type) . '</b
+  >' !!} for your subscription <b>{{ $subscription->plan_info['name'] }}</b
   >.<br />
   <br />
   To avoid disruptions to your subscription, please make sure
-  <a href="https://software.siser.com/account/payment-method">your registered payment method</a> has enough funds. <br />
+  <a href="https://software.siser.com/account/payment-method">your registered payment method</a> has enough funds.
+  <br />
   <br />
   Here is a brief summary of your subscription:<br />
   <br />
@@ -26,7 +26,8 @@
     'subtotal',
     'total_tax', 
     'total_amount',
-  ]"
+    ]"
+    :$timezone
   >
   </x-emails.subscription.table>
   <br />

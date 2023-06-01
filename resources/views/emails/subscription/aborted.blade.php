@@ -16,6 +16,7 @@
       'total_tax', 
       'total_amount'
     ]"
+    :$timezone
   ></x-emails.subscription.table>
   <br />
 </x-emails.subscription.layout>

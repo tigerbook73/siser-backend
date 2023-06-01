@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\Country;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use Illuminate\Bus\Queueable;
@@ -78,8 +79,9 @@ class SubscriptionNotification extends Notification
       // ->from()
       ->subject($subject)
       ->view("emails.$view", [
-        'subscription' => $this->subscription,
-        'invoice'      => $this->invoice,
+        'subscription'  => $this->subscription,
+        'invoice'       => $this->invoice,
+        'timezone'      => Country::findByCode($this->subscription->billing_info['address']['country'])->timezone,
       ]);
   }
 
