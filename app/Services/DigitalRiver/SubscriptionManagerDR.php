@@ -706,13 +706,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->save();
       DrLog::info($__FUNCTION__, 'subscription updated => invoice-completing', $subscription);
 
-      // create invoice
-      $this->createFirstInvoice($subscription);
-      DrLog::info($__FUNCTION__, 'first invoice created', $subscription);
-
       // update user subscription level
       $user->updateSubscriptionLevel();
       DrLog::info($__FUNCTION__, 'user subscription level updated', $subscription);
+
+      // create invoice
+      $this->createFirstInvoice($subscription);
+      DrLog::info($__FUNCTION__, 'first invoice created', $subscription);
     });
 
     $section->close();
@@ -980,6 +980,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->stop(Subscription::STATUS_FAILED, 'renew failed');
     DrLog::info(__FUNCTION__, 'subscription stoped => failed', $subscription);
 
+    $section->step('update user subscription level');
+
+    // update user subscription level
+    $subscription->user->updateSubscriptionLevel();
+    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+
     $section->step('update active invoice => failed');
 
     // stop invoice
@@ -989,13 +995,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
     }
-
-    $section->step('update user subscription level');
-
-    // update user subscription level
-    $user = $subscription->user;
-    $user->updateSubscriptionLevel();
-    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
 
     $section->close();
 

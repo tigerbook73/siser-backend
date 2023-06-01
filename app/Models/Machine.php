@@ -19,12 +19,12 @@ class Machine extends BaseMachine
 
   protected function afterCreate()
   {
-    $this->attachUser($this->user);
+    $this->user->updateSubscriptionLevel();
   }
 
   protected function afterDelete()
   {
-    $this->detachUser($this->user);
+    $this->user->updateSubscriptionLevel();
   }
 
   public function transfer(int $newUserId)
@@ -34,38 +34,11 @@ class Machine extends BaseMachine
       $this->user_id = $newUserId;
       $this->save();
 
-      $this->detachUser($prevUser);
-      $this->attachUser(User::find($newUserId));
+      $prevUser->updateSubscriptionLevel();
+      $this->unsetRelation('user');
+      $this->user->updateSubscriptionLevel();
     });
 
     return $this;
-  }
-
-  protected function attachUser(User $user)
-  {
-    // create subscription if required and update license count for user
-    if (!$user->getActiveSubscription()) {
-      Subscription::createBasicMachineSubscription($user);
-      $user->subscription_level = 1;
-    }
-    $user->license_count = $user->machines()->count() * GeneralConfiguration::getMachineLicenseUnit();
-    $user->save();
-  }
-
-  protected function detachUser(User $user)
-  {
-    /** @var Subscription|null $subscription */
-    $subscription = $user->getActiveSubscription();
-    if ($subscription) {
-      $user->license_count = $user->machines()->count() * GeneralConfiguration::getMachineLicenseUnit();
-      if ($user->license_count <= 0) {
-        // TODO: more to be considered if PRO plan support (e.g. when to stop)
-        if ($subscription->subscription_level == 1) {
-          $subscription->stop(Subscription::STATUS_STOPPED, 'all machine detached');
-          $user->subscription_level = 0;
-        }
-      }
-      $user->save();
-    }
   }
 }

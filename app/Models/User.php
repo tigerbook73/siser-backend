@@ -158,15 +158,28 @@ class User extends UserWithTrait
   public function updateSubscriptionLevel()
   {
     $subscription = $this->getActiveSubscription();
-    if (!$subscription) {
-      if ($this->machines()->count() > 0) {
-        $subscription = Subscription::createBasicMachineSubscription($this);
-      }
+    $machineCount = $this->machines()->count();
+
+    // create basic subscription if required
+    if (!$subscription && $machineCount > 0) {
+      $subscription = Subscription::createBasicMachineSubscription($this);
     }
 
-    $this->subscription_level = ($subscription) ? $subscription->subscription_level : 0;
-    $this->save();
+    // stop basic subscription is required
+    if ($subscription?->subscription_level == 1 && $machineCount <= 0) {
+      $subscription->stop(Subscription::STATUS_STOPPED, 'all machine detached');
+      $subscription = null;
+    }
 
+    if ($subscription) {
+      $this->subscription_level = $subscription->subscription_level;
+      $this->license_count = ($machineCount ?: 1) * GeneralConfiguration::getMachineLicenseUnit();
+    } else {
+      $this->subscription_level = 0;
+      $this->license_count = 0;
+    }
+
+    $this->save();
     return $this;
   }
 }
