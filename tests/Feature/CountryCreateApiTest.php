@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Services\TimeZone;
+
 class CountryCreateApiTest extends CountryTestCase
 {
   public ?string $role = 'admin';
 
   public function testCountryCreateOk()
   {
-    $this->createAssert();
+    $response = $this->createAssert();
+    $this->assertEquals($response->json('timezone'), TimeZone::default($this->modelCreate['code']));
   }
 
   public function testMore()
