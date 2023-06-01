@@ -8,7 +8,6 @@
     :$subscription
     :$invoice
     :fields="[
-    'order_id',
     'name',
     'end_date',
     'currency',
