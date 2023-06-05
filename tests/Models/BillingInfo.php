@@ -27,7 +27,13 @@ class BillingInfo {
     /** @var \Tests\Models\Address $address */
     public $address;
 
-    /** @var \Tests\Models\BillingInfoTaxId $tax_id */
+    /** @var \Tests\Models\BillingInfoCreateTaxId $tax_id */
     public $tax_id;
+
+    /** @var string $language */
+    public $language = "";
+
+    /** @var string $locale */
+    public $locale = "";
 
 }

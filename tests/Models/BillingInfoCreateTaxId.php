@@ -1,13 +1,13 @@
 <?php
 /**
- * BillingInfoTaxId
+ * BillingInfoCreateTaxId
  */
 namespace Tests\Models;
 
 /**
- * BillingInfoTaxId
+ * BillingInfoCreateTaxId
  */
-class BillingInfoTaxId {
+class BillingInfoCreateTaxId {
 
     /** @var string $type */
     public $type = "";
