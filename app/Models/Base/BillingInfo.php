@@ -26,6 +26,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $tax_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string $language
+ * @property string $locale
  * 
  * @property User $user
  *
@@ -51,7 +53,9 @@ class BillingInfo extends Model
     'organization',
     'email',
     'address',
-    'tax_id'
+    'tax_id',
+    'language',
+    'locale'
   ];
 
   public function user()

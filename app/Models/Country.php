@@ -34,7 +34,6 @@ class Country extends BaseCountry
     // update timezone
     if (!$this->timezone) {
       $this->timezone = TimeZone::default($this->code);
-      $this->save();
     }
   }
 }

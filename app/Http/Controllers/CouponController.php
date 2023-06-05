@@ -11,14 +11,14 @@ class CouponController extends SimpleController
 {
   protected string $modelClass = Coupon::class;
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'code'        => ['filled'],
     ];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [
       'code'                            => ['required', 'string', 'max:255', 'unique:coupons'],
@@ -34,7 +34,7 @@ class CouponController extends SimpleController
     ];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       'code'                            => ['filled', 'string', 'max:255', Rule::unique('coupons')->ignore(request("id"))],
@@ -50,12 +50,12 @@ class CouponController extends SimpleController
     ];
   }
 
-  protected function getUpdateRulesForDraft()
+  protected function getUpdateRulesForDraft(array $inputs = [])
   {
-    return $this->getUpdateRules();
+    return $this->getUpdateRules($inputs);
   }
 
-  protected function getUpdateRulesForActive()
+  protected function getUpdateRulesForActive(array $inputs = [])
   {
     return [
       'description'                     => ['string', 'max:255'],
@@ -101,9 +101,9 @@ class CouponController extends SimpleController
 
     $inputs = $request->all();
     if ($coupon->status === 'draft') {
-      $rules = $this->getUpdateRulesForDraft();
+      $rules = $this->getUpdateRulesForDraft($inputs);
     } else if ($coupon->status === 'active') {
-      $rules = $this->getUpdateRulesForActive();
+      $rules = $this->getUpdateRulesForActive($inputs);
     } else {
       return response()->json(['message' => "Coupon in {$coupon->status} status can not be updated"], 400);
     }

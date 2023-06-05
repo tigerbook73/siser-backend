@@ -222,32 +222,32 @@ class SimpleController extends Controller
     $this->userType = $this->user ? ($this->user->cognito_id ? 'customer' : 'admin') : 'customer';
   }
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [];
   }
 
-  protected function getDeleteRules()
+  protected function getDeleteRules(): array
   {
     return [];
   }
 
-  protected function validateList(Request $request)
+  protected function validateList(Request $request): array
   {
     $inputs = $request->all();
 
     // retrieve rules from extended class
-    $rules = $this->getListRules();
+    $rules = $this->getListRules($inputs);
 
     if ($rules) {
       // append default rules
@@ -259,19 +259,20 @@ class SimpleController extends Controller
     return $this->validateRules($inputs, $rules);
   }
 
-  protected function validateCreate(Request $request)
+  protected function validateCreate(Request $request): array
   {
     $inputs = $request->all();
-    return $this->validateRules($inputs, $this->getCreateRules());
+    return $this->validateRules($inputs, $this->getCreateRules($inputs));
   }
 
-  protected function validateUpdate(Request $request, int $id)
+  protected function validateUpdate(Request $request, int $id): array
   {
     if ($this->modelClass::where($this->keyName, $id)->count() <= 0) {
       abort(404, 'The object to be updated does not exist.');
     }
 
-    $inputs = $this->validateRules($request->all(), $this->getUpdateRules());
+    $inputs = $request->all();
+    $inputs = $this->validateRules($inputs, $this->getUpdateRules($inputs));
     if (empty($inputs)) {
       abort(400, 'input data can not be empty.');
     }
@@ -287,7 +288,7 @@ class SimpleController extends Controller
     return $inputs;
   }
 
-  protected function validateDelete(int $id)
+  protected function validateDelete(int $id): array
   {
     if ($this->modelClass::where($this->keyName, $id)->count() <= 0) {
       abort(404, 'The object to be deleted does not exist.');
@@ -296,7 +297,7 @@ class SimpleController extends Controller
     return $this->validateRules([$this->keyName => $id], $this->getDeleteRules());
   }
 
-  protected function validateRules(array $inputs, array $rules, $ignoreUndefined = false)
+  protected function validateRules(array $inputs, array $rules, $ignoreUndefined = false): array
   {
     if ($rules) {
       if (!$ignoreUndefined) {

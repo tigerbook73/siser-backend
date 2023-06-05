@@ -1,6 +1,6 @@
 <x-emails.subscription.layout :$subscription>
   This is to inform you that your subscription <b>{{ $subscription->plan_info["name"] }}</b> was terminated on
-  <b>{{ $subscription->current_period_end_date->setTimezone($timezone)->isoFormat('lll z') }}</b
+  <b>{{ $subscription->current_period_end_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</b
   >.<br />
   <br />
   You can check your subscription's details on our

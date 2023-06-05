@@ -21,7 +21,7 @@ class SubscriptionController extends SimpleController
     parent::__construct();
   }
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'user_id'     => ['filled'],
@@ -31,7 +31,7 @@ class SubscriptionController extends SimpleController
     ];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [
       'plan_id'     => [

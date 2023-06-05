@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\BillingInfo;
 use App\Models\User;
 use App\Services\DigitalRiver\SubscriptionManager;
+use App\Services\Locale;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class BillingInfoController extends SimpleController
 {
@@ -17,7 +19,7 @@ class BillingInfoController extends SimpleController
     parent::__construct();
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       "first_name"        => ['filled', 'string', 'max:255'],
@@ -35,6 +37,7 @@ class BillingInfoController extends SimpleController
       "tax_id"            => ['nullable', 'array'],
       "tax_id.type"       => ['required_with:tax_id', 'string', 'max:255'],
       "tax_id.value"      => ['required_with:tax_id', 'string', 'max:255'],
+      "language"          => ['filled', Rule::in(Locale::languages($inputs['address']['country'] ?? ''))],
     ];
   }
 
@@ -65,6 +68,10 @@ class BillingInfoController extends SimpleController
           400
         );
       }
+    }
+
+    if (isset($inputs['address']['country']) && !isset($inputs['language'])) {
+      $inputs['language'] = Locale::defaultLanguage($inputs['address']['country']);
     }
 
     $billingInfo->forceFill($inputs);

@@ -11,7 +11,7 @@ class SoftwarePackageController extends SimpleController
   protected string $modelClass = SoftwarePackage::class;
   protected string $orderDirection = 'desc';   // default is 'desc'
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'name'          => ['filled'],
@@ -22,7 +22,7 @@ class SoftwarePackageController extends SimpleController
     ];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [
       'name'                        => ['required', 'max:255'],
@@ -42,7 +42,7 @@ class SoftwarePackageController extends SimpleController
     ];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       'name'                        => ['filled', 'string', 'max:255'],

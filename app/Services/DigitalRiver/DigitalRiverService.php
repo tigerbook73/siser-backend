@@ -419,7 +419,7 @@ class DigitalRiverService
     $checkoutRequest = new DrCheckoutRequest();
     $checkoutRequest->setCustomerId((string)$subscription->user->dr['customer_id']);
     $checkoutRequest->setEmail($subscription->billing_info['email']);
-    // $checkoutRequest->setLocale('string'); // TODO:
+    $checkoutRequest->setLocale($subscription->billing_info['locale']);
     $checkoutRequest->setBrowserIp(request()->ip());
     // $checkoutRequest->setTaxIdentifiers('DrCheckoutTaxIdentifierRequest[]');
     $checkoutRequest->setBillTo($this->fillBilling($subscription->billing_info));

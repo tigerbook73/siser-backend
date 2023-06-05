@@ -12,7 +12,7 @@ class AdminUserController extends SimpleController
 {
   protected string $modelClass = AdminUser::class;
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'name'                => ['filled'],
@@ -21,7 +21,7 @@ class AdminUserController extends SimpleController
     ];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [
       'name'      => ['required', 'string', 'max:255', 'unique:' . AdminUser::class],
@@ -33,7 +33,7 @@ class AdminUserController extends SimpleController
     ];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       'full_name' => ['filled', 'string', 'max:255'],
@@ -43,7 +43,7 @@ class AdminUserController extends SimpleController
     ];
   }
 
-  protected function getDeleteRules()
+  protected function getDeleteRules(): array
   {
     return [];
   }

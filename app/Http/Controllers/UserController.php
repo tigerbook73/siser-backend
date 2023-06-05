@@ -10,7 +10,7 @@ class UserController extends SimpleController
 {
   protected string $modelClass = User::class;
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'name'                => ['filled'],

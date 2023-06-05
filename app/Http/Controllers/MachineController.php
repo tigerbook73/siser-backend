@@ -11,7 +11,7 @@ class MachineController extends SimpleController
 {
   protected string $modelClass = Machine::class;
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'serial_no' => ['filled'],
@@ -19,7 +19,7 @@ class MachineController extends SimpleController
     ];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       "model"     => ['filled', 'string', 'max:255'],

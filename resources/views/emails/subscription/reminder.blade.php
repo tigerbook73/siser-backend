@@ -2,7 +2,7 @@
   This is a reminder that your
   <b>{{ $subscription->plan_info['name'] }}</b>
   subscription is set to renew on or after
-  <b>{{ $subscription->next_invoice_date->setTimezone($timezone)->isoFormat('lll z') }}</b
+  <b>{{ $subscription->next_invoice_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</b
   >.<br />
   <br />
   To ensure that your subscription continues without interruption, your {!! $subscription->user->payment_method->type ==

@@ -11,7 +11,7 @@ class PlanController extends SimpleController
 {
   protected string $modelClass = Plan::class;
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'name'        => ['filled'],
@@ -20,7 +20,7 @@ class PlanController extends SimpleController
     ];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [
       'name'                  => ['required', 'string', 'max:255', 'unique:plans'],
@@ -35,7 +35,7 @@ class PlanController extends SimpleController
     ];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       'name'                  => ['filled', 'string', 'max:255', Rule::unique('plans')->ignore(request("id"))],
@@ -50,14 +50,14 @@ class PlanController extends SimpleController
     ];
   }
 
-  protected function getUpdateRulesForDraft()
+  protected function getUpdateRulesForDraft(array $inputs = [])
   {
-    return $this->getUpdateRules();
+    return $this->getUpdateRules($inputs);
   }
 
-  protected function getUpdateRulesForActive()
+  protected function getUpdateRulesForActive(array $inputs = [])
   {
-    $rules = $this->getUpdateRules();
+    $rules = $this->getUpdateRules($inputs);
     unset($rules['name']);
     unset($rules['catagory']);
     unset($rules['subscription_level']);
@@ -174,9 +174,9 @@ class PlanController extends SimpleController
 
     $inputs = $request->all();
     if ($plan->status === 'draft') {
-      $rules = $this->getUpdateRulesForDraft();
+      $rules = $this->getUpdateRulesForDraft($inputs);
     } else if ($plan->status === 'active') {
-      $rules = $this->getUpdateRulesForActive();
+      $rules = $this->getUpdateRulesForActive($inputs);
     } else {
       return response()->json(['message' => "Design plan in {$plan->status} status can not be updated"], 400);
     }

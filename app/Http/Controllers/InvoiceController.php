@@ -9,7 +9,7 @@ class InvoiceController extends SimpleController
 {
   protected string $modelClass = Invoice::class;
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'id'              => ['filled'],

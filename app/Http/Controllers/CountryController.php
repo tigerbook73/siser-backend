@@ -12,7 +12,7 @@ class CountryController extends SimpleController
   protected string $modelClass = Country::class;
 
 
-  protected function getListRules()
+  protected function getListRules(array $inputs = []): array
   {
     return [
       'code'      => ['filled'],
@@ -21,7 +21,7 @@ class CountryController extends SimpleController
     ];
   }
 
-  protected function getCreateRules()
+  protected function getCreateRules(array $inputs = []): array
   {
     return [
       'code'                    => ['required', 'string', 'size:2', 'unique:countries'],
@@ -32,7 +32,7 @@ class CountryController extends SimpleController
     ];
   }
 
-  protected function getUpdateRules()
+  protected function getUpdateRules(array $inputs = []): array
   {
     return [
       'name'                    => ['filled', 'string', 'max:255'],
