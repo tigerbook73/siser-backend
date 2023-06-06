@@ -6,7 +6,7 @@ class AccountBillingInfoSetApiTest extends AccountBillingInfoTestCase
 {
   public ?string $role = 'customer';
 
-  public function testAccountBillingInfoSetOk()
+  public function testSetOk()
   {
     // update
     $response = $this->createOrUpdateBillingInfo($this->modelUpdate);
@@ -22,6 +22,17 @@ class AccountBillingInfoSetApiTest extends AccountBillingInfoTestCase
       ->assertJson($this->modelUpdate);
 
     return $response;
+  }
+
+
+  public function testSetNokWithWrongLanguage()
+  {
+    // update
+    $this->modelUpdate['language'] = 'fr';
+    $response = $this->postJson('/api/v1/account/billing-info', $this->modelUpdate);
+    $this->assertTrue($response->isClientError());
+
+    $this->markTestIncomplete('more test cases to come');
   }
 
   public function testMore()

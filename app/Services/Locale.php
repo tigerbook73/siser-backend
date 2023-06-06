@@ -108,7 +108,7 @@ class Locale
 
   static public function languages(string $country): array
   {
-    return self::$countryLanguages[$country]['all'] ?? [];
+    return self::$countryLanguages[$country]['all'] ?? ['en'];
   }
 
   static public function defaultLanguage(string $country): string

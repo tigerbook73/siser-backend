@@ -36,7 +36,8 @@ class AccountBillingInfoTestCase extends DrApiTestCase
       'tax_id' => [
         'type'        => 'type',
         'value'       => 'value',
-      ]
+      ],
+      'language'      => 'en',
     ];
   }
 }
