@@ -60,6 +60,7 @@ class Subscription extends BaseSubscription
     'dr'                        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'stop_reason'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status'                    => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'status_transitions'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'sub_status'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'created_at'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
@@ -72,35 +73,52 @@ class Subscription extends BaseSubscription
     /** @var Plan $plan */
     $plan = Plan::find(config('siser.plan.default_machine_plan'));
 
-    return Subscription::create([
-      'user_id'                   => $user->id,
-      'plan_id'                   => $plan->id,
-      'coupon_id'                 => null,
-      'billing_info'              => ($user->billing_info ?? BillingInfo::createDefault($user))->toResource('customer'),
-      'plan_info'                 => $plan->toPublicPlan('US'),
-      'coupon_info'               => null,
-      'processing_fee_info'       => [
-        'explicit_processing_fee' => false,
-        'processing_fee_rate'     => 0,
-      ],
-      'currency'                  => 'USD',
-      'price'                     => 0.0,
-      'processing_fee'            => 0.0,
-      'subtotal'                  => 0.0,
-      'tax_rate'                  => 0.0,
-      'total_tax'                 => 0.0,
-      'total_amount'              => 0.0,
-      'subscription_level'        => 1,
-      'current_period'            => 0,
-      'start_date'                => new Carbon(),
-      'end_date'                  => null,
-      'current_period_start_date' => null,
-      'current_period_end_date'   => null,
-      'next_invoice_date'         => null,
-      'next_invoice'              => null,
-      'status'                    => Subscription::STATUS_ACTIVE,
-      'sub_status'                => Subscription::SUB_STATUS_NORMAL,
-    ]);
+    $subscription = new Subscription(
+      [
+        'user_id'                   => $user->id,
+        'plan_id'                   => $plan->id,
+        'coupon_id'                 => null,
+        'billing_info'              => ($user->billing_info ?? BillingInfo::createDefault($user))->toResource('customer'),
+        'plan_info'                 => $plan->toPublicPlan('US'),
+        'coupon_info'               => null,
+        'processing_fee_info'       => [
+          'explicit_processing_fee' => false,
+          'processing_fee_rate'     => 0,
+        ],
+        'currency'                  => 'USD',
+        'price'                     => 0.0,
+        'processing_fee'            => 0.0,
+        'subtotal'                  => 0.0,
+        'tax_rate'                  => 0.0,
+        'total_tax'                 => 0.0,
+        'total_amount'              => 0.0,
+        'subscription_level'        => 1,
+        'current_period'            => 0,
+        'start_date'                => new Carbon(),
+        'end_date'                  => null,
+        'current_period_start_date' => null,
+        'current_period_end_date'   => null,
+        'next_invoice_date'         => null,
+        'next_invoice'              => null,
+        'status'                    => Subscription::STATUS_ACTIVE,
+        'sub_status'                => Subscription::SUB_STATUS_NORMAL,
+      ]
+    );
+    $subscription->setStatus(Subscription::STATUS_DRAFT);
+    $subscription->setStatus(Subscription::STATUS_ACTIVE);
+    $subscription->save();
+    return $subscription;
+  }
+
+  public function setStatus(string $status)
+  {
+    $this->status = $status;
+
+    $status_transitions = $this->status_transitions ?? [];
+    $status_transitions[$status] = now();
+    $this->status_transitions = $status_transitions;
+
+    return $this;
   }
 
   public function fillNextInvoice()
@@ -193,7 +211,7 @@ class Subscription extends BaseSubscription
 
   public function stop(string $status, string $stopReason = '', string $subStatus = Subscription::SUB_STATUS_NORMAL)
   {
-    $this->status = $status;
+    $this->setStatus($status);
     $this->stop_reason = $stopReason;
     $this->sub_status = $subStatus;
 

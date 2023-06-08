@@ -141,8 +141,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->current_period_end_date    = null;
     $subscription->next_invoice_date          = null;
     $subscription->stop_reason                = null;
-    $subscription->status                     = Subscription::STATUS_DRAFT;
     $subscription->sub_status                 = Subscription::SUB_STATUS_NORMAL;
+    $subscription->setStatus(Subscription::STATUS_DRAFT);
 
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription (init) created => draft', $subscription);
@@ -257,7 +257,7 @@ class SubscriptionManagerDR implements SubscriptionManager
         ->setDrOrderId($order->getId())
         ->setDrSubscriptionId($order->getItems()[0]->getSubscriptionInfo()->getSubscriptionId());
 
-      $subscription->status = Subscription::STATUS_PENDING;
+      $subscription->setStatus(Subscription::STATUS_PENDING);
       $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
       $subscription->save();
       DrLog::info(__FUNCTION__, 'subscription updated => pending', $subscription);
@@ -294,7 +294,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       $invoice = $subscription->getActiveInvoice();
       if ($invoice && $invoice->status != Invoice::STATUS_COMPLETING) {
-        $invoice->status = Invoice::STATUS_VOID;
+        $invoice->setStatus(Invoice::STATUS_VOID);
         $invoice->save();
         DrLog::info(__FUNCTION__, 'invoice updated => void', $subscription);
       }
@@ -520,7 +520,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->step('update subscription => processing');
 
     // update subscription status
-    $subscription->status = Subscription::STATUS_PROCESSING;
+    $subscription->setStatus(Subscription::STATUS_PROCESSING);
     $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription updated => processing', $subscription);
@@ -700,7 +700,7 @@ class SubscriptionManagerDR implements SubscriptionManager
         $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
       $subscription->next_invoice_date =
         $drSubscription->getNextInvoiceDate() ? Carbon::parse($drSubscription->getNextInvoiceDate()) : null;
-      $subscription->status = Subscription::STATUS_ACTIVE;
+      $subscription->setStatus(Subscription::STATUS_ACTIVE);
       $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_COMPLETING;
       $subscription->fillNextInvoice();
       $subscription->save();
@@ -758,7 +758,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       // update invoice
       $invoice->pdf_file = $fileLink->getUrl();
       $invoice->setFileId($orderInvoice['fileId']);
-      $invoice->status = Invoice::STATUS_COMPLETED;
+      $invoice->setStatus(Invoice::STATUS_COMPLETED);
       $invoice->save();
       DrLog::info($__FUNCTION__, 'invoice updated => completed', $subscription);
 
@@ -830,7 +830,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->total_amount        = $subscription->total_amount;
     $invoice->invoice_date        = now();
     $invoice->setOrderId($subscription->dr['order_id']);
-    $invoice->status              = Invoice::STATUS_COMPLETING;
+    $invoice->setStatus(Invoice::STATUS_COMPLETING);
     $invoice->save();
 
     $subscription->active_invoice_id = $invoice->id;
@@ -863,8 +863,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->total_tax           = $drInvoice->getTotalTax();
     $invoice->total_amount        = $drInvoice->getTotalAmount();
     $invoice->invoice_date        = Carbon::parse($drInvoice->getStateTransitions()?->getOpen() ?? $drInvoice->getUpdatedTime());
-    $invoice->status              = Invoice::STATUS_OPEN;
     $invoice->setInvoiceId($drInvoice->getId());
+    $invoice->setStatus(Invoice::STATUS_OPEN);
     $invoice->save();
 
     $subscription->active_invoice_id = $invoice->id;
@@ -949,7 +949,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // update invoice
       $invoice->setOrderId($drInvoice->getOrderId());
-      $invoice->status = Invoice::STATUS_COMPLETING;
+      $invoice->setStatus(Invoice::STATUS_COMPLETING);
       $invoice->save();
       DrLog::info($__FUNCTION__, 'invoice updated => completing', $subscription);
     });
@@ -991,7 +991,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // stop invoice
     $invoice = $subscription->getActiveInvoice();
     if ($invoice) {
-      $invoice->status = Invoice::STATUS_FAILED;
+      $invoice->setStatus(Invoice::STATUS_FAILED);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
     }
@@ -1057,7 +1057,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       }
 
       if ($invoice->status == Invoice::STATUS_OPEN) {
-        $invoice->status = Invoice::STATUS_PENDING;
+        $invoice->setStatus(Invoice::STATUS_PENDING);
         $invoice->save();
         DrLog::info($__FUNCTION__, 'invoice updated => pending', $subscription);
       }
