@@ -39,6 +39,9 @@ class Invoice {
     /** @var \Tests\Models\ProcessingFee $processing_fee_info */
     public $processing_fee_info;
 
+    /** @var \Tests\Models\PaymentMethodInfo $payment_method_info */
+    public $payment_method_info;
+
     /** @var float $subtotal price - discount + processing_fee*/
     public $subtotal = 0;
 
