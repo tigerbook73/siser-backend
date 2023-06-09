@@ -38,6 +38,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array|null $status_transitions
+ * @property array|null $payment_method_info
  * 
  * @property Subscription $subscription
  * @property User $user
@@ -64,7 +65,8 @@ class Invoice extends Model
     'total_amount' => 'float',
     'invoice_date' => 'datetime',
     'dr' => 'json',
-    'status_transitions' => 'json'
+    'status_transitions' => 'json',
+    'payment_method_info' => 'json'
   ];
 
   protected $fillable = [
@@ -86,7 +88,8 @@ class Invoice extends Model
     'dr_invoice_id',
     'dr_order_id',
     'status',
-    'status_transitions'
+    'status_transitions',
+    'payment_method_info'
   ];
 
   public function subscription()

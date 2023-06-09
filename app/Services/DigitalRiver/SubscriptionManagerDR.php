@@ -385,9 +385,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       $paymentMethod->type = $source->getType();
       $paymentMethod->dr = ['source_id' => $source->getId()];
       $paymentMethod->display_data = ($source->getType() == 'creditCard') ?  [
-        'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
         'brand'             => $source->getCreditCard()->getBrand(),
-      ] : null;
+        'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
+        'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
+        'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
+      ] : [];
       $paymentMethod->save();
       DrLog::info($__FUNCTION__, 'payment-method updated', $user);
 
@@ -824,6 +826,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->plan_info           = $subscription->plan_info;
     $invoice->coupon_info         = $subscription->coupon_info;
     $invoice->processing_fee_info = $subscription->processing_fee_info;
+    $invoice->payment_method_info = $subscription->user->payment_method->info();
 
     $invoice->subtotal            = $subscription->subtotal;
     $invoice->total_tax           = $subscription->total_tax;
@@ -858,6 +861,18 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->plan_info           = $subscription->next_invoice['plan_info'];
     $invoice->coupon_info         = $subscription->next_invoice['coupon_info'];
     $invoice->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
+
+    $source = $drInvoice->getPayment()->getSources()[0];
+    $invoice->payment_method_info = [
+      'type'          => $source->getType(),
+      'dr'            => ['source_id' => $source->getId()],
+      'display_data'  => ($source->getType() == 'creditCard') ?  [
+        'brand'             => $source->getCreditCard()->getBrand(),
+        'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
+        'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
+        'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
+      ] : [],
+    ];
 
     $invoice->subtotal            = $drInvoice->getSubtotal();
     $invoice->total_tax           = $drInvoice->getTotalTax();
@@ -948,6 +963,17 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info($__FUNCTION__, 'subscription extended => invoice-completing', $subscription);
 
       // update invoice
+      $source = $drInvoice->getPayment()->getSources()[0];
+      $invoice->payment_method_info = [
+        'type'          => $source->getType(),
+        'dr'            => ['source_id' => $source->getId()],
+        'display_data'  => ($source->getType() == 'creditCard') ?  [
+          'brand'             => $source->getCreditCard()->getBrand(),
+          'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
+          'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
+          'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
+        ] : [],
+      ];
       $invoice->setOrderId($drInvoice->getOrderId());
       $invoice->setStatus(Invoice::STATUS_COMPLETING);
       $invoice->save();
@@ -991,6 +1017,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // stop invoice
     $invoice = $subscription->getActiveInvoice();
     if ($invoice) {
+      $invoice->payment_method_info = $subscription->user->payment_method->info();
       $invoice->setStatus(Invoice::STATUS_FAILED);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);

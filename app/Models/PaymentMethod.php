@@ -15,4 +15,13 @@ class PaymentMethod extends BasePaymentMethod
     'created_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
+
+  public function info()
+  {
+    return [
+      'type'          => $this->type,
+      'display_data'  => $this->display_data,
+      'dr'            => $this->dr,
+    ];
+  }
 }

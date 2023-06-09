@@ -23,8 +23,10 @@ class UserPaymentMethodGetApiTest extends UserPaymentMethodTestCase
       'user_id'       => $user->id,
       'type'          => 'creditCard',
       'display_data'  => [
-        'last_four_digits'  => '9999',
         'brand'             => 'visa',
+        'last_four_digits'  => '9999',
+        'expiration_year'   => 2099,
+        'expiration_month'  => 7,
       ],
       'dr' => [
         'source_id' => 'digital-river-source-id-visa'
