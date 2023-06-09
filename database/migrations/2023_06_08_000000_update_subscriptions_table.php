@@ -27,11 +27,11 @@ return new class extends Migration
       if ($subscription->start_date) {
         $status_transitions[Subscription::STATUS_ACTIVE] = $subscription->start_date;
       }
-      if ($subscription->status == Subscription::STATUS_STOPPED) {
-        $status_transitions[Subscription::STATUS_STOPPED] = $subscription->end_date;
-      }
-      if ($subscription->status == Subscription::STATUS_FAILED) {
-        $status_transitions[Subscription::STATUS_FAILED] = $subscription->end_date;
+      if (
+        $subscription->status == Subscription::STATUS_STOPPED ||
+        $subscription->status == Subscription::STATUS_FAILED
+      ) {
+        $status_transitions[$subscription->status] = $subscription->end_date;
       }
       $subscription->status_transitions = $status_transitions;
       $subscription->save();

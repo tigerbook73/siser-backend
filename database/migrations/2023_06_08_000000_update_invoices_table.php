@@ -22,10 +22,11 @@ return new class extends Migration
     $invoices = Invoice::all();
     foreach ($invoices as $invoice) {
       $status_transitions[Invoice::STATUS_OPEN] = $invoice->created_at;
-      if ($invoice->status == Invoice::STATUS_COMPLETED) {
-        $status_transitions[Invoice::STATUS_FAILED] = $invoice->updated_at;
-      } else if ($invoice->status == Invoice::STATUS_FAILED) {
-        $status_transitions[Invoice::STATUS_FAILED] = $invoice->updated_at;
+      if (
+        $invoice->status == Invoice::STATUS_COMPLETED ||
+        $invoice->status == Invoice::STATUS_FAILED
+      ) {
+        $status_transitions[$invoice->status] = $invoice->updated_at;
       }
       $invoice->status_transitions = $status_transitions;
       $invoice->save();
