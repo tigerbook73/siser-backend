@@ -389,7 +389,7 @@ class SubscriptionManagerDR implements SubscriptionManager
         'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
         'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
         'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-      ] : [];
+      ] : null;
       $paymentMethod->save();
       DrLog::info($__FUNCTION__, 'payment-method updated', $user);
 
@@ -871,7 +871,7 @@ class SubscriptionManagerDR implements SubscriptionManager
         'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
         'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
         'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-      ] : [],
+      ] : null,
     ];
 
     $invoice->subtotal            = $drInvoice->getSubtotal();
@@ -972,7 +972,7 @@ class SubscriptionManagerDR implements SubscriptionManager
           'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
           'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
           'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-        ] : [],
+        ] : null,
       ];
       $invoice->setOrderId($drInvoice->getOrderId());
       $invoice->setStatus(Invoice::STATUS_COMPLETING);
