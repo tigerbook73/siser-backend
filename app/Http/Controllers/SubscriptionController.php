@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\User;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -75,7 +76,7 @@ class SubscriptionController extends SimpleController
     $this->validateUser();
     $inputs = $this->validateCreate($request);
 
-    if ($this->user->blacklisted) {
+    if ($this->user->type == User::TYPE_BLACKLISTED) {
       return response()->json(['message' => 'User are blocked, please contact our support team.'], 400);
     }
 
@@ -156,7 +157,7 @@ class SubscriptionController extends SimpleController
       'terms' => ['filled', 'string'],
     ]);
 
-    if ($this->user->blacklisted) {
+    if ($this->user->type == User::TYPE_BLACKLISTED) {
       return response()->json(['message' => 'User are blocked, please contact our support team.'], 400);
     }
 

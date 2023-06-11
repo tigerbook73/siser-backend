@@ -55,7 +55,7 @@ const resourceRoleMapping = [
   'user.get' => ['siser-backend' => 1],
   'user.create' => ['siser-backend' => 1],
   'user.refresh' => ['siser-backend' => 1],
-  'user.blacklist' => [],
+  'user.update' => [],
 
   'invoice.list' => [],
   'invoice.get' => [],

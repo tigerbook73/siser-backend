@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\Cognito\CognitoProvider;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends SimpleController
 {
@@ -58,16 +59,16 @@ class UserController extends SimpleController
     return response()->json($user->toResource('admin'));
   }
 
-  public function blacklist(Request $request, $id)
+  public function updateDetails(Request $request, $id)
   {
     /** @var User $user */
     $user = User::findOrFail($id);
 
     $inputs = $request->validate([
-      'blacklisted'     => ['required', 'boolean'],
+      'type'     => ['required', Rule::in([User::TYPE_NORMAL, User::TYPE_VIP, User::TYPE_STAFF, User::TYPE_BLACKLISTED])],
     ]);
 
-    $user->blacklisted = $inputs['blacklisted'];
+    $user->type = $inputs['type'];
     $user->save();
     return response()->json($user->toResource('admin'));
   }

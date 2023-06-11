@@ -6,6 +6,7 @@ use App\Models\Base\BillingInfo;
 use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\DigitalRiverService;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
@@ -1018,7 +1019,7 @@ class DrApiTestCase extends ApiTestCase
 
     // assert
     $response->assertSuccessful();
-    $this->assertTrue($this->user->blacklisted);
+    $this->assertTrue($this->user->type == User::TYPE_BLACKLISTED);
     $this->assertTrue(
       $subscription->status == Subscription::STATUS_ACTIVE && $subscription->sub_status == Subscription::SUB_STATUS_CANCELLING ||
         $subscription->status != Subscription::STATUS_ACTIVE

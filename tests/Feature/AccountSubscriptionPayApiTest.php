@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Coupon;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\User;
 
 class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
 {
@@ -49,7 +50,7 @@ class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
     ]);
 
     // mock up
-    $this->user->blacklisted = true;
+    $this->user->type = User::TYPE_BLACKLISTED;
     $this->user->save();
 
     $subscription = Subscription::find($createResponse->json()['id']);

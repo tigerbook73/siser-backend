@@ -802,7 +802,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->step('blacklist user');
 
     $user = $subscription->user;
-    $user->blacklisted = true;
+    $user->type = User::TYPE_BLACKLISTED;
     $user->save();
     DrLog::warning(__FUNCTION__, 'user blacklisted', $subscription);
 

@@ -45,7 +45,7 @@ class User {
     /** @var int $license_count */
     public $license_count = 0;
 
-    /** @var bool $blacklisted */
-    public $blacklisted = false;
+    /** @var string $type */
+    public $type = "";
 
 }

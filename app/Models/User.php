@@ -11,6 +11,12 @@ class User extends UserWithTrait
 {
   use Notifiable;
 
+  // user_type
+  public const TYPE_NORMAL        = 'normal';
+  public const TYPE_STAFF         = 'staff';
+  public const TYPE_VIP           = 'vip';
+  public const TYPE_BLACKLISTED   = 'blacklisted';
+
   static protected $attributesOption = [
     'id'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'name'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -24,7 +30,7 @@ class User extends UserWithTrait
     'language_code'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'license_count'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'blacklisted'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'type'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -50,6 +56,10 @@ class User extends UserWithTrait
     $this->subscription_level = 0;
     $this->license_count = 0;
     $this->roles = null;
+
+    if (!$this->type) {
+      $this->type = USER::TYPE_NORMAL;
+    }
   }
 
   protected function afterCreate()
