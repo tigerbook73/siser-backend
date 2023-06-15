@@ -4,8 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\GeneralConfiguration;
+use App\Models\LdsLicense;
 use App\Models\Machine;
-use App\Models\LdsPool;
 use Tests\Trait\CognitoProviderMockup;
 
 class MachineTransferApiTest extends MachineTestCase
@@ -19,9 +19,9 @@ class MachineTransferApiTest extends MachineTestCase
     return User::find($userId)->license_count;
   }
 
-  private function getUserLdsPool(int $userId)
+  private function getLdsLicense(int $userId)
   {
-    return LdsPool::where("user_id", $userId)->first();
+    return LdsLicense::fromUserId($userId);
   }
 
   public function testMachineTransferOk()
@@ -32,7 +32,7 @@ class MachineTransferApiTest extends MachineTestCase
       "username" => $this->getDefaultTestUserName(),
     ])->json();
 
-    $newUserLdsPool = LdsPool::where("user_id", $user['id'])->first();
+    $newLdsLicense = LdsLicense::fromUserId($user['id']);
 
     $machine = Machine::first();
 
@@ -49,17 +49,17 @@ class MachineTransferApiTest extends MachineTestCase
 
     // get original user's license count after
     $originalUserLicenseCountAfter = $this->getUserLicenseCount($machine->user_id);
-    $originalUserLdsPool = $this->getUserLdsPool($machine->user_id);
+    $originalLdsLicense = $this->getLdsLicense($machine->user_id);
     $this->assertEquals($originalUserLicenseCountAfter, $originalUserLicenseCountBefore - $numberOfLicensePerUnit);
-    $this->assertEquals($originalUserLdsPool->license_count, $originalUserLicenseCountAfter);
-    $this->assertEquals($originalUserLdsPool->license_free, $originalUserLicenseCountAfter);
+    $this->assertEquals($originalLdsLicense->license_count, $originalUserLicenseCountAfter);
+    $this->assertEquals($originalLdsLicense->license_free, $originalUserLicenseCountAfter);
 
     // get new user's license count after
     $newUserLicenseCountAfter = $this->getUserLicenseCount($user['id']);
-    $newUserLdsPool = $this->getUserLdsPool($user['id']);
+    $newLdsLicense = $this->getLdsLicense($user['id']);
     $this->assertEquals($newUserLicenseCountAfter, $numberOfLicensePerUnit);
-    $this->assertEquals($newUserLdsPool->license_count, $numberOfLicensePerUnit);
-    $this->assertEquals($newUserLdsPool->license_free, $numberOfLicensePerUnit);
+    $this->assertEquals($newLdsLicense->license_count, $numberOfLicensePerUnit);
+    $this->assertEquals($newLdsLicense->license_free, $numberOfLicensePerUnit);
 
     // Assert machine's user is new user
     $machine = Machine::first();
@@ -74,10 +74,10 @@ class MachineTransferApiTest extends MachineTestCase
 
     // get user license count before
     $userLicenseCountBefore = $this->getUserLicenseCount($machine->user_id);
-    $userLdsPool = $this->getUserLdsPool($machine->user_id);
+    $ldsLicense = $this->getLdsLicense($machine->user_id);
     $this->assertEquals($userLicenseCountBefore, $numberOfLicensePerUnit);
-    $this->assertEquals($userLdsPool->license_count, $userLicenseCountBefore);
-    $this->assertEquals($userLdsPool->license_free, $userLicenseCountBefore);
+    $this->assertEquals($ldsLicense->license_count, $userLicenseCountBefore);
+    $this->assertEquals($ldsLicense->license_free, $userLicenseCountBefore);
 
     // transer machine to new user
     $response = $this->postJson("/api/v1/machines/{$machine->id}/transfer", ['new_user_id' => $machine->user_id]);
@@ -86,10 +86,10 @@ class MachineTransferApiTest extends MachineTestCase
 
     // get original user's license count after
     $userLicenseCountAfter = $this->getUserLicenseCount($machine->user_id);
-    $userLdsPool = $this->getUserLdsPool($machine->user_id);
+    $ldsLicense = $this->getLdsLicense($machine->user_id);
     $this->assertEquals($userLicenseCountAfter, $userLicenseCountBefore);
-    $this->assertEquals($userLdsPool->license_count, $userLicenseCountAfter);
-    $this->assertEquals($userLdsPool->license_free, $userLicenseCountAfter);
+    $this->assertEquals($ldsLicense->license_count, $userLicenseCountAfter);
+    $this->assertEquals($ldsLicense->license_free, $userLicenseCountAfter);
   }
 
   public function testMachineTransferNonExistMachineFail()

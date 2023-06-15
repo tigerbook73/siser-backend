@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Events\UserSaved;
 use App\Events\UserSubscriptionLevelChanged;
 use App\Services\Cognito\CognitoUser;
 use Illuminate\Notifications\Notifiable;
@@ -58,13 +57,13 @@ class User extends UserWithTrait
     $this->roles = null;
 
     if (!$this->type) {
-      $this->type = USER::TYPE_NORMAL;
+      $this->type = User::TYPE_NORMAL;
     }
   }
 
   protected function afterCreate()
   {
-    UserSaved::dispatch($this);
+    LdsLicense::createFromUser($this);
   }
 
   protected function afterUpdate()
@@ -73,7 +72,7 @@ class User extends UserWithTrait
       UserSubscriptionLevelChanged::dispatch($this);
     }
     if ($this->wasChanged(['subscription_level', 'license_count'])) {
-      UserSaved::dispatch($this);
+      $this->lds_license->updateSubscriptionLevel($this->subscription_level, $this->license_count);
     };
   }
 

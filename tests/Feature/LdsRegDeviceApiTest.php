@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\LdsInstance;
-
 class LdsRegDeviceApiTest extends LdsTestCase
 {
   public ?string $role = 'customer';

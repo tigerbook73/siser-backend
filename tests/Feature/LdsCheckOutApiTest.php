@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\Lds\LdsException;
 use Tests\Helper\ApiTestTimeHelper;
 
 class LdsCheckOutApiTest extends LdsTestCase
@@ -58,7 +59,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $this->verifyCheckActionDatabaseContent($checkInRequest, 0, FALSE);
   }
 
-  public function testLdsCheckOutExpiredDeviceOK()
+  public function testLdsCheckOutExpiredDeviceOk()
   {
     // Reverse time by an hour
     ApiTestTimeHelper::setCurrentTime(\time() - 3600);
@@ -77,7 +78,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $this->verifyCheckActionDatabaseContent($checkInRequest, 0, FALSE);
   }
 
-  public function testLdsCheckOutOfflineExpiredDeviceOK()
+  public function testLdsCheckOutOfflineExpiredDeviceOk()
   {
     // Reverse time by an hour
     ApiTestTimeHelper::setCurrentTime(\time() - 3600);
@@ -326,7 +327,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $checkInRequest = $this->checkInRequest;
     $checkInRequest['user_code'] = $this->getUserCode();
     $response = $this->verifyCheckOutResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 7);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN[0]);
 
     return $response;
   }
@@ -345,7 +346,7 @@ class LdsCheckOutApiTest extends LdsTestCase
 
     // check-out
     $response = $this->verifyCheckOutResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 7);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN[0]);
   }
 
   public function testLdsCheckOutCheckInTooManyDevicesFail()
@@ -378,7 +379,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $this->regRequest['device_id'] = $checkInRequest['device_id'];
     $this->regDeviceApi();
     $response = $this->verifyCheckInResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 3);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_TOO_MANY_DEVICES[0]);
   }
 
   public function testLdsCheckOutCheckInTooManyDevicesScenario2Fail()
@@ -414,7 +415,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $this->regRequest['device_id'] = $checkInRequest['device_id'];
     $this->regDeviceApi();
     $response = $this->verifyCheckInResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 3);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_TOO_MANY_DEVICES[0]);
   }
 
   public function testLdsCheckOutPreviouslyCheckedOutDeviceFail()
@@ -442,7 +443,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     // check-out
     $response = $this->verifyCheckOutResponse($previousCheckInRequest);
     // Assert value 7 - "Device not check-in yet "
-    $this->verifyCheckActionDataContent($previousCheckInRequest, $response, 7);
+    $this->verifyCheckActionDataContent($previousCheckInRequest, $response, LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN[0]);
     $this->verifyCheckActionDatabaseContent($previousCheckInRequest, 1, FALSE);
 
     // check-in
@@ -479,7 +480,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     // check-out
     $response = $this->verifyCheckOutResponse($previousCheckInRequest);
     // Assert value 7 - "Device not check-in yet "
-    $this->verifyCheckActionDataContent($previousCheckInRequest, $response, 7);
+    $this->verifyCheckActionDataContent($previousCheckInRequest, $response, LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN[0]);
     $this->verifyCheckActionDatabaseContent($previousCheckInRequest, 1, FALSE);
 
     // check-in
@@ -502,7 +503,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $checkInRequest['device_id'] = $this->faker->numerify('################');
     $response = $this->verifyCheckOutResponse($checkInRequest);
     // Verify returns Not Register flag
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 6);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_DEVICE_NOT_REGISTERED[0]);
   }
 
   public function testLdsCheckOutOfflineNotRegisteredDeviceFail()
@@ -530,7 +531,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $this->verifyCheckOutResponse($checkInRequest, TRUE, 400);
   }
 
-  public function testLdsCheckOutOnlineUnauthorizedRequestIDFail()
+  public function testLdsCheckOutOnlineUnauthorizedRequestIdFail()
   {
     // check-in
     $checkInRequest = $this->checkInRequest;
@@ -566,7 +567,7 @@ class LdsCheckOutApiTest extends LdsTestCase
     $this->verifyCheckOutResponse($checkInRequest, FALSE, 400);
   }
 
-  public function testLdsCheckOutOfflineUnauthorizedRequestIDFail()
+  public function testLdsCheckOutOfflineUnauthorizedRequestIdFail()
   {
     // check-in
     $checkInRequest = $this->checkInRequest;

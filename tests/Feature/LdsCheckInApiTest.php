@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Base\LdsInstance;
-use App\Models\LdsPool;
+use App\Models\LdsLicense;
+use App\Services\Lds\LdsException;
 use Tests\Helper\ApiTestTimeHelper;
 
 class LdsCheckInApiTest extends LdsTestCase
@@ -77,9 +77,9 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->verifyCheckActionDatabaseContent($checkInRequest, 1);
 
     // check-in
-    $instance = $this->findInstance($checkInRequestPrevious['user_code'], $checkInRequestPrevious['device_id']);
-    $this->assertEquals($instance->online, FALSE);
-    $this->assertEquals($instance->expires_at, 0);
+    $device = $this->findDevice($checkInRequestPrevious['user_code'], $checkInRequestPrevious['device_id']);
+    $this->assertEquals($device->getStatus(), 'offline');
+    $this->assertEquals($device->getExpiresAt(),  0);
   }
 
   public function testLdsCheckInMultipleDevicesKickOutExpiredDeviceOk()
@@ -185,19 +185,17 @@ class LdsCheckInApiTest extends LdsTestCase
     $response = $this->verifyCheckInResponse($checkInRequest);
     $this->verifyCheckActionDataContent($checkInRequest, $response);
     $this->verifyCheckActionDatabaseContent($checkInRequest);
-    /** @var LdsInstance $ldsInstance */
-    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
-    $first_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
+    $device = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
+    $this->assertTrue($device !== null && $device->getStatus() == 'online');
+    $first_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
     sleep(3);
 
     // check-in
     $response = $this->verifyCheckInResponse($checkInRequest);
-    /** @var LdsInstance $ldsInstance */
-    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
-    $second_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
+    $device = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
+    $this->assertTrue($device !== null && $device->getStatus() == 'online');
+    $second_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
     $first_time_date = new \DateTime($first_time_expires_at);
     $second_time_date = new \DateTime($second_time_expires_at);
@@ -229,19 +227,17 @@ class LdsCheckInApiTest extends LdsTestCase
     $checkInRequest['user_code'] = $this->getUserCode();
     $this->verifyCheckInResponse($checkInRequest, FALSE);
     $this->verifyCheckActionDatabaseContent($checkInRequest);
-    /** @var LdsInstance $ldsInstance */
-    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
-    $first_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
+    $device = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
+    $this->assertTrue($device !== null && $device->getStatus() == 'online');
+    $first_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
     sleep(3);
 
     // check-in (offline)
     $this->verifyCheckInResponse($checkInRequest, FALSE);
-    /** @var LdsInstance $ldsInstance */
-    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
-    $second_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
+    $device = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
+    $this->assertTrue($device !== null && $device->getStatus() == 'online');
+    $second_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
     $first_time_date = new \DateTime($first_time_expires_at);
     $second_time_date = new \DateTime($second_time_expires_at);
@@ -257,19 +253,17 @@ class LdsCheckInApiTest extends LdsTestCase
     $checkInRequest['user_code'] = $this->getUserCode();
     $this->verifyCheckInResponse($checkInRequest, FALSE);
     $this->verifyCheckActionDatabaseContent($checkInRequest);
-    /** @var LdsInstance $ldsInstance */
-    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
-    $first_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
+    $device = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
+    $this->assertTrue($device !== null && $device->getStatus() == 'online');
+    $first_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
     sleep(3);
 
     // check-in
     $this->verifyCheckInResponse($checkInRequest);
-    /** @var LdsInstance $ldsInstance */
-    $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
-    $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
-    $second_time_expires_at = date('Y-m-d H:i:s', $ldsInstance->expires_at);
+    $device = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
+    $this->assertTrue($device !== null && $device->getStatus() == 'online');
+    $second_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
     $first_time_date = new \DateTime($first_time_expires_at);
     $second_time_date = new \DateTime($second_time_expires_at);
@@ -300,7 +294,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->regRequest['device_id'] = $checkInRequest['device_id'];
     $this->regDeviceApi();
     $response = $this->verifyCheckInResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 3);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_TOO_MANY_DEVICES[0]);
   }
 
   public function testLdsCheckInOnOfflineTooManyDevicesFail()
@@ -324,7 +318,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->regRequest['device_id'] = $checkInRequest['device_id'];
     $this->regDeviceApi();
     $response = $this->verifyCheckInResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 3);
+    $this->verifyCheckActionDataContent($checkInRequest, $response,  LdsException::LDS_ERR_TOO_MANY_DEVICES[0]);
   }
 
   public function testLdsCheckInOnOfflineTooManyDevicesScenario2Fail()
@@ -362,7 +356,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->regRequest['device_id'] = $checkInRequest['device_id'];
     $this->regDeviceApi();
     $response = $this->verifyCheckInResponse($checkInRequest);
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 3);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_TOO_MANY_DEVICES[0]);
   }
 
   public function testLdsCheckInOnOfflineTooManyDevicesScenario3Fail()
@@ -408,7 +402,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $checkInRequest['user_code'] = $this->getUserCode();
     $response = $this->verifyCheckInResponse($checkInRequest);
     // Verify returns Not Register flag
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 6);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_DEVICE_NOT_REGISTERED[0]);
 
     return $response;
   }
@@ -492,16 +486,16 @@ class LdsCheckInApiTest extends LdsTestCase
   public function testLdsCheckInOnlineUserNoLicenseFail()
   {
     // Manual set user to no licenses
-    $ldsPool = LdsPool::where('user_id', $this->user->id)->first();
-    $ldsPool->license_count = 0;
-    $ldsPool->save();
+    $ldsLicense = LdsLicense::fromUserId($this->user->id);
+    $ldsLicense->license_count = 0;
+    $ldsLicense->save();
 
     // check-in
     $checkInRequest = $this->checkInRequest;
     $checkInRequest['user_code'] = $this->getUserCode();
     $response = $this->verifyCheckInResponse($checkInRequest);
     // Verify returns User doesn't have any licenses
-    $this->verifyCheckActionDataContent($checkInRequest, $response, 8);
+    $this->verifyCheckActionDataContent($checkInRequest, $response, LdsException::LDS_ERR_USER_DOESNT_HAVE_LICENSE[0]);
 
     return $response;
   }

@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\LdsController;
+use App\Http\Controllers\LdsLicenseController;
 use App\Http\Controllers\TestController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,8 +38,8 @@ if (!$role || $role == 'admin') {
  * LDS
  */
 if (!$role || $role == 'customer') {
-  Route::get('/check-in', [LdsController::class, 'checkIn']);
-  Route::get('/check-out', [LdsController::class, 'checkOut']);
+  Route::get('/check-in', [LdsLicenseController::class, 'checkIn']);
+  Route::get('/check-out', [LdsLicenseController::class, 'checkOut']);
 }
 
 /**

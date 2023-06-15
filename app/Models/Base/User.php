@@ -8,8 +8,7 @@ namespace App\Models\Base;
 
 use App\Models\BillingInfo;
 use App\Models\Invoice;
-use App\Models\LdsPool;
-use App\Models\LdsRegistration;
+use App\Models\LdsLicense;
 use App\Models\Machine;
 use App\Models\PaymentMethod;
 use App\Models\Subscription;
@@ -43,8 +42,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * 
  * @property BillingInfo $billing_info
  * @property Collection|Invoice[] $invoices
- * @property LdsPool $lds_pool
- * @property Collection|LdsRegistration[] $lds_registrations
+ * @property LdsLicense $lds_license
  * @property Collection|Machine[] $machines
  * @property PaymentMethod $payment_method
  * @property Collection|Subscription[] $subscriptions
@@ -92,14 +90,9 @@ class User extends \Illuminate\Foundation\Auth\User
     return $this->hasMany(Invoice::class);
   }
 
-  public function lds_pool()
+  public function lds_license()
   {
-    return $this->hasOne(LdsPool::class);
-  }
-
-  public function lds_registrations()
-  {
-    return $this->hasMany(LdsRegistration::class);
+    return $this->hasOne(LdsLicense::class);
   }
 
   public function machines()

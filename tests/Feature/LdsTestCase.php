@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Lds {
+namespace App\Models {
   function time()
   {
     return \Tests\Feature\LdsTestCase::fakeTime();
@@ -9,19 +9,17 @@ namespace App\Services\Lds {
 
 namespace Tests\Feature {
 
-  use App\Models\LdsRegistration;
+  use App\Models\LdsDevice;
   use App\Services\Lds\LdsCoding;
   use Tests\ApiTestCase;
-  use App\Models\Base\LdsInstance;
-  use App\Models\LdsPool;
+  use App\Models\LdsLicense;
   use App\Services\Lds\LdsException;
-  use App\Services\Lds\LdsLicenseManager;
   use Tests\Helper\ApiTestTimeHelper;
 
   class LdsTestCase extends ApiTestCase
   {
     public string $baseUrl = '/api/v1/lds';
-    public string $model = LdsRegistration::class;
+    public string $model = LdsLicense::class;
 
     public $regRequest = [
       'version' => 1,
@@ -123,18 +121,16 @@ namespace Tests\Feature {
 
     protected function verifyCheckActionDatabaseContent(array $checkInRequest, int $count = 1, bool $isOnline = TRUE)
     {
-      /** @var LdsInstance $ldsInstance */
-      $ldsInstance = $this->findInstance($checkInRequest['user_code'], $checkInRequest['device_id']);
+      $ldsDevice = $this->findDevice($checkInRequest['user_code'], $checkInRequest['device_id']);
       if ($isOnline) {
-        $this->assertTrue($ldsInstance !== null && $ldsInstance->online);
+        $this->assertTrue($ldsDevice !== null && $ldsDevice->getStatus() == 'online');
       } else {
-        $this->assertTrue($ldsInstance !== null && !$ldsInstance->online);
+        $this->assertTrue($ldsDevice !== null && $ldsDevice->getStatus() != 'online');
       }
 
-      /** @var LdsPool $ldsPool */
-      $ldsPool = LdsPool::where('user_id', $this->user->id)->first();
-      $this->assertTrue($ldsPool !== null);
-      $this->assertTrue($ldsPool->license_free + $count === $ldsPool->license_count);
+      $ldsLicense = LdsLicense::where('user_id', $this->user->id)->first();
+      $this->assertTrue($ldsLicense !== null);
+      $this->assertTrue($ldsLicense->license_free + $count === $ldsLicense->license_count);
     }
 
     public function regDeviceApi()
@@ -143,9 +139,8 @@ namespace Tests\Feature {
       $response->assertStatus(200)
         ->assertJsonStructure($this->regResponseSchema);
 
-      /** @var LdsInstance $ldsInstance */
-      $ldsInstance = $this->findInstance($response->json('user_code'), $this->regRequest['device_id']);
-      $this->assertTrue($ldsInstance !== null);
+      $ldsDevice = $this->findDevice($response->json('user_code'), $this->regRequest['device_id']);
+      $this->assertTrue($ldsDevice !== null);
 
       return $response;
     }
@@ -157,16 +152,15 @@ namespace Tests\Feature {
       $response = $this->postJson($this->baseUrl . '/unreg-device', $unregRequest);
       $response->assertStatus(200);
 
-      /** @var LdsInstance $ldsInstance */
-      $ldsInstance = $this->findInstance($user_code, $unregRequest['device_id']);
-      $this->assertTrue($ldsInstance == null);
+      $ldsDevice = $this->findDevice($user_code, $unregRequest['device_id']);
+      $this->assertTrue($ldsDevice == null);
 
       return $response;
     }
 
-    public function findInstance(string $user_code, string $device_id): ?LdsInstance
+    public function findDevice(string $user_code, string $device_id): ?LdsDevice
     {
-      return (new LdsLicenseManager)->findInstance($user_code, $device_id);
+      return LdsLicense::fromUserId((new LdsCoding)->decodeUserId($user_code))->getDevice($device_id);
     }
   }
 }

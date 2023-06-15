@@ -5,14 +5,13 @@ namespace App\Models;
 use App\Models\Base\LdsLog as BaseLdsLog;
 use Illuminate\Support\Facades\Log;
 
-class LdsLog extends BaseLdsLog
+class LdsLog
 {
-
-  public static function log(int $instance_id, string $action, string $result, string $text)
+  public static function log(string $device_id, string $action, string $result, string $text)
   {
-    // TODO: refactor
+    // TODO: move to service and refactor
     Log::info('LDS_LOG: ', [
-      'lds_instance_id' => $instance_id,
+      'lds_instance_id' => $device_id,
       'action' => $action,
       'result' => $result,
       'text' => $text,

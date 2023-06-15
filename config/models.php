@@ -293,6 +293,12 @@ return [
       'personal_access_tokens',
       'migrations',
       'telescope_*',
+
+      // TODO: remove and add migration to remove
+      'lds_pools',
+      'lds_registrations',
+      'lds_instances',
+      'lds_logs',
     ],
 
     /*

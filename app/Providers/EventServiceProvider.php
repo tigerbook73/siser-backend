@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\LdsRegistration;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -29,7 +28,6 @@ class EventServiceProvider extends ServiceProvider
    * @var array
    */
   protected $subscribe = [
-    \App\Services\Lds\LdsEventSubscriber::class,
     \App\Services\Cognito\SiserEventSubscriber::class,
   ];
 

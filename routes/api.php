@@ -8,7 +8,7 @@ use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CouponController;
 use App\Http\Controllers\GeneralConfigurationController;
 use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\LdsRegistrationController;
+use App\Http\Controllers\LdsLicenseController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PlanController;
@@ -161,8 +161,6 @@ if (!$role || $role == 'admin') {
   });
 }
 
-// TODO: subscriptions
-//
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/subscriptions', [SubscriptionController::class, 'list'])->middleware('access:subscription.list');
@@ -175,8 +173,9 @@ if (!$role || $role == 'admin') {
 //
 if (!$role || $role == 'customer') {
   Route::middleware('auth:api')->group(function () {
-    Route::post('/lds/reg-device', [LdsRegistrationController::class, 'regDevice']);
-    Route::post('/lds/unreg-device', [LdsRegistrationController::class, 'unregDevice']);
+    Route::get('/lds/lds-license', [LdsLicenseController::class, 'accountGet']);
+    Route::post('/lds/reg-device', [LdsLicenseController::class, 'regDevice']);
+    Route::post('/lds/unreg-device', [LdsLicenseController::class, 'unregDevice']);
   });
 }
 
@@ -211,20 +210,13 @@ if (!$role || $role == 'admin') {
 }
 
 //
-// user billing info
+// user additional info (billing_info, payment_method, license)
 //
 if (!$role || $role == 'admin') {
   Route::middleware('auth:admin')->group(function () {
-    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'userGet'])->middleware('access:billing-info.get');
-  });
-}
-
-//
-// user payment method
-//
-if (!$role || $role == 'admin') {
-  Route::middleware('auth:admin')->group(function () {
-    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'userGet'])->middleware('access:payment-method.get');
+    Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'userGet'])->middleware('access:user.billing-info.get');
+    Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'userGet'])->middleware('access:user.payment-method.get');
+    Route::get('/users/{id}/lds-license', [LdsLicenseController::class, 'userGet'])->middleware('access:user.lds-license.get');
   });
 }
 
