@@ -129,4 +129,20 @@ class AuthController extends Controller
       'expires_in' => config('jwt.ttl') * 60
     ]);
   }
+
+  public function loginTest(Request $request)
+  {
+    $user = User::where('name', 'user1.test')->first();
+
+    // view
+    $viewData = [
+      'token' => base64_encode(json_encode([
+        'access_token' => $this->jwtAuth()->login($user),
+        'token_type' => 'bearer',
+        'expires_in' => config('jwt.ttl') * 60,
+      ])),
+      'account' => base64_encode(json_encode($user->toResource('customer')))
+    ];
+    return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
+  }
 }
