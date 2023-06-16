@@ -1,0 +1,81 @@
+<?php
+
+/**
+ * Created by Reliese Model.
+ */
+
+namespace App\Models\Base;
+
+use App\Models\LdsLog;
+use App\Models\LdsPool;
+use App\Models\LdsRegistration;
+use App\Models\TraitModel;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * Class LdsInstance
+ * 
+ * @property int $id
+ * @property int $lds_pool_id
+ * @property int $lds_registration_id
+ * @property int $user_id
+ * @property string $device_id
+ * @property string $user_code
+ * @property Carbon $registered_at
+ * @property bool $online
+ * @property int $expires_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property string|null $status
+ * 
+ * @property LdsPool $lds_pool
+ * @property LdsRegistration $lds_registration
+ * @property Collection|LdsLog[] $lds_logs
+ *
+ * @package App\Models\Base
+ */
+class LdsInstance extends Model
+{
+  use HasFactory;
+  use TraitModel;
+  protected $table = 'lds_instances';
+
+  protected $casts = [
+    'lds_pool_id' => 'int',
+    'lds_registration_id' => 'int',
+    'user_id' => 'int',
+    'registered_at' => 'datetime',
+    'online' => 'bool',
+    'expires_at' => 'int'
+  ];
+
+  protected $fillable = [
+    'lds_pool_id',
+    'lds_registration_id',
+    'user_id',
+    'device_id',
+    'user_code',
+    'registered_at',
+    'online',
+    'expires_at',
+    'status'
+  ];
+
+  public function lds_pool()
+  {
+    return $this->belongsTo(LdsPool::class);
+  }
+
+  public function lds_registration()
+  {
+    return $this->belongsTo(LdsRegistration::class);
+  }
+
+  public function lds_logs()
+  {
+    return $this->hasMany(LdsLog::class);
+  }
+}

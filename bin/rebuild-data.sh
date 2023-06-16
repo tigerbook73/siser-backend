@@ -11,8 +11,8 @@ if [ "$1" == "--model" ]; then
   php $BASEDIR/../artisan code:models
 
   # TODO: temporary: remove extra lines
-  sed -i '/LdsPool\|LdsRegistration/d' $BASEDIR/../app/Models/Base/User.php
-  sed -i '/lds_pool\|lds_registrations/,+3d' $BASEDIR/../app/Models/Base/User.php
+  # sed -i '/LdsPool\|LdsRegistration/d' $BASEDIR/../app/Models/Base/User.php
+  # sed -i '/lds_pool\|lds_registrations/,+3d' $BASEDIR/../app/Models/Base/User.php
 fi
 
 php $BASEDIR/../artisan db:seed

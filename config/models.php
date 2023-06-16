@@ -295,10 +295,10 @@ return [
       'telescope_*',
 
       // TODO: remove and add migration to remove
-      'lds_pools',
-      'lds_registrations',
-      'lds_instances',
-      'lds_logs',
+      // 'lds_pools',
+      // 'lds_registrations',
+      // 'lds_instances',
+      // 'lds_logs',
     ],
 
     /*

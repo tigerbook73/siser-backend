@@ -6,6 +6,9 @@ class LdsDevice
 {
   private $container = [];
 
+  /**
+   * @param array $data ['device_id' => '...', 'user_code' => '...', 'device_name' => '...']
+   */
   static public function init(array $data): self
   {
     $device = new self();
@@ -14,6 +17,7 @@ class LdsDevice
       'user_code'           => $data['user_code'],
       'device_name'         => $data['device_name'] ?? '',
       'status'              => '',
+      'registered_at'       => time(),
       'expires_at'          => 0,
       'latest_action'       => [
         'action'      => '',
