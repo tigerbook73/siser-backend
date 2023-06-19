@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Base\LdsLicense as BaseLdsLicense;
 use App\Services\Lds\LdsException;
+use App\Services\Lds\LdsLog;
 
 class LdsResult
 {
@@ -80,7 +81,14 @@ class LdsLicense extends BaseLdsLicense
    */
   public function registerDevice(array $device_info, string $client_ip = null): LdsResult
   {
+    $logContext = [
+      'user_id' => $this->user_id,
+      'device_id' => $device_info['device_id'],
+      'client_ip' => $client_ip,
+    ];
+
     if (count($this->devices) >= LdsLicense::MAX_DEVICE_COUNT && !$this->exists($device_info['device_id'])) {
+      LdsLog::info('register', 'nok', 'too many devices', $logContext);
       throw new LdsException(
         LdsException::LDS_ERR_TOO_MANY_DEVICES,
         ['subscription_level' => $this->subscription_level]
@@ -92,32 +100,48 @@ class LdsLicense extends BaseLdsLicense
     $this->setDevice($device)
       ->refreshLicense()
       ->save();
+    LdsLog::info('register', 'ok', 'device registered', $logContext);
 
     return new LdsResult($this->subscription_level);
   }
 
   public function unregisterDevice(string $device_id, string $client_ip = null): LdsResult
   {
+    $logContext = [
+      'user_id' => $this->user_id,
+      'device_id' => $device_id,
+      'client_ip' => $client_ip,
+    ];
+
     if (!$device = $this->getDevice($device_id)) {
+      LdsLog::info('unregister', 'nok', 'device not registered', $logContext);
       throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_REGISTERED);
     }
 
     $this->removeDevice($device)
       ->refreshLicense()
       ->save();
+    LdsLog::info('unregister', 'ok', 'device unregistered', $logContext);
 
     return new LdsResult($this->subscription_level);
   }
 
   public function checkInDevice(string $device_id, string $client_ip): LdsResult
   {
+    $logContext = [
+      'user_id' => $this->user_id,
+      'device_id' => $device_id,
+      'client_ip' => $client_ip,
+    ];
+
     if (!$device = $this->getDevice($device_id)) {
+      LdsLog::info('unregister', 'nok', 'device not registered', $logContext);
       throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_REGISTERED);
     }
 
     // if no license
     if ($this->license_count <= 0) {
-      LdsLog::log($device->getDeviceId(), 'check-in', 'nok', "user:$this->user_id doesnt have licenses");
+      LdsLog::info('check-in', 'nok', "user doesnt have licenses", $logContext);
       throw new LdsException(LdsException::LDS_ERR_USER_DOESNT_HAVE_LICENSE);
     }
 
@@ -127,7 +151,7 @@ class LdsLicense extends BaseLdsLicense
         ->refreshLicense()
         ->save();
 
-      LdsLog::log($device->getDeviceId(), 'check-in', 'ok', "user:$this->user_id device:{$device->getDeviceId()} extended");
+      LdsLog::info('check-in', 'ok', "device extended", $logContext);
       return new LdsResult($this->subscription_level);
     }
 
@@ -137,11 +161,11 @@ class LdsLicense extends BaseLdsLicense
         ->refreshLicense()
         ->save();
 
-      LdsLog::log($device->getDeviceId(), 'check-in', 'ok', "user:$this->user_id device:{$device->getDeviceId()} check-in");
+      LdsLog::info('check-in', 'ok', 'device checked-in', $logContext);
       return new LdsResult($this->subscription_level);
     }
 
-    LdsLog::log($device->getDeviceId(), 'check-in', 'nok', "user:$this->user_id device:{$device->getDeviceId()} no free license");
+    LdsLog::info('check-in', 'nok', "too many devices", $logContext);
     throw new LdsException(
       LdsException::LDS_ERR_TOO_MANY_DEVICES,
       ['subscription_level' => $this->subscription_level]
@@ -150,21 +174,27 @@ class LdsLicense extends BaseLdsLicense
 
   public function checkOutDevice(string $device_id, $client_ip = null): LdsResult
   {
+    $logContext = [
+      'user_id' => $this->user_id,
+      'device_id' => $device_id,
+      'client_ip' => $client_ip,
+    ];
+
     if (!$device = $this->getDevice($device_id)) {
+      LdsLog::info('check-in', 'ok', "device not registered", $logContext);
       throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_REGISTERED);
     };
 
     // not online
     if ($device->getStatus() != 'online') {
-      LdsLog::log($device->getDeviceId(), 'check-out', 'nok', "user:$this->user_id device:{$device->getDeviceId()} not online");
+      LdsLog::info('check-out', 'nok', "device not checked-in", $logContext);
       throw new LdsException(LdsException::LDS_ERR_DEVICE_NOT_CHECK_IN);
     }
 
     $this->setDevice($device->checkout($client_ip))
       ->refreshLicense()
       ->save();
-
-    LdsLog::log($device->getDeviceId(), 'check-out', 'ok', "user:$this->user_id device:{$device->getDeviceId()} check-out");
+    LdsLog::info('check-out', 'ok', "device checked-out", $logContext);
     return new LdsResult($this->subscription_level);
   }
 
@@ -174,6 +204,8 @@ class LdsLicense extends BaseLdsLicense
     $this->license_count = $license_count;
     $this->license_free = ($this->license_count > $this->license_used) ? $this->license_count - $this->license_used : 0;
     $this->save();
+
+    LdsLog::info('update-level', 'ok', 'updated subscription', ['user_id' => $this->user_id]);
   }
 
   protected function refreshLicense(): self
@@ -188,7 +220,10 @@ class LdsLicense extends BaseLdsLicense
       if ($device->getStatus() == 'online' && $device->getExpiresAt() < time()) {
         $this->setDevice($device->checkout());
 
-        LdsLog::Log($device->getDeviceId(), 'check-out', 'ok', "user:$this->user_id device:{$device->getDeviceId()} expired");
+        LdsLog::info('exipre', 'ok', 'device expired', [
+          'user_id' => $this->user_id,
+          'device_id' => $device->getDeviceId(),
+        ]);
       }
 
       if ($device->getStatus() == 'online') {
