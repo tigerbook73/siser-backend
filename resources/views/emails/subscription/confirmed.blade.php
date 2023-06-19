@@ -1,8 +1,8 @@
 <x-emails.subscription.layout :$subscription>
-  This is to inform you that your order for the subscription <b>{{ $subscription->plan_info['name'] }}</b> has been
+  We are pleased to inform you that your subscription to the <b>{{ $subscription->plan_info['name'] }}</b> has been
   confirmed!<br />
   <br />
-  Here is a brief summary of your subscription:<br />
+  Here is a summary of your subscription:<br />
   <br />
   <x-emails.subscription.table
     :$subscription
@@ -13,7 +13,6 @@
       'start_date',
       'currency',
       'price',
-      'total_discount',
       'subtotal',
       'total_tax', 
       'total_amount',
@@ -22,7 +21,7 @@
   >
   </x-emails.subscription.table>
   <br />
-  You can check your subscription's details on our
+  You can see your subscription details on our
   <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
   <br />
 </x-emails.subscription.layout>

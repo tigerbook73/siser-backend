@@ -1,8 +1,9 @@
 <x-emails.subscription.layout :$subscription>
-  This is to confirm that your subscription <b>{{ $subscription->plan_info['name'] }}</b> has been successfully
-  renewed!<br />
+  We are pleased to confirm that your subscription to the 
+  <b>{{ $subscription->plan_info['name'] }}</b>
+  has been successfully renewed! You can continue enjoying all the exclusive benefits and features of your subscription.<br />
   <br />
-  Here is a brief summary of your subscription:<br />
+  Here is a summary of your subscription:<br />
   <br />
   <x-emails.subscription.table
     :$subscription
@@ -13,7 +14,6 @@
       'period_end_date',
       'currency',
       'price',
-      'total_discount',
       'subtotal',
       'total_tax', 
       'total_amount',
@@ -22,7 +22,6 @@
   >
   </x-emails.subscription.table>
   <br />
-  You can check your subscription's details on our
-  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
+  You can see your subscription details on our <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
   <br />
 </x-emails.subscription.layout>

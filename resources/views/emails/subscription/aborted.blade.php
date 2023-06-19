@@ -1,8 +1,8 @@
 <x-emails.subscription.layout :$subscription>
-  This is to inform you that your purchase of the subscription
-  <b>{{ $subscription->plan_info["name"] }}</b> was cancelled. Please check your payment method and retry.<br />
+  Unfortunately, an attempted subscription to the <b>{{ $subscription->plan_info["name"] }}</b> failed. Please check
+  your payment method and try again.<br />
   <br />
-  Here is a brief summary of the subscription you are trying to purchase:<br />
+  Here is a summary of the attempted subscription purchase:<br />
   <br />
   <x-emails.subscription.table
     :$subscription
@@ -11,7 +11,6 @@
       'name',
       'currency',
       'price',
-      'total_discount',
       'subtotal',
       'total_tax', 
       'total_amount'

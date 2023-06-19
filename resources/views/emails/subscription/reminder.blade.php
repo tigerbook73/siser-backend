@@ -1,17 +1,18 @@
 <x-emails.subscription.layout :$subscription>
-  This is a reminder that your
+  We would like to remind you that your subscription to 
   <b>{{ $subscription->plan_info['name'] }}</b>
-  subscription is set to renew on or after
-  <b>{{ $subscription->next_invoice_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</b
-  >.<br />
+  is scheduled to renew on or after
+  <b>{{ $subscription->next_invoice_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</b>.<br />
   <br />
-  To ensure that your subscription continues without interruption, your {!! $subscription->user->payment_method->type ==
-  'creditCard' ? '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in
-  <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' : '<b
-    >' . ucfirst($subscription->user->payment_method->type) . '</b
-  >' !!} will be charged {{ $subscription->total_amount }} {{ $subscription->currency }}.<br />
+  To ensure uninterrupted access to all your subscription benefits, please ensure your
+  {!!
+    $subscription->user->payment_method->type == 'creditCard' ?
+     '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' :
+     '<b>' . ucfirst($subscription->user->payment_method->type) . '</b>'
+  !!}
+  has sufficient funds for the renewal amount of {{ $subscription->total_amount }} {{ $subscription->currency }}.<br />
   <br />
-  Here is a brief summary of your subscription:<br />
+  Here is a summary of your subscription:<br />
   <br />
   <x-emails.subscription.table
     :$subscription
@@ -20,7 +21,6 @@
       'next_invoice_date',
       'currency',
       'price',
-      'total_discount',
       'subtotal',
       'total_tax', 
       'total_amount'
@@ -28,7 +28,7 @@
     :$timezone
   ></x-emails.subscription.table>
   <br />
-  You can check your subscription's details on our
+  You can see your subscription details on our
   <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
   <br />
 </x-emails.subscription.layout>
