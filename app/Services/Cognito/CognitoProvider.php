@@ -58,6 +58,7 @@ class CognitoProvider
       phone_number: $user['phone_number'] ?? null,
       language_code: $user['custom:language_code'] ?? null,
       country_code: $user['custom:country_code'] ?? null,
+      timezone: $user['custom:timezone'] ?? null,
       is_lds_prem_sub: $user['custom:is_lds_prem_sub'] ?? null,
       software_user_id: $user['custom:software_user_id'] ?? null,
     );

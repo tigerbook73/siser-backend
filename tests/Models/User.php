@@ -36,6 +36,9 @@ class User {
     /** @var string $language_code */
     public $language_code = "";
 
+    /** @var string $timezone */
+    public $timezone = "";
+
     /** @var string $cognito_id cognito sub*/
     public $cognito_id = "";
 

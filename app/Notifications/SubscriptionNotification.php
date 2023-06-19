@@ -81,7 +81,7 @@ class SubscriptionNotification extends Notification
       ->view("emails.$view", [
         'subscription'  => $this->subscription,
         'invoice'       => $this->invoice,
-        'timezone'      => Country::findByCode($this->subscription->billing_info['address']['country'])->timezone,
+        'timezone'      => $this->subscription->user->timezone,
       ]);
   }
 

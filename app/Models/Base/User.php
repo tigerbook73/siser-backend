@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property Carbon|null $updated_at
  * @property array|null $dr
  * @property string|null $type
+ * @property string|null $timezone
  * 
  * @property BillingInfo $billing_info
  * @property Collection|Invoice[] $invoices
@@ -81,7 +82,8 @@ class User extends \Illuminate\Foundation\Auth\User
     'license_count',
     'roles',
     'dr',
-    'type'
+    'type',
+    'timezone'
   ];
 
   public function billing_info()

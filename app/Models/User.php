@@ -27,6 +27,7 @@ class User extends UserWithTrait
     'phone_number'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'country_code'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'language_code'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'timezone'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'license_count'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'type'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -94,6 +95,7 @@ class User extends UserWithTrait
         'phone_number'  => $cognitoUser->phone_number,
         'country_code'  => $cognitoUser->country_code,
         'language_code' => $cognitoUser->language_code,
+        'timezone'      => $cognitoUser->timezone,
         'password'      => 'not allowed',
       ]);
     }
@@ -114,6 +116,7 @@ class User extends UserWithTrait
     $this->phone_number   = $cognitoUser->phone_number;
     $this->country_code   = $cognitoUser->country_code;
     $this->language_code  = $cognitoUser->language_code;
+    $this->timezone       = $cognitoUser->timezone;
     $this->save();
 
     return $this;

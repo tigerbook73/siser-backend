@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -13,8 +15,8 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::table('countries', function (Blueprint $table) {
-      $table->string('timezone')->default('UTC');
+    Schema::table('users', function (Blueprint $table) {
+      $table->string('timezone')->nullable();
     });
   }
 
@@ -25,7 +27,7 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::table('countries', function (Blueprint $table) {
+    Schema::table('users', function (Blueprint $table) {
       $table->dropColumn('timezone');
     });
   }

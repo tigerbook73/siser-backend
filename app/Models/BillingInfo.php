@@ -25,17 +25,12 @@ class BillingInfo extends BaseBillingInfo
 
   public function beforeCreate()
   {
-    if (!$this->language) {
-      $this->language = Locale::defaultLanguage($this->address['country']);
-    }
+    $this->language = Locale::defaultLanguage($this->address['country'], $this->language);
     $this->locale = Locale::locale($this->language, $this->address['country']);
   }
 
   public function beforeUpdate()
   {
-    if (!$this->language) {
-      $this->language = Locale::defaultLanguage($this->address['country']);
-    }
     $this->locale = Locale::locale($this->language, $this->address['country']);
   }
 
@@ -49,15 +44,17 @@ class BillingInfo extends BaseBillingInfo
       'organization'  => "",
       'email'         => $user->email,
       'address'       => [
-        "line1" => "",
-        "line2" => "",
-        "city" => "",
-        "postcode" => "",
-        "state" => "",
-        "country" => $user->country_code,
+        "line1"       => "",
+        "line2"       => "",
+        "city"        => "",
+        "postcode"    => "",
+        "state"       => "",
+        "country"     => $user->country_code,
       ],
       'tax_id'        => null
     ]);
+    $billingInfo->language  = Locale::defaultLanguage($user->country_code, $user->language_code);
+    $billingInfo->locale    = Locale::locale($billingInfo->language, $billingInfo->address['country']);
 
     $billingInfo->id = $user->id;
     $billingInfo->save();
