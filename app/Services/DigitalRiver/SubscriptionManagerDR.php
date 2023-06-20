@@ -121,18 +121,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->billing_info               = $billingInfo->toResource('customer');
     $subscription->plan_info                  = $publicPlan;
     $subscription->coupon_info                = $coupon ? $coupon->toResource('customer') : null;
-    $subscription->processing_fee_info        = [
-      'processing_fee_rate'     => $country->processing_fee_rate,
-      'explicit_processing_fee' => $country->explicit_processing_fee,
-    ];
     $subscription->currency                   = $country->currency;
-    if ($country->explicit_processing_fee) {
-      $subscription->price                    = round($publicPlan['price']['price'] * (1 -  $couponDiscount / 100), 2);
-      $subscription->processing_fee           = round($subscription->price * $country->processing_fee_rate / 100, 2);
-    } else {
-      $subscription->price                    = round($publicPlan['price']['price'] * (1 -  $couponDiscount / 100) * (1 + $country->processing_fee_rate / 100), 2);
-      $subscription->processing_fee           = 0;
-    }
+    $subscription->price                    = round($publicPlan['price']['price'] * (1 -  $couponDiscount / 100), 2);
     $subscription->start_date                 = null;
     $subscription->end_date                   = null;
     $subscription->subscription_level         = $publicPlan['subscription_level'];
@@ -825,7 +815,6 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $invoice->plan_info           = $subscription->plan_info;
     $invoice->coupon_info         = $subscription->coupon_info;
-    $invoice->processing_fee_info = $subscription->processing_fee_info;
     $invoice->payment_method_info = $subscription->user->payment_method->info();
 
     $invoice->subtotal            = $subscription->subtotal;
@@ -860,7 +849,6 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $invoice->plan_info           = $subscription->next_invoice['plan_info'];
     $invoice->coupon_info         = $subscription->next_invoice['coupon_info'];
-    $invoice->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
 
     $source = $drInvoice->getPayment()->getSources()[0];
     $invoice->payment_method_info = [
@@ -948,7 +936,6 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       $subscription->plan_info = $subscription->next_invoice['plan_info'];
       $subscription->coupon_info = $subscription->next_invoice['coupon_info'];
-      $subscription->processing_fee_info = $subscription->next_invoice['processing_fee_info'];
 
       $subscription->fillNextInvoice();
 

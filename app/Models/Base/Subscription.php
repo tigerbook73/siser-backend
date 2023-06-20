@@ -33,8 +33,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $billing_info
  * @property array|null $plan_info
  * @property array|null $coupon_info
- * @property array|null $processing_fee_info
- * @property float $processing_fee
  * @property float $subtotal
  * @property float $tax_rate
  * @property float $total_tax
@@ -75,8 +73,6 @@ class Subscription extends Model
     'billing_info' => 'json',
     'plan_info' => 'json',
     'coupon_info' => 'json',
-    'processing_fee_info' => 'json',
-    'processing_fee' => 'float',
     'subtotal' => 'float',
     'tax_rate' => 'float',
     'total_tax' => 'float',
@@ -104,8 +100,6 @@ class Subscription extends Model
     'billing_info',
     'plan_info',
     'coupon_info',
-    'processing_fee_info',
-    'processing_fee',
     'subtotal',
     'tax_rate',
     'total_tax',

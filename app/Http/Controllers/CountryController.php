@@ -27,8 +27,6 @@ class CountryController extends SimpleController
       'code'                    => ['required', 'string', 'size:2', 'unique:countries'],
       'name'                    => ['required', 'string', 'max:255'],
       'currency'                => ['required', 'string', 'size:3'],
-      'processing_fee_rate'     => ['required', 'numeric', 'between:0,50'],
-      'explicit_processing_fee' => ['required', 'boolean'],
     ];
   }
 
@@ -37,8 +35,6 @@ class CountryController extends SimpleController
     return [
       'name'                    => ['filled', 'string', 'max:255'],
       'currency'                => ['filled', 'string', 'size:3'],
-      'processing_fee_rate'     => ['filled', 'numeric', 'between:0,50'],
-      'explicit_processing_fee' => ['filled', 'boolean'],
     ];
   }
 

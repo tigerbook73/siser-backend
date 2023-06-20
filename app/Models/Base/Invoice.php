@@ -25,7 +25,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $currency
  * @property array $plan_info
  * @property array|null $coupon_info
- * @property array $processing_fee_info
  * @property float $subtotal
  * @property float $total_tax
  * @property float $total_amount
@@ -59,7 +58,6 @@ class Invoice extends Model
     'period_end_date' => 'datetime',
     'plan_info' => 'json',
     'coupon_info' => 'json',
-    'processing_fee_info' => 'json',
     'subtotal' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
@@ -78,7 +76,6 @@ class Invoice extends Model
     'currency',
     'plan_info',
     'coupon_info',
-    'processing_fee_info',
     'subtotal',
     'total_tax',
     'total_amount',

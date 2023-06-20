@@ -49,7 +49,7 @@ class DrTestHelper
     $checkout->setMetadata(['subscription_id' => $subscription->id]);
     $checkout->setUpstreamId((string)$subscription->id);
 
-    $checkout->setSubtotal($subscription->price + $subscription->processing_fee);
+    $checkout->setSubtotal($subscription->price);
     $checkout->getItems()[0]->getTax()->setRate(0.1);
     $checkout->setTotalTax($checkout->getSubtotal() * 0.1);
     $checkout->setTotalAmount($checkout->getSubtotal() + $checkout->getTotalTax());
@@ -80,7 +80,7 @@ class DrTestHelper
   {
     $invoice = DrObject::invoice();
     $invoice->setId($id ?: $this->uuid());
-    $invoice->setSubtotal($subscription->price + $subscription->processing_fee);
+    $invoice->setSubtotal($subscription->price);
     $invoice->getItems()[0]->getTax()->setRate(0.1);
     $invoice->setTotalTax($invoice->getSubtotal() * 0.1);
     $invoice->setTotalAmount($invoice->getSubtotal() + $invoice->getTotalTax());
@@ -96,7 +96,7 @@ class DrTestHelper
     $order = DrObject::order();
     $order->setId($id ?? $subscription->getDrOrderId() ?? $this->uuid());
 
-    $order->setSubtotal($subscription->price + $subscription->processing_fee);
+    $order->setSubtotal($subscription->price);
     $order->getItems()[0]->getTax()->setRate(0.1);
     $order->setTotalTax($order->getSubtotal() * 0.1);
     $order->setTotalAmount($order->getSubtotal() + $order->getTotalTax());

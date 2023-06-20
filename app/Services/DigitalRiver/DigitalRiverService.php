@@ -179,20 +179,6 @@ class DigitalRiverService
     return $productDetails;
   }
 
-  protected function fillProcessingFeeItemProductDetails(Subscription $subscription): DrProductDetails
-  {
-    // productDetails
-    $productDetails = new DrProductDetails();
-    $productDetails->setSkuGroupId(config('dr.sku_grp_process_fee'));
-    $productName = 'Processing fee (' . $subscription->processing_fee_info['processing_fee_rate'] . '%)';
-    $productDetails->setName($productName);
-    $productDetails->setDescription('');
-    $productDetails->setCountryOfOrigin('AU');
-
-    return $productDetails;
-  }
-
-
   /**
    * plan
    */
@@ -382,34 +368,9 @@ class DigitalRiverService
     return $item;
   }
 
-  protected function fillCheckoutProcessingFeeItem(Subscription $subscription): DrSkuRequestItem
-  {
-    // productDetails
-    $productDetails = $this->fillProcessingFeeItemProductDetails($subscription);
-
-    // subscriptionInfo
-    $subscriptionInfo = new DrSubscriptionInfo();
-    $subscriptionInfo->setPlanId(config('dr.default_plan'));
-    $subscriptionInfo->setTerms('These are the terms...');
-    $subscriptionInfo->setAutoRenewal(true);
-
-    // item
-    $item = new DrSkuRequestItem();
-    $item->setProductDetails($productDetails);
-    $item->setSubscriptionInfo($subscriptionInfo);
-    $item->setPrice($subscription->processing_fee);
-    $item->setQuantity(1);
-    $item->setMetadata(['subscription' => $subscription->id]);
-
-    return $item;
-  }
-
   protected function fillCheckoutItems(Subscription $subscription)
   {
     $items[] = $this->fillCheckoutSubscriptionItem($subscription);
-    if ($subscription->processing_fee_info['explicit_processing_fee']) {
-      $items[] = $this->fillCheckoutProcessingFeeItem($subscription);
-    }
     return $items;
   }
 
@@ -633,26 +594,9 @@ class DigitalRiverService
     return $item;
   }
 
-  protected function fillSubscriptionProcessingFeeItem(Subscription $subscription): DrSubscriptionItems
-  {
-    // productDetails
-    $productDetails = $this->fillProcessingFeeItemProductDetails($subscription);
-
-    // item
-    $item = new DrSubscriptionItems();
-    $item->setProductDetails($productDetails);
-    $item->setPrice($subscription->processing_fee);
-    $item->setQuantity(1);
-
-    return $item;
-  }
-
   protected function fillSubscriptionItems(Subscription $subscription)
   {
     $items[] = $this->fillSubscriptionSubscriptionItem($subscription);
-    if ($subscription->processing_fee_info['explicit_processing_fee']) {
-      $items[] = $this->fillSubscriptionProcessingFeeItem($subscription);
-    }
     return $items;
   }
 

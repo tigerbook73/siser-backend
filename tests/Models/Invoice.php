@@ -36,13 +36,10 @@ class Invoice {
     /** @var \Tests\Models\Coupon $coupon_info */
     public $coupon_info;
 
-    /** @var \Tests\Models\ProcessingFee $processing_fee_info */
-    public $processing_fee_info;
-
     /** @var \Tests\Models\PaymentMethodInfo $payment_method_info */
     public $payment_method_info;
 
-    /** @var float $subtotal price - discount + processing_fee*/
+    /** @var float $subtotal price - discount*/
     public $subtotal = 0;
 
     /** @var float $total_tax */

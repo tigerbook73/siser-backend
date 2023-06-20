@@ -15,14 +15,8 @@ class SubscriptionNextInvoice {
     /** @var \Tests\Models\Coupon $coupon_info */
     public $coupon_info;
 
-    /** @var \Tests\Models\ProcessingFee $processing_fee_info */
-    public $processing_fee_info;
-
     /** @var float $price beautified price (beautified price)*/
     public $price = 0;
-
-    /** @var float $processing_fee */
-    public $processing_fee = 0;
 
     /** @var float $subtotal */
     public $subtotal = 0;

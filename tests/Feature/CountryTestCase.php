@@ -24,16 +24,12 @@ class CountryTestCase extends ApiTestCase
       'code' => "UK",
       'name' => "United Kingtom",
       'currency' => "GBP",
-      'processing_fee_rate' => 2,
-      'explicit_processing_fee' => false,
     ];
 
     $this->modelUpdate = [
       // 'code' => "US",
       'name' => "USA",
       'currency' => "USD",
-      'processing_fee_rate' => 3,
-      'explicit_processing_fee' => false,
     ];
 
     $this->object = Country::first();
