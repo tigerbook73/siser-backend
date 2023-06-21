@@ -132,7 +132,12 @@ class AuthController extends Controller
 
   public function loginTest(Request $request)
   {
-    $user = User::where('name', 'user1.test')->first();
+    $name = $request->name ?: 'user1.test';
+    $user = User::where('name', $name)->first();
+
+    if (!$user) {
+      return response('Invalid user name!!', 400);
+    }
 
     // view
     $viewData = [
