@@ -18,6 +18,9 @@ class Device {
     /** @var string $user_code user_code for the registration. It will be a 15-digit string.*/
     public $user_code = "";
 
+    /** @var int $registered_at */
+    public $registered_at = 0;
+
     /** @var int $expires_at */
     public $expires_at = 0;
 
