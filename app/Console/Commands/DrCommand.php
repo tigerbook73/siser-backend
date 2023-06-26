@@ -43,11 +43,6 @@ class DrCommand extends Command
    */
   public function handle()
   {
-    if (config('dr.dr_mode') == 'prod') {
-      $this->warn('This command can not be executed under "prod" mode');
-      return -1;
-    }
-
     $subcmd = $this->argument('subcmd');
     if (!$subcmd || $subcmd == 'help') {
       $this->info('Usage: php artisan dr:cmd {subcmd}');
@@ -58,7 +53,7 @@ class DrCommand extends Command
       $this->info('  clear:           try to clear all test data');
       $this->info('  enable-hook:     enable webhook');
       $this->info('  disable-hook:    disable webhook');
-      return 0;
+      return self::SUCCESS;
     }
 
     switch ($subcmd) {
@@ -76,7 +71,7 @@ class DrCommand extends Command
 
       default:
         $this->error("Invalid subcmd: {$subcmd}");
-        return -1;
+        return self::FAILURE;
     }
   }
 
@@ -93,7 +88,7 @@ class DrCommand extends Command
     $this->info("Default Plan: {$defaultPlan->getId()}");
     $this->info("Create or update default plan ... done!");
 
-    return 0;
+    return self::SUCCESS;
   }
 
   public function enableWebhook(bool $enable)
@@ -106,6 +101,11 @@ class DrCommand extends Command
 
   public function clear()
   {
+    if (config('dr.dr_mode') == 'prod') {
+      $this->warn('This command can not be executed under "prod" mode');
+      return self::FAILURE;
+    }
+
     /**
      * clear plans
      */
@@ -214,7 +214,7 @@ class DrCommand extends Command
     $this->info('Clear customers ...');
     $this->info('');
 
-    return 0;
+    return self::SUCCESS;
   }
 
   public function ignore($callback)
