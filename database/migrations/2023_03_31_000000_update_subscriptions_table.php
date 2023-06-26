@@ -117,6 +117,7 @@ return new class extends Migration
       ->update([
         'plan_id' => config('siser.plan.default_machine_plan'),
         'plan_info' => Plan::find(config('siser.plan.default_machine_plan'))->toPublicPlan('US'),
+        'subscription_level'        => 1,
         'processing_fee_info'       => [
           'explicit_processing_fee' => false,
           'processing_fee_rate'     => 0,
@@ -144,7 +145,9 @@ return new class extends Migration
     Schema::table('subscriptions', function (Blueprint $table) {
       $table->dropIndex(['subscription_level']);
       $table->dropIndex(['current_period']);
-      $table->dropIndex(['dr_subscription_id']); // NEW
+      if (Schema::hasColumn('subscriptions', 'dr_subscription_id')) {
+        $table->dropIndex(['dr_subscription_id']); // NEW
+      }
       $table->dropIndex(['status']);
       $table->dropIndex(['sub_status']);
 
@@ -161,7 +164,9 @@ return new class extends Migration
       $table->dropColumn('processing_fee_info');
       $table->dropColumn('processing_fee');
       $table->dropColumn('subtotal');
-      $table->dropColumn('tax_rate'); // NEW
+      if (Schema::hasColumn('subscriptions', 'tax_rate')) {
+        $table->dropColumn('tax_rate'); // NEW
+      }
       $table->dropColumn('total_tax');
       $table->dropColumn('total_amount');
       $table->dropColumn('subscription_level');
@@ -169,9 +174,13 @@ return new class extends Migration
       $table->dropColumn('current_period_start_date');
       $table->dropColumn('current_period_end_date');
       $table->dropColumn('next_invoice_date');
-      $table->dropColumn('next_invoice'); // NEW
+      if (Schema::hasColumn('subscriptions', 'next_invoice')) {
+        $table->dropColumn('next_invoice'); // NEW
+      }
       $table->dropColumn('dr');
-      $table->dropColumn('dr_subscription_id'); // NEW
+      if (Schema::hasColumn('subscriptions', 'dr_subscription_id')) {
+        $table->dropColumn('dr_subscription_id'); // NEW
+      }
       $table->dropColumn('stop_reason');
       $table->dropColumn('sub_status');
     });

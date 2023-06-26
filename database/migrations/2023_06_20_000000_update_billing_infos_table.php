@@ -49,9 +49,5 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::table('billing_infos', function (Blueprint $table) {
-      $table->dropColumn('language');
-      $table->dropColumn('locale');
-    });
   }
 };

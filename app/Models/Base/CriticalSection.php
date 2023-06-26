@@ -21,9 +21,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property array $action
  * @property array $steps
  * @property string $status
+ * @property bool $need_notify
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property bool $need_notify
  *
  * @package App\Models\Base
  */

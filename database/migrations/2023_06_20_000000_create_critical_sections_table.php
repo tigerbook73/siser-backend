@@ -21,11 +21,13 @@ return new class extends Migration
       $table->json('action')->comment('action object');
       $table->json('steps')->comment('array of steps');
       $table->string('status')->default('open')->comment('[open, closed]');
+      $table->boolean('need_notify')->default(true);
       $table->timestamps();
 
       $table->index('type');
       $table->index('object_id');
       $table->index('status');
+      $table->index('need_notify');
     });
   }
 
@@ -36,6 +38,5 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::drop('critical_sections');
   }
 };
