@@ -16,3 +16,6 @@ does test site share resource with production site? only difference is test_mode
 4. create plans
 5. create webhook
 
+
+code-deploy:
+update template
