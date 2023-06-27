@@ -18,4 +18,4 @@ does test site share resource with production site? only difference is test_mode
 
 
 code-deploy:
-update template
+update cloud-formation template

@@ -142,47 +142,5 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::table('subscriptions', function (Blueprint $table) {
-      $table->dropIndex(['subscription_level']);
-      $table->dropIndex(['current_period']);
-      if (Schema::hasColumn('subscriptions', 'dr_subscription_id')) {
-        $table->dropIndex(['dr_subscription_id']); // NEW
-      }
-      $table->dropIndex(['status']);
-      $table->dropIndex(['sub_status']);
-
-      $table->dropForeign(['coupon_id']);
-
-      $table->float('price')->change();
-      $table->datetime('start_date')->nullable()->change();
-      $table->datetime('end_date')->nullable()->change();
-
-      $table->dropColumn('coupon_id');
-      $table->dropColumn('billing_info');
-      $table->dropColumn('plan_info');
-      $table->dropColumn('coupon_info');
-      $table->dropColumn('processing_fee_info');
-      $table->dropColumn('processing_fee');
-      $table->dropColumn('subtotal');
-      if (Schema::hasColumn('subscriptions', 'tax_rate')) {
-        $table->dropColumn('tax_rate'); // NEW
-      }
-      $table->dropColumn('total_tax');
-      $table->dropColumn('total_amount');
-      $table->dropColumn('subscription_level');
-      $table->dropColumn('current_period');
-      $table->dropColumn('current_period_start_date');
-      $table->dropColumn('current_period_end_date');
-      $table->dropColumn('next_invoice_date');
-      if (Schema::hasColumn('subscriptions', 'next_invoice')) {
-        $table->dropColumn('next_invoice'); // NEW
-      }
-      $table->dropColumn('dr');
-      if (Schema::hasColumn('subscriptions', 'dr_subscription_id')) {
-        $table->dropColumn('dr_subscription_id'); // NEW
-      }
-      $table->dropColumn('stop_reason');
-      $table->dropColumn('sub_status');
-    });
   }
 };

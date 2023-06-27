@@ -93,16 +93,5 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::table('plans', function (Blueprint $table) {
-      $table->dropUnique(['name']);
-      $table->dropIndex(['catagory']);
-      $table->dropIndex(['status']);
-
-      $table->dropColumn('price_list');
-
-      $table->string('contract_term')->nullable();
-      $table->json('price')->nullable();
-      $table->boolean('auto_renew')->default(true);
-    });
   }
 };

@@ -35,6 +35,5 @@ return new class extends Migration
    */
   public function down()
   {
-    Schema::drop('payment_methods');
   }
 };
