@@ -44,12 +44,12 @@ class BillingInfo extends BaseBillingInfo
       'organization'  => "",
       'email'         => $user->email,
       'address'       => [
-        "line1"       => "",
-        "line2"       => "",
-        "city"        => "",
-        "postcode"    => "",
-        "state"       => "",
-        "country"     => $user->country_code,
+        'line1'       => '',
+        'line2'       => '',
+        'city'        => '',
+        'postcode'    => '',
+        'state'       => '',
+        'country'     => Country::findByCode($user->country_code)?->code ?? 'US',
       ],
       'tax_id'        => null
     ]);
