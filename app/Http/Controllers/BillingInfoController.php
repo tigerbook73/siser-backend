@@ -90,6 +90,7 @@ class BillingInfoController extends SimpleController
     $billingInfo->save();
 
     // create or update customer
+    // TODO: when DR go online, DR: customer may need to update
     $this->manager->createOrUpdateCustomer($billingInfo);
 
     return $this->transformSingleResource($billingInfo->unsetRelations());
