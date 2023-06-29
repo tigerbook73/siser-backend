@@ -112,9 +112,10 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Billing information is not configured!'], 400);
     }
 
-    // validate customer id
+    // create dr customer is required
     if (empty($this->user->dr['customer_id'])) {
-      return response()->json(['message' => 'Customer is not created'], 400);
+      $this->manager->createOrUpdateCustomer($billingInfo);
+      $this->user->refresh();
     }
 
     $pendingSubscription = $this->user->getPendingOrProcessingSubscription();
