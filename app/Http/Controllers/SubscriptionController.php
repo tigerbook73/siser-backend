@@ -25,7 +25,7 @@ class SubscriptionController extends SimpleController
   protected function getListRules(array $inputs = []): array
   {
     return [
-      'user_id'     => ['filled'],
+      'user_id'     => ['filled', 'integer'],
       'plan_id'     => ['filled'],
       'status'      => ['filled'],
       'sub_status'  => ['filled'],
@@ -61,6 +61,15 @@ class SubscriptionController extends SimpleController
     $this->validateUser();
     $object = $this->baseQuery()->where('user_id', $this->user->id)->findOrFail($id);
     return $this->transformSingleResource($object);
+  }
+
+  // GET /users/{id}/subscriptions
+  public function listByUser(Request $request, $user_id)
+  {
+    $this->validateUser();
+    $request->merge(['user_id' => $user_id]);
+
+    return parent::list($request);
   }
 
   // GET /subscriptions

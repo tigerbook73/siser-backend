@@ -204,8 +204,6 @@ if (!$role || $role == 'admin') {
     Route::post('/users', [UserController::class, 'create'])->middleware('access:user.create');
     Route::post('/users/{id}', [UserController::class, 'refresh'])->middleware('access:user.refresh');
     Route::post('/users/{id}/details', [UserController::class, 'updateDetails'])->middleware('access:user.update');
-
-    Route::get('/users/{id}/machines', [MachineController::class, 'listByUser']);
   });
 }
 
@@ -217,6 +215,8 @@ if (!$role || $role == 'admin') {
     Route::get('/users/{id}/billing-info', [BillingInfoController::class, 'userGet'])->middleware('access:user.billing-info.get');
     Route::get('/users/{id}/payment-method', [PaymentMethodController::class, 'userGet'])->middleware('access:user.payment-method.get');
     Route::get('/users/{id}/lds-license', [LdsLicenseController::class, 'userGet'])->middleware('access:user.lds-license.get');
+    Route::get('/users/{id}/machines', [MachineController::class, 'listByUser'])->middleware('access:user.machine.list');
+    Route::get('/users/{id}/subscriptions', [SubscriptionController::class, 'listByUser'])->middleware('access:user.subscription.list');
   });
 }
 

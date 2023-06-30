@@ -56,6 +56,8 @@ const resourceRoleMapping = [
   'user.billing-info.get' => [],
   'user.payment-method.get' => [],
   'user.lds-license.get' => [],
+  'user.machine.list' => [],
+  'user.subscription.list' => [],
 
   'invoice.list' => [],
   'invoice.get' => [],
