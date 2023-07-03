@@ -11,6 +11,7 @@
     <script>
       const token = JSON.parse(atob('{!! $token !!}'));  // must be ' here 
       const account = JSON.parse(atob('{!! $account !!}'));  // must be ' here
+      const siserToken = JSON.parse(atob('{!! $siserToken !!}'));  // must be ' here
 
       console.log(token);
       console.log(account);
@@ -21,6 +22,9 @@
       for (const prop in account) {
         window.sessionStorage.setItem("user_account." + prop, account[prop]);
       }
+      for (const prop in siserToken) {
+        window.sessionStorage.setItem("user_siserToken." + prop, siserToken[prop]);
+      } 
 
       const redirect = window.sessionStorage.getItem('login_redirect') || "/";
       window.sessionStorage.removeItem('login_redirect');

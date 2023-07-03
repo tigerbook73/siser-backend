@@ -68,7 +68,12 @@ class AuthController extends Controller
         'token_type' => 'bearer',
         'expires_in' => config('jwt.ttl') * 60,
       ])),
-      'account' => base64_encode(json_encode($user->toResource('customer')))
+      'account' => base64_encode(json_encode($user->toResource('customer'))),
+      'siserToken' => base64_encode(json_encode([
+        'accessToken' => $request->input('accessToken'),
+        'idToken' => $request->input('idToken'),
+        'refreshToken' => $request->input('refreshToken'),
+      ])),
     ];
     return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
   }
@@ -146,7 +151,12 @@ class AuthController extends Controller
         'token_type' => 'bearer',
         'expires_in' => config('jwt.ttl') * 60,
       ])),
-      'account' => base64_encode(json_encode($user->toResource('customer')))
+      'account' => base64_encode(json_encode($user->toResource('customer'))),
+      'siserToken' => base64_encode(json_encode([
+        'accessToken' => $request->input('accessToken'),
+        'idToken' => $request->input('idToken'),
+        'refreshToken' => $request->input('refreshToken'),
+      ])),
     ];
     return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
   }
