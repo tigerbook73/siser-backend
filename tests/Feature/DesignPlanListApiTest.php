@@ -10,7 +10,7 @@ class DesignPlanListApiTest extends DesignPlanTestCase
   {
     $this->listAssert(200);
 
-    $this->listAssert(200, ['name' => 'LDS Premier Plan']);
+    $this->listAssert(200, ['name' => 'Leonardo™ Design Studio Pro Plan']);
 
     $this->listAssert(200, ['catagory' => 'machine']);
 

@@ -63,7 +63,7 @@
 
       <!-- logo -->
       <div>
-        <img width="110px" src="https://www.siser.com/wp-content/themes/S22/images/layout/logo.png" />
+        <img width="110px" src="{{ config('app.url') . '/imgs/siser-logo-trimmed.png'}}" />
       </div>
     </div>
   </body>

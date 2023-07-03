@@ -21,7 +21,7 @@ return <<<EOD
           "price": 14.0,
           "productDetails": {
               "skuGroupId": "software-subscription-01",
-              "name": "LDS Premier Plan",
+              "name": "Leonardo™ Design Studio Pro Plan",
               "countryOfOrigin": "AU"
           },
           "quantity": 1

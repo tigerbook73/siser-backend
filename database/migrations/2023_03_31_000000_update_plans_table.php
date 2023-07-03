@@ -60,9 +60,9 @@ return new class extends Migration
     DB::table('plans')->upsert(
       [
         [
-          'name'                => 'LDS Premier Plan',
+          'name'                => 'Leonardo™ Design Studio Pro Plan',
           'catagory'            => 'machine',
-          'description'         => 'LDS Premier Plan',
+          'description'         => 'Leonardo™ Design Studio Pro Plan',
           'subscription_level'  => 2,
           'price_list'          => json_encode([
             [

@@ -43,7 +43,7 @@ return <<<EOD
       {
           "id": "f13e6c3a-e340-497b-b5a5-d3cd503ad71a",
           "productDetails": {
-              "name": "LDS Premier Plan",
+              "name": "Leonardo™ Design Studio Pro Plan",
               "eccn": "EAR99",
               "taxCode": "4323.320_A",
               "skuGroupId": "software-subscription-01",
