@@ -63,7 +63,7 @@
 
       <!-- logo -->
       <div>
-        <img width="110px" src="{{ config('app.url') . '/imgs/siser-logo-trimmed.png'}}" />
+        <img width="110" height="46" src="{{ config('app.url') . '/imgs/siser-logo-trimmed.png'}}" />
       </div>
     </div>
   </body>
