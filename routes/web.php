@@ -10,55 +10,80 @@ use Illuminate\Support\Facades\Route;
 | Web Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
+| IMPORTANT: When adding new routes in this file, you may need to update
+| the Nginx configuration: common.conf about the proxy rules
 |
 */
 
+
 $role = env('CONTAINER_ROLE', null);
+if ($role && $role != 'admin' && $role != 'customer' &&  $role != 'main') {
+  return;
+}
+
 $testCode = env('APP_TEST_CODE', false);
+$domainCustomer = env('DOMAIN_CUSTOMER', '');
+$domainAdmin = $domainCustomer ? 'admin.' . $domainCustomer : '';
+$domainLds = $domainCustomer ? 'lds.' . $domainCustomer : '';
+
 
 /**
- * authentication
+ * customer routes
  */
-
-if (!$role || $role == 'customer') {
+Route::domain($domainCustomer)->group(function () use ($testCode) {
+  // authentication
   Route::get('/auth/login', [AuthController::class, 'loginWeb']);
   Route::get('/auth/logout', [AuthController::class, 'logoutWeb']);
-}
 
-if (!$role || $role == 'admin') {
-  Route::get('/admin/auth/reset-password', function () {
-    return view('index');
-  })->name('password.reset');
-}
-
-/**
- * LDS
- */
-if (!$role || $role == 'customer') {
+  // LDS
   Route::get('/check-in', [LdsLicenseController::class, 'checkIn']);
   Route::get('/check-out', [LdsLicenseController::class, 'checkOut']);
-}
+
+  // Customer portal test
+  if ($testCode) {
+    Route::get('/auth/login-without-password', [AuthController::class, 'loginTest']);
+  }
+});
+
+/**
+ * lds routes
+ */
+Route::domain($domainLds)->group(function () {
+  // LDS
+  Route::get('/check-in', [LdsLicenseController::class, 'checkIn']);
+  Route::get('/check-out', [LdsLicenseController::class, 'checkOut']);
+
+  Route::fallback(function () {
+    return  response('', 404);
+  });
+});
+
+/** 
+ * admin routes
+ */
+Route::domain($domainAdmin)->group(function () use ($role) {
+  Route::get('/admin/auth/reset-password', function () {
+    return redirect('/error/NotFound' . '?' . http_build_query(['url' => request()->url()]));
+  })->name('password.reset');
+});
+
 
 /**
  * Backend Test
  */
 if ($testCode) {
-  Route::get('/be-test/dr', function () {
-    return view('dr-test');
-  });
-
   Route::get('/be-test/mail/{type}', [TestController::class, 'sendMail']);
   Route::get('/be-test/notification/{type}', [TestController::class, 'viewNotification']);
-
-  Route::get('/auth/login-without-password', [AuthController::class, 'loginTest']);
 }
 
-/**
- * fallback 
- */
+//
+// health check
+//
+Route::get('/health-check', function () {
+  return response('OK');
+});
+
+
 Route::fallback(function () {
-  return view('index');
+  return redirect('/error/NotFound' . '?' . http_build_query(['url' => request()->url()]));
 });
