@@ -8,7 +8,7 @@ ARG php_fpm_host
 ENV php_fpm_host=${php_fpm_host:-127.0.0.1}
 
 # nginx conf
-COPY ./docker/nginx /etc/nginx/conf.d
+COPY ./docker/nginx/ /etc/nginx/
 RUN rm /etc/nginx/conf.d/default.conf
 RUN sed -i "s/%%%DOMAIN_CUSTOMER%%%/${domain_customer}/g" /etc/nginx/conf.d/*.conf
 RUN sed -i "s/%%%PHP_FPM_HOST%%%/${php_fpm_host}/g" /etc/nginx/conf.d/common/*.conf
