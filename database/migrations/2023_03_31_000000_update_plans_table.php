@@ -140,8 +140,8 @@ return new class extends Migration
           ]),
           'url'                 => '',
           'status'              => 'active',
-          'created_at'          => new Carbon(),
-          'updated_at'          => new Carbon(),
+          'created_at'          => now(),
+          'updated_at'          => now(),
         ]
       ],
       ['name']
