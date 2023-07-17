@@ -15,7 +15,10 @@ class XRaySummaryItem {
     /** @var string $title */
     public $title = "";
 
-    /** @var \Tests\Models\XRaySummaryItemValue $value */
-    public $value;
+    /** @var float $value */
+    public $value = 0;
+
+    /** @var float $average daily average since 2022-10-17*/
+    public $average = 0;
 
 }

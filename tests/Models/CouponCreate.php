@@ -9,9 +9,6 @@ namespace Tests\Models;
  */
 class CouponCreate {
 
-    /** @var string $code */
-    public $code = "";
-
     /** @var string $description */
     public $description = "";
 
@@ -29,5 +26,8 @@ class CouponCreate {
 
     /** @var \DateTime $end_date when end_date &lt; today() and coupon is active, coupon will be deactivated immediately.*/
     public $end_date;
+
+    /** @var string $code */
+    public $code = "";
 
 }
