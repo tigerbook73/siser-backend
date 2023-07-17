@@ -3,31 +3,49 @@ ARG frontend_customer
 ARG backend_cli
 
 #
-# index.blade.php for customer and admin portal
+# frontend static files
 #
 FROM ${frontend_admin}  as frontend_admin
 FROM ${frontend_customer} as frontend_customer
 
 #
+# base image
+#
 FROM ${backend_cli}
 
-COPY ./docker/roadrunner/rr.yaml ./.rr.yaml
+#
+# install and config roadrunner
+#
 RUN php artisan octane:install --server=roadrunner --no-interaction && \
   chmod 755 ./rr
+COPY ./docker/roadrunner/rr.yaml ./.rr.yaml
 
+#
 # copy frontend admin
+#
 COPY --from=frontend_admin /dist/public/ ./public/admin
 COPY --from=frontend_admin /dist/public/index.html ./resources/views/index-admin.blade.php
 COPY ./public/static/ ./public/admin/static/
 
+#
 # copy frontend customer
+#
 COPY --from=frontend_customer /dist/public/ ./public/customer
 COPY --from=frontend_customer /dist/public/index.html ./resources/views/index-customer.blade.php 
 COPY ./public/static/ ./public/customer/static/
 
+#
+# export to volume, will be used by nginx
+#
 VOLUME [ "/var/www/html/public" ]
 
+#
+# run command
+#
 RUN chmod 755 start-fpm.sh
 CMD ["/var/www/html/start-fpm.sh"]
 
+#
+# use RR as FastCGI
+#
 EXPOSE 9000
