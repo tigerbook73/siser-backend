@@ -25,6 +25,7 @@ services:
       args:
         - frontend_customer=localhost/siser/frontend-customer:${DEV_VERSION:-9.9.9}-local
         - frontend_admin=localhost/siser/frontend-admin:${DEV_VERSION:-9.9.9}-local
+        - backend_cli=localhost/siser/main:${DEV_VERSION:-9.9.9}-queue-local
     restart: always
     image: localhost/siser/main:${DEV_VERSION:-9.9.9}-web-local
     environment:
@@ -40,6 +41,8 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       - public:/var/www/html/public
+    depends_on:
+      - queue
 
   queue:
     build:

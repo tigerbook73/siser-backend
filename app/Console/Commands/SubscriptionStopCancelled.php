@@ -38,6 +38,8 @@ class SubscriptionStopCancelled extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:stop-cancelled: start');
+
     $maxCount = 100;
     $dryRun = $this->option('dry-run');
 
@@ -55,14 +57,14 @@ class SubscriptionStopCancelled extends Command
     }
 
     if ($subscriptions->count() <= 0) {
-      $this->info('There is no subscriptions to process.');
+      Log::info('There is no subscriptions to process.');
       return Command::SUCCESS;
     }
 
-    $this->info("Process {$subscriptions->count()} subscriptions ...");
+    Log::info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
-      $this->info("  stopping subscription: id=$subscription->id");
+      Log::info("  stopping subscription: id=$subscription->id");
       if (!$dryRun) {
         // stop subscription data
         $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled');
@@ -78,10 +80,10 @@ class SubscriptionStopCancelled extends Command
       }
     }
 
-    $this->info("Process {$subscriptions->count()} subscriptions ... Done!");
+    Log::info("Process {$subscriptions->count()} subscriptions ... Done!");
 
     if ($moreItems) {
-      $this->info('There are more subscriptions to process');
+      Log::info('There are more subscriptions to process');
     }
 
     if (!$dryRun) {

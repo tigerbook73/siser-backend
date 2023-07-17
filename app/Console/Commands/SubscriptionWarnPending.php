@@ -6,6 +6,7 @@ use App\Models\Subscription;
 use App\Notifications\SubscriptionWarning;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionWarnPending extends Command
 {
@@ -35,6 +36,8 @@ class SubscriptionWarnPending extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:warn-pending: start');
+
     $maxCount = 100;
     $dryRun = $this->option('dry-run');
 
@@ -46,7 +49,7 @@ class SubscriptionWarnPending extends Command
       ->map(fn ($model) => $model->id)
       ->all();
 
-    $this->info('There are ' . count($subscriptionIds) . ' pending or processing subscriptions: [' . implode(', ', $subscriptionIds) . '] !');
+    Log::info('There are ' . count($subscriptionIds) . ' pending or processing subscriptions: [' . implode(', ', $subscriptionIds) . '] !');
 
     if (!$dryRun && count($subscriptionIds) > 0) {
       SubscriptionWarning::notify(SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION, $subscriptionIds);

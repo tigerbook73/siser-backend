@@ -36,6 +36,8 @@ class SubscriptionCleanDraft extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:clean-draft: start');
+
     $maxCount = 100;
     $dryRun = $this->option('dry-run');
 
@@ -52,24 +54,24 @@ class SubscriptionCleanDraft extends Command
     }
 
     if ($subscriptions->count() <= 0) {
-      $this->info('There is no subscriptions to process.');
+      Log::info('There is no subscriptions to process.');
       return Command::SUCCESS;
     }
 
-    $this->info("Process {$subscriptions->count()} subscriptions ...");
+    Log::info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
-      $this->info("  deleting subscription: id=$subscription->id");
+      Log::info("  deleting subscription: id=$subscription->id");
       if (!$dryRun) {
         $this->manager->deleteSubscription($subscription);
         usleep(1_000_000 / 20);
       }
     }
 
-    $this->info("Process {$subscriptions->count()} subscriptions ... Done!");
+    Log::info("Process {$subscriptions->count()} subscriptions ... Done!");
 
     if ($moreItems) {
-      $this->info('There are more subscriptions to process');
+      Log::info('There are more subscriptions to process');
     }
 
     if (!$dryRun) {

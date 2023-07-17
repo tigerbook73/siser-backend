@@ -42,14 +42,14 @@ return [
       'after_commit' => false,
     ],
 
-    'beanstalkd' => [
-      'driver' => 'beanstalkd',
-      'host' => 'localhost',
-      'queue' => 'default',
-      'retry_after' => 90,
-      'block_for' => 0,
-      'after_commit' => false,
-    ],
+    // 'beanstalkd' => [
+    //   'driver' => 'beanstalkd',
+    //   'host' => 'localhost',
+    //   'queue' => 'default',
+    //   'retry_after' => 90,
+    //   'block_for' => 0,
+    //   'after_commit' => false,
+    // ],
 
     'sqs' => [
       'driver' => 'sqs',
@@ -62,14 +62,14 @@ return [
       'after_commit' => false,
     ],
 
-    'redis' => [
-      'driver' => 'redis',
-      'connection' => 'default',
-      'queue' => env('REDIS_QUEUE', 'default'),
-      'retry_after' => 90,
-      'block_for' => null,
-      'after_commit' => false,
-    ],
+    // 'redis' => [
+    //   'driver' => 'redis',
+    //   'connection' => 'default',
+    //   'queue' => env('REDIS_QUEUE', 'default'),
+    //   'retry_after' => 90,
+    //   'block_for' => null,
+    //   'after_commit' => false,
+    // ],
 
   ],
 

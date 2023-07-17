@@ -36,6 +36,8 @@ class SubscriptionExpireCoupon extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:expire-coupon: start');
+
     $maxCount = 100;
     $dryRun = $this->option('dry-run');
 
@@ -49,24 +51,24 @@ class SubscriptionExpireCoupon extends Command
     }
 
     if ($subscriptions->count() <= 0) {
-      $this->info('There is no subscriptions to process.');
+      Log::info('There is no subscriptions to process.');
       return Command::SUCCESS;
     }
 
-    $this->info("Process {$subscriptions->count()} subscriptions ...");
+    Log::info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
-      $this->info("  updating subscription: id=$subscription->id");
+      Log::info("  updating subscription: id=$subscription->id");
       if (!$dryRun) {
         // TODO: processing subscriptions
         usleep(1_000_000 / 20);
       }
     }
 
-    $this->info("Process {$subscriptions->count()} subscriptions ... Done!");
+    Log::info("Process {$subscriptions->count()} subscriptions ... Done!");
 
     if ($moreItems) {
-      $this->info('There are more subscriptions to process');
+      Log::info('There are more subscriptions to process');
     }
 
     if (!$dryRun) {

@@ -6,6 +6,7 @@ use App\Models\CriticalSection;
 use App\Notifications\SubscriptionWarning;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionWarnUnclosed extends Command
 {
@@ -35,13 +36,15 @@ class SubscriptionWarnUnclosed extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:warn-unclosed: start');
+
     $dryRun = $this->option('dry-run');
 
     $ids = CriticalSection::unclosed()
       ->map(fn ($model) => $model->id)
       ->all();
 
-    $this->info('There are ' . count($ids) . ' unclosed critical section: [' . implode(', ', $ids) . '] !');
+    Log::info('There are ' . count($ids) . ' unclosed critical section: [' . implode(', ', $ids) . '] !');
 
     if (!$dryRun && count($ids) > 0) {
       SubscriptionWarning::notify(SubscriptionWarning::NOTIF_UNCLOSED_CRITICAL_SECTION, $ids);

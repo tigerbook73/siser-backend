@@ -7,6 +7,7 @@ use App\Models\Subscription;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionLogs extends Command
 {
@@ -36,6 +37,8 @@ class SubscriptionLogs extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:logs: start');
+
     $id = $this->argument('id');
 
     if (!$id) {
@@ -62,7 +65,7 @@ class SubscriptionLogs extends Command
     }
 
     if ($sections->count() <= 0) {
-      $this->info('There is no subscriptions to process.');
+      Log::info('There is no subscriptions to process.');
       return Command::SUCCESS;
     }
 
@@ -73,7 +76,7 @@ class SubscriptionLogs extends Command
       'plan',
       'status'
     );
-    $this->info(" $title");
+    Log::info(" $title");
     foreach ($sections as $section) {
       /** @var Subscription $subscription */
       $subscription = Subscription::find($section->object_id);
@@ -84,11 +87,11 @@ class SubscriptionLogs extends Command
         $subscription->plan_info['name'] ?? "",
         $subscription->status ?? "deleted"
       );
-      $this->info(" $text");
+      Log::info(" $text");
     }
 
     if ($moreItems) {
-      $this->info('There are more subscriptions to process');
+      Log::info('There are more subscriptions to process');
     }
     return Command::SUCCESS;
   }
@@ -100,7 +103,7 @@ class SubscriptionLogs extends Command
       ->where('object_id', $id)
       ->get();
 
-    $this->info("Subscription: $id");
+    Log::info("Subscription: $id");
     foreach ($sections as $section) {
       $text = sprintf(
         "action (%s): %s - %s",
@@ -112,11 +115,11 @@ class SubscriptionLogs extends Command
       if ($section->status != 'closed') {
         $this->warn($text);
       } else {
-        $this->info($text);
+        Log::info($text);
       }
       foreach ($section->steps as $step) {
         $text = sprintf("  %s - %s", $step['time'], $step['step']);
-        $this->info($text);
+        Log::info($text);
       }
     }
   }

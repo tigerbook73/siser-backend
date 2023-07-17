@@ -53,7 +53,7 @@ return [
   'channels' => [
     'stack' => [
       'driver' => 'stack',
-      'channels' =>  !env('APP_TEST_CODE') ? ['single', 'stdout', 'bugsnag'] : ['single', 'stdout'],
+      'channels' =>  !env('APP_TEST_CODE') ? ['single', 'stderr', 'bugsnag'] : ['single', 'stderr'],
       'ignore_exceptions' => false,
     ],
 
@@ -89,16 +89,6 @@ return [
       'formatter' => env('LOG_STDERR_FORMATTER'),
       'with' => [
         'stream' => 'php://stderr',
-      ],
-    ],
-
-    'stdout' => [
-      'driver' => 'monolog',
-      'level' => env('LOG_LEVEL', 'debug'),
-      'handler' => StreamHandler::class,
-      'formatter' => env('LOG_STDERR_FORMATTER'),
-      'with' => [
-        'stream' => 'php://stdout',
       ],
     ],
 
