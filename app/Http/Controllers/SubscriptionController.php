@@ -95,11 +95,6 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Invalid plan!'], 400);
     }
 
-    /** validate user & plan */
-    if ($this->user->machines()->count() <= 0 /* && $plan is not 3rd part */) {
-      return response()->json(['message' => "User without machine(s) can not purchase [{$plan->name}]"], 400);
-    }
-
     /** @var Coupon|null $coupon */
     $coupon = isset($inputs['coupon_id']) ? Coupon::find($inputs['coupon_id']) : null;
     if ($coupon && $coupon->status !== 'active') {

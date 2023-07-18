@@ -38,6 +38,23 @@ class DatabaseSeeder extends Seeder
       'country_code'  =>  "AU",
       'language_code' =>  "en",
       'password'      => 'not allowed',
+      'timezone'      => 'Australia/Sydney',
+    ]);
+
+    // additional customer
+    User::create([
+      'id'            =>  28,
+      'name'          =>  "user2.test",
+      'cognito_id'    =>  "2ace5639-feb3-49b8-a718-ca7f5644d171",
+      'email'         =>  "user2.test@iifuture.com",
+      'given_name'    =>  "User2",
+      'family_name'   =>  "Test",
+      'full_name'     =>  "User2 Test",
+      'phone_number'  =>  "+61000000000",
+      'country_code'  =>  "AU",
+      'language_code' =>  "en",
+      'password'      => 'not allowed',
+      'timezone'      => 'Australia/Sydney',
     ]);
 
     /**

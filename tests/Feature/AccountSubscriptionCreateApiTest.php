@@ -41,6 +41,25 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
     return $response;
   }
 
+  public function testAccountSubscriptionCreateWithoutMachine()
+  {
+    $this->createOrUpdateBillingInfo();
+
+    $this->user->machines()->delete();
+
+    $plan = Plan::public()->first();
+    $coupon = Coupon::public()->first();
+
+    $response = $this->createSubscription([
+      "plan_id"     => $plan->id,
+      "coupon_id"   => $coupon->id
+    ]);
+    $response->assertStatus(201)
+      ->assertJsonStructure($this->modelSchema);
+
+    return $response;
+  }
+
   public function testAccountSubscriptionCreateBlocked()
   {
     $this->createOrUpdateBillingInfo();
