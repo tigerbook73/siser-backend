@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3b21a066afad7c0146b4b295f967ad66",
+    "content-hash": "f563e8ee7e701def948e61b51c0aec72",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -8138,16 +8138,16 @@
         },
         {
             "name": "laravel/telescope",
-            "version": "v4.14.3",
+            "version": "v4.15.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/telescope.git",
-                "reference": "d3de7650d846badfa067e2bc777392228a97df16"
+                "reference": "5d74ae4c9f269b756d7877ad1527770c59846e14"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/telescope/zipball/d3de7650d846badfa067e2bc777392228a97df16",
-                "reference": "d3de7650d846badfa067e2bc777392228a97df16",
+                "url": "https://api.github.com/repos/laravel/telescope/zipball/5d74ae4c9f269b756d7877ad1527770c59846e14",
+                "reference": "5d74ae4c9f269b756d7877ad1527770c59846e14",
                 "shasum": ""
             },
             "require": {
@@ -8203,9 +8203,9 @@
             ],
             "support": {
                 "issues": "https://github.com/laravel/telescope/issues",
-                "source": "https://github.com/laravel/telescope/tree/v4.14.3"
+                "source": "https://github.com/laravel/telescope/tree/v4.15.2"
             },
-            "time": "2023-05-19T18:34:30+00:00"
+            "time": "2023-07-13T20:06:27+00:00"
         },
         {
             "name": "mockery/mockery",

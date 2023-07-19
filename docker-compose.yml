@@ -35,6 +35,7 @@ services:
       - DOMAIN_CUSTOMER=software.localhost
       - MAIL_HOST=host.docker.internal
       - QUEUE_CONNECTION=database
+      - TELESCOPE_ENABLED=false
     env_file:
       - .env
     extra_hosts:
@@ -58,6 +59,7 @@ services:
       - DB_HOST=host.docker.internal
       - MAIL_HOST=host.docker.internal
       - QUEUE_CONNECTION=database
+      - TELESCOPE_ENABLED=false
     env_file:
       - .env
     extra_hosts:
