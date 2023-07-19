@@ -33,6 +33,7 @@ COPY ./public/static/ ./public/admin/static/
 COPY --from=frontend_customer /dist/public/ ./public/customer
 COPY --from=frontend_customer /dist/public/index.html ./resources/views/index-customer.blade.php 
 COPY ./public/static/ ./public/customer/static/
+COPY ./public/.well-known/ ./public/customer/.well-known/
 
 #
 # export to volume, will be used by nginx
