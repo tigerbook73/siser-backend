@@ -417,6 +417,7 @@ class DigitalRiverService
       }
       $updateCheckoutRequest = new DrUpdateCheckoutRequest();
       $updateCheckoutRequest->setItems($items);
+      $updateCheckoutRequest->setBrowserIp(request()->ip());
 
       return $this->checkoutApi->updateCheckouts($checkoutId, $updateCheckoutRequest);
     } catch (\Throwable $th) {
