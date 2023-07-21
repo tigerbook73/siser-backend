@@ -289,10 +289,21 @@ class SubscriptionManagerDR implements SubscriptionManager
         DrLog::info(__FUNCTION__, 'invoice updated => void', $subscription);
       }
 
+      // TODO: temp solution, TODO: when calling dr api, it is better to update information from dr objects
+      // stop subscription if it is in the first period
+      if ($subscription->current_period == 1) {
+        $section->step('stop subscription when it is in the first period');
+        $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled in the first period');
+        // TODO: refund required
+      }
+
       $section->close();
 
-      // send notification
+      // send notification TODO: NOTIF_CANCELLED_TERMINATED: to indicated is it cancelled and terminated
       $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
+      if ($subscription->status == Subscription::STATUS_STOPPED) {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);
+      }
 
       return $subscription;
     } catch (\Throwable $th) {
