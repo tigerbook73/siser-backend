@@ -561,10 +561,10 @@ class DrApiTestCase extends ApiTestCase
 
     // mock up
     if (isset($subscription->dr['checkout_id'])) {
-      $this->mockDeleteCheckoutAsync();
+      $this->mockDeleteCheckout();
     }
     if (isset($subscription->dr['subscription_id'])) {
-      $this->mockDeleteSubscriptionAsync();
+      $this->mockDeleteSubscription();
     }
 
     // call api

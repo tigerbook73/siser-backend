@@ -161,6 +161,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $this->fillSubscriptionAmount($subscription, $checkout);
     $subscription
       ->setDrCheckoutId($checkout->getId())
+      ->setDrSubscriptionId($checkout->getItems()[0]->getSubscriptionInfo()->getSubscriptionId())
       ->setDrSessionId($checkout->getPayment()->getSession()->getId());
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription updated: amounts & dr', $subscription);
@@ -196,13 +197,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       if (isset($subscription->dr['checkout_id'])) {
         $section->step('delete dr-checkout');
 
-        $this->drService->deleteCheckoutAsync($subscription->dr['checkout_id']);
+        $this->drService->deleteCheckout($subscription->dr['checkout_id']);
         DrLog::info(__FUNCTION__, 'dr-checkout deleted', $subscription);
       }
       if (isset($subscription->dr_subscription_id)) {
         $section->step('delete dr-subscription');
 
-        $this->drService->deleteSubscriptionAsync($subscription->dr_subscription_id);
+        $this->drService->deleteSubscription($subscription->dr_subscription_id);
         DrLog::info(__FUNCTION__, 'dr-subscription deleted', $subscription);
       }
     } catch (\Throwable $th) {
@@ -244,8 +245,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // update subscription
       $subscription
-        ->setDrOrderId($order->getId())
-        ->setDrSubscriptionId($order->getItems()[0]->getSubscriptionInfo()->getSubscriptionId());
+        ->setDrOrderId($order->getId());
 
       $subscription->setStatus(Subscription::STATUS_PENDING);
       $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
@@ -289,21 +289,10 @@ class SubscriptionManagerDR implements SubscriptionManager
         DrLog::info(__FUNCTION__, 'invoice updated => void', $subscription);
       }
 
-      // TODO: temp solution, TODO: when calling dr api, it is better to update information from dr objects
-      // stop subscription if it is in the first period
-      if ($subscription->current_period == 1) {
-        $section->step('stop subscription when it is in the first period');
-        $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled in the first period');
-        // TODO: refund required
-      }
-
       $section->close();
 
-      // send notification TODO: NOTIF_CANCELLED_TERMINATED: to indicated is it cancelled and terminated
+      // send notification
       $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
-      if ($subscription->status == Subscription::STATUS_STOPPED) {
-        $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);
-      }
 
       return $subscription;
     } catch (\Throwable $th) {
@@ -363,7 +352,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if ($previousSourceId) {
       $section->step('detach dr-source from dr-customer');
 
-      $this->drService->detachCustomerSourceAsync($user->dr['customer_id'], $previousSourceId);
+      $this->drService->detachCustomerSource($user->dr['customer_id'], $previousSourceId);
       DrLog::info(__FUNCTION__, 'old dr-source detached from dr-customer', $user);
     }
 
@@ -385,12 +374,25 @@ class SubscriptionManagerDR implements SubscriptionManager
       // create / update payment method
       $paymentMethod->type = $source->getType();
       $paymentMethod->dr = ['source_id' => $source->getId()];
-      $paymentMethod->display_data = ($source->getType() == 'creditCard') ?  [
-        'brand'             => $source->getCreditCard()->getBrand(),
-        'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
-        'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
-        'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-      ] : null;
+      if ($source->getType() == 'creditCard') {
+        $paymentMethod->display_data = [
+          'brand'             => $source->getCreditCard()->getBrand(),
+          'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
+          'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
+          'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
+        ];
+      } else if ($source->getType() == 'googlePay') {
+        $paymentMethod->display_data = [
+          'brand'             => $source->getGooglePay()->getBrand(),
+          'last_four_digits'  => $source->getGooglePay()->getLastFourDigits(),
+          'expiration_year'   => $source->getGooglePay()->getExpirationYear(),
+          'expiration_month'  => $source->getGooglePay()->getExpirationMonth(),
+        ];
+      } else {
+        $paymentMethod->display_data = null;
+      }
+
+
       $paymentMethod->save();
       DrLog::info($__FUNCTION__, 'payment-method updated', $user);
 
@@ -861,17 +863,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->plan_info           = $subscription->next_invoice['plan_info'];
     $invoice->coupon_info         = $subscription->next_invoice['coupon_info'];
 
-    $source = $drInvoice->getPayment()->getSources()[0];
-    $invoice->payment_method_info = [
-      'type'          => $source->getType(),
-      'dr'            => ['source_id' => $source->getId()],
-      'display_data'  => ($source->getType() == 'creditCard') ?  [
-        'brand'             => $source->getCreditCard()->getBrand(),
-        'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
-        'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
-        'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-      ] : null,
-    ];
+    $invoice->payment_method_info = $subscription->user->payment_method->info();
 
     $invoice->subtotal            = $drInvoice->getSubtotal();
     $invoice->total_tax           = $drInvoice->getTotalTax();
@@ -961,17 +953,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info($__FUNCTION__, 'subscription extended => invoice-completing', $subscription);
 
       // update invoice
-      $source = $drInvoice->getPayment()->getSources()[0];
-      $invoice->payment_method_info = [
-        'type'          => $source->getType(),
-        'dr'            => ['source_id' => $source->getId()],
-        'display_data'  => ($source->getType() == 'creditCard') ?  [
-          'brand'             => $source->getCreditCard()->getBrand(),
-          'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
-          'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
-          'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-        ] : null,
-      ];
+      $invoice->payment_method_info = $subscription->user->payment_method->info();
       $invoice->setOrderId($drInvoice->getOrderId());
       $invoice->setStatus(Invoice::STATUS_COMPLETING);
       $invoice->save();

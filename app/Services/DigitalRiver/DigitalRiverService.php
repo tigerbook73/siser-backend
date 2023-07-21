@@ -318,8 +318,7 @@ class DigitalRiverService
 
   public function detachCustomerSourceAsync(string $customerId, string $source_id)
   {
-    $this->customerApi->deleteCustomerSourceAsync($customerId, $source_id);
-    return true;
+    return $this->customerApi->deleteCustomerSourceAsync($customerId, $source_id);
   }
 
   /**
@@ -439,8 +438,7 @@ class DigitalRiverService
 
   public function deleteCheckoutAsync(string $id)
   {
-    $this->checkoutApi->deleteCheckoutsAsync($id);
-    return true;
+    return $this->checkoutApi->deleteCheckoutsAsync($id);
   }
 
   public function attachCheckoutSource(string $id, string $sourceId): DrSource
@@ -484,6 +482,7 @@ class DigitalRiverService
     try {
       $orderRequest = new DrOrderRequest();
       $orderRequest->setCheckoutId($checkoutId);
+      $orderRequest->setBrowserIp(request()->ip());
       return $this->orderApi->createOrders($orderRequest);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
@@ -564,8 +563,7 @@ class DigitalRiverService
 
   public function deleteSubscriptionAsync(string $id)
   {
-    $this->subscriptionApi->deleteSubscriptionsAsync($id);
-    return true;
+    return $this->subscriptionApi->deleteSubscriptionsAsync($id);
   }
 
   public function updateSubscriptionSource(string $id, string $sourceId)
