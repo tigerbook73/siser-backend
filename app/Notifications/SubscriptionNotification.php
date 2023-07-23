@@ -11,7 +11,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class SubscriptionNotification extends Notification
+class SubscriptionNotification extends Notification implements ShouldQueue
 {
   use Queueable;
 

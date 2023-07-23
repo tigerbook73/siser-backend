@@ -9,7 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Notifications\Notification;
 
 
-class SubscriptionWarning extends Notification
+class SubscriptionWarning extends Notification implements ShouldQueue
 {
   use Queueable;
 

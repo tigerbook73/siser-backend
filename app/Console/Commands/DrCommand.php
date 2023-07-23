@@ -133,6 +133,14 @@ class DrCommand extends Command
     /** @var DrSubscription[] $subscriptions */
     $subscriptions = $this->drService->subscriptionApi->listSubscriptions(state: 'draft')->getData();
     foreach ($subscriptions as $subscription) {
+      $checkouts = $this->drService->checkoutApi->listCheckouts(subscription_id: $subscription->getId())->getData();
+      if ($checkouts && isset($checkouts[0])) {
+        $this->info("  delete checkout " . $checkouts[0]->getId());
+        $this->ignore(
+          [$this->drService->checkoutApi, 'deleteCheckouts'],
+          $checkouts[0]->getId()
+        );
+      }
       $this->info("  delete subscription " . $subscription->getId());
       $this->ignore(
         [$this->drService->subscriptionApi, 'deleteSubscriptions'],
@@ -152,25 +160,6 @@ class DrCommand extends Command
     $this->info('Clear subscriptions ...');
     $this->info('');
 
-
-    /**
-     * clear checkout
-     */
-
-    $this->info('Clear checkouts ...');
-
-    // /** @var DrCheckout[] $checkouts */
-    // $checkouts = $this->drService->checkoutApi->listCheckouts()->getData();
-    // foreach ($checkouts as $checkout) {
-    //   $this->ignore(
-    //     [$this->drService->checkoutApi, 'deleteCheckouts'],
-    //     $checkout->getId()
-    //   );
-    // }
-
-    $this->info('Clear checkouts ...');
-    $this->info('');
-
     /**
      * clear order
      */
@@ -178,11 +167,19 @@ class DrCommand extends Command
     $this->info('Clear orders ...');
 
     /** @var DrOrder[] $orders */
+    // clear acctpted order
     $orders = $this->drService->orderApi->listOrders(state: 'accepted')->getData();
     foreach ($orders as $order) {
-      $this->info("  cancel order " . $order->getId());
+      $this->info("  cancel draft order " . $order->getId());
       $this->drService->fulfillOrder(orderId: $order->getId(), cancel: true);
     }
+
+    // clear fullfuled order
+    // $orders = $this->drService->orderApi->listOrders(state: 'fulfilled')->getData();
+    // foreach ($orders as $order) {
+    //   $this->info("  cancel fulfilled order " . $order->getId());
+    //   $this->drService->fulfillOrder(orderId: $order->getId(), cancel: true);
+    // }
 
     $this->info('Clear orders ...');
     $this->info('');

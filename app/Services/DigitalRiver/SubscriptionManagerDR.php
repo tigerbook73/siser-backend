@@ -507,7 +507,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // fulfill order
     try {
-      $this->drService->fulfillOrder($order->getId());
+      $this->drService->fulfillOrder($order->getId(), $order);
       DrLog::info(__FUNCTION__, 'dr-order fulfilled', $subscription);
     } catch (\Throwable $th) {
       $section->step('stop subscription when fulfillment fails');
@@ -602,9 +602,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    // TODO: cancel order
-    // ...
-
     $subscription->stop(Subscription::STATUS_FAILED, 'first order failed');
     DrLog::info(__FUNCTION__, 'subscription stopped', $subscription);
 
@@ -646,9 +643,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::warning(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
       return null;
     }
-
-    // TODO: cancel order
-    ///
 
     $subscription->stop(Subscription::STATUS_FAILED, 'first order charge capture failed');
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
