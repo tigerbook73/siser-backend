@@ -244,11 +244,10 @@ class SubscriptionManagerDR implements SubscriptionManager
       $section->step('update subscription => pending');
 
       // update subscription
-      $subscription
-        ->setDrOrderId($order->getId());
+      $subscription->setDrOrderId($order->getId());
 
       $subscription->setStatus(Subscription::STATUS_PENDING);
-      $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
+      $subscription->sub_status = ($order->getState() == 'accepted') ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING;
       $subscription->save();
       DrLog::info(__FUNCTION__, 'subscription updated => pending', $subscription);
 
@@ -259,7 +258,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $section->close('force close');
 
       $body = $th->getResponseObject()->getErrors()[0];
-      throw (new Exception("{$body->getCode()}: {$body->getMessage()}", $th->getCode()));
+      throw (new Exception("{$body->getMessage()}", $th->getCode()));
     } catch (\Throwable $th) {
       throw $th;
     }
@@ -603,6 +602,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    // TODO: cancel order
+    // ...
+
     $subscription->stop(Subscription::STATUS_FAILED, 'first order failed');
     DrLog::info(__FUNCTION__, 'subscription stopped', $subscription);
 
@@ -644,6 +646,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::warning(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
       return null;
     }
+
+    // TODO: cancel order
+    ///
 
     $subscription->stop(Subscription::STATUS_FAILED, 'first order charge capture failed');
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);

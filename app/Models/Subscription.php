@@ -25,6 +25,7 @@ class Subscription extends BaseSubscription
   public const SUB_STATUS_INVOICE_OPEN        = 'invoice-open';
   public const SUB_STATUS_INVOICE_PENDING     = 'invoice-pending';
   public const SUB_STATUS_NORMAL              = 'normal';
+  public const SUB_STATUS_ORDER_PENDING       = 'order_pending'; // for STATUS_PENDING
 
   // dr attributes
   public const DR_CHECKOUT_ID       = 'checkout_id';
