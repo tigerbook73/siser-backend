@@ -17,3 +17,6 @@ parameters:
     - ./*/*/FileToBeExcluded.php
 
   checkMissingIterableValueType: false
+
+  editorUrl: "vscode://file/%%file%%:%%line%%"
+  editorUrlTitle: "%%relFile%%:%%line%%"
