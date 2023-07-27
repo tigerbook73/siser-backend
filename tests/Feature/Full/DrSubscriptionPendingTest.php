@@ -53,11 +53,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderAccepted($this->drHelper->createOrder(
-      $subscription,
-      $subscription->dr['order_id'],
-      DrOrder::STATE_ACCEPTED
-    ));
+    $response = $this->sendOrderAccepted($this->drOrders[$subscription->getActiveInvoice()->getDrOrderId()]->setState(DrOrder::STATE_ACCEPTED));
 
     // refresh data
     $subscription->refresh();
@@ -86,6 +82,14 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     $response = $this->init_pending();
 
     return $this->onOrderCancelled(Subscription::find($response->json('id')));
+  }
+
+  public function test_pending_to_failed_cancelled_by_order()
+  {
+    $response = $this->init_pending();
+
+    $response = $this->cancelOrder(Subscription::find($response->json('id')));
+    $response->assertStatus(200);
   }
 
   public function test_pending_to_failed_charge_failed()

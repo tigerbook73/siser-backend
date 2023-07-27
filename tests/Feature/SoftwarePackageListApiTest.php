@@ -16,7 +16,7 @@ class SoftwarePackageListApiTest extends SoftwarePackageTestCase
 
     // name
     $this->listAssert(200, ['name' => $this->object->name]);
-    $this->listAssert(200, ['name' => $this->createRandomString(255)]);
+    $this->listAssert(200, ['name' => "not exist"]);
 
     // platform
     $this->listAssert(200, ['platform' => 'Windows']);

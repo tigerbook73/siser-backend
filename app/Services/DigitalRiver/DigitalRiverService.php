@@ -48,6 +48,7 @@ use DigitalRiver\ApiSdk\Model\SubscriptionInfo as DrSubscriptionInfo;
 use DigitalRiver\ApiSdk\Model\SubscriptionItems as DrSubscriptionItems;
 use DigitalRiver\ApiSdk\Model\UpdateCheckoutRequest as DrUpdateCheckoutRequest;
 use DigitalRiver\ApiSdk\Model\UpdateCustomerRequest as DrUpdateCustomerRequest;
+use DigitalRiver\ApiSdk\Model\UpdateOrderRequest;
 use DigitalRiver\ApiSdk\Model\UpdatePlanRequest as DrUpdatePlanRequest;
 use DigitalRiver\ApiSdk\Model\UpdateSubscriptionRequest as DrUpdateSubscriptionRequest;
 use DigitalRiver\ApiSdk\Model\WebhookUpdateRequest as DrWebhookUpdateRequest;
@@ -316,11 +317,6 @@ class DigitalRiverService
     }
   }
 
-  public function detachCustomerSourceAsync(string $customerId, string $source_id)
-  {
-    return $this->customerApi->deleteCustomerSourceAsync($customerId, $source_id);
-  }
-
   /**
    * checkout
    */
@@ -390,7 +386,7 @@ class DigitalRiverService
     $checkoutRequest->setChargeType(DrChargeType::CUSTOMER_INITIATED); // @phpstan-ignore-line
     $checkoutRequest->setCustomerType(DrCustomerType::INDIVIDUAL); // @phpstan-ignore-line
     $checkoutRequest->setMetadata(['subscription_id' => $subscription->id]);
-    $checkoutRequest->setUpstreamId((string)$subscription->id);
+    $checkoutRequest->setUpstreamId((string)$subscription->active_invoice_id);
 
     try {
       return $this->checkoutApi->createCheckouts($checkoutRequest);
@@ -436,11 +432,6 @@ class DigitalRiverService
     }
   }
 
-  public function deleteCheckoutAsync(string $id)
-  {
-    return $this->checkoutApi->deleteCheckoutsAsync($id);
-  }
-
   public function attachCheckoutSource(string $id, string $sourceId): DrSource
   {
     try {
@@ -471,6 +462,18 @@ class DigitalRiverService
   {
     try {
       return $this->orderApi->retrieveOrders($id);
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
+
+  public function updateOrderUpstreamId(string $id, string|int $upstreamId)
+  {
+    try {
+      $orderUpdateRequest = new UpdateOrderRequest();
+      $orderUpdateRequest->setUpstreamId((string)$upstreamId);
+      return  $this->orderApi->updateOrders($id, $orderUpdateRequest);
     } catch (\Throwable $th) {
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
@@ -559,11 +562,6 @@ class DigitalRiverService
       Log::warning('DRAPI:' . $th->getMessage());
       return false;
     }
-  }
-
-  public function deleteSubscriptionAsync(string $id)
-  {
-    return $this->subscriptionApi->deleteSubscriptionsAsync($id);
   }
 
   public function updateSubscriptionSource(string $id, string $sourceId)

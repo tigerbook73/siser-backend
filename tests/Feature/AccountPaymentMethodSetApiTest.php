@@ -15,7 +15,7 @@ class AccountPaymentMethodSetApiTest extends AccountPaymentMethodTestCase
      */
     $this->mockAttachCustomerSource();
     if ($this->user->payment_method->dr['source_id'] ?? null) {
-      $this->mockDetachCustomerSourceAsync();
+      $this->mockDetachCustomerSource();
     }
     if ($activeSubscripiton = $this->user->getActiveLiveSubscription()) {
       $this->mockUpdateSubscriptionSource($activeSubscripiton);

@@ -47,7 +47,9 @@ class DrTestHelper
     $checkout->setEmail($subscription->billing_info['email']);
     $checkout->setCurrency($subscription->currency);
     $checkout->setMetadata(['subscription_id' => $subscription->id]);
-    $checkout->setUpstreamId((string)$subscription->id);
+    $checkout->setUpstreamId($subscription->getActiveInvoice()->id);
+
+    $checkout->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($this->uuid());
 
     $checkout->setSubtotal($subscription->price);
     $checkout->getItems()[0]->getTax()->setRate(0.1);
@@ -91,10 +93,11 @@ class DrTestHelper
     return $invoice;
   }
 
-  public function createOrder(Subscription $subscription, string $id = null, string $state = null)
+  public function createOrder(Subscription $subscription, string $id = null, string $state = DrOrder::STATE_COMPLETE)
   {
     $order = DrObject::order();
-    $order->setId($id ?? $subscription->getDrOrderId() ?? $this->uuid());
+    $order->setId($id ?? $this->uuid());
+    $order->setUpstreamId($subscription->getActiveInvoice()?->id);
 
     $order->setSubtotal($subscription->price);
     $order->getItems()[0]->getTax()->setRate(0.1);
@@ -102,7 +105,7 @@ class DrTestHelper
     $order->setTotalAmount($order->getSubtotal() + $order->getTotalTax());
 
     $order->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->getDrSubscriptionId() ?? $this->uuid());
-    $order->setState($state ?: 'complete');
+    $order->setState($state);
     return $order;
   }
 
@@ -125,25 +128,10 @@ class DrTestHelper
     return $fileLink;
   }
 
-  public function createSubscription(Subscription $subscription, string $id = null, bool $next = false)
+  public function createSubscription(Subscription $subscription, string $id = null)
   {
-    $periodStart = $subscription->current_period_start_date ?: now();
-    if ($next) {
-      $periodStart = $periodStart->addDays(config('dr.dr_test.interval_count'));
-    }
-
     $drSubscripiton = DrObject::subscription();
-    $drSubscripiton->setId($id ?? $subscription->dr['subscription_id'] ?? $this->uuid())
-      ->setCurrentPeriodEndDate(
-        $periodStart
-          ->addDays(config('dr.dr_test.interval_count'))
-        // ->toIso8601ZuluString()
-      )
-      ->setNextInvoiceDate(
-        now()
-          ->addDays(config('dr.dr_test.interval_count') - config('dr.dr_test.billing_offset_days'))
-        // ->toIso8601ZuluString()
-      );
+    $drSubscripiton->setId($id ?? $subscription->dr['subscription_id'] ?? $this->uuid());
 
     return $drSubscripiton;
   }

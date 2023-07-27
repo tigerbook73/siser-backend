@@ -43,24 +43,21 @@ class DrApiTest extends DrApiTestCase
       ->mockUpdateCustomer()
       ->mockAttachCustomerSource()
       ->mockDetachCustomerSource()
-      ->mockDetachCustomerSourceAsync()
-      ->mockGetCheckout($subscription)
+      ->mockGetCheckout()
       ->mockCreateCheckout()
-      ->mockUpdateCheckoutTerms($subscription)
+      ->mockUpdateCheckoutTerms()
       ->mockDeleteCheckout()
-      ->mockDeleteCheckoutAsync()
       ->mockAttachCheckoutSource()
       ->mockGetSource()
-      ->mockGetOrder($subscription)
+      ->mockGetOrder()
       ->mockConvertCheckoutToOrder($subscription)
       ->mockFulfillOrder()
-      ->mockGetSubscription($subscription)
-      ->mockActivateSubscription($subscription)
+      ->mockGetSubscription()
+      ->mockActivateSubscription()
       ->mockDeleteSubscription()
-      ->mockDeleteSubscriptionAsync()
-      ->mockUpdateSubscriptionSource($subscription)
-      ->mockUpdateSubscriptionItems($subscription)
-      ->mockCancelSubscription($subscription)
+      ->mockUpdateSubscriptionSource()
+      ->mockUpdateSubscriptionItems()
+      ->mockCancelSubscription()
       ->mockCreateFileLink();
 
     $this->assertTrue($drService->getCustomer($id) instanceof DrCustomer);
@@ -68,12 +65,10 @@ class DrApiTest extends DrApiTestCase
     $this->assertTrue($drService->updateCustomer($id, $billingInfo) instanceof DrCustomer);
     $this->assertTrue($drService->attachCustomerSource($id, $id) instanceof DrSource);
     $this->assertTrue(is_bool($drService->detachCustomerSource($id, $id)));
-    $this->assertTrue(is_bool($drService->detachCustomerSourceAsync($id, $id)));
     $this->assertTrue($drService->getCheckout($id) instanceof DrCheckout);
     $this->assertTrue($drService->createCheckout($subscription) instanceof DrCheckout);
     $this->assertTrue($drService->updateCheckoutTerms($id, "terms") instanceof  DrCheckout);
     $this->assertTrue(is_bool($drService->deleteCheckout($id)));
-    $this->assertTrue(is_bool($drService->deleteCheckoutAsync($id)));
     $this->assertTrue($drService->attachCheckoutSource($id, $id) instanceof DrSource);
     $this->assertTrue($drService->getSource($id) instanceof DrSource);
     $this->assertTrue($drService->getOrder($id) instanceof  DrOrder);
@@ -82,7 +77,6 @@ class DrApiTest extends DrApiTestCase
     $this->assertTrue($drService->getSubscription($id) instanceof DrSubscription);
     $this->assertTrue($drService->activateSubscription($id) instanceof DrSubscription);
     $this->assertTrue(is_bool($drService->deleteSubscription($id)));
-    $this->assertTrue(is_bool($drService->deleteSubscriptionAsync($id)));
     $this->assertTrue($drService->updateSubscriptionSource($id, $id) instanceof DrSubscription);
     $this->assertTrue($drService->updateSubscriptionItems($id, $subscription) instanceof DrSubscription);
     $this->assertTrue($drService->cancelSubscription($id) instanceof DrSubscription);

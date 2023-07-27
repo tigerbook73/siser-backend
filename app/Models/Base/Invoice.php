@@ -20,15 +20,15 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $user_id
  * @property int $subscription_id
  * @property int $period
- * @property Carbon $period_start_date
- * @property Carbon $period_end_date
+ * @property Carbon|null $period_start_date
+ * @property Carbon|null $period_end_date
  * @property string $currency
  * @property array $plan_info
  * @property array|null $coupon_info
  * @property float $subtotal
  * @property float $total_tax
  * @property float $total_amount
- * @property Carbon $invoice_date
+ * @property Carbon|null $invoice_date
  * @property string|null $pdf_file
  * @property array $dr
  * @property string|null $dr_invoice_id

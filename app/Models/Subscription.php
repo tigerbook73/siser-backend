@@ -209,6 +209,7 @@ class Subscription extends BaseSubscription
 
     $this->end_date = $this->start_date ? now() : null;
     $this->next_invoice_date = null;
+    $this->active_invoice_id = null;
     $this->save();
   }
 

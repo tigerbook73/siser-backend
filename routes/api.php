@@ -88,6 +88,8 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/invoices', [InvoiceController::class, 'accountList']);
     Route::get('/account/invoices/{id}', [InvoiceController::class, 'accountIndex']);
+
+    Route::post('/account/invoices/{id}/cancel', [InvoiceController::class, 'accountCancel']);
   });
 
   // LDS
@@ -174,6 +176,8 @@ Route::domain($domainAdmin)->group(function () {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/invoices', [InvoiceController::class, 'list'])->middleware('access:invoice.list');
     Route::get('/invoices/{id}', [InvoiceController::class, 'index'])->middleware('access:invoice.get');
+
+    Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel'])->middleware('access:invoice.cancel');
   });
 
   // subscription

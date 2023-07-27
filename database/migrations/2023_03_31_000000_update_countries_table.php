@@ -49,7 +49,7 @@ return new class extends Migration
         ['code' => 'EE', 'name' => 'Estonia',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'ES', 'name' => 'Spain',                     'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'FR', 'name' => 'France',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'GB', 'name' => 'Great Britain',             'currency' => 'GBR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'GB', 'name' => 'Great Britain',             'currency' => 'GBP', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'GF', 'name' => 'French Guiana',             'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'GP', 'name' => 'Guadeloupe',                'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'GR', 'name' => 'Greece',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],

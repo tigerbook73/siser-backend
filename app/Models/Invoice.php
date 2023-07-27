@@ -7,12 +7,15 @@ use App\Models\Base\Invoice as BaseInvoice;
 class Invoice extends BaseInvoice
 {
   // status -- see invoice.md
-  public const STATUS_OPEN          = 'open';
+  public const STATUS_INIT          = 'init';         // first invoice only
+  public const STATUS_OPEN          = 'open';         // renew invoice only
   public const STATUS_PENDING       = 'pending';
+  public const STATUS_PROCESSING    = 'processing';   // first invoice only
   public const STATUS_COMPLETING    = 'completing';
   public const STATUS_COMPLETED     = 'completed';
   public const STATUS_FAILED        = 'failed';
-  public const STATUS_VOID          = 'void';
+  public const STATUS_CANCELLED     = 'cancelled';    // first invoice only
+  public const STATUS_VOID          = 'void';         // renew invoice only
 
   // dr attributes
   public const DR_FILE_ID           = 'file_id';
@@ -36,7 +39,7 @@ class Invoice extends BaseInvoice
     'invoice_date'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'pdf_file'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'dr'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
+    'dr'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status_transitions'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
@@ -92,9 +95,9 @@ class Invoice extends BaseInvoice
     return $this->setDrAttr(self::DR_INVOICE_ID, $invoice_id);
   }
 
-  public function setOrderId(string $order_id)
+  public function setOrderId(string|null $order_id)
   {
     $this->dr_order_id = $order_id;
-    return $this->setDrAttr(self::DR_ORDER_ID, $order_id);
+    return $this->setDrAttr(self::DR_ORDER_ID, $order_id ?? '');
   }
 }

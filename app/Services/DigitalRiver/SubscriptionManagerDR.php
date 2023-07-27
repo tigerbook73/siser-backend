@@ -36,7 +36,7 @@ class DrLog
     if ($context instanceof Subscription) {
       $context = ['subscription_id' => $context->id, 'subscription_status' => $context->status];
     } else if ($context instanceof Invoice) {
-      $context = ['invoice_id' => $context->id, 'invoice_status' => $context->status];
+      $context = ['subscription_id' => $context->subscription_id, 'invoice_id' => $context->id, 'invoice_status' => $context->status];
     } else if ($context instanceof User) {
       $context = ['user_id' => $context->id, 'subscription_level' => $context->subscription_level];
     }
@@ -122,7 +122,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->plan_info                  = $publicPlan;
     $subscription->coupon_info                = $coupon ? $coupon->toResource('customer') : null;
     $subscription->currency                   = $country->currency;
-    $subscription->price                    = round($publicPlan['price']['price'] * (1 -  $couponDiscount / 100), 2);
+    $subscription->price                      = round($publicPlan['price']['price'] * (1 -  $couponDiscount / 100), 2);
     $subscription->start_date                 = null;
     $subscription->end_date                   = null;
     $subscription->subscription_level         = $publicPlan['subscription_level'];
@@ -137,6 +137,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription (init) created => draft', $subscription);
 
+    $invoice = $this->createFirstInvoice($subscription);
+    DrLog::info(__FUNCTION__, 'create first invoice', $invoice);
+
     $section = CriticalSection::open($subscription, __FUNCTION__, 'create subscription');
 
     // create checkout
@@ -146,10 +149,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       $checkout = $this->drService->createCheckout($subscription);
       DrLog::info(__FUNCTION__, 'dr-checkout created', $subscription);
     } catch (\Throwable $th) {
-      $section->step('delete subscription when creating dr-checkout fails');
+      $section->step('delete subscription/invoice when creating dr-checkout fails');
 
+      $invoice->delete();
       $subscription->delete();
-      DrLog::info(__FUNCTION__, 'subscription deleted when creating dr-checkout fails', $subscription);
+      DrLog::info(__FUNCTION__, 'subscription/invoice deleted when creating dr-checkout fails', $subscription);
 
       $section->close();
       throw $th;
@@ -211,8 +215,10 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $section->step('delete subscription');
 
+    $invoice = $subscription->getActiveInvoice();
+    $invoice->delete();
     $subscription->delete();
-    DrLog::info(__FUNCTION__, 'subscription deleted', $subscription);
+    DrLog::info(__FUNCTION__, 'subscription and invoice deleted', $subscription);
 
     $section->close();
 
@@ -245,11 +251,23 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // update subscription
       $subscription->setDrOrderId($order->getId());
-
       $subscription->setStatus(Subscription::STATUS_PENDING);
       $subscription->sub_status = ($order->getState() == 'accepted') ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING;
       $subscription->save();
       DrLog::info(__FUNCTION__, 'subscription updated => pending', $subscription);
+
+      // update invoice
+      $section->step('update invoice: init => pending');
+      $invoice = $subscription->getActiveInvoice();
+      $invoice->payment_method_info = $subscription->user->payment_method->info();
+      $invoice->subtotal            = $subscription->subtotal;
+      $invoice->total_tax           = $subscription->total_tax;
+      $invoice->total_amount        = $subscription->total_amount;
+      $invoice->invoice_date        = now();
+      $invoice->setOrderId($order->getId());
+      $invoice->setStatus(Invoice::STATUS_PENDING);
+      $invoice->save();
+      DrLog::info(__FUNCTION__, 'invoice init => pending', $invoice);
 
       $section->close();
 
@@ -279,7 +297,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->next_invoice_date = null;
       $subscription->next_invoice = null;
       $subscription->save();
-      DrLog::info(__FUNCTION__, 'subscription cancelled => cancelling', $subscription);
+      DrLog::info(__FUNCTION__, 'subscription active => cancelling', $subscription);
 
       $invoice = $subscription->getActiveInvoice();
       if ($invoice && $invoice->status != Invoice::STATUS_COMPLETING) {
@@ -294,6 +312,44 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
 
       return $subscription;
+    } catch (\Throwable $th) {
+      throw $th;
+    }
+  }
+
+  public function cancelOrder(Invoice $invoice): Invoice
+  {
+    if ($invoice->period != 0 || $invoice->status != Invoice::STATUS_PENDING) {
+      throw new Exception('Only the first order in pending status can be cancelled', 500);
+    }
+
+    $subscription = $invoice->subscription;
+    if ($subscription->status == Subscription::STATUS_PROCESSING) {
+      throw new Exception('Subscription is processing, can not cancel order', 409);
+    }
+
+    try {
+      $section = CriticalSection::open($subscription, __FUNCTION__, 'cancel dr-order');
+
+      $this->drService->fulfillOrder($invoice->getDrOrderId(), null, true);
+      DrLog::info(__FUNCTION__, 'dr-order cancelled', $subscription);
+
+      $section->step('update invoice & subscription => failed');
+
+      $invoice->setStatus(Invoice::STATUS_CANCELLED);
+      $invoice->save();
+      DrLog::info(__FUNCTION__, 'dr-order pending => cancelled', $invoice);
+
+      $subscription->stop(Subscription::STATUS_FAILED, 'manually cancelled');
+      $subscription->save();
+      DrLog::info(__FUNCTION__, 'subscription pending => failed', $subscription);
+
+      $section->close();
+
+      // send notification
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
+
+      return $invoice;
     } catch (\Throwable $th) {
       throw $th;
     }
@@ -496,6 +552,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     // must be in pending status
     if ($subscription->status != Subscription::STATUS_PENDING) {
@@ -512,6 +569,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     } catch (\Throwable $th) {
       $section->step('stop subscription when fulfillment fails');
 
+      $invoice->setStatus(Invoice::STATUS_FAILED);
+      $invoice->save();
+
       $subscription->stop(Subscription::STATUS_FAILED, 'fulfill dr-order fails');
       DrLog::warning(__FUNCTION__, 'subscription stopped => failed: fulfillment failed', $subscription);
 
@@ -522,6 +582,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $section->step('update subscription => processing');
+
+    $invoice->setStatus(Invoice::STATUS_PROCESSING);
+    $invoice->save();
 
     // update subscription status
     $subscription->setStatus(Subscription::STATUS_PROCESSING);
@@ -541,6 +604,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     // must be in pending status
     if (
@@ -550,6 +614,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::warning(__FUNCTION__, 'subscription skipped, not in pending or processing status', $subscription);
       return null;
     }
+
+    $invoice->setStatus(Invoice::STATUS_FAILED);
+    $invoice->save();
 
     // update subscription status
     $subscription->stop(Subscription::STATUS_FAILED, 'first order being blocked');
@@ -570,12 +637,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
       DrLog::warning(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
       return null;
     }
+
+    $invoice->setStatus(Invoice::STATUS_FAILED);
+    $invoice->save();
 
     $subscription->stop(Subscription::STATUS_FAILED, 'first order being cancelled');
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
@@ -595,12 +666,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
       DrLog::info(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
       return null;
     }
+
+    $invoice->setStatus(Invoice::STATUS_FAILED);
+    $invoice->save();
 
     $subscription->stop(Subscription::STATUS_FAILED, 'first order failed');
     DrLog::info(__FUNCTION__, 'subscription stopped', $subscription);
@@ -637,12 +712,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
       DrLog::warning(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
       return null;
     }
+
+    $invoice->setStatus(Invoice::STATUS_FAILED);
+    $invoice->save();
 
     $subscription->stop(Subscription::STATUS_FAILED, 'first order charge capture failed');
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
@@ -682,7 +761,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $this->cancelSubscription($previousSubscription);
     }
 
-    $section->step('stop previous subscription, activate new subscription, create first invoice, update user subscription level');
+    $section->step('stop previous subscription, activate new subscription, update invoice, update user subscription level');
 
     $__FUNCTION__ = __FUNCTION__;
     DB::transaction(function () use ($order, $subscription, $drSubscription, $__FUNCTION__) {
@@ -714,8 +793,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       $user->updateSubscriptionLevel();
       DrLog::info($__FUNCTION__, 'user subscription level updated', $subscription);
 
-      // create invoice
-      $this->createFirstInvoice($subscription);
+      // update invoice status
+      $invoice = $subscription->getActiveInvoice();
+      $invoice->period              = $subscription->current_period;
+      $invoice->period_start_date   = $subscription->current_period_start_date;
+      $invoice->period_end_date     = $subscription->current_period_end_date;
+      $invoice->setStatus(Invoice::STATUS_COMPLETING);
+      $invoice->save();
       DrLog::info($__FUNCTION__, 'first invoice created', $subscription);
     });
 
@@ -827,18 +911,12 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $invoice->plan_info           = $subscription->plan_info;
     $invoice->coupon_info         = $subscription->coupon_info;
-    $invoice->payment_method_info = $subscription->user->payment_method->info();
 
-    $invoice->subtotal            = $subscription->subtotal;
-    $invoice->total_tax           = $subscription->total_tax;
-    $invoice->total_amount        = $subscription->total_amount;
-    $invoice->invoice_date        = now();
-    $invoice->setOrderId($subscription->dr['order_id']);
-    $invoice->setStatus(Invoice::STATUS_COMPLETING);
+    $invoice->setOrderId(null);
+    $invoice->setStatus(Invoice::STATUS_INIT);
     $invoice->save();
 
     $subscription->active_invoice_id = $invoice->id;
-    $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_COMPLETING;
     $subscription->save();
 
     return $invoice;
@@ -869,12 +947,13 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->total_amount        = $drInvoice->getTotalAmount();
     $invoice->invoice_date        = Carbon::parse($drInvoice->getStateTransitions()?->getOpen() ?? $drInvoice->getUpdatedTime());
     $invoice->setInvoiceId($drInvoice->getId());
-    $invoice->setStatus(Invoice::STATUS_OPEN);
+    $invoice->setOrderId($drInvoice->getOrderId() ?? "");
+    $invoice->setStatus(Invoice::STATUS_PENDING);
     $invoice->save();
 
     $subscription->active_invoice_id = $invoice->id;
     if ($subscription->sub_status != Subscription::SUB_STATUS_CANCELLING) {
-      $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_OPEN;
+      $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_PENDING;
     }
     $subscription->save();
 
@@ -918,11 +997,21 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section = CriticalSection::open($subscription, __FUNCTION__);
 
     $invoice = $subscription->getActiveInvoice();
-    if (!$invoice || $invoice->getDrInvoiceId() != $drInvoice->getId()) {
+    if (!$invoice) {
       $section->step('create renew invoice');
 
       $invoice = $this->createRenewInvoice($subscription, $drInvoice);
       DrLog::info(__FUNCTION__, 'renew invoice created', $subscription);
+    }
+
+    // update DrOrder
+    try {
+      $section->step('update dr order upstream id');
+      $this->drService->updateOrderUpstreamId($drInvoice->getOrderId(), $invoice->id);
+      DrLog::info(__FUNCTION__, 'update dr order upstream id', $invoice);
+    } catch (\Throwable $th) {
+      DrLog::error(__FUNCTION__, 'update dr order upstream id failed', $invoice);
+      throw $th;
     }
 
     $section->step('renew subscription & update invoice status');
@@ -973,6 +1062,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     if ($subscription->status != Subscription::STATUS_ACTIVE) {
       DrLog::warning(__FUNCTION__, 'subscription skipped: not in active', ['subscription_id' => $drSubscription->getId()]);
@@ -994,7 +1084,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->step('update active invoice => failed');
 
     // stop invoice
-    $invoice = $subscription->getActiveInvoice();
     if ($invoice) {
       $invoice->payment_method_info = $subscription->user->payment_method->info();
       $invoice->setStatus(Invoice::STATUS_FAILED);
@@ -1031,18 +1120,14 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $invoice = $subscription->getActiveInvoice();
-    if (
-      $invoice &&
-      $invoice->getDrInvoiceId() == $drInvoice->getId() &&
-      $invoice->status == Invoice::STATUS_PENDING
-    ) {
+    if ($invoice && $invoice->status == Invoice::STATUS_PENDING) {
       DrLog::info(__FUNCTION__, 'subscription skipped: invoice in pending already', $subscription);
       return $subscription;
     }
 
     $section = CriticalSection::open($subscription, __FUNCTION__);
 
-    if (!$invoice || $invoice->getDrInvoiceId() != $drInvoice->getId()) {
+    if (!$invoice) {
       $section->step('create renew invoice');
 
       $invoice = $this->createRenewInvoice($subscription, $drInvoice);
@@ -1053,20 +1138,13 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $__FUNCTION__ = __FUNCTION__;
     DB::transaction(function () use ($subscription, $invoice, $__FUNCTION__) {
-      if (
-        $subscription->sub_status == Subscription::SUB_STATUS_NORMAL ||
-        $subscription->sub_status == Subscription::SUB_STATUS_INVOICE_OPEN
-      ) {
-        $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_PENDING;
-        $subscription->save();
-        DrLog::info($__FUNCTION__, 'subscription updated => invoice-pending', $subscription);
-      }
+      $invoice->setStatus(Invoice::STATUS_PENDING);
+      $invoice->save();
+      DrLog::info($__FUNCTION__, 'invoice updated => pending', $subscription);
 
-      if ($invoice->status == Invoice::STATUS_OPEN) {
-        $invoice->setStatus(Invoice::STATUS_PENDING);
-        $invoice->save();
-        DrLog::info($__FUNCTION__, 'invoice updated => pending', $subscription);
-      }
+      $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_PENDING;
+      $subscription->save();
+      DrLog::info($__FUNCTION__, 'subscription updated => invoice-pending', $subscription);
     });
 
     $section->close();

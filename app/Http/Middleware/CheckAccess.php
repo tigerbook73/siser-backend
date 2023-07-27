@@ -61,6 +61,7 @@ const resourceRoleMapping = [
 
   'invoice.list' => [],
   'invoice.get' => [],
+  'invoice.cancel' => [],
 
   'x-ray.summary' => ['siser-backend' => 1],
 ];

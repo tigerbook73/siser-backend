@@ -25,10 +25,26 @@ use Illuminate\Support\Facades\Notification;
 use Mockery\MockInterface;
 use Tests\ApiTestCase;
 
+/**
+ * @property DrCustomer[]  $drCustomers 
+ * @property DrCheckout[]  $drCheckouts 
+ * @property DrOrder[]  $drOrders 
+ * @property DrSubscription[]  $drSubscriptions 
+ * @property DrSource[]  $drSources 
+ * @property DrInvoice[]  $drInvoices 
+ */
 class DrApiTestCase extends ApiTestCase
 {
   public DrTestHelper $drHelper;
   public MockInterface $drMock;
+
+  // cache
+  public $drCustomers;
+  public $drCheckouts;
+  public $drOrders;
+  public $drSubscriptions;
+  public $drSources;
+  public $drInvoices;
 
   /**
    * setup function
@@ -41,55 +57,73 @@ class DrApiTestCase extends ApiTestCase
     $this->drMock = $this->mock(
       DigitalRiverService::class
     );
+
+    $this->drCustomers = [];
+    $this->drCheckouts = [];
+    $this->drOrders = [];
+    $this->drSubscriptions = [];
+    $this->drSources = [];
+    $this->drInvoices = [];
   }
 
   /**
    * The followings are DR API mock helper
    */
-  public function mockGetCustomer(DrCustomer $customer = null): self
+  public function mockGetCustomer(): self
   {
     $this->drMock
       ->shouldReceive('getCustomer')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $customer ?? $this->drHelper->createCustomer(id: $id)
+        function (string $id) {
+          return $this->drCustomers[$id] ?? $this->drCustomers[$id] = $this->drHelper->createCustomer(id: $id);
+        }
       );
     return $this;
   }
 
-  public function mockCreateCustomer(DrCustomer $customer = null): self
+  public function mockCreateCustomer(): self
   {
     $this->drMock
       ->shouldReceive('createCustomer')
       ->once()
       ->andReturnUsing(
-        fn (BillingInfo $billingInfo) =>
-        $customer ?? $this->drHelper->createCustomer(billingInfo: $billingInfo)
+        function (BillingInfo $billingInfo) {
+          $newCustomer = $this->drHelper->createCustomer(billingInfo: $billingInfo);
+          $this->drCustomers[$newCustomer->getId()] = $newCustomer;
+          return $newCustomer;
+        }
       );
     return $this;
   }
 
-  public function mockUpdateCustomer(DrCustomer $customer = null): self
+  public function mockUpdateCustomer(): self
   {
     $this->drMock
       ->shouldReceive('updateCustomer')
       ->once()
       ->andReturnUsing(
-        fn (string $id, BillingInfo $billingInfo) =>
-        $customer ?? $this->drHelper->createCustomer(id: $id, billingInfo: $billingInfo)
+        function (string $id, BillingInfo $billingInfo) {
+          $updatedCustomer = $this->drCustomers[$id] ?? $this->drHelper->createCustomer(id: $id, billingInfo: $billingInfo);
+          $this->drCustomers[$id] = $updatedCustomer;
+          $updatedCustomer->setEmail($billingInfo->email);
+          return $updatedCustomer;
+        }
       );
     return $this;
   }
 
-  public function mockAttachCustomerSource(DrSource $source = null): self
+  public function mockAttachCustomerSource(): self
   {
     $this->drMock
       ->shouldReceive('attachCustomerSource')
       ->once()
       ->andReturnUsing(
-        fn (string $customerId, string $sourceId) =>
-        $source ?? $this->drHelper->createSource(id: $sourceId, customerId: $customerId)
+        function (string $customerId, string $sourceId) {
+          $newSource = $this->drSources[$sourceId] ?? $this->drHelper->createSource(id: $sourceId, customerId: $customerId);
+          $this->drSources[$sourceId] = $newSource;
+          return $newSource;
+        }
       );
     return $this;
   }
@@ -103,54 +137,52 @@ class DrApiTestCase extends ApiTestCase
     return $this;
   }
 
-  public function mockDetachCustomerSourceAsync(bool $result = true): self
+  public function mockGetCheckout(): self
   {
-    $this->drMock
-      ->shouldReceive('detachCustomerSourceAsync')
-      ->once()
-      ->andReturn($result);
-    return $this;
-  }
-
-  public function mockGetCheckout(DrCheckout|Subscription $object): self
-  {
-    $checkout = $object instanceof DrCheckout ? $object : null;
-    $subscription = $object instanceof Subscription ? $object : null;
-
     $this->drMock
       ->shouldReceive('getCheckout')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $checkout ?? $this->drHelper->createCheckout($subscription, $id)
+        function (string $id) {
+          return $this->drCheckouts[$id];
+        }
       );
 
     return $this;
   }
 
-  public function mockCreateCheckout(DrCheckout $checkout = null): self
+  public function mockCreateCheckout(): self
   {
     $this->drMock
       ->shouldReceive('createCheckout')
       ->once()
       ->andReturnUsing(
-        fn (Subscription $subscription) =>
-        $checkout ?? $this->drHelper->createCheckout($subscription, null)
+        function (Subscription $subscription) {
+          $newCheckout = $this->drHelper->createCheckout($subscription, null);
+          $this->drCheckouts[$newCheckout->getId()] = $newCheckout;
+
+          $drSubscription = $this->drHelper->createSubscription(
+            $subscription,
+            $newCheckout->getItems()[0]->getSubscriptionInfo()->getSubscriptionId()
+          );
+          $this->drSubscriptions[$drSubscription->getId()] = $drSubscription;
+          return $newCheckout;
+        }
       );
     return $this;
   }
 
-  public function mockUpdateCheckoutTerms(DrCheckout|Subscription $object): self
+  public function mockUpdateCheckoutTerms(): self
   {
-    $checkout = $object instanceof DrCheckout ? $object : null;
-    $subscription = $object instanceof Subscription ? $object : null;
-
     $this->drMock
       ->shouldReceive('updateCheckoutTerms')
       ->once()
       ->andReturnUsing(
-        fn (string $checkoutId, string $terms) =>
-        $checkout ?? $this->drHelper->createCheckout($subscription, $checkoutId)
+        function (string $checkoutId, string $terms) {
+          $updatedCheckout = $this->drCheckouts[$checkoutId];
+          $updatedCheckout->getItems()[0]->getSubscriptionInfo()->setTerms($terms);
+          return $updatedCheckout;
+        }
       );
     return $this;
   }
@@ -160,113 +192,135 @@ class DrApiTestCase extends ApiTestCase
     $this->drMock
       ->shouldReceive('deleteCheckout')
       ->once()
-      ->andReturn($result);
+      ->andReturnUsing(
+        function (string $checkoutId) use ($result) {
+          if ($result) {
+            unset($this->drCheckouts[$checkoutId]);
+          }
+          return $result;
+        }
+      );
     return $this;
   }
 
-  public function mockDeleteCheckoutAsync(bool $result = true): self
-  {
-    $this->drMock
-      ->shouldReceive('deleteCheckoutAsync')
-      ->once()
-      ->andReturn($result);
-    return $this;
-  }
-
-  public function mockAttachCheckoutSource(DrSource $source = null): self
+  public function mockAttachCheckoutSource(): self
   {
     $this->drMock
       ->shouldReceive('attachCheckoutSource')
       ->once()
       ->andReturnUsing(
-        fn (string $checkoutId, string $sourceId) =>
-        $source ?? $this->drHelper->createSource($sourceId)
+        function (string $checkoutId, string $sourceId) {
+          $newSource = $this->drSources[$sourceId] ?? $this->drHelper->createSource(id: $sourceId);
+          $this->drSources[$sourceId] = $newSource;
+          return $newSource;
+        }
       );
     return $this;
   }
 
-  public function mockGetSource(DrSource $source = null): self
+  public function mockGetSource(): self
   {
     $this->drMock
       ->shouldReceive('getSource')
       ->once()
       ->andReturnUsing(
-        fn (string $sourceId) =>
-        $source ?? $this->drHelper->createSource($sourceId)
+        function (string $sourceId) {
+          return $this->drSources[$sourceId] ?? $this->drSources[$sourceId] = $this->drHelper->createSource(id: $sourceId);
+        }
       );
     return $this;
   }
 
-  public function mockGetOrder(DrOrder|Subscription $object, string $state = null): self
+  public function mockGetOrder(): self
   {
-    $order = ($object instanceof DrOrder) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('getOrder')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $order ?? $this->drHelper->createOrder($subscription, $id, $state)
+        function (string $id) {
+          return $this->drOrders[$id];
+        }
       );
     return $this;
   }
 
-  public function mockConvertCheckoutToOrder(DrOrder|Subscription $object, string $state = null): self
+  public function mockConvertCheckoutToOrder(Subscription $subscription, string $state = DrOrder::STATE_ACCEPTED): self
   {
-    $order = ($object instanceof DrOrder) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('convertCheckoutToOrder')
       ->once()
       ->andReturnUsing(
-        fn (string $checkoutId) =>
-        $order ?? $this->drHelper->createOrder($subscription, null, $state)
+        function (string $checkoutId) use ($subscription, $state) {
+          $newOrder = $this->drHelper->createOrder($subscription, $checkoutId, $state);
+          $this->drOrders[$newOrder->getId()] = $newOrder;
+          return $newOrder;
+        }
       );
 
     return $this;
   }
 
-  public function mockFulfillOrder(DrFulfillment $fulfillment = null): self
+  public function mockUpdateOrderUpstreamId(): self
+  {
+    $this->drMock
+      ->shouldReceive('updateOrderUpstreamId')
+      ->once()
+      ->andReturnUsing(
+        function (string $orderId, string|int $upstreamId) {
+          $updatedOrder = $this->drOrders[$orderId];
+          $updatedOrder->setUpstreamId($upstreamId);
+          return $updatedOrder;
+        }
+      );
+
+    return $this;
+  }
+
+  public function mockFulfillOrder(): self
   {
     $this->drMock
       ->shouldReceive('fulfillOrder')
       ->once()
       ->andReturnUsing(
-        fn (string $orderId, DrOrder $order = null, bool $cancel = false) =>
-        $fulfillment ?? $this->drHelper->createFulfillment()
+        function (string $orderId, DrOrder $order = null, bool $cancel = false) {
+          $newFulfillment = $this->drHelper->createFulfillment($orderId);
+          $order = $this->drOrders[$orderId];
+          $order->setState($cancel ? DrOrder::STATE_CANCELLED : DrOrder::STATE_FULFILLED);
+          return $newFulfillment;
+        }
       );
 
     return $this;
   }
 
-  public function mockGetSubscription(DrSubscription|Subscription $object, string $id = null, bool $next = false): self
+  public function mockGetSubscription(): self
   {
-    $drSubscription = ($object instanceof DrSubscription) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('getSubscription')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $drSubscription ?? $this->drHelper->createSubscription($subscription, $id, $next)
+        function (string $id) {
+          return $drSubscription ?? $this->drSubscriptions[$id];
+        }
       );
     return $this;
   }
 
-  public function mockActivateSubscription(DrSubscription|Subscription $object, string $id = null, bool $next = false): self
+  public function mockActivateSubscription(): self
   {
-    $drSubscription = ($object instanceof DrSubscription) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('activateSubscription')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $drSubscription ?? $this->drHelper->createSubscription($subscription, $id, $next)
+        function (string $id) {
+          $updatedSubscription = $this->drSubscriptions[$id];
+          $updatedSubscription
+            ->setCurrentPeriodEndDate(now()->addDays(config('dr.dr_test.interval_count')))
+            ->setNextInvoiceDate(
+              now()->addDays(config('dr.dr_test.interval_count') - config('dr.dr_test.billing_offset_days'))
+            );
+          return $updatedSubscription;
+        }
       );
     return $this;
   }
@@ -276,69 +330,66 @@ class DrApiTestCase extends ApiTestCase
     $this->drMock
       ->shouldReceive('deleteSubscription')
       ->once()
-      ->andReturn($result);
+      ->andReturnUsing(
+        function (string $id) use ($result) {
+          if ($result) {
+            unset($this->drSubscriptions[$id]);
+          }
+          return $result;
+        }
+      );
     return $this;
   }
 
-  public function mockDeleteSubscriptionAsync(bool $result = false): self
+  public function mockUpdateSubscriptionSource(): self
   {
-    $this->drMock
-      ->shouldReceive('deleteSubscriptionAsync')
-      ->once()
-      ->andReturn($result);
-    return $this;
-  }
-
-  public function mockUpdateSubscriptionSource(DrSubscription|Subscription $object, string $id = null, bool $next = false): self
-  {
-    $drSubscription = ($object instanceof DrSubscription) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('updateSubscriptionSource')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $drSubscription ?? $this->drHelper->createSubscription($subscription, $id, $next)
+        function (string $id, string $sourceId) {
+          $updatedSubscription = $this->drSubscriptions[$id];
+          $updatedSubscription->setSourceId($sourceId);
+          return $updatedSubscription;
+        }
       );
     return $this;
   }
 
-  public function mockUpdateSubscriptionItems(DrSubscription|Subscription $object, string $id = null, bool $next = false): self
+  public function mockUpdateSubscriptionItems(): self
   {
-    $drSubscription = ($object instanceof DrSubscription) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('updateSubscriptionItems')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $drSubscription ?? $this->drHelper->createSubscription($subscription, $id, $next)
+        function (string $id, Subscription $subscription) {
+          $updatedSubscription = $this->drSubscriptions[$id];
+          $this->drSubscriptions[$updatedSubscription->getId()] = $updatedSubscription;
+          // TODO: update items
+          return $updatedSubscription;
+        }
       );
     return $this;
   }
 
-  public function mockCancelSubscription(DrSubscription|Subscription $object, string $id = null, bool $next = false): self
+  public function mockCancelSubscription(): self
   {
-    $drSubscription = ($object instanceof DrSubscription) ? $object : null;
-    $subscription = ($object instanceof Subscription) ? $object : null;
-
     $this->drMock
       ->shouldReceive('cancelSubscription')
       ->once()
       ->andReturnUsing(
-        fn (string $id) =>
-        $drSubscription ?? $this->drHelper->createSubscription($subscription, $id, $next)
+        function (string $id) {
+          $updatedSubscription = $this->drSubscriptions[$id];
+          $updatedSubscription->setState(DrSubscription::STATE_CANCELLED);
+          return $updatedSubscription;
+        }
       );
     return $this;
   }
 
-  public function mockCreateFileLink(DrFileLink|string $url = null): self
+  public function mockCreateFileLink(string $url = null): self
   {
-    $fileLink = ($url instanceof DrFileLink) ? $url
-      : $this->drHelper->createFileLink($url);
-
+    $fileLink = $this->drHelper->createFileLink($url);
     $this->drMock
       ->shouldReceive('createFileLink')
       ->once()
@@ -512,7 +563,7 @@ class DrApiTestCase extends ApiTestCase
     // mock up
     $this->mockAttachCustomerSource();
     if ($this->user->payment_method->dr['source_id'] ?? null) {
-      $this->mockDetachCustomerSourceAsync();
+      $this->mockDetachCustomerSource();
     }
     if ($activeSubscripiton = $this->user->getActiveLiveSubscription()) {
       $this->mockUpdateSubscriptionSource($activeSubscripiton);
@@ -581,7 +632,7 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function paySubscription(Subscription|int $subscription, string $terms = 'this is test terms ...')
+  public function paySubscription(Subscription|int $subscription, string $terms = 'this is test terms ...', string $orderState = DrOrder::STATE_ACCEPTED)
   {
     // prepare
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
@@ -590,7 +641,7 @@ class DrApiTestCase extends ApiTestCase
     // mock up
     $this->mockAttachCheckoutSource();
     $this->mockUpdateCheckoutTerms($subscription);
-    $this->mockConvertCheckoutToOrder($subscription);
+    $this->mockConvertCheckoutToOrder($subscription, $orderState);
 
     // call api
     $response = $this->postJson(
@@ -604,6 +655,10 @@ class DrApiTestCase extends ApiTestCase
     // assert
     $response->assertSuccessful();
     $this->assertEquals($subscription->status, Subscription::STATUS_PENDING);
+    $this->assertEquals(
+      $subscription->sub_status,
+      ($orderState == DrOrder::STATE_ACCEPTED) ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING
+    );
 
     return $response;
   }
@@ -643,6 +698,43 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
+  public function cancelOrder(Subscription|int $subscription)
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getActiveInvoice();
+    $tryCancel = $subscription->status == Subscription::STATUS_PENDING;
+
+    // mock up
+    if ($tryCancel) {
+      $this->mockFulfillOrder();
+    }
+    Notification::fake();
+
+    // call api
+    $response = $this->postJson("/api/v1/account/invoices/{$invoice->id}/cancel");
+
+    // refresh authenticated user data
+    $subscription->refresh();
+    $invoice->refresh();
+
+    // assert
+    if ($tryCancel) {
+      $response->assertSuccessful();
+      $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
+      $this->assertEquals($invoice->status, Invoice::STATUS_CANCELLED);
+
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ABORTED
+      );
+    } else {
+      $response->assertStatus(409);
+    }
+
+    return $response;
+  }
+
   public function onOrderAccept(Subscription|int $subscription): Subscription
   {
     /** @var Subscription $subscription */
@@ -655,11 +747,9 @@ class DrApiTestCase extends ApiTestCase
     $this->mockFulfillOrder();
 
     // call api
-    $response = $this->sendOrderAccepted($this->drHelper->createOrder(
-      $subscription,
-      $subscription->dr['order_id'],
-      DrOrder::STATE_ACCEPTED
-    ));
+    $response = $this->sendOrderAccepted(
+      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_ACCEPTED)
+    );
 
     // refresh data
     $subscription->refresh();
@@ -687,11 +777,9 @@ class DrApiTestCase extends ApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderComplete($this->drHelper->createOrder(
-      $subscription,
-      null,
-      DrOrder::STATE_COMPLETE
-    ));
+    $response = $this->sendOrderComplete(
+      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_COMPLETE)
+    );
 
     // refresh data
     $subscription->refresh();
@@ -719,6 +807,7 @@ class DrApiTestCase extends ApiTestCase
   {
     /** @var Subscription $subscription */
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getActiveInvoice();
 
     // prepare
     $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING || $subscription->status == Subscription::STATUS_PENDING);
@@ -728,13 +817,13 @@ class DrApiTestCase extends ApiTestCase
 
     // call api
     if ($type == 'order.blocked') {
-      $order = $this->drHelper->createOrder($subscription, null, DrOrder::STATE_BLOCKED);
+      $order = $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_BLOCKED);
       $response = $this->sendOrderBlocked($order);
     } else if ($type == 'order.cancelled') {
-      $order = $this->drHelper->createOrder($subscription, null, DrOrder::STATE_CANCELLED);
+      $order = $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_CANCELLED);
       $response = $this->sendOrderCancelled($order);
     } else if ($type == 'order.charge.failed') {
-      $order = $this->drHelper->createOrder($subscription, null, DrOrder::STATE_CANCELLED);
+      $order = $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_CANCELLED);
       $response = $this->sendOrderChargeFailed($order);
     } else if ($type == 'order.charge.capture.failed') {
       $order = $this->drHelper->createCharge($subscription->dr['order_id'], DrCharge::STATE_FAILED);
@@ -743,10 +832,12 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
+    $invoice->refresh();
 
     // assert
     $response->assertSuccessful();
     $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
+    $this->assertEquals($invoice->status, Invoice::STATUS_FAILED);
 
     Notification::assertSentTo(
       $subscription,
@@ -780,7 +871,7 @@ class DrApiTestCase extends ApiTestCase
     $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING || $subscription->status == Subscription::STATUS_PENDING);
 
     // mock up
-    $this->mockGetOrder($subscription);
+    $this->mockGetOrder();
 
     Notification::fake();
 
@@ -813,16 +904,14 @@ class DrApiTestCase extends ApiTestCase
     $invoice = $subscription->getActiveInvoice();
 
     // mock up
-    $this->mockGetOrder($subscription);
+    $this->mockGetOrder();
     $this->mockCreateFileLink();
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderInvoiceCreated($this->drHelper->createOrder(
-      $subscription,
-      null,
-      DrOrder::STATE_COMPLETE
-    ));
+    $response = $this->sendOrderInvoiceCreated(
+      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_COMPLETE)
+    );
 
     // refresh data
     $subscription->refresh();
@@ -854,7 +943,7 @@ class DrApiTestCase extends ApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendSubscriptionReminder($this->drHelper->createSubscription($subscription));
+    $response = $this->sendSubscriptionReminder($this->drSubscriptions[$subscription->getDrSubscriptionId()]);
 
     // refresh data
     $subscription->refresh();
@@ -887,9 +976,11 @@ class DrApiTestCase extends ApiTestCase
     Notification::fake();
 
     // call api
+    $drInvoice = $this->drInvoices[$invoice?->getDrInvoiceId()] ?? $this->drHelper->createInvoice($subscription);
+    $this->drInvoices[$drInvoice->getId()] = $drInvoice;
     $response = $this->sendSubscriptionPaymentFailed(
-      $this->drHelper->createSubscription($subscription),
-      $this->drHelper->createInvoice($subscription, $invoice?->getDrInvoiceId() ?? $this->drHelper->uuid())
+      $this->drSubscriptions[$subscription->getDrSubscriptionId()],
+      $drInvoice
     );
 
     // refresh data
@@ -921,16 +1012,18 @@ class DrApiTestCase extends ApiTestCase
     $invoice = $subscription->getActiveInvoice();
 
     // mock up
+    $this->mockUpdateOrderUpstreamId();
     Notification::fake();
 
     // call api
+    $drOrder = $this->drHelper->createOrder($subscription, null, DrOrder::STATE_COMPLETE);
+    $this->drOrders[$drOrder->getId()] = $drOrder;
+    $drInvoice = $this->drInvoices[$invoice?->getDrInvoiceId()] ?? $this->drHelper->createInvoice($subscription, null, $drOrder->getId());
+    $drInvoice->setOrderId($drOrder->getId());
+    $this->drInvoices[$drInvoice->getId()] = $drInvoice;
     $response = $this->sendSubscriptionExtended(
-      $this->drHelper->createSubscription($subscription),
-      $this->drHelper->createInvoice(
-        $subscription,
-        $invoice?->getDrInvoiceId() ?? $this->drHelper->uuid(),
-        $this->drHelper->uuid()
-      )
+      $this->drSubscriptions[$subscription->getDrSubscriptionId()],
+      $drInvoice
     );
 
     // refresh data
@@ -964,7 +1057,7 @@ class DrApiTestCase extends ApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendSubscriptionFailed($this->drHelper->createSubscription($subscription));
+    $response = $this->sendSubscriptionFailed($this->drSubscriptions[$subscription->getDrSubscriptionId()]);
 
     // refresh data
     $subscription->refresh();
@@ -975,7 +1068,7 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
     $this->assertEquals($subscription->user->getActiveSubscription()->subscription_level, 1);
     if ($invoice) {
-      $this->assertTrue($invoice->status == Invoice::STATUS_FAILED);
+      $this->assertTrue($invoice->status == Invoice::STATUS_FAILED || $invoice->status == Invoice::STATUS_COMPLETING);
     }
 
 
@@ -1007,11 +1100,9 @@ class DrApiTestCase extends ApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderChargeback($this->drHelper->createOrder(
-      $subscription,
-      null,
-      DrOrder::STATE_COMPLETE
-    ));
+    $response = $this->sendOrderChargeback(
+      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_BLOCKED)
+    );
 
     // refresh data
     $subscription->refresh();

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Full;
 
+use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\Developer;
 use App\Notifications\SubscriptionWarning;
@@ -46,11 +47,10 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderComplete($this->drHelper->createOrder(
-      $subscription,
-      null,
-      DrOrder::STATE_COMPLETE
-    ), $eventId = $this->drHelper->uuid());
+    $response = $this->sendOrderComplete(
+      $this->drOrders[$subscription->getActiveInvoice()->getDrOrderId()]->setState(DrOrder::STATE_COMPLETE),
+      $eventId = $this->drHelper->uuid()
+    );
 
     // refresh data
     $subscription->refresh();
@@ -58,7 +58,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     // assert
     $response->assertStatus(400);
     $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING);
-    $this->assertTrue($subscription->getActiveInvoice() == null);
+    $this->assertTrue($subscription->getActiveInvoice()->status == Invoice::STATUS_PROCESSING);
     $this->assertDatabaseHas('critical_sections', [
       'type' => 'subscription',
       'status' => 'open',
@@ -68,6 +68,14 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
       'event_id' => $eventId
     ]);
     Notification::assertNothingSent();
+  }
+
+  public function test_processing_to_failed_error_by_cancel_order()
+  {
+    $subscription = $this->init_processing();
+
+    $response = $this->cancelOrder($subscription);
+    $response->assertStatus(409);
   }
 
   public function test_processing_to_failed_blocked()

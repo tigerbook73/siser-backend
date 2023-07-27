@@ -20,7 +20,8 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
   [*]
-  [*]           --> Open            : invoice.open
+  [*]           --> Open            : invoice.open (renew)
+  [*]           --> Pending         : create order
 
   Open
   Open          --> Failed          : subscription.failed
@@ -29,7 +30,10 @@ stateDiagram-v2
 
   Pending       --> Failed          : subscription.failed
   Pending       --> Completing      : subscription.extended
+  Pending       --> Processing      : order.fulfilled (first)
   
+  Processing    --> Completing      : order.completed (first)
+
   Completing
   Completing    --> Completed       : order.invoice.created
 
