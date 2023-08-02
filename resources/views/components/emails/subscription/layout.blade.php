@@ -1,4 +1,4 @@
-@props(['subscription'])
+@props(['subscription', 'helper'])
 
 <!DOCTYPE html>
 <html>
@@ -13,30 +13,51 @@
         line-height: 1.3em;
         font-size: 1.1em;
         margin: auto;
-        max-width: 1400px;
+        max-width: 800px;
       }
 
-      .subscription-table,
-      .subscription-table th,
-      .subscription-table td {
+      table,
+      table th,
+       {
         padding: 2px 5px 2px 5px;
         border-top: 1px solid gray;
         border-bottom: 1px solid gray;
         border-collapse: collapse;
       }
 
-      .subscription-table {
+      table {
         min-width: 600px;
-        border-top: 2px solid black;
-        border-bottom: 2px solid black;
+        max-width: 800px;
+        width: 100%;
+        margin-top: 5px
+        border-top: 2px solid lightgray;
+        border-bottom: 2px solid lightgray;
       }
 
-      .subscription-table th {
-        background-color: #1976d2;
-        color: white;
+      table tr td:first-child {
+        width: 40%;
+      }
+
+      .highlight {
+        background-color: lightgray;
+        color: black;
         font-weight: bold;
+      }
+
+      .text-left {
         text-align: left;
-        min-width: 200px;
+      }
+
+      .text-right {
+        text-align: right;
+      }
+
+      table th {
+        /* background-color: #1976d2; */
+        /* color: white; */
+        /* font-weight: bold; */
+        text-align: right;
+        /* min-width: 200px; */
       }
     </style>
   </head>
@@ -44,27 +65,53 @@
   <body>
     <div class="mail-content">
       <!-- greeting -->
-      <div>
-        Dear {{ $subscription->billing_info['first_name'] . ' ' . $subscription->billing_info['last_name'] }},<br />
-        <br />
-      </div>
+      <br />
+      {{ $helper->trans('messages.layout.greeting', ['name' => $helper->formatName($subscription->billing_info)]) }}
+      <br />
+      <br />
 
       <!-- main content -->
       <div>
         {{ $slot }}
       </div>
+      <br />
+      <br />
+
+      <!-- customer portal -->
+      {!! $helper->trans('messages.layout.manage_subscription', ['customer_portal_link' => $helper->getCustomerPortalLink()]); !!}
+      <br />
+      <br />
+
+      <!-- faq -->
+      {!! $helper->trans('messages.layout.faqs', ['support_link' => $helper->getSupportLink()]); !!}
+      <br />
+      <br />
+
+      <!-- faq -->
+
+      {!!
+        $helper->trans('messages.layout.contact_us', [
+          'support_email_link' => $helper->getSupportEmailLink(),
+          'customer_support_link' => $helper->getCustomerSupportLink(),
+        ]);
+      !!}
+      <br />
+      <br />
 
       <!-- thank you -->
-      <div>
-        <br />
-        Kind Regards,<br />
-        {{ config("app.name") }}<br />
-      </div>
+      {{ $helper->trans('messages.layout.regards') }}
+      <br />
+      {{ config("app.name") }}
+      <br />
+      <br />
 
       <!-- logo -->
       <div>
         <img width="110" height="46" src="{{ config('app.url') . '/static/imgs/siser-logo-trimmed.png'}}" />
       </div>
+      <br />
+      <hr />
+      <x-emails.subscription.dr-bar :country="$subscription->billing_info['address']['country']"/>
     </div>
   </body>
 </html>

@@ -1,8 +1,5 @@
 Use Cases:
 
-1. View order/invoices
-3. Support to cancel order if on pending status
-4. Support download invoice is invoice pdf is ready
 
 TODO:
 
@@ -18,3 +15,7 @@ another CC account.
 
 
 1
+
+
+
+

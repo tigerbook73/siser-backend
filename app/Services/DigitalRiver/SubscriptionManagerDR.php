@@ -310,7 +310,6 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // send notification
       $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
-
       return $subscription;
     } catch (\Throwable $th) {
       throw $th;
@@ -347,8 +346,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $section->close();
 
       // send notification
-      $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
-
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CANCELLED, $invoice);
       return $invoice;
     } catch (\Throwable $th) {
       throw $th;
@@ -545,10 +543,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  protected function onOrderAccepted(DrOrder $order): Subscription|null
+  protected function onOrderAccepted(DrOrder $drOrder): Subscription|null
   {
     // validate the order
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
@@ -564,7 +562,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // fulfill order
     try {
-      $this->drService->fulfillOrder($order->getId(), $order);
+      $this->drService->fulfillOrder($drOrder->getId(), $drOrder);
       DrLog::info(__FUNCTION__, 'dr-order fulfilled', $subscription);
     } catch (\Throwable $th) {
       $section->step('stop subscription when fulfillment fails');
@@ -577,7 +575,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       $section->close();
 
-      $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
       return null;
     }
 
@@ -597,10 +595,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  protected function onOrderBlocked(DrOrder $order): Subscription|null
+  protected function onOrderBlocked(DrOrder $drOrder): Subscription|null
   {
     // validate the order
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
@@ -625,15 +623,14 @@ class SubscriptionManagerDR implements SubscriptionManager
     CriticalSection::single($subscription, __FUNCTION__, 'stop subscription: first order blocked');
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
     return $subscription;
   }
 
-  protected function onOrderCancelled(DrOrder $order): Subscription|null
+  protected function onOrderCancelled(DrOrder $drOrder): Subscription|null
   {
     // validate the order
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
@@ -654,15 +651,15 @@ class SubscriptionManagerDR implements SubscriptionManager
     CriticalSection::single($subscription, __FUNCTION__, 'stop subscription: first order cancelled');
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
 
     return $subscription;
   }
 
-  protected function onOrderChargeFailed(DrOrder $order): Subscription|null
+  protected function onOrderChargeFailed(DrOrder $drOrder): Subscription|null
   {
     // validate the order
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
@@ -683,8 +680,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     CriticalSection::single($subscription, __FUNCTION__, 'stop subscription: first order charge failed');
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
     return $subscription;
   }
 
@@ -707,8 +703,8 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onOrderChargeCaptureFailed(DrCharge $charge): Subscription|null
   {
     // validate the order
-    $order = $this->drService->getOrder($charge->getOrderId());
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
+    $drOrder = $this->drService->getOrder($charge->getOrderId());
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
@@ -729,18 +725,18 @@ class SubscriptionManagerDR implements SubscriptionManager
     CriticalSection::single($subscription, __FUNCTION__, 'stop subscription: first order charge capture failed');
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_ABORTED);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
     return $subscription;
   }
 
-  protected function onOrderComplete(DrOrder $order): Subscription|null
+  protected function onOrderComplete(DrOrder $drOrder): Subscription|null
   {
     // validate the order
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
+    $invoice = $subscription->getActiveInvoice();
 
     // must be in processing status
     if ($subscription->status != Subscription::STATUS_PROCESSING) {
@@ -764,7 +760,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->step('stop previous subscription, activate new subscription, update invoice, update user subscription level');
 
     $__FUNCTION__ = __FUNCTION__;
-    DB::transaction(function () use ($order, $subscription, $drSubscription, $__FUNCTION__) {
+    DB::transaction(function () use ($drOrder, $subscription, $invoice, $drSubscription, $__FUNCTION__) {
       $user = $subscription->user;
 
       // stop previous subscription
@@ -774,7 +770,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       }
 
       // active current subscription
-      $this->fillSubscriptionAmount($subscription, $order);
+      $this->fillSubscriptionAmount($subscription, $drOrder);
 
       $subscription->start_date = now();
       $subscription->current_period = 1;
@@ -794,7 +790,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info($__FUNCTION__, 'user subscription level updated', $subscription);
 
       // update invoice status
-      $invoice = $subscription->getActiveInvoice();
       $invoice->period              = $subscription->current_period;
       $invoice->period_start_date   = $subscription->current_period_start_date;
       $invoice->period_end_date     = $subscription->current_period_end_date;
@@ -806,30 +801,29 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->close();
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_CONFIRMED);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_CONFIRMED, $invoice);
     return $subscription;
   }
 
   protected function onOrderInvoiceCreated(array $orderInvoice): Subscription|null
   {
     // validate order
-    $order = $this->drService->getOrder($orderInvoice['orderId']);
-    $subscription = $this->validateOrder($order, [], __FUNCTION__: __FUNCTION__);
+    $drOrder = $this->drService->getOrder($orderInvoice['orderId']);
+    $subscription = $this->validateOrder($drOrder, [], __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
     }
 
     // validate invoice - must after subscription extended
-    $invoice = $subscription->getInvoiceByOrderId($order->getId());
+    $invoice = $subscription->getInvoiceByOrderId($drOrder->getId());
     if (!$invoice) {
-      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['subscription_id' => $subscription->id, 'order_id' => $order->getId()]);
+      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['subscription_id' => $subscription->id, 'order_id' => $drOrder->getId()]);
       return null;
     }
 
     // skip duplicated invoice
     if ($invoice->pdf_file) {
-      DrLog::warning(__FUNCTION__, 'invoice skipped: pdf file already exists', ['subscription_id' => $subscription->id, 'order_id' => $order->getId()]);
+      DrLog::warning(__FUNCTION__, 'invoice skipped: pdf file already exists', ['subscription_id' => $subscription->id, 'order_id' => $drOrder->getId()]);
       return null;
     }
 
@@ -864,8 +858,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->close();
 
     // sent notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PDF, $invoice);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_INVOICE, $invoice);
     return $subscription;
   }
 
@@ -1051,8 +1044,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->close();
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED, $invoice);
     return $subscription;
   }
 
@@ -1094,8 +1086,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->close();
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED, $invoice);
     return $subscription;
   }
 
@@ -1150,8 +1141,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $section->close();
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PENDING);
-
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PENDING, $invoice);
     return $subscription;
   }
 
@@ -1180,7 +1170,6 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
-
     return $subscription;
   }
 

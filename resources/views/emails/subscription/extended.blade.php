@@ -1,27 +1,25 @@
-<x-emails.subscription.layout :$subscription>
-  We are pleased to confirm that your subscription to the 
-  <b>{{ $subscription->plan_info['name'] }}</b>
-  has been successfully renewed! You can continue enjoying all the exclusive benefits and features of your subscription.<br />
+<x-emails.subscription.layout
+  :$type
+  :$subscription
+  :$invoice
+  :$helper
+>
+  {!! $helper->trans('messages.subscription_extended.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
   <br />
-  Here is a summary of your subscription:<br />
+  {{ $helper->trans('messages.subscription_extended.summary') }}
+  <br />
   <br />
   <x-emails.subscription.table
+    :$type
     :$subscription
     :$invoice
     :fields="[
-      'name',
-      'period_start_date',
-      'period_end_date',
-      'currency',
-      'price',
-      'subtotal',
-      'total_tax', 
-      'total_amount',
+      'order',
+      'customer',
+      'items',
+      'payment_method',
+      'subscription',
     ]"
-    :$timezone
-  >
-  </x-emails.subscription.table>
-  <br />
-  You can see your subscription details on our <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
-  <br />
+    :$helper
+  />
 </x-emails.subscription.layout>

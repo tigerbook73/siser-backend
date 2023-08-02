@@ -21,5 +21,8 @@ return [
 
   'plan' => [
     'default_machine_plan' => 1,
-  ]
+  ],
+
+  'support_email'   => "support@siserna.com",
+  'bcc_email'       => "user2.test@iifuture.com",
 ];

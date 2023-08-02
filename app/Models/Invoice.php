@@ -10,11 +10,13 @@ class Invoice extends BaseInvoice
   public const STATUS_INIT          = 'init';         // first invoice only
   public const STATUS_OPEN          = 'open';         // renew invoice only
   public const STATUS_PENDING       = 'pending';
+  public const STATUS_CANCELLED     = 'cancelled';    // first invoice only
   public const STATUS_PROCESSING    = 'processing';   // first invoice only
+  public const STATUS_FAILED        = 'failed';
   public const STATUS_COMPLETING    = 'completing';
   public const STATUS_COMPLETED     = 'completed';
-  public const STATUS_FAILED        = 'failed';
-  public const STATUS_CANCELLED     = 'cancelled';    // first invoice only
+  public const STATUS_REFUNDING     = 'refunding';
+  public const STATUS_REFUNDED      = 'refunded';
   public const STATUS_VOID          = 'void';         // renew invoice only
 
   // dr attributes

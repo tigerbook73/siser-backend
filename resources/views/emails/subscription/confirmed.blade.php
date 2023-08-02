@@ -1,27 +1,26 @@
-<x-emails.subscription.layout :$subscription>
-  We are pleased to inform you that your subscription to the <b>{{ $subscription->plan_info['name'] }}</b> has been
-  confirmed!<br />
+<x-emails.subscription.layout
+  :$type
+  :$subscription
+  :$invoice
+  :$helper
+>
+  {!! $helper->trans('messages.order_confirm.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
   <br />
-  Here is a summary of your subscription:<br />
+  <br />
+  {{ $helper->trans('messages.order_confirm.summary') }}
+  <br />
   <br />
   <x-emails.subscription.table
+    :$type
     :$subscription
     :$invoice
     :fields="[
-      'order_id',
-      'name',
-      'start_date',
-      'currency',
-      'price',
-      'subtotal',
-      'total_tax', 
-      'total_amount',
+      'order',
+      'customer',
+      'items',
+      'payment_method',
+      'subscription',
     ]"
-    :$timezone
-  >
-  </x-emails.subscription.table>
-  <br />
-  You can see your subscription details on our
-  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
-  <br />
+    :$helper
+  />
 </x-emails.subscription.layout>

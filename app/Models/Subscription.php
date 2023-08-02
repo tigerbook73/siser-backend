@@ -234,8 +234,10 @@ class Subscription extends BaseSubscription
     ];
   }
 
-  public function sendNotification(string $type, Invoice|null $invoice = null)
+  public function sendNotification(string $type, Invoice $invoice = null, array $context = [])
   {
-    $this->notify(new SubscriptionNotification($type, $this, $invoice));
+    $context['subscription'] = $this;
+    $context['invoice'] = $invoice;
+    $this->notify(new SubscriptionNotification($type, $context));
   }
 }

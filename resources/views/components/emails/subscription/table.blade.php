@@ -1,143 +1,189 @@
-@props(['subscription', 'invoice' => null, 'fields', 'timezone'])
+@props([ 'type', 'subscription', 'invoice' => null, 'fields', 'helper'])
 
 <div>
-  <table class="subscription-table">
-    @if (in_array('order_id', $fields))
+  @if (in_array('order', $fields))
+  <table>
     <tr>
-      <td>Order Id</td>
-      <td>{{ $subscription->getDrOrderId() }}</td>
+      <td colspan="2" class="highlight">{{ $helper->trans('messages.order.#', ['order_id' => $invoice->id]) }}</td>
     </tr>
-    @endif 
-
-    @if (in_array('id', $fields))
     <tr>
-      <td>Subscription Id</td>
+      <td>DigitalRiver {{ $helper->trans('messages.order.no') }}</td>
+      <td>{{ $invoice->getDrOrderId() }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->trans('messages.order.date') }}</td>
+      <td>{{ $helper->formatDate($invoice->invoice_date) }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->trans('messages.order.type')}}</td>
+      <td>{{ $helper->formatOrderType($invoice->period) }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->trans('messages.order.status')}}</td>
+      <td>{{ $helper->formatOrderStatus($invoice->status) }}</td>
+    </tr>
+  </table>
+  @endif
+
+  @if (in_array('customer', $fields))
+  <table>
+    <tr>
+      <td class="highlight">{{ $helper->trans('messages.customer_info') }}</td>
+      <td class="highlight">{{ $helper->trans('messages.billing_address') }}</td>
+    </tr>
+    <tr>
+      <td>
+        <div>{{ $helper->formatName($subscription->billing_info) }}</div>
+        <div>{{ $subscription->billing_info['email'] }}</div>
+        <div>{{ $subscription->billing_info['phone'] }}</div>
+      </td>
+      <td>
+        {!! $helper->formatAddress($subscription->billing_info['address']) !!}
+      </td>
+    </tr>
+  </table>
+  @endif
+
+  @if (in_array('items', $fields))
+  <table>
+    <tr>
+      <td colspan="5" class="highlight">{{ $helper->trans('messages.order_items', ['currency' => $invoice->currency]) }}</td>
+    </tr>
+    <tr>
+      <th class="text-left">{{ $helper->trans('messages.order_item') }}</th>
+      <th>{{ $helper->trans('messages.order_quantity') }}</th>
+      <th>{{ $helper->trans('messages.order_price_excl', ['tax' => $helper->getTaxName()]) }}</th>
+    </tr>
+    <tr>
+      <td>{{ $invoice->plan_info['name'] }}</td>
+      <td class="text-right">1</td>
+      <td class="text-right">{{ $helper->formatPrice($invoice->plan_info['price']['price']) }}</td>
+    </tr>
+    <tr>
+      <td colspan="5" class="highlight"></td>
+    </tr>
+    <tr>
+      <td colspan="5" class="highlight"></td>
+    </tr>
+    <tr>
+      <td rowspan="5" style="width: 40%"></td>
+      <td class="text-right">{{ $helper->trans('messages.order_subtotal', ['tax' => $helper->getTaxName()]) }}</td>
+      <td class="text-right">{{ $helper->formatPrice($invoice->subtotal) }}</td>
+    </tr>
+    <tr>
+      <td class="text-right">{{ $helper->getTaxName() }}</td>
+      <td class="text-right">{{ $helper->formatPrice($invoice->total_tax) }}</td>
+    </tr>
+    <tr>
+      <td class="text-right">{{ $helper->trans('messages.order_total', ['tax' => $helper->getTaxName()]) }}</td>
+      <td class="text-right">{{ $helper->formatPrice($invoice->total_amount) }}</td>
+    </tr>
+    {{-- TODO: adjust refund total --}}
+    @if ($type === 'subscription.order-refunded')
+    <tr>
+      <td class="text-right">{{ $helper->trans('messages.order_refunded', ['tax' => $helper->getTaxName()]) }}</td>
+      <td class="text-right">{{ $helper->formatPrice($invoice->refunded_total ?? $invoice->total_amount) }}</td>
+    </tr>
+    @endif
+  </table>
+  @endif
+
+  @if (in_array('payment_method', $fields))
+  <table>
+    <tr>
+      <td colspan="2" class="highlight">{{ $helper->trans('messages.payment_method') }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->formatPaymentMethodType($subscription->user->payment_method->info()['type']) }}</td>
+      <td>
+        {!! $helper->formatPaymentMethod($subscription->user->payment_method->info()['type'], $subscription->user->payment_method->info()['display_data']) !!}
+      </td>
+    </tr>
+  </table>
+  @endif
+  
+  @if (in_array('subscription', $fields))
+  <table>
+    <tr>
+      <td colspan="2" class="highlight">{{ $helper->trans('messages.subscription_info') }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->trans('messages.subscription_no') }}</td>
       <td>{{ $subscription->id }}</td>
     </tr>
-    @endif 
-
-    @if (in_array('name', $fields))
     <tr>
-      <td>Plan Name</td>
-      <td>{{ ($invoice ?? $subscription)->plan_info['name'] }}</td>
+      <td>{{ $helper->trans('messages.subscription.plan_name') }}</td>
+      <td>{{ $subscription->plan_info['name'] }}</td>
     </tr>
-    @endif
-
-    @if (in_array('description', $fields))
     <tr>
-      <td>Description</td>
-      <td>{{ ($invoice ?? $subscription)->plan_info['description'] }}</td>
-    </tr>
-    @endif
-
-    @if (in_array('period', $fields))
-    <tr>
-      <td>Period No.</td>
-      <td>{{ $invoice?->period ?? $subscription->current_period }}</td>
-    </tr>
-    @endif
-
-    @if (in_array('currency', $fields))
-    <tr>
-      <td>Currency</td>
+      <td>{{ $helper->trans('messages.subscription.currency') }}</td>
       <td>
         {{ $subscription->currency }}
       </td>
     </tr>
-    @endif 
-
-    @if (in_array('price', $fields))
     <tr>
-      <td>Price</td>
+      <td>{{ $helper->trans('messages.subscription.price', ['tax' => $helper->getTaxName()]) }}</td>
       <td>
-        {{ number_format(($invoice ?? $subscription)->plan_info['price']['price'], 2) }}
+        {{ number_format($subscription->plan_info['price']['price'], 2) }}
       </td>
     </tr>
-    @endif 
-
-    @if (in_array('total_discount', $fields))
     <tr>
-      <td>Total Discount</td>
+      <td>{{ $helper->getTaxName() }}</td>
       <td>
-        {{ number_format((float)($invoice ?? $subscription)->total_discount, 2) }}
+        {{ number_format($subscription->total_tax, 2) }}
       </td>
     </tr>
-    @endif
-
-    @if (in_array('subtotal', $fields))
     <tr>
-      <td>Subtotal</td>
+      <td>{{ $helper->trans('messages.subscription.total_amount', ['tax' => $helper->getTaxName()]) }}</td>
       <td>
-        {{ number_format((float)($invoice ?? $subscription)->subtotal, 2) }}
+        {{ number_format($subscription->total_amount, 2) }}
       </td>
     </tr>
-    @endif
 
-    @if (in_array('total_tax', $fields))
+    @if ($helper->showStart($type))
     <tr>
-      <td>Total Tax</td>
+      <td>{{ $helper->trans('messages.subscription.start_date') }}</td>
       <td>
-        {{ number_format((float)($invoice ?? $subscription)->total_tax, 2) }}
+        {{ $helper->formatDate($subscription->start_date) }}
       </td>
     </tr>
     @endif
 
-    @if (in_array('total_amount', $fields))
+    @if ($helper->showEnd($type))
     <tr>
-      <td>Total Amount</td>
+      <td>{{ $helper->trans('messages.subscription.end_date') }}</td>
       <td>
-        {{ number_format((float)($invoice ?? $subscription)->total_amount, 2) }}
+        {{ $helper->formatDate($subscription->end_date) }}
       </td>
     </tr>
     @endif
-
-    @if (in_array('start_date', $fields))
+    
+    @if ($helper->showPeriod($type))
     <tr>
-      <td>Start Date</td>
-      <td>{{ $subscription->start_date ? $subscription->start_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') : '' }}</td>
+      <td>{{ $helper->trans('messages.subscription.period_start_date') }}</td>
+      <td>
+        {{ $helper->formatDate($subscription->current_period_start_date) }}
+      </td>
     </tr>
     @endif
-
-    @if (in_array('end_date', $fields))
+    
+    @if ($helper->showPeriod($type))
     <tr>
-      <td>End Date</td>
-      <td>{{ $subscription->end_date ? $subscription->end_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') : '' }}</td>
+      <td>{{ $helper->trans('messages.subscription.period_end_date') }}</td>
+      <td>
+        {{ $helper->formatDate($subscription->current_period_end_date) }}
+      </td>
     </tr>
     @endif
-
-    @if (in_array('period_start_date', $fields))
+    
+    @if ($helper->showNextInvoice($type))
     <tr>
-      <td>Period Start Date</td>
-      <td>{{ ($invoice?->period_start_date ?? $subscription->current_period_start_date)->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</td>
-    </tr>
-    @endif
-
-    @if (in_array('period_end_date', $fields))
-    <tr>
-      <td>Period End Date</td>
-      <td>{{ ($invoice?->period_end_date ?? $subscription->current_period_end_date)->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</td>
-    </tr>
-    @endif
-
-    @if (in_array('terminate_date', $fields))
-    <tr>
-      <td>To be terminated at</td>
-      <td>{{ $subscription->current_period_end_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</td>
-    </tr>
-    @endif
-
-    @if (in_array('terminate_reason', $fields))
-    <tr>
-      <td>Terminated Reason</td>
-      <td>{{ $subscription->stop_reason }}</td>
-    </tr>
-    @endif
-
-    @if (in_array('next_invoice_date', $fields))
-    <tr>
-      <td>Next invoice date</td>
-      <td>{{ $subscription->next_invoice_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</td>
+      <td>{{ $helper->trans('messages.subscription.next_invoice_date') }}</td>
+      <td>
+        {{ $helper->formatDate($subscription->next_invoice_date) }}
+      </td>
     </tr>
     @endif
   </table>
+  @endif
 </div>

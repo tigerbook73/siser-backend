@@ -1,40 +1,26 @@
-<x-emails.subscription.layout :$subscription>
-  We regret to inform you that we could not process the payment for your
-  <b>{{ $subscription->plan_info['name'] }}</b>
-  subscription using the 
-  {!!
-    $subscription->user->payment_method->type == 'creditCard' ?
-     '<b>' . strtoupper($subscription->user->payment_method->display_data['brand']) . '</b> card ending in <b>' . $subscription->user->payment_method->display_data['last_four_digits'] . '</b>' :
-     '<b>' . ucfirst($subscription->user->payment_method->type) . '</b>' 
-  !!}
-  .<br />
+<x-emails.subscription.layout
+  :$type
+  :$subscription
+  :$invoice
+  :$helper
+>
+  {!! $helper->trans('messages.subscription_invoice_pending.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
   <br />
-  To prevent any disruption to your subscription access, we kindly request that you verify
-  <a href="https://software.siser.com/account/payment-method">your registered payment method</a>
-  and ensure sufficient funds are available.<br />
   <br />
-  If you require any assistance or have any questions regarding your payment, please contact our support team.<br />
+  {{ $helper->trans('messages.subscription_invoice_pending.summary') }}
   <br />
-  Here is a summary of your subscription:<br />
   <br />
   <x-emails.subscription.table
+    :$type
     :$subscription
     :$invoice
     :fields="[
-    'name',
-    'period_start_date',
-    'period_end_date',
-    'currency',
-    'price',
-    'subtotal',
-    'total_tax', 
-    'total_amount',
+      'order',
+      'customer',
+      'items',
+      'payment_method',
+      'subscription',
     ]"
-    :$timezone
-  >
-  </x-emails.subscription.table>
-  <br />
-  You can see your subscription details on our
-  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
-  <br />
+    :$helper
+  />
 </x-emails.subscription.layout>

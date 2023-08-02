@@ -74,6 +74,7 @@ Route::domain($domainAdmin)->group(function () use ($role) {
 if ($testCode) {
   Route::get('/be-test/mail/{type}', [TestController::class, 'sendMail']);
   Route::get('/be-test/notification/{type}', [TestController::class, 'viewNotification']);
+  Route::get('/be-test/clean', [TestController::class, 'clean']);
 }
 
 //

@@ -1,11 +1,29 @@
-<x-emails.subscription.layout :$subscription>
-  We are writing to inform you that your subscription to 
-  <b>{{ $subscription->plan_info["name"] }}</b> 
-  was terminated on
-  <b>{{ $subscription->current_period_end_date->setTimezone($timezone)->locale($subscription->billing_info['locale'])->isoFormat('lll z') }}</b>
-  .<br />
+<x-emails.subscription.layout
+  :$type
+  :$subscription
+  :$helper
+>
+  {!! 
+    $helper->trans(
+      'messages.subscription_terminated.notification',
+      [
+        'plan_name' => $subscription->plan_info['name'],
+        'end_date' => $subscription->end_date
+      ]
+    ) 
+  !!}
   <br />
-  You can see your subscription details on our
-  <a href="https://software.siser.com/account/subscription">Customer Portal</a>.<br />
   <br />
+  {{ $helper->trans('messages.subscription_terminated.summary') }}
+  <br />
+  <br />
+  <x-emails.subscription.table
+    :$type
+    :$subscription
+    :fields="[
+      'customer',
+      'subscription',
+    ]"
+    :$helper
+  />
 </x-emails.subscription.layout>

@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Base\BillingInfo;
 use App\Models\Coupon;
 use App\Models\Machine;
+use App\Models\Plan;
 use App\Models\SoftwarePackage;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 

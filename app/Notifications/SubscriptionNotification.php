@@ -2,7 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\Country;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use Illuminate\Bus\Queueable;
@@ -15,29 +14,42 @@ class SubscriptionNotification extends Notification implements ShouldQueue
 {
   use Queueable;
 
-  public const NOTIF_ABORTED          = 'subscription.aborted';
-  public const NOTIF_CANCELLED        = 'subscription.cancelled';
+  public const NOTIF_ORDER_ABORTED    = 'subscription.order-aborted';
+  public const NOTIF_ORDER_CANCELLED  = 'subscription.order-cancelled';
+  public const NOTIF_ORDER_REFUNDED   = 'subscription.order-refunded';
+  public const NOTIF_ORDER_INVOICE    = 'subscription.order-invoice';
+  public const NOTIF_ORDER_CREDIT     = 'subscription.order-credit';
   public const NOTIF_CONFIRMED        = 'subscription.confirmed';
-  public const NOTIF_EXTENDED         = 'subscription.extended';
-  public const NOTIF_FAILED           = 'subscription.failed';
-  public const NOTIF_INVOICE_PDF      = 'subscription.invoice-pdf';
-  public const NOTIF_INVOICE_PENDING  = 'subscription.invoice-pending';
+  public const NOTIF_CANCELLED        = 'subscription.cancelled';
+  public const NOTIF_CANCELLED_REFUND = 'subscription.cancelled-refund';
   public const NOTIF_REMINDER         = 'subscription.reminder';
+  public const NOTIF_INVOICE_PENDING  = 'subscription.invoice-pending';
+  public const NOTIF_FAILED           = 'subscription.failed';
+  public const NOTIF_EXTENDED         = 'subscription.extended';
   public const NOTIF_TERMINATED       = 'subscription.terminated';
-  public const NOTIF_UPDATED          = 'subscription.updated';
+  public const NOTIF_TERMS_CHANGED    = 'subscription.terms-changed';
 
   static public $types = [
-    self::NOTIF_ABORTED               => ['subject' => "Subscription Aborted",        'view' => null],
-    self::NOTIF_CANCELLED             => ['subject' => "Subscription Cancelled",      'view' => null],
-    self::NOTIF_CONFIRMED             => ['subject' => "Subscription Confirmed",      'view' => null],
-    self::NOTIF_EXTENDED              => ['subject' => "Subscription Extended",       'view' => null],
-    self::NOTIF_FAILED                => ['subject' => "Subscription Failed",         'view' => null],
-    self::NOTIF_INVOICE_PDF           => ['subject' => "Invoice PDF",                 'view' => null],
-    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription Payment Failed", 'view' => null],
-    self::NOTIF_REMINDER              => ['subject' => "Subscription Renew Reminder", 'view' => null],
-    self::NOTIF_TERMINATED            => ['subject' => "Subscription Terminated",     'view' => null],
-    self::NOTIF_UPDATED               => ['subject' => "Subscription Updated",        'view' => null],
+    self::NOTIF_ORDER_ABORTED         => ['subject' => "Subscription Aborted"],
+    self::NOTIF_ORDER_CANCELLED       => ['subject' => "Order Cancelled"],
+    self::NOTIF_ORDER_REFUNDED        => ['subject' => "Order Refund Confirmed"],
+    self::NOTIF_ORDER_INVOICE         => ['subject' => "Invoice PDF"],
+    self::NOTIF_ORDER_CREDIT          => ['subject' => "Credit Memo"],
+    self::NOTIF_CONFIRMED             => ['subject' => "Subscription Confirmed"],
+    self::NOTIF_CANCELLED             => ['subject' => "Subscription Cancelled"],
+    self::NOTIF_CANCELLED_REFUND      => ['subject' => "Subscription Cancelled & Terminated"],
+    self::NOTIF_REMINDER              => ['subject' => "Subscription Renew Reminder"],
+    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription Payment Failed"],
+    self::NOTIF_FAILED                => ['subject' => "Subscription Failed"],
+    self::NOTIF_EXTENDED              => ['subject' => "Subscription Extended"],
+    self::NOTIF_TERMINATED            => ['subject' => "Subscription Terminated"],
+    self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription Terms Changed"],
   ];
+
+  public Subscription $subscription;
+  public Invoice|null $invoice;
+
+  public EmailHelper $helper;
 
   /**
    * Create a new notification instance.
@@ -46,12 +58,20 @@ class SubscriptionNotification extends Notification implements ShouldQueue
    */
   public function __construct(
     public string $type,
-    public Subscription|null $subscription = null,
-    public Invoice|null $invoice = null
+    array $context  = []
   ) {
     if (!isset(static::$types[$type])) {
       throw new HttpException(400, 'Invalid SubscriptionNotification.type!');
     }
+
+    $this->subscription     = $context['subscription'];
+    $this->invoice          = $context['invoice'] ?? null;
+
+    $this->helper           = new EmailHelper(
+      locale: $this->subscription->billing_info['locale'],
+      timezone: $this->subscription->user->timezone,
+      country: $this->subscription->billing_info['address']['country'],
+    );
   }
 
   /**
@@ -78,10 +98,12 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     return (new MailMessage)
       // ->from()
       ->subject($subject)
+      ->bcc(config('siser.bcc_email'))
       ->view("emails.$view", [
-        'subscription'  => $this->subscription,
-        'invoice'       => $this->invoice,
-        'timezone'      => $this->subscription->user->timezone,
+        'type'            => $this->type,
+        'subscription'    => $this->subscription,
+        'invoice'         => $this->invoice,
+        'helper'          => $this->helper,
       ]);
   }
 

@@ -64,7 +64,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ABORTED
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
     );
 
     return $subscription;
