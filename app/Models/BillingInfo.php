@@ -49,7 +49,7 @@ class BillingInfo extends BaseBillingInfo
         'city'        => '',
         'postcode'    => '',
         'state'       => '',
-        'country'     => Country::findByCode($user->country_code)?->code ?? 'US',
+        'country'     => Country::findByCode($user->country_code ?? 'US')->code,
       ],
       'tax_id'        => null
     ]);
