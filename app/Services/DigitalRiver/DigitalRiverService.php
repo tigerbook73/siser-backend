@@ -153,13 +153,13 @@ class DigitalRiverService
   {
     $billTo = new DrBilling();
     if ($billingInfo instanceof BillingInfo) {
-      $billTo->setName($billingInfo['first_name'] . ' ' . $billingInfo['first_name']);
-      $billTo->setPhone($billingInfo['phone']);
-      $billTo->setEmail($billingInfo['email']);
-      $billTo->setOrganization($billingInfo['organization'] ?: null);
+      $billTo->setName($billingInfo->first_name . ' ' . $billingInfo->last_name);
+      $billTo->setPhone($billingInfo->phone);
+      $billTo->setEmail($billingInfo->email);
+      $billTo->setOrganization($billingInfo->organization ?: null);
       $billTo->setAddress($this->fillAddress($billingInfo->address));
     } else {
-      $billTo->setName($billingInfo['first_name'] . ' ' . $billingInfo['first_name']);
+      $billTo->setName($billingInfo['first_name'] . ' ' . $billingInfo['last_name']);
       $billTo->setPhone($billingInfo['phone']);
       $billTo->setEmail($billingInfo['email']);
       $billTo->setOrganization($billingInfo['organization'] ?: null);
