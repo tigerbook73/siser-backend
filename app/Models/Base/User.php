@@ -12,6 +12,7 @@ use App\Models\LdsLicense;
 use App\Models\Machine;
 use App\Models\PaymentMethod;
 use App\Models\Subscription;
+use App\Models\TaxId;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -47,6 +48,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property Collection|Machine[] $machines
  * @property PaymentMethod $payment_method
  * @property Collection|Subscription[] $subscriptions
+ * @property Collection|TaxId[] $tax_ids
  *
  * @package App\Models\Base
  */
@@ -110,5 +112,10 @@ class User extends \Illuminate\Foundation\Auth\User
   public function subscriptions()
   {
     return $this->hasMany(Subscription::class);
+  }
+
+  public function tax_ids()
+  {
+    return $this->hasMany(TaxId::class);
   }
 }

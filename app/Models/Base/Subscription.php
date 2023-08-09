@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $updated_at
  * @property int|null $coupon_id
  * @property array|null $billing_info
+ * @property array|null $tax_id_info
  * @property array|null $plan_info
  * @property array|null $coupon_info
  * @property float $subtotal
@@ -71,6 +72,7 @@ class Subscription extends Model
     'end_date' => 'datetime',
     'coupon_id' => 'int',
     'billing_info' => 'json',
+    'tax_id_info' => 'json',
     'plan_info' => 'json',
     'coupon_info' => 'json',
     'subtotal' => 'float',
@@ -98,6 +100,7 @@ class Subscription extends Model
     'status',
     'coupon_id',
     'billing_info',
+    'tax_id_info',
     'plan_info',
     'coupon_info',
     'subtotal',

@@ -24,7 +24,6 @@ class AccountBillingInfoSetApiTest extends AccountBillingInfoTestCase
     return $response;
   }
 
-
   public function testSetNokWithWrongLanguage()
   {
     // update
@@ -33,6 +32,11 @@ class AccountBillingInfoSetApiTest extends AccountBillingInfoTestCase
     $this->assertTrue($response->isClientError());
 
     $this->markTestIncomplete('more test cases to come');
+  }
+
+  public function testCustomerType()
+  {
+    $this->markTestIncomplete('test customer type');
   }
 
   public function testMore()

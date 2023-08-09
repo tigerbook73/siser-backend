@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\TaxId;
 use App\Models\User;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Http\Request;
@@ -42,6 +43,10 @@ class SubscriptionController extends SimpleController
       'coupon_id'   => [
         'filled',
         Rule::exists('coupons', 'id')->where(fn ($q) => $q->where('end_date', '>=', today())->where('status', 'active'))
+      ],
+      'tax_id'   => [
+        'filled',
+        Rule::exists('tax_ids', 'id')->where(fn ($q) => $q->whereNot('status', TaxId::STATUS_INVALID))
       ],
     ];
   }
@@ -97,7 +102,7 @@ class SubscriptionController extends SimpleController
 
     /** @var Coupon|null $coupon */
     $coupon = isset($inputs['coupon_id']) ? Coupon::find($inputs['coupon_id']) : null;
-    if ($coupon && $coupon->status !== 'active') {
+    if ((isset($inputs['coupon_id']) && !$coupon) || ($coupon && $coupon->status !== 'active')) {
       return response()->json(['message' => 'Invalid coupon!'], 400);
     }
     if ($coupon && !$coupon->validate($this->user->isNewCustomer())) {
@@ -108,6 +113,12 @@ class SubscriptionController extends SimpleController
     $billingInfo = $this->user->billing_info()->first();
     if (!$billingInfo || !$billingInfo->address['postcode']) {
       return response()->json(['message' => 'Billing information is not configured!'], 400);
+    }
+
+    /** @var TaxId|null @taxId */
+    $taxId = isset($inputs['tax_id']) ? $this->user->tax_ids()->find($inputs['tax_id']) : null;
+    if ((isset($inputs['tax_id']) && !$taxId) || ($taxId && $taxId->status == TaxID::STATUS_INVALID)) {
+      return response()->json(['message' => 'Invalid tax id!'], 400);
     }
 
     /** @var Country|null $country */
@@ -129,7 +140,7 @@ class SubscriptionController extends SimpleController
 
     // creat subscription
     try {
-      $subscription = $this->manager->createSubscription($this->user, $plan, $coupon);
+      $subscription = $this->manager->createSubscription($this->user, $plan, $coupon, $taxId);
       return  response()->json($this->transformSingleResource($subscription), 201);
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $th->getCode());

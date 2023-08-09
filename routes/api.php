@@ -15,6 +15,7 @@ use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
 use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\TaxIdController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -82,6 +83,14 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
   Route::middleware('auth:api')->group(function () {
     Route::get('/account/payment-method', [PaymentMethodController::class, 'accountGet']);
     Route::post('/account/payment-method', [PaymentMethodController::class, 'accountSet']);
+  });
+
+  // tax id
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/tax-ids', [TaxIdController::class, 'accountList']);
+    Route::post('/account/tax-ids', [TaxIdController::class, 'accountCreate']);
+    Route::get('/account/tax-ids/{id}', [TaxIdController::class, 'accountIndex']);
+    Route::delete('/account/tax-ids/{id}', [TaxIdController::class, 'accountDelete']);
   });
 
   // account invoice

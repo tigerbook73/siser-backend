@@ -13,51 +13,41 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Class BillingInfo
+ * Class TaxId
  * 
  * @property int $id
  * @property int $user_id
- * @property string $first_name
- * @property string $last_name
- * @property string|null $phone
+ * @property string $dr_tax_id
+ * @property string $country
  * @property string $customer_type
- * @property string|null $organization
- * @property string $email
- * @property array $address
- * @property array|null $tax_id
+ * @property string $type
+ * @property string $value
+ * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property string $language
- * @property string $locale
  * 
  * @property User $user
  *
  * @package App\Models\Base
  */
-class BillingInfo extends Model
+class TaxId extends Model
 {
   use HasFactory;
   use TraitModel;
-  protected $table = 'billing_infos';
+  protected $table = 'tax_ids';
 
   protected $casts = [
-    'user_id' => 'int',
-    'address' => 'json',
-    'tax_id' => 'json'
+    'user_id' => 'int'
   ];
 
   protected $fillable = [
     'user_id',
-    'first_name',
-    'last_name',
-    'phone',
+    'dr_tax_id',
+    'country',
     'customer_type',
-    'organization',
-    'email',
-    'address',
-    'tax_id',
-    'language',
-    'locale'
+    'type',
+    'value',
+    'status'
   ];
 
   public function user()

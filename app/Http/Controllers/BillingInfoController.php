@@ -25,6 +25,7 @@ class BillingInfoController extends SimpleController
       "first_name"        => ['filled', 'string', 'max:255'],
       "last_name"         => ['filled', 'string', 'max:255'],
       "phone"             => ['string', 'max:255'],
+      "customer_type"     => ['string', 'in:individual,business'],
       "organization"      => ['string', 'max:255'],
       "email"             => ['filled', 'email'],
       "address"           => ['filled', 'array'],
@@ -87,10 +88,17 @@ class BillingInfoController extends SimpleController
         400
       );
     }
+
+    if ($billingInfo->customer_type == BillingInfo::CUSTOMER_TYPE_BUSINESS && $billingInfo->organization == '') {
+      return response()->json(
+        ['message' => 'BillingInfo organization is required when customer_type is business.'],
+        400
+      );
+    }
+
     $billingInfo->save();
 
     // create or update customer
-    // TODO: when DR go online, DR: customer may need to update
     $this->manager->createOrUpdateCustomer($billingInfo);
 
     return $this->transformSingleResource($billingInfo->unsetRelations());

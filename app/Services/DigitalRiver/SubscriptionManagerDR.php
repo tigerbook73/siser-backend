@@ -11,15 +11,18 @@ use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
 use DigitalRiver\ApiSdk\ApiException as DrApiException;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
+use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
+use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxId;
 use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -84,6 +87,10 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // invoice events: see Invoice.md for state machine
       'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
+
+      // tax id
+      'tax_identifier.verified'       => ['class' => DrTaxId::class,        'handler' => 'onTaxIdStateChange'],
+      'tax_identifier.not_valid'      => ['class' => DrTaxId::class,        'handler' => 'onTaxIdStateChange'],
     ];
   }
 
@@ -106,7 +113,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->next_invoice = $next_invoice;
   }
 
-  public function createSubscription(User $user, Plan $plan, Coupon|null $coupon): Subscription
+  public function createSubscription(User $user, Plan $plan, Coupon|null $coupon = null, TaxId|null $taxId = null): Subscription
   {
     $billingInfo = $user->billing_info;
     $country = Country::findByCode($billingInfo->address['country']);
@@ -119,6 +126,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->plan_id                    = $plan->id;
     $subscription->coupon_id                  = $coupon->id ?? null;
     $subscription->billing_info               = $billingInfo->toResource('customer');
+    $subscription->tax_id_info                = $taxId ? $taxId->info() : null;
     $subscription->plan_info                  = $publicPlan;
     $subscription->coupon_info                = $coupon ? $coupon->toResource('customer') : null;
     $subscription->currency                   = $country->currency;
@@ -463,6 +471,76 @@ class SubscriptionManagerDR implements SubscriptionManager
   }
 
   /**
+   * Tax Id
+   */
+
+  public function createTaxId(User $user, string $type, string $value): TaxId
+  {
+    /** @var TaxId|null $taxId */
+    $taxId = TaxId::where('user_id', $user->id)->where('type', $type)->first();
+
+    // already exists
+    if ($taxId && $taxId->value == $value) {
+      return $taxId;
+    }
+
+    // create new taxId
+    $drTaxId = $this->drService->createTaxId($type, $value);
+    DrLog::info(__FUNCTION__, 'dr-taxId created', $user);
+
+    if ($drTaxId->getState() == DrCustomerTaxIdentifier::STATE_NOT_VALID || !isset($drTaxId->getApplicability()[0])) {
+      $this->drService->deleteTaxId($drTaxId->getId());
+      throw new \Exception('tax id is invalid', 400);
+    }
+
+    if ($taxId) {
+      // delete old taxId
+      $this->drService->deleteTaxId($taxId->dr_tax_id);
+      DrLog::info(__FUNCTION__, 'remove dr-taxId of same type', $user);
+    }
+
+    $this->drService->attachCustomerTaxId($user->dr['customer_id'], $drTaxId->getId());
+    DrLog::info(__FUNCTION__, 'dr-taxId attach to customer', $user);
+
+    $taxId = $taxId ?? new TaxId();
+    $taxId->customer_type = "";
+
+    $taxId->user_id = $user->id;
+    $taxId->dr_tax_id = $drTaxId->getId();
+    $taxId->country = $drTaxId->getApplicability()[0]->getCountry();
+    foreach ($drTaxId->getApplicability() as $applicability) {
+      if (!$taxId->customer_type) {
+        $taxId->customer_type = $applicability->getCustomerType();
+        continue;
+      }
+      if ($applicability->getCustomerType() != $taxId->customer_type) {
+        $taxId->customer_type = TaxId::CUSTOMER_TYPE_INDIVIDUAL_BUSINESS;
+      }
+    }
+    $taxId->type = $type;
+    $taxId->value = $value;
+    $taxId->status = $drTaxId->getState();
+    $taxId->save();
+    DrLog::info(__FUNCTION__, 'create/update taxId created', $user);
+
+    return $taxId;
+  }
+
+  public function deleteTaxId(TaxId $taxId)
+  {
+    // TODO: need check whether tax id is in use?   
+
+    // delete old taxId
+    $this->drService->deleteTaxId($taxId->dr_tax_id);
+    DrLog::info(__FUNCTION__, 'delete dr tax id', ['user_id' => $taxId->user_id]);
+
+    $result = $taxId->delete();
+    DrLog::info(__FUNCTION__, 'delete taxId', ['user_id' => $taxId->user_id]);
+
+    return $result;
+  }
+
+  /**
    * webhook event
    */
   public function updateDefaultWebhook(bool $enable)
@@ -501,7 +579,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $handler = $eventHandler['handler'];
       $subscription = $this->$handler($object);
       $eventInfo['action'] = $subscription ? 'processed' : 'skipped';
-      $eventInfo['subscription_id'] = $subscription?->id;
+      $eventInfo['subscription_id'] = ($subscription instanceof Subscription) ?  $subscription->id : null;
       DrLog::info(__FUNCTION__, 'event processed: ' . $eventInfo['action'], $eventInfo);
       DrEvent::log($eventInfo);
       return response()->json($eventInfo);
@@ -1172,6 +1250,27 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
     return $subscription;
   }
+
+  protected function onTaxIdStateChange(DrTaxId $drTaxId): TaxId|null
+  {
+    //
+    $id = $drTaxId->getId();
+
+    /** @var TaxId|null @taxId */
+    $taxId = TaxId::where('dr_tax_id', $id)->first();
+    if (!$taxId) {
+      return null;
+    }
+
+    if ($taxId->status != $drTaxId->getState()) {
+      $taxId->status = $drTaxId->getState();
+      $taxId->save();
+      DrLog::info(__FUNCTION__, 'tax id status updated', ['tax_id' => $taxId->id, 'status' => $taxId->status]);
+    }
+
+    return $taxId;
+  }
+
 
   /*
   TODO: check data integrity

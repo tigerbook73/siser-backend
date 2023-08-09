@@ -15,4 +15,7 @@ class SubscriptionCreate {
     /** @var string $coupon_id */
     public $coupon_id = "";
 
+    /** @var int $tax_id */
+    public $tax_id = 0;
+
 }

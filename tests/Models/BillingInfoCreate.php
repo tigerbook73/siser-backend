@@ -18,6 +18,9 @@ class BillingInfoCreate {
     /** @var string $phone */
     public $phone = "";
 
+    /** @var string $customer_type individual or business*/
+    public $customer_type = "";
+
     /** @var string $organization */
     public $organization = "";
 

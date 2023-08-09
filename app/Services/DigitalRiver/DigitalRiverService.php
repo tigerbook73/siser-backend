@@ -19,14 +19,17 @@ use DigitalRiver\ApiSdk\Api\OrdersApi as DrOrdersApi;
 use DigitalRiver\ApiSdk\Api\PlansApi as DrPlansApi;
 use DigitalRiver\ApiSdk\Api\SourcesApi as DrSourcesApi;
 use DigitalRiver\ApiSdk\Api\SubscriptionsApi as DrSubscriptionsApi;
+use DigitalRiver\ApiSdk\Api\TaxIdentifiersApi as DrTaxIdentifiersApi;
 use DigitalRiver\ApiSdk\Api\WebhooksApi as DrWebhooksApi;
 use DigitalRiver\ApiSdk\Model\Address as DrAddress;
 use DigitalRiver\ApiSdk\Model\Billing as DrBilling;
 use DigitalRiver\ApiSdk\Model\ChargeType as DrChargeType;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\CheckoutRequest as DrCheckoutRequest;
+use DigitalRiver\ApiSdk\Model\CheckoutTaxIdentifierRequest as DrCheckoutTaxIdentifierRequest;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\CustomerRequest as DrCustomerRequest;
+use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\CustomerType as DrCustomerType;
 use DigitalRiver\ApiSdk\Model\FileLink as DrFileLink;
 use DigitalRiver\ApiSdk\Model\FileLinkRequest as DrFileLinkRequest;
@@ -46,6 +49,8 @@ use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\Model\SubscriptionInfo as DrSubscriptionInfo;
 use DigitalRiver\ApiSdk\Model\SubscriptionItems as DrSubscriptionItems;
+use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxIdentifier;
+use DigitalRiver\ApiSdk\Model\TaxIdentifierRequest as DrTaxIdentifierRequest;
 use DigitalRiver\ApiSdk\Model\UpdateCheckoutRequest as DrUpdateCheckoutRequest;
 use DigitalRiver\ApiSdk\Model\UpdateCustomerRequest as DrUpdateCustomerRequest;
 use DigitalRiver\ApiSdk\Model\UpdateOrderRequest;
@@ -73,6 +78,9 @@ class DigitalRiverService
 
   /** @var DrSubscriptionsApi|null */
   public $subscriptionApi = null;
+
+  /** @var DrTaxIdentifiersApi|null */
+  public $taxIdentifierApi = null;
 
   /** @var DrOrdersApi|null */
   public $orderApi = null;
@@ -106,6 +114,7 @@ class DigitalRiverService
     $this->planApi          = new DrPlansApi($this->client, $this->config);
     $this->checkoutApi      = new DrCheckoutsApi($this->client, $this->config);
     $this->subscriptionApi  = new DrSubscriptionsApi($this->client, $this->config);
+    $this->taxIdentifierApi = new DrTaxIdentifiersApi($this->client, $this->config);
     $this->orderApi         = new DrOrdersApi($this->client, $this->config);
     $this->fulfillmentApi   = new DrFulfillmentsApi($this->client, $this->config);
     $this->customerApi      = new DrCustomersApi($this->client, $this->config);
@@ -374,19 +383,24 @@ class DigitalRiverService
     // checkout
     $checkoutRequest = new DrCheckoutRequest();
     $checkoutRequest->setCustomerId((string)$subscription->user->dr['customer_id']);
+    $checkoutRequest->setCustomerType($subscription->billing_info['customer_type']);
     $checkoutRequest->setEmail($subscription->billing_info['email']);
     $checkoutRequest->setLocale($subscription->billing_info['locale']);
     $checkoutRequest->setBrowserIp(request()->ip());
-    // $checkoutRequest->setTaxIdentifiers('DrCheckoutTaxIdentifierRequest[]');
     $checkoutRequest->setBillTo($this->fillBilling($subscription->billing_info));
-    // $checkoutRequest->setOrganization('DrOrganization');
     $checkoutRequest->setCurrency($subscription->currency);
     $checkoutRequest->setTaxInclusive(false);
     $checkoutRequest->setItems($this->fillCheckoutItems($subscription));
     $checkoutRequest->setChargeType(DrChargeType::CUSTOMER_INITIATED); // @phpstan-ignore-line
-    $checkoutRequest->setCustomerType(DrCustomerType::INDIVIDUAL); // @phpstan-ignore-line
     $checkoutRequest->setMetadata(['subscription_id' => $subscription->id]);
     $checkoutRequest->setUpstreamId((string)$subscription->active_invoice_id);
+
+    // set tax id
+    if (!empty($subscription->tax_id_info)) {
+      $checkoutRequest->setTaxIdentifiers([(new DrCheckoutTaxIdentifierRequest())->setId($subscription->tax_id_info['dr_tax_id'])]);
+    } else {
+      $checkoutRequest->setTaxIdentifiers([]);
+    }
 
     try {
       return $this->checkoutApi->createCheckouts($checkoutRequest);
@@ -396,22 +410,28 @@ class DigitalRiverService
     }
   }
 
-  public function updateCheckoutTerms(string $checkoutId, string $terms): DrCheckout
+  public function updateCheckout(string $checkoutId, string $terms = null, string $taxId = null): DrCheckout
   {
     try {
       $checkout = $this->getCheckout($checkoutId);
 
+      // update checkout terms
 
-      $items = [];
-      foreach ($checkout->getItems() as $checkoutItem) {
-        // subscription item
-        $itemRequest = new DrSkuUpdateRequestItem();
-        $itemRequest->setId($checkoutItem->getId());
-        $itemRequest->setSubscriptionInfo($checkoutItem->getSubscriptionInfo()->setTerms($terms));
-        $items[] = $itemRequest;
-      }
       $updateCheckoutRequest = new DrUpdateCheckoutRequest();
-      $updateCheckoutRequest->setItems($items);
+      if ($terms) {
+        $items = [];
+        foreach ($checkout->getItems() as $checkoutItem) {
+          // subscription item
+          $itemRequest = new DrSkuUpdateRequestItem();
+          $itemRequest->setId($checkoutItem->getId());
+          $itemRequest->setSubscriptionInfo($checkoutItem->getSubscriptionInfo()->setTerms($terms));
+          $items[] = $itemRequest;
+        }
+        $updateCheckoutRequest->setItems($items);
+      }
+      if ($taxId) {
+        $updateCheckoutRequest->setTaxIdentifiers([(new DrCheckoutTaxIdentifierRequest())->setId($taxId)]);
+      }
       $updateCheckoutRequest->setBrowserIp(request()->ip());
 
       return $this->checkoutApi->updateCheckouts($checkoutId, $updateCheckoutRequest);
@@ -419,6 +439,16 @@ class DigitalRiverService
       Log::warning('DRAPI:' . $th->getMessage());
       throw $th;
     }
+  }
+
+  public function updateCheckoutTerms(string $checkoutId, string $terms): DrCheckout
+  {
+    return $this->updateCheckout($checkoutId, terms: $terms);
+  }
+
+  public function updateCheckoutTaxId(string $checkoutId, string $taxId): DrCheckout
+  {
+    return $this->updateCheckout($checkoutId, taxId: $taxId);
   }
 
   public function deleteCheckout(string $id): bool
@@ -625,6 +655,66 @@ class DigitalRiverService
       throw $th;
     }
   }
+
+  /**
+   * tax id
+   */
+
+  public function createTaxId(string $type, string $value): DrCustomerTaxIdentifier
+  {
+    $taxIdRequest = new DrTaxIdentifierRequest();
+    $taxIdRequest->setType($type);
+    $taxIdRequest->setValue($value);
+
+    try {
+      return $this->taxIdentifierApi->createTaxIdentifiers($taxIdRequest);
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
+
+  public function getTaxId(string $id): DrCustomerTaxIdentifier
+  {
+    try {
+      return $this->taxIdentifierApi->retrieveTaxIdentifiers($id);
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
+
+  public function deleteTaxId(string $id)
+  {
+    try {
+      $this->taxIdentifierApi->deleteTaxIdentifiers($id);
+      return true;
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      return false;
+    }
+  }
+
+  public function listCustomerTaxIds(string $customerId): array|null
+  {
+    try {
+      return $this->taxIdentifierApi->listTaxIdentifiers(customer_id: $customerId)->getData();
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
+
+  public function attachCustomerTaxId(string $customerId, string $taxId): DrTaxIdentifier
+  {
+    try {
+      return $this->customerApi->createCustomerTaxIdentifier($customerId, $taxId);
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
+
 
   /**
    * webhook
