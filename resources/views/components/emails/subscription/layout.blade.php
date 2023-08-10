@@ -75,7 +75,6 @@
         {{ $slot }}
       </div>
       <br />
-      <br />
 
       <!-- customer portal -->
       {!! $helper->trans('messages.layout.manage_subscription', ['customer_portal_link' => $helper->getCustomerPortalLink()]); !!}

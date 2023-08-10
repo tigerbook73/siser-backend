@@ -58,6 +58,7 @@ return [
 
   'order_confirm.notification'                    => 'We are pleased to inform you that your order to the <b>:plan_name</b> subscription has been confirmed!',
   'order_confirm.summary'                         => 'Here is a summary of your order and subscription:',
+  'order_confirm.agreement_claim'                 => 'You have agreed to the subscription terms unless you cancel your subscription.',
 
   'layout.greeting'                               => 'Dear :name,',
   'layout.manage_subscription'                    => 'You can view and/or manage your subscriptions and/or orders from our :customer_portal_link.',

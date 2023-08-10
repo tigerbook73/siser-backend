@@ -23,4 +23,6 @@
     ]"
     :$helper
   />
+  <br />
+  {{ $helper->trans('messages.order_confirm.agreement_claim') }}
 </x-emails.subscription.layout>
