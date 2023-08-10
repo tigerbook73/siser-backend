@@ -116,6 +116,10 @@
       <td>{{ $subscription->plan_info['name'] }}</td>
     </tr>
     <tr>
+      <td>{{ $helper->trans('messages.subscription.billing_period') }}</td>
+      <td>{{ $helper->trans('messages.subscription.billing_period.monthly') }}</td>
+    </tr>
+    <tr>
       <td>{{ $helper->trans('messages.subscription.currency') }}</td>
       <td>
         {{ $subscription->currency }}

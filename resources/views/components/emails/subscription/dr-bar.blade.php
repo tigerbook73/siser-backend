@@ -13,15 +13,15 @@
     ) {
       $this->entityDrInc = [
         'name' => "Digital River Inc.",
-        'url' => "https://store.digitalriver.com/store/defaults/en_US/DisplayDRAboutDigitalRiverPage/eCommerceProvider.Digital%20River%20Inc.",
+        'url' => "https://store.digitalriver.com/store/defaults/{{locale}}/DisplayDRAboutDigitalRiverPage/eCommerceProvider.Digital%20River%20Inc.",
       ];
       $this->entityDrIreland = [
         'name' => "Digital River Ireland Ltd.",
-        'url' => "https://store.digitalriver.com/store/defaults/en_IE/DisplayDRAboutDigitalRiverPage/eCommerceProvider.Digital%20River%20Ireland%20Ltd.",
+        'url' => "https://store.digitalriver.com/store/defaults/{{locale}}/DisplayDRAboutDigitalRiverPage/eCommerceProvider.Digital%20River%20Ireland%20Ltd.",
       ];
       $this->entityDrUk = [
         'name' => "Digital River UK Ltd.",
-        'url' => "https://store.digitalriver.com/store/defaults/en_GB/DisplayDRAboutDigitalRiverPage/eCommerceProvider.Digital%20River%20UK%20Ltd.",
+        'url' => "https://store.digitalriver.com/store/defaults/{{locale}}/DisplayDRAboutDigitalRiverPage/eCommerceProvider.Digital%20River%20UK%20Ltd.",
       ];
       $this->countryMappings = [
         'US'      => ['entity' => $this->entityDrInc,     'locale' => "en_US",],
@@ -51,7 +51,7 @@
 
     function getEntityUrl()
     {
-      return $this->getEntity($this->country)['url'];
+      return str_replace('{{locale}}', $this->getLocale(), $this->getEntity($this->country)['url']);
     }
 
     function getEntityName()
@@ -68,14 +68,14 @@
 
 <div>{{ $helper->setCountry($country) }}</div>
 <div>
-  <a href="{{ $helper->getEntityUrl($country) }}" target="_blank">{{ $helper->getEntityName() }}</a> is the authorized reseller of <b>Leonardo™ Software</b> in this online store. <br/>
+  <a href="{{ $helper->getEntityUrl() }}" target="_blank">{{ $helper->getEntityName() }}</a> is the authorized reseller of <b>Leonardo™ Software</b> in this online store. <br/>
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRPrivacyPolicyPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Privacy Policy</a> |
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRTermsAndConditionsPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Terms of Sale</a> |
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRCookiesPolicyPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Cookies</a> |
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRTermsAndConditionsPage/eCommerceProvider.{{ $helper->getEntityName() }}.#cancellationRight" target="_blank">Cancellation Right</a> |
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRContactInformationPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Legal Notice</a> |
   @if ($country == 'US')
-  <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRContactInformationPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Your California Privacy Rights</a> |
+  <a href="https://store.digitalriver.com/store/defaults/en_US/DisplayCCPAPage/eCommerceProvider.Digital River Inc." target="_blank">Your California Privacy Rights</a> |
   @endif
   @if ($country == 'JP') 
   <a href="https://software.siser.com/legislation/legislation-japan" target="_blank">特定商取引に関する法律に基づく表示</a> |
