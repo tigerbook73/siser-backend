@@ -137,6 +137,13 @@ return new class extends Migration
             ['country' => 'VE', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'VI', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'ZA', 'currency' => 'ZAR', 'price' => 169.99],
+            ['country' => 'BG', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'CY', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'FI', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'HU', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'LI', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'SI', 'currency' => 'EUR', 'price' => 7.99],
+
           ]),
           'url'                 => 'https://www.siserna.com/leonardo-design-studio/',
           'status'              => 'active',
