@@ -93,7 +93,7 @@ class SubscriptionNotificationTest
     ];
     $this->coupon->period = 0;
     $this->coupon->percentage_off = ($code == 'percentage-off') ? 10 : 100;
-    $this->coupon->start_date = '2020-01-01';
+    $this->coupon->start_date = now();
     $this->coupon->save();
 
     return $this;
