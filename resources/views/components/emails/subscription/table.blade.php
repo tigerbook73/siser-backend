@@ -59,6 +59,14 @@
       <td class="text-right">1</td>
       <td class="text-right">{{ $helper->formatPrice($invoice->plan_info['price']['price']) }}</td>
     </tr>
+    @if (isset($invoice->coupon_info['id']))
+    {{-- TODO: coupon --}}
+    <tr>
+      <td>{{ $helper->formatCouponDescription($invoice->coupon_info) }}</td>
+      <td class="text-right">1</td>
+      <td class="text-right">{{ $helper->formatPrice(-$invoice->plan_info['price']['price'] * $invoice->coupon_info['percentage_off'] / 100) }}</td>
+    </tr>
+    @endif
     <tr>
       <td colspan="5" class="highlight"></td>
     </tr>
@@ -115,9 +123,16 @@
       <td>{{ $helper->trans('messages.subscription.plan_name') }}</td>
       <td>{{ $subscription->plan_info['name'] }}</td>
     </tr>
+    @if (isset($subscription->coupon_info['id']))
+    {{-- TODO: coupon --}}
+    <tr>
+      <td>{{ $helper->trans('messages.coupon.coupon') }}</td>
+      <td>{{ $helper->formatCouponDescription($invoice->coupon_info) }}</td>
+    </tr>
+    @endif
     <tr>
       <td>{{ $helper->trans('messages.subscription.billing_period') }}</td>
-      <td>{{ $helper->trans('messages.subscription.billing_period.monthly') }}</td>
+      <td>{{ $helper->formatBillingPeriod($subscription) }}</td>
     </tr>
     <tr>
       <td>{{ $helper->trans('messages.subscription.currency') }}</td>
@@ -126,21 +141,21 @@
       </td>
     </tr>
     <tr>
-      <td>{{ $helper->trans('messages.subscription.price', ['tax' => $helper->getTaxName()]) }}</td>
+      <td>{{ $helper->trans('messages.subscription.subtotal', ['tax' => $helper->getTaxName()]) }}</td>
       <td>
-        {{ number_format($subscription->plan_info['price']['price'], 2) }}
+        {{ $helper->formatPrice($subscription->subtotal) }}
       </td>
     </tr>
     <tr>
       <td>{{ $helper->getTaxName() }}</td>
       <td>
-        {{ number_format($subscription->total_tax, 2) }}
+        {{ $helper->formatPrice($subscription->total_tax) }}
       </td>
     </tr>
     <tr>
       <td>{{ $helper->trans('messages.subscription.total_amount', ['tax' => $helper->getTaxName()]) }}</td>
       <td>
-        {{ number_format($subscription->total_amount, 2) }}
+        {{ $helper->formatPrice($subscription->total_amount) }}
       </td>
     </tr>
 
@@ -164,14 +179,17 @@
     
     @if ($helper->showPeriod($type))
     <tr>
+      <td>{{ $helper->trans('messages.subscription.period') }}</td>
+      <td>
+        {{ $helper->formatPeriod($subscription) }}
+      </td>
+    </tr>
+    <tr>
       <td>{{ $helper->trans('messages.subscription.period_start_date') }}</td>
       <td>
         {{ $helper->formatDate($subscription->current_period_start_date) }}
       </td>
     </tr>
-    @endif
-    
-    @if ($helper->showPeriod($type))
     <tr>
       <td>{{ $helper->trans('messages.subscription.period_end_date') }}</td>
       <td>
@@ -185,6 +203,13 @@
       <td>{{ $helper->trans('messages.subscription.next_invoice_date') }}</td>
       <td>
         {{ $helper->formatDate($subscription->next_invoice_date) }}
+      </td>
+    </tr>
+    <tr>
+      {{-- TODO: to be fixed --}}
+      <td>{{ $helper->trans('messages.subscription.next_invoice_total_amount', ['tax' => $helper->getTaxName()]) }}</td>
+      <td>
+        {{ $helper->formatPrice($subscription->next_invoice['total_amount'] ) }}
       </td>
     </tr>
     @endif

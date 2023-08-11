@@ -28,6 +28,9 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   public const NOTIF_EXTENDED         = 'subscription.extended';
   public const NOTIF_TERMINATED       = 'subscription.terminated';
   public const NOTIF_TERMS_CHANGED    = 'subscription.terms-changed';
+  // TODO: implement these
+  public const NOTIF_FREE_TRIAL_ENDED = 'subscription.free-trial-ended';
+  public const NOTIF_COUPON_ENDED     = 'subscription.coupone-ended';
 
   static public $types = [
     self::NOTIF_ORDER_ABORTED         => ['subject' => "Subscription Aborted"],

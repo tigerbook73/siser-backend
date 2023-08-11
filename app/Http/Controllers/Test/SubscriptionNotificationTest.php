@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Test;
 
 use App\Models\BillingInfo;
 use App\Models\Country;
+use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
@@ -14,9 +15,12 @@ use Illuminate\Support\Carbon;
 
 class SubscriptionNotificationTest
 {
+  public const CouponCode = 'SNT-A1B2C3D4';
+
   public function __construct(
     public Country|null $country = null,
     public Plan|null $plan = null,
+    public Coupon|null $coupon = null,
     public array|null $publicPlan = null,
     public User|null $user = null,
     public BillingInfo|null $billingInfo = null,
@@ -55,6 +59,8 @@ class SubscriptionNotificationTest
     $user->billing_info()->delete();
     $user->lds_license()->delete();
     $user->delete();
+
+    Coupon::where('code', 'like', '%SNT%')->delete();
   }
 
   public function updateCountry(string $country = null)
@@ -70,6 +76,26 @@ class SubscriptionNotificationTest
 
     $this->plan = $plan;
     $this->publicPlan = $this->plan->toPublicPlan($this->country->code);
+    return $this;
+  }
+
+  public function updateCoupon(string $code = null)
+  {
+    /** @var Coupon|null $coupon */
+    $coupon = Coupon::where('code', self::CouponCode)->first();
+    $this->coupon =  $coupon ?? new Coupon();
+    $this->coupon->code = self::CouponCode;
+    $this->coupon->description = ($code == 'percentage-off') ? '10% off' : 'First 1 month free, then full price';
+    $this->coupon->condition = [
+      'new_customer_only' => false,
+      'new_subscription_only' => false,
+      'upgrade_only' => false
+    ];
+    $this->coupon->period = 0;
+    $this->coupon->percentage_off = ($code == 'percentage-off') ? 10 : 100;
+    $this->coupon->start_date = '2020-01-01';
+    $this->coupon->save();
+
     return $this;
   }
 
@@ -153,8 +179,8 @@ class SubscriptionNotificationTest
     $this->subscription->price                        = $this->publicPlan['price']['price'];
     $this->subscription->subtotal                     = $this->publicPlan['price']['price'];
     $this->subscription->tax_rate                     = $taxRate && $this->subscription->tax_rate ?: 0.1;
-    $this->subscription->total_tax                    = $this->publicPlan['price']['price'] * $this->subscription->tax_rate;
-    $this->subscription->total_amount                 = $this->publicPlan['price']['price'] * (1 + $this->subscription->tax_rate);
+    $this->subscription->total_tax                    = $this->subscription->subtotal * $this->subscription->tax_rate;
+    $this->subscription->total_amount                 = $this->subscription->subtotal * (1 + $this->subscription->tax_rate);
     $this->subscription->subscription_level           = $this->plan->subscription_level;
     $this->subscription->current_period               = $currentPeriod ?? $this->subscription->current_period ?? 0;
     $this->subscription->start_date                   = $startDate ?? $this->subscription->start_date ?? now();
@@ -175,6 +201,36 @@ class SubscriptionNotificationTest
     ];
     $this->subscription->status                       = $status ?? $this->subscription->status ?? Subscription::STATUS_PENDING;
     $this->subscription->sub_status                   = $subStatus ?? $this->subscription->sub_status ?? Subscription::SUB_STATUS_NORMAL;
+
+    $this->subscription->save();
+    return $this;
+  }
+
+  public function updateSubscriptionCoupon()
+  {
+    if ($this->subscription->current_period > 1) {
+      return $this;
+    }
+
+    $this->subscription->coupon_id        = $this->coupon->id;
+    $this->subscription->coupon_info      = $this->coupon->info();
+    $this->subscription->subtotal         = $this->subscription->price * (100 - $this->coupon->percentage_off) / 100;
+    $this->subscription->total_tax        = $this->subscription->subtotal * $this->subscription->tax_rate;
+    $this->subscription->total_amount     = $this->subscription->subtotal * (1 + $this->subscription->tax_rate);
+
+    $next_invoice = $this->subscription->next_invoice;
+    if ($this->subscription->coupon_info['percentage_off'] >= 100) {
+      $next_invoice['coupon_info']        = null;
+      $next_invoice["subtotal"]           = $this->subscription->price;
+      $next_invoice["total_tax"]          = $next_invoice["subtotal"] * $this->subscription->tax_rate;
+      $next_invoice["total_amount"]       = $next_invoice["subtotal"] * (1 + $this->subscription->tax_rate);
+    } else {
+      $next_invoice['coupon_info']        = $this->subscription->coupon_info;
+      $next_invoice["subtotal"]           = $this->subscription->subtotal;
+      $next_invoice["total_tax"]          = $this->subscription->total_tax;
+      $next_invoice["total_amount"]       = $this->subscription->total_amount;
+    }
+    $this->subscription->next_invoice = $next_invoice;
 
     $this->subscription->save();
     return $this;
@@ -203,6 +259,20 @@ class SubscriptionNotificationTest
       "file_id"   =>  "dr-file-0000",
       "order_id"  =>  "dr-order-0000",
     ];
+    $this->invoice->save();
+    return $this;
+  }
+
+  public function updateInvoiceCoupon()
+  {
+    if ($this->subscription->current_period > 1) {
+      return $this;
+    }
+
+    $this->invoice->coupon_info      = $this->coupon->info();
+    $this->invoice->subtotal         = $this->subscription->subtotal;
+    $this->invoice->total_tax        = $this->subscription->total_tax;
+    $this->invoice->total_amount     = $this->subscription->total_amount;
     $this->invoice->save();
     return $this;
   }

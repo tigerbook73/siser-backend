@@ -52,6 +52,18 @@ class Coupon extends BaseCoupon
     }
   }
 
+  public function info()
+  {
+    return [
+      'id'              => $this->id,
+      'code'            => $this->code,
+      'description'     => $this->description,
+      'condition'       => $this->condition,
+      'percentage_off'  => $this->percentage_off,
+      'period'          => $this->period,
+    ];
+  }
+
   public function validate(bool $new_customer, bool $new_subscription = true, bool $upgrade_subscription = false): bool
   {
     return !(

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Country;
+use App\Models\Coupon;
 use App\Models\Subscription;
 use Carbon\Carbon;
 
@@ -158,5 +159,27 @@ class EmailHelper
       SubscriptionNotification::NOTIF_INVOICE_PENDING,
       SubscriptionNotification::NOTIF_REMINDER,
     ]));
+  }
+
+  public function formatCouponDescription(array $coupon)
+  {
+    return $this->trans('messages.coupon.description', [
+      'code' => $coupon['code'],
+      'description' => $coupon['description'],
+      'tax' => $this->getTaxName()
+    ]);
+  }
+
+  public function formatBillingPeriod(Subscription $subscription)
+  {
+    return $this->trans('messages.subscription.billing_period.monthly' .
+      (($subscription->coupon_info && $subscription->coupon_info['percentage_off'] >= 100) ? '_trial' : ''));
+  }
+
+  public function formatPeriod(Subscription $subscription)
+  {
+    return ($subscription->coupon_info && $subscription->coupon_info['percentage_off'] >= 100) ?
+      $this->trans('messages.subscription.period_free_trial') :
+      $subscription->current_period;
   }
 }

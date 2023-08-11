@@ -19,7 +19,7 @@ class TestController extends Controller
     return response()->json(['message' => 'test data reset successfully!']);
   }
 
-  public function prepare(string $type, string $country)
+  public function prepare(string $type, string $country, string $coupon = null)
   {
     $notificationConfigures = [
       SubscriptionNotification::NOTIF_ORDER_ABORTED => [
@@ -136,6 +136,11 @@ class TestController extends Controller
         period: $config['invoice_period']
       );
     }
+    if ($coupon && $config['invoice_period'] == 1) {
+      $mockup->updateCoupon($coupon);
+      $mockup->updateSubscriptionCoupon();
+      $mockup->updateInvoiceCoupon();
+    }
 
     return $mockup;
   }
@@ -152,8 +157,12 @@ class TestController extends Controller
     if ($country && Country::findByCode($country) === null) {
       return response('Country not found', 404);
     }
+    $coupon = $request->coupon;
+    if ($coupon && !in_array($request->coupon, ['free-trial', 'percentage-off'])) {
+      return response("Invalid coupon", 400);
+    }
 
-    $mockup = $this->prepare($type, $country);
+    $mockup = $this->prepare($type, $country, $coupon);
     $mockup->subscription->sendNotification($type, $mockup->invoice);
     return response('Please checkout your email');
   }
@@ -164,8 +173,12 @@ class TestController extends Controller
     if ($country && Country::findByCode($country) === null) {
       return response('Country not found', 404);
     }
+    $coupon = $request->coupon;
+    if ($coupon && !in_array($request->coupon, ['free-trial', 'percentage-off'])) {
+      return response("Invalid coupon", 400);
+    }
 
-    $mockup = $this->prepare($type, $country ?: 'US');
+    $mockup = $this->prepare($type, $country, $coupon);
     return (new SubscriptionNotification($type, [
       'subscription' => $mockup->subscription,
       'invoice' => $mockup->invoice

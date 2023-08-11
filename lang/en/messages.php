@@ -44,8 +44,11 @@ return [
   'subscription.plan_name'                        => 'Plan Name',
   'subscription.billing_period'                   => 'Billing Period',
   'subscription.billing_period.monthly'           => 'Monthly',
+  'subscription.billing_period.monthly_trial'     => 'Monthly after Free Trial',
   'subscription.billing_period.annually'          => 'Annually',
+  'subscription.billing_period.annually_trial'    => 'Annually after Free Trial',
   'subscription.price'                            => 'Price (Excl. :tax)',
+  'subscription.subtotal'                         => 'Sub Total (Excl. :tax)',
   'subscription.tax'                              => ':tax',
   'subscription.total_amount'                     => 'Grand Total (Incl :tax)',
   'subscription.currency'                         => 'Currency',
@@ -54,7 +57,9 @@ return [
   'subscription.period'                           => 'Current Period',
   'subscription.period_start_date'                => 'Current Period Start Date',
   'subscription.period_end_date'                  => 'Current Period End Date',
+  'subscription.period_free_trial'                => 'Free Trial Period',
   'subscription.next_invoice_date'                => 'Next Invoice Date',
+  'subscription.next_invoice_total_amount'        => 'Next Invoice Grand Total (Incl :tax)',
 
   'order_confirm.notification'                    => 'We are pleased to inform you that your order to the <b>:plan_name</b> subscription has been confirmed!',
   'order_confirm.summary'                         => 'Here is a summary of your order and subscription:',
@@ -105,5 +110,8 @@ return [
   'subscription_terms_changed.notification'       => 'We are writing to inform you that the <b>:terms</b> of your subscription to <b>:plan_name</b> was changed.<br /><br />Here is the summury of changes:<br /> :terms_items',
   'subscription_terms_changed.summary'            => 'Here is a summary of your subscription:',
 
-  'tax_name'                                      => 'TAX',
+  'tax_name'                                      => 'Tax',
+
+  'coupon.coupon'                                 => 'Coupon',
+  'coupon.description'                            => ':code (:description)'
 ];
