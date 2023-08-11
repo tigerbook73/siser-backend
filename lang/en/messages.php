@@ -113,5 +113,5 @@ return [
   'tax_name'                                      => 'Tax',
 
   'coupon.coupon'                                 => 'Coupon',
-  'coupon.description'                            => ':code (:description)'
+  'coupon.description'                            => 'Coupon: :code (:description)'
 ];
