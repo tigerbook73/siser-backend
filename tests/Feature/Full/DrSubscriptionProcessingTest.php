@@ -59,11 +59,6 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     $response->assertStatus(400);
     $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING);
     $this->assertTrue($subscription->getActiveInvoice()->status == Invoice::STATUS_PROCESSING);
-    $this->assertDatabaseHas('critical_sections', [
-      'type' => 'subscription',
-      'status' => 'open',
-      'object_id' => $subscription->id
-    ]);
     $this->assertDatabaseMissing('dr_events', [
       'event_id' => $eventId
     ]);

@@ -81,10 +81,5 @@ class DrSubscriptionDraftTest extends DrApiTestCase
     // assert
     $response->assertStatus(444);
     $this->assertTrue($subscription->status == Subscription::STATUS_DRAFT);
-    $this->assertDatabaseHas('critical_sections', [
-      'type' => 'subscription',
-      'status' => 'open',
-      'object_id' => $subscription->id
-    ]);
   }
 }

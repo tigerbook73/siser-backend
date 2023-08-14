@@ -23,7 +23,6 @@ class Kernel extends ConsoleKernel
     $schedule->call(fn () => Artisan::queue('subscription:clean-draft'))->everyThirtyMinutes()->name('queue subscription:clean-draft');
     $schedule->call(fn () => Artisan::queue('subscription:stop-cancelled'))->everyThirtyMinutes()->name('queue subscription:stop-cancelled');
     $schedule->call(fn () => Artisan::queue('subscription:warn-pending'))->everyTwoHours()->name('queue subscription:warn-pending');
-    $schedule->call(fn () => Artisan::queue('subscription:warn-unclosed'))->hourly()->name('queue subscription:warn-unclosed');
   }
 
   /**
