@@ -7,7 +7,7 @@
       <td colspan="2" class="highlight">{{ $helper->trans('messages.order.#', ['order_id' => $invoice->id]) }}</td>
     </tr>
     <tr>
-      <td>DigitalRiver {{ $helper->trans('messages.order.no') }}</td>
+      <td width="40%">DigitalRiver {{ $helper->trans('messages.order.no') }}</td>
       <td>{{ $invoice->getDrOrderId() }}</td>
     </tr>
     <tr>
@@ -28,7 +28,7 @@
   @if (in_array('customer', $fields))
   <table>
     <tr>
-      <td class="highlight">{{ $helper->trans('messages.customer_info') }}</td>
+      <td width="40%" class="highlight">{{ $helper->trans('messages.customer_info') }}</td>
       <td class="highlight">{{ $helper->trans('messages.billing_address') }}</td>
     </tr>
     <tr>
@@ -50,7 +50,7 @@
       <td colspan="5" class="highlight">{{ $helper->trans('messages.order_items', ['currency' => $invoice->currency]) }}</td>
     </tr>
     <tr>
-      <th class="text-left">{{ $helper->trans('messages.order_item') }}</th>
+      <th width="40%" class="text-left">{{ $helper->trans('messages.order_item') }}</th>
       <th>{{ $helper->trans('messages.order_quantity') }}</th>
       <th>{{ $helper->trans('messages.order_price_excl', ['tax' => $helper->getTaxName()]) }}</th>
     </tr>
@@ -74,7 +74,7 @@
       <td colspan="5" class="highlight"></td>
     </tr>
     <tr>
-      <td rowspan="5" style="width: 40%"></td>
+      <td rowspan="5" width="40%"></td>
       <td class="text-right">{{ $helper->trans('messages.order_subtotal', ['tax' => $helper->getTaxName()]) }}</td>
       <td class="text-right">{{ $helper->formatPrice($invoice->subtotal) }}</td>
     </tr>
@@ -102,7 +102,7 @@
       <td colspan="2" class="highlight">{{ $helper->trans('messages.payment_method') }}</td>
     </tr>
     <tr>
-      <td>{{ $helper->formatPaymentMethodType($subscription->user->payment_method->info()['type']) }}</td>
+      <td width="40%">{{ $helper->formatPaymentMethodType($subscription->user->payment_method->info()['type']) }}</td>
       <td>
         {!! $helper->formatPaymentMethod($subscription->user->payment_method->info()['type'], $subscription->user->payment_method->info()['display_data']) !!}
       </td>
@@ -113,14 +113,10 @@
   @if (in_array('subscription', $fields))
   <table>
     <tr>
-      <td colspan="2" class="highlight">{{ $helper->trans('messages.subscription_info') }}</td>
+      <td colspan="2" class="highlight">{{ $helper->trans('messages.subscription.#', ['subscription_id' => $subscription->id]) }}</td>
     </tr>
     <tr>
-      <td>{{ $helper->trans('messages.subscription_no') }}</td>
-      <td>{{ $subscription->id }}</td>
-    </tr>
-    <tr>
-      <td>{{ $helper->trans('messages.subscription.plan_name') }}</td>
+      <td witdh="40%">{{ $helper->trans('messages.subscription.plan_name') }}</td>
       <td>{{ $subscription->plan_info['name'] }}</td>
     </tr>
     @if (isset($subscription->coupon_info['id']))

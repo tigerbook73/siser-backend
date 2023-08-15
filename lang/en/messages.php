@@ -39,8 +39,7 @@ return [
   'order_total'                                   => 'Grand Total (Incl. :tax)',
   'order_refunded'                                => 'Refund Total (Incl. :tax)',
 
-  'subscription_info'                             => 'Subscription Info',
-  'subscription_no'                               => 'Subscription No.',
+  'subscription.#'                                => 'Subscription # :subscription_id',
   'subscription.plan_name'                        => 'Plan Name',
   'subscription.billing_period'                   => 'Billing Period',
   'subscription.billing_period.monthly'           => 'Monthly',
@@ -108,7 +107,7 @@ return [
   'subscription_terminated.summary'               => 'Here is a summary of your subscription:',
 
   'subscription_terms_changed.notification'       => 'We are writing to inform you that the <b>:terms</b> of your subscription to <b>:plan_name</b> was changed.<br /><br />Here is the summury of changes:<br /> :terms_items',
-  'subscription_terms_changed.summary'            => 'Here is a summary of your subscription:',
+  'subscription_terms_changed.summary'            => 'Here is a summary of your most recent order and subscription:',
 
   'tax_name'                                      => 'Tax',
 

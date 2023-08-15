@@ -21,7 +21,9 @@
   <x-emails.subscription.table
     :$type
     :$subscription
+    :$invoice
     :fields="[
+      'order',
       'customer',
       'subscription',
     ]"
