@@ -1,30 +1,145 @@
 <?php
 
-use Carbon\Carbon;
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+namespace App\Console\Commands;
 
-return new class extends Migration
+use App\Models\BillingInfo;
+use App\Models\Invoice;
+use App\Models\PaymentMethod;
+use App\Models\Subscription;
+use App\Models\TaxId;
+use App\Models\User;
+use App\Services\DigitalRiver\DigitalRiverService;
+use App\Services\DigitalRiver\SubscriptionManager;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+
+class LaunchSteps extends Command
 {
   /**
-   * Run the migrations.
+   * The name and signature of the console command.
    *
-   * @return void
+   * @var string
    */
-  public function up()
-  {
-    Schema::table('countries', function (Blueprint $table) {
-      $table->renameColumn('country_code', 'code');
-      $table->renameColumn('country', 'name');
-      $table->string('currency');
-      $table->decimal('processing_fee_rate')->default(0.0);
-      $table->boolean('explicit_processing_fee')->default(false);
-      $table->timestamps();
-    });
+  protected $signature = 'launch:step {subcmd=help}';
 
-    // default data
+  /**
+   * The console command description.
+   *
+   * @var string
+   */
+  protected $description = 'steps to launch online-store';
+
+
+  public function __construct(
+    public SubscriptionManager $manager,
+    public DigitalRiverService $drService
+  ) {
+    parent::__construct();
+  }
+
+  /**
+   * Execute the console command.
+   *
+   * @return int
+   */
+  public function handle()
+  {
+    /**
+     * setup steps
+     * from portal
+     * 1. create webhook & retrieve keys
+     * 2. 
+     * 1. update dr public key
+     * 2. update dr confidential key
+     * 3. 
+     */
+    $subcmd = $this->argument('subcmd');
+    if (!$subcmd || $subcmd == 'help') {
+      $this->info('Usage: php artisan dr:cmd {subcmd}');
+      $this->info('');
+      $this->info('subcmd:');
+      $this->info('  clear:             remove old data');
+      $this->info('  init:              init data');
+      $this->info('  update-countries:  update country list');
+      $this->info('  update-plans:      update pro-plan');
+      return self::SUCCESS;
+    }
+
+    switch ($subcmd) {
+      case 'clear':
+        return $this->clear();
+
+      case 'init':
+        return $this->call('dr:cmd', ['subcmd' => 'init']);
+
+      case 'update-countries':
+        return $this->updateCountries();
+
+      case 'update-plans':
+        return $this->updatePlans();
+
+      default:
+        $this->error("Invalid subcmd: {$subcmd}");
+        return self::FAILURE;
+    }
+  }
+
+  public function clear()
+  {
+    if (config('dr.dr_mode') == 'prod') {
+      $this->warn('This command can not be executed under "prod" mode');
+      return self::FAILURE;
+    }
+
+    // clear dr information
+    $this->info("--------------------------------------------");
+    $this->call('dr:cmd', ['subcmd' => 'clear']);
+
+    // disable hook
+    $this->info("--------------------------------------------");
+    $this->call('dr:cmd', ['subcmd' => 'disable-hook']);
+
+    /**
+     * table
+     */
+    $this->info("");
+    $this->info("--------------------------------------------");
+    TaxId::whereNotNull('id')->delete();
+    BillingInfo::whereNotNull('id')->delete();
+    PaymentMethod::whereNotNull('id')->delete();
+    Invoice::whereNotNull('id')->delete();
+    Subscription::where('subscription_level', '>', 1)->delete();
+
+    // create subscription
+    foreach (User::all() as $user) {
+      $user->dr = null;
+      $user->save();
+
+      BillingInfo::createDefault($user);
+      $user->updateSubscriptionLevel();
+    }
+
+    return self::SUCCESS;
+  }
+
+  public function init()
+  {
+    if (config('dr.dr_mode') == 'prod') {
+      $this->warn('This command can not be executed under "prod" mode');
+      return self::FAILURE;
+    }
+
+    // init plan
+    $this->call('dr:cmd', ['subcmd' => 'init']);
+
+    // enable hook
+    $this->call('dr:cmd', ['subcmd' => 'enable-hook']);
+  }
+
+  public function updateCountries()
+  {
+    $this->info("Update countries ...");
+
     $now = now();
     DB::table('countries')->upsert(
       [
@@ -109,14 +224,110 @@ return new class extends Migration
       ],
       ['code']
     );
+
+    $this->info("Update countries ... Done!");
   }
 
-  /**
-   * Reverse the migrations.
-   *
-   * @return void
-   */
-  public function down()
+  public function updatePlans()
   {
+    $this->info("Update countries ...");
+
+    DB::table('plans')->upsert(
+      [
+        [
+          'name'                => 'Leonardo™ Design Studio Pro Plan',
+          'catagory'            => 'machine',
+          'description'         => 'Leonardo™ Design Studio Pro Plan',
+          'subscription_level'  => 2,
+          'price_list'          => json_encode([
+            ['country' => 'AE', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'AT', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'AU', 'currency' => 'AUD', 'price' => 12.99],
+            ['country' => 'AW', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'BE', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'BG', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'BN', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'BR', 'currency' => 'BRL', 'price' => 39.99],
+            ['country' => 'BS', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'CA', 'currency' => 'CAD', 'price' => 11.49],
+            ['country' => 'CH', 'currency' => 'CHF', 'price' => 7.5],
+            ['country' => 'CL', 'currency' => 'CLP', 'price' => 6999],
+            ['country' => 'CO', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'CR', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'CY', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'CZ', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'DE', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'DK', 'currency' => 'DKK', 'price' => 59.99],
+            ['country' => 'DO', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'EC', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'EE', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'ES', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'FI', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'FR', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'GB', 'currency' => 'GBP', 'price' => 6.99],
+            ['country' => 'GF', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'GP', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'GR', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'GT', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'HN', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'HR', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'HU', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'ID', 'currency' => 'IDR', 'price' => 130000],
+            ['country' => 'IE', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'IL', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'IN', 'currency' => 'INR', 'price' => 699],
+            ['country' => 'IS', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'IT', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'JM', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'JP', 'currency' => 'JPY', 'price' => 1299],
+            ['country' => 'KR', 'currency' => 'KRW', 'price' => 11699],
+            ['country' => 'LI', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'LT', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'LU', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'LV', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'MN', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'MT', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'MU', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'MX', 'currency' => 'MXN', 'price' => 149],
+            ['country' => 'MY', 'currency' => 'MYR', 'price' => 40],
+            ['country' => 'NI', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'NL', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'NO', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'NZ', 'currency' => 'NZD', 'price' => 14.49],
+            ['country' => 'PA', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'PH', 'currency' => 'PHP', 'price' => 499],
+            ['country' => 'PL', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'PM', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'PR', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'PT', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'PY', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'RE', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'RO', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'RS', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'SE', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'SG', 'currency' => 'SGD', 'price' => 11.99],
+            ['country' => 'SI', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'SK', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'SV', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'TH', 'currency' => 'THB', 'price' => 299],
+            ['country' => 'TR', 'currency' => 'TRY', 'price' => 235],
+            ['country' => 'TT', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'TW', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'UA', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'US', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'VE', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'VI', 'currency' => 'USD', 'price' => 8.99],
+            ['country' => 'ZA', 'currency' => 'ZAR', 'price' => 169.99],
+          ]),
+          'url'                 => 'https://www.siserna.com/leonardo-design-studio/',
+          'status'              => 'active',
+          'created_at'          => now(),
+          'updated_at'          => now(),
+        ]
+      ],
+      ['name']
+    );
+
+    $this->info("Update countries ... Done!");
   }
-};
+}

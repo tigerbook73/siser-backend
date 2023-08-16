@@ -24,5 +24,5 @@ return [
   ],
 
   'support_email'   => "support@siserna.com",
-  'bcc_email'       => "user2.test@iifuture.com",
+  'bcc_email'       => "user2.test@iifuture.com",  // TODO:  change to MAIL_BCC_ADDRESS env
 ];
