@@ -235,9 +235,9 @@ class LaunchSteps extends Command
     DB::table('plans')->upsert(
       [
         [
-          'name'                => 'Leonardo™ Design Studio Pro Plan',
+          'name'                => 'Leonardo™ Design Studio Pro Monthly Plan',
           'catagory'            => 'machine',
-          'description'         => 'Leonardo™ Design Studio Pro Plan',
+          'description'         => 'Leonardo™ Design Studio Pro Monthly Plan',
           'subscription_level'  => 2,
           'price_list'          => json_encode([
             ['country' => 'AE', 'currency' => 'USD', 'price' => 8.99],
@@ -275,7 +275,7 @@ class LaunchSteps extends Command
             ['country' => 'ID', 'currency' => 'IDR', 'price' => 130000],
             ['country' => 'IE', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'IL', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'IN', 'currency' => 'INR', 'price' => 699],
+            ['country' => 'IN', 'currency' => 'INR', 'price' => 700],
             ['country' => 'IS', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'IT', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'JM', 'currency' => 'USD', 'price' => 8.99],
@@ -295,7 +295,7 @@ class LaunchSteps extends Command
             ['country' => 'NO', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'NZ', 'currency' => 'NZD', 'price' => 14.49],
             ['country' => 'PA', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'PH', 'currency' => 'PHP', 'price' => 499],
+            ['country' => 'PH', 'currency' => 'PHP', 'price' => 500],
             ['country' => 'PL', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'PM', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'PR', 'currency' => 'USD', 'price' => 8.99],
@@ -305,11 +305,11 @@ class LaunchSteps extends Command
             ['country' => 'RO', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'RS', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'SE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'SG', 'currency' => 'SGD', 'price' => 11.99],
+            ['country' => 'SG', 'currency' => 'SGD', 'price' => 12.00],
             ['country' => 'SI', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'SK', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'SV', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'TH', 'currency' => 'THB', 'price' => 299],
+            ['country' => 'TH', 'currency' => 'THB', 'price' => 300],
             ['country' => 'TR', 'currency' => 'TRY', 'price' => 235],
             ['country' => 'TT', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'TW', 'currency' => 'USD', 'price' => 8.99],

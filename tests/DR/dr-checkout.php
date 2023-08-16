@@ -43,7 +43,7 @@ return <<<EOD
       {
           "id": "f13e6c3a-e340-497b-b5a5-d3cd503ad71a",
           "productDetails": {
-              "name": "Leonardo™ Design Studio Pro Plan",
+              "name": "Leonardo™ Design Studio Pro Monthly Plan",
               "eccn": "EAR99",
               "taxCode": "4323.320_A",
               "skuGroupId": "software-subscription-01",
