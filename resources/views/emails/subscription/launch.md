@@ -14,12 +14,12 @@ art launch:step init
 art launch:step update-countries
 art launch:step update-plans
 
-# step3: refresh user with level=2
+# step4: refresh user with level=2
 
 in tinker:
 
 foreach (User::where('subscription_level', '>', 1)->get() as $user) { $user->updateSubscriptionLevel(); }
 
-# step4: test
+# step5: test
 
 
