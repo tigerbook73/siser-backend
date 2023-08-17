@@ -14,7 +14,6 @@ use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
-use DigitalRiver\ApiSdk\ApiException as DrApiException;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
@@ -249,9 +248,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info(__FUNCTION__, 'invoice init => pending', $invoice);
 
       return $subscription;
-    } catch (DrApiException $th) {
-      $body = $th->getResponseObject()->getErrors()[0];
-      throw (new Exception("{$body->getMessage()}", $th->getCode()));
     } catch (\Throwable $th) {
       throw $th;
     }

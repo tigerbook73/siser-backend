@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 
+use DigitalRiver\ApiSdk\ApiException as DrApiException;
 use DigitalRiver\ApiSdk\Configuration as DrConfiguration;
 use DigitalRiver\ApiSdk\Api\CheckoutsApi as DrCheckoutsApi;
 use DigitalRiver\ApiSdk\Api\CustomersApi as DrCustomersApi;
@@ -57,6 +58,7 @@ use DigitalRiver\ApiSdk\Model\UpdateOrderRequest;
 use DigitalRiver\ApiSdk\Model\UpdatePlanRequest as DrUpdatePlanRequest;
 use DigitalRiver\ApiSdk\Model\UpdateSubscriptionRequest as DrUpdateSubscriptionRequest;
 use DigitalRiver\ApiSdk\Model\WebhookUpdateRequest as DrWebhookUpdateRequest;
+use Exception;
 
 
 class DigitalRiverService
@@ -122,6 +124,24 @@ class DigitalRiverService
     $this->eventApi         = new DrEventsApi($this->client, $this->config);
     $this->webhookApi       = new DrWebhooksApi($this->client, $this->config);
     $this->fileLinkApi      = new DrfileLinksApi($this->client, $this->config);
+  }
+
+  protected function throwException(\Throwable $th): Exception
+  {
+    if ($th instanceof DrApiException) {
+      if ($th->getResponseObject()) {
+        $message = $th->getResponseObject()->getErrors()[0]->getMessage() ?? 'Unknown error';
+      } else {
+        $text = $th->getResponseBody() ?? $th->getMessage();
+        $body = json_decode($text);
+        $message = $body->errors[0]->message ?? $text;
+      }
+    } else {
+      $text = $th->getMessage();
+      $body = json_decode($text);
+      $message = $body->errors[0]->message ?? $text;
+    }
+    return new Exception("{$message}", $th->getCode());
   }
 
   /**
@@ -197,8 +217,7 @@ class DigitalRiverService
     try {
       return $this->planApi->retrievePlans(config('dr.default_plan'));
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -228,8 +247,7 @@ class DigitalRiverService
     try {
       return $this->planApi->createPlans($planRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -244,8 +262,7 @@ class DigitalRiverService
     try {
       return $this->planApi->updatePlans(config('dr.default_plan'), $planRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -257,8 +274,7 @@ class DigitalRiverService
       $webhookUpdateRequest->setEnabled($enable);
       return $this->webhookApi->updateWebhooks(config('dr.default_webhook'), $webhookUpdateRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -270,8 +286,7 @@ class DigitalRiverService
     try {
       return $this->customerApi->retrieveCustomers($id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -286,8 +301,7 @@ class DigitalRiverService
     try {
       return $this->customerApi->createCustomers($customerRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -300,8 +314,7 @@ class DigitalRiverService
     try {
       return $this->customerApi->updateCustomers($id, $customerRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -310,8 +323,7 @@ class DigitalRiverService
     try {
       return $this->customerApi->createCustomerSource($customerId, $source_id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -334,8 +346,7 @@ class DigitalRiverService
     try {
       return $this->checkoutApi->retrieveCheckouts($id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -405,8 +416,7 @@ class DigitalRiverService
     try {
       return $this->checkoutApi->createCheckouts($checkoutRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -436,8 +446,7 @@ class DigitalRiverService
 
       return $this->checkoutApi->updateCheckouts($checkoutId, $updateCheckoutRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -467,8 +476,7 @@ class DigitalRiverService
     try {
       return $this->checkoutApi->attachSourceToCheckout($id, $sourceId);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -480,8 +488,7 @@ class DigitalRiverService
     try {
       return $this->sourceApi->retrieveSources($id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -493,8 +500,7 @@ class DigitalRiverService
     try {
       return $this->orderApi->retrieveOrders($id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -505,8 +511,7 @@ class DigitalRiverService
       $orderUpdateRequest->setUpstreamId((string)$upstreamId);
       return  $this->orderApi->updateOrders($id, $orderUpdateRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -518,8 +523,7 @@ class DigitalRiverService
       $orderRequest->setBrowserIp(request()->ip());
       return $this->orderApi->createOrders($orderRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -547,8 +551,7 @@ class DigitalRiverService
 
       return $this->fulfillmentApi->createFulfillments($fulfillmentRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -565,8 +568,7 @@ class DigitalRiverService
     try {
       return $this->subscriptionApi->retrieveSubscriptions($id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -578,8 +580,7 @@ class DigitalRiverService
     try {
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -602,8 +603,7 @@ class DigitalRiverService
     try {
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -638,8 +638,7 @@ class DigitalRiverService
     try {
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -651,8 +650,7 @@ class DigitalRiverService
     try {
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -669,8 +667,7 @@ class DigitalRiverService
     try {
       return $this->taxIdentifierApi->createTaxIdentifiers($taxIdRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -679,8 +676,7 @@ class DigitalRiverService
     try {
       return $this->taxIdentifierApi->retrieveTaxIdentifiers($id);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -700,8 +696,7 @@ class DigitalRiverService
     try {
       return $this->taxIdentifierApi->listTaxIdentifiers(customer_id: $customerId)->getData();
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -710,8 +705,7 @@ class DigitalRiverService
     try {
       return $this->customerApi->createCustomerTaxIdentifier($customerId, $taxId);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -725,8 +719,7 @@ class DigitalRiverService
       $events = $this->eventApi->listEvents();
       return $events->getData();
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 
@@ -739,8 +732,7 @@ class DigitalRiverService
     try {
       return $this->fileLinkApi->createFileLinks($fileLinkRequest);
     } catch (\Throwable $th) {
-      Log::warning('DRAPI:' . $th->getMessage());
-      throw $th;
+      throw $this->throwException($th);
     }
   }
 }

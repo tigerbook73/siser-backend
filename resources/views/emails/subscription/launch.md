@@ -1,8 +1,8 @@
 # Step1: Update AWS env
 
-aws ssm put-parameter --profile production --name "siser.DR_TOKEN" --value "xxxxxx" --type String --overwrite
-aws ssm put-parameter --profile production --name "siser.DR_PUBLIC_KEY" --value "xxxxxx" --type String --overwrite
-aws ssm put-parameter --profile production --name "siser.DR_DEFAULT_WEBHOOK" --value "xxxxxx" --type String --overwrite
+aws ssm put-parameter --profile staging --name "siser.DR_TOKEN" --value "xxxxxx" --type String --overwrite
+aws ssm put-parameter --profile staging --name "siser.DR_PUBLIC_KEY" --value "xxxxxx" --type String --overwrite
+aws ssm put-parameter --profile staging --name "siser.DR_DEFAULT_WEBHOOK" --value "xxxxxx" --type String --overwrite
 
 # Step2: update data
 
