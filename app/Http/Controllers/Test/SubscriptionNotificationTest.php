@@ -208,9 +208,9 @@ class SubscriptionNotificationTest
 
   public function updateSubscriptionCoupon()
   {
-    if ($this->subscription->current_period > 1) {
-      return $this;
-    }
+    // if ($this->subscription->current_period > 1) {
+    //   return $this;
+    // }
 
     $this->subscription->coupon_id        = $this->coupon->id;
     $this->subscription->coupon_info      = $this->coupon->info();
@@ -265,9 +265,9 @@ class SubscriptionNotificationTest
 
   public function updateInvoiceCoupon()
   {
-    if ($this->subscription->current_period > 1) {
-      return $this;
-    }
+    // if ($this->subscription->current_period > 1) {
+    //   return $this;
+    // }
 
     $this->invoice->coupon_info      = $this->coupon->info();
     $this->invoice->subtotal         = $this->subscription->subtotal;

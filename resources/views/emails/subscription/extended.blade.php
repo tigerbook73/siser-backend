@@ -6,6 +6,7 @@
 >
   {!! $helper->trans('messages.subscription_extended.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
   <br />
+  <br />
   {{ $helper->trans('messages.subscription_extended.summary') }}
   <br />
   <br />

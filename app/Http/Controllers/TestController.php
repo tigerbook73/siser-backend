@@ -136,7 +136,7 @@ class TestController extends Controller
         period: $config['invoice_period']
       );
     }
-    if ($coupon && $config['invoice_period'] == 1) {
+    if ($coupon) {
       $mockup->updateCoupon($coupon);
       $mockup->updateSubscriptionCoupon();
       $mockup->updateInvoiceCoupon();
