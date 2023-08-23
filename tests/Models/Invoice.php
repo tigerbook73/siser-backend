@@ -30,6 +30,12 @@ class Invoice {
     /** @var string $currency */
     public $currency = "";
 
+    /** @var \Tests\Models\BillingInfo $billing_info */
+    public $billing_info;
+
+    /** @var \Tests\Models\TaxIdInfo $tax_id_info */
+    public $tax_id_info;
+
     /** @var \Tests\Models\Plan $plan_info */
     public $plan_info;
 
@@ -48,11 +54,17 @@ class Invoice {
     /** @var float $total_amount */
     public $total_amount = 0;
 
+    /** @var float $total_refunded */
+    public $total_refunded = 0;
+
     /** @var \DateTime $invoice_date */
     public $invoice_date;
 
     /** @var string $pdf_file */
     public $pdf_file = "";
+
+    /** @var \Tests\Models\InvoiceCreditMemo[] $credit_memos */
+    public $credit_memos = [];
 
     /** @var \Tests\Models\InvoiceDR $dr */
     public $dr;
