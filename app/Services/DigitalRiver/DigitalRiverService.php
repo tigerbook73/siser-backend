@@ -4,6 +4,8 @@ namespace App\Services\DigitalRiver;
 
 use App\Models\BillingInfo;
 use App\Models\Configuration;
+use App\Models\Invoice;
+use App\Models\Refund;
 use App\Models\Subscription;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
@@ -18,6 +20,7 @@ use DigitalRiver\ApiSdk\Api\FileLinksApi as DrFileLinksApi;
 use DigitalRiver\ApiSdk\Api\FulfillmentsApi as DrFulfillmentsApi;
 use DigitalRiver\ApiSdk\Api\OrdersApi as DrOrdersApi;
 use DigitalRiver\ApiSdk\Api\PlansApi as DrPlansApi;
+use DigitalRiver\ApiSdk\Api\RefundsApi as DrRefundsApi;
 use DigitalRiver\ApiSdk\Api\SourcesApi as DrSourcesApi;
 use DigitalRiver\ApiSdk\Api\SubscriptionsApi as DrSubscriptionsApi;
 use DigitalRiver\ApiSdk\Api\TaxIdentifiersApi as DrTaxIdentifiersApi;
@@ -32,16 +35,19 @@ use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\CustomerRequest as DrCustomerRequest;
 use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\CustomerType as DrCustomerType;
+use DigitalRiver\ApiSdk\Model\Event as DrEvent;
 use DigitalRiver\ApiSdk\Model\FileLink as DrFileLink;
 use DigitalRiver\ApiSdk\Model\FileLinkRequest as DrFileLinkRequest;
 use DigitalRiver\ApiSdk\Model\Fulfillment as DrFulfillment;
 use DigitalRiver\ApiSdk\Model\FulfillmentRequest as DrFulfillmentRequest;
 use DigitalRiver\ApiSdk\Model\FulfillmentRequestItem as DrFulfillmentRequestItem;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
+use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
 use DigitalRiver\ApiSdk\Model\OrderRequest as DrOrderRequest;
 use DigitalRiver\ApiSdk\Model\Plan as DrPlan;
 use DigitalRiver\ApiSdk\Model\PlanRequest as DrPlanRequest;
 use DigitalRiver\ApiSdk\Model\ProductDetails as DrProductDetails;
+use DigitalRiver\ApiSdk\Model\RefundRequest as DrRefundRequest;
 use DigitalRiver\ApiSdk\Model\Shipping as DrShipping;
 use DigitalRiver\ApiSdk\Model\SkuDiscount as DrSkuDiscount;
 use DigitalRiver\ApiSdk\Model\SkuRequestItem as DrSkuRequestItem;
@@ -93,6 +99,9 @@ class DigitalRiverService
   /** @var DrSourcesApi|null */
   public $sourceApi = null;
 
+  /** @var DrRefundsApi|null */
+  public $refundApi = null;
+
   /** @var DrEventsApi|null */
   public $eventApi = null;
 
@@ -118,6 +127,7 @@ class DigitalRiverService
     $this->subscriptionApi  = new DrSubscriptionsApi($this->client, $this->config);
     $this->taxIdentifierApi = new DrTaxIdentifiersApi($this->client, $this->config);
     $this->orderApi         = new DrOrdersApi($this->client, $this->config);
+    $this->refundApi        = new DrRefundsApi($this->client, $this->config);
     $this->fulfillmentApi   = new DrFulfillmentsApi($this->client, $this->config);
     $this->customerApi      = new DrCustomersApi($this->client, $this->config);
     $this->sourceApi        = new DrSourcesApi($this->client, $this->config);
@@ -145,7 +155,7 @@ class DigitalRiverService
   }
 
   /**
-   * helper function
+   * create and fill a DrAddress object
    */
   protected function fillAddress(array $addr): DrAddress
   {
@@ -159,6 +169,9 @@ class DigitalRiverService
     return $address;
   }
 
+  /**
+   * create and fill a DrShipping object from a BillingInfo object
+   */
   protected function fillShipping(BillingInfo|array $billingInfo): DrShipping
   {
     $shipping = new DrShipping();
@@ -178,6 +191,9 @@ class DigitalRiverService
     return $shipping;
   }
 
+  /**
+   * create and fill a DrBilling object from a BillingInfo object
+   */
   protected function fillBilling(BillingInfo|array $billingInfo): DrBilling
   {
     $billTo = new DrBilling();
@@ -197,6 +213,9 @@ class DigitalRiverService
     return $billTo;
   }
 
+  /**
+   * create and fill a DrProductDetails from a Subscription object
+   */
   protected function fillSubscriptionItemProductDetails(Subscription $subscription): DrProductDetails
   {
     $productDetails = new DrProductDetails();
@@ -210,7 +229,7 @@ class DigitalRiverService
   }
 
   /**
-   * plan
+   * get the default DrPlan. TODO: yearly plan is not supported yet
    */
   public function getDefaultPlan(): DrPlan
   {
@@ -221,6 +240,9 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * create the default DrPlan (monthly plan)
+   */
   public function createDefaultPlan(Configuration $configuration): DrPlan
   {
     $planRequest = new DrPlanRequest();
@@ -251,7 +273,9 @@ class DigitalRiverService
     }
   }
 
-
+  /**
+   * update the default DrPlan (monthly plan)
+   */
   public function UpdateDefaultPlan(Configuration $configuration): DrPlan
   {
     $planRequest = new DrUpdatePlanRequest();
@@ -266,6 +290,9 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * update & enable the default DrWebhook
+   */
   public function updateDefaultWebhook(array $types, bool $enable)
   {
     try {
@@ -279,7 +306,7 @@ class DigitalRiverService
   }
 
   /**
-   * customer
+   * get DrCustomer by dr_customer_id
    */
   public function getCustomer(string $id): DrCustomer
   {
@@ -290,10 +317,13 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * create a DrCustomer from billing info
+   */
   public function createCustomer(BillingInfo $billingInfo): DrCustomer
   {
     $customerRequest = new DrCustomerRequest();
-    // $customerRequest->setId('customer-' . $billingInfo->user_id);
+    $customerRequest->setType($billingInfo->customer_type); // @phpstan-ignore-line
     $customerRequest->setEmail($billingInfo->email);
     $customerRequest->setShipping($this->fillShipping($billingInfo));
     $customerRequest->setMetadata(['user_id' => $billingInfo->user_id]);
@@ -305,9 +335,14 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * update a DrCustomer from billing info
+   * @param string $id dr customer id
+   */
   public function updateCustomer(string $id, BillingInfo $billingInfo): DrCustomer
   {
     $customerRequest = new DrUpdateCustomerRequest();
+    $customerRequest->setType($billingInfo->customer_type); // @phpstan-ignore-line
     $customerRequest->setEmail($billingInfo->email);
     $customerRequest->setShipping($this->fillShipping($billingInfo));
 
@@ -318,6 +353,11 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * attach source to DrCustomer
+   * @param string $customerId dr customer id
+   * @param string $source_id dr source id
+   */
   public function attachCustomerSource(string $customerId, string $source_id): DrSource
   {
     try {
@@ -327,6 +367,11 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * detach source from DrCustomer
+   * @param string $customerId dr customer id
+   * @param string $source_id dr source id
+   */
   public function detachCustomerSource(string $customerId, string $source_id): bool
   {
     try {
@@ -339,7 +384,8 @@ class DigitalRiverService
   }
 
   /**
-   * checkout
+   * get DrCheckout by dr checkout id
+   * @param string $id dr checkout id
    */
   public function getCheckout(string $id): DrCheckout
   {
@@ -350,7 +396,9 @@ class DigitalRiverService
     }
   }
 
-
+  /**
+   * create & fill a DrSkuRequestItem from a subscription
+   */
   protected function fillCheckoutSubscriptionItem(Subscription $subscription): DrSkuRequestItem
   {
     // productDetails
@@ -383,12 +431,18 @@ class DigitalRiverService
     return $item;
   }
 
+  /**
+   * create & fill a DrSkuRequestItem array from a subscription
+   */
   protected function fillCheckoutItems(Subscription $subscription)
   {
     $items[] = $this->fillCheckoutSubscriptionItem($subscription);
     return $items;
   }
 
+  /**
+   * create a DrCheckout from a subscription
+   */
   public function createCheckout(Subscription $subscription): DrCheckout
   {
     // checkout
@@ -460,6 +514,10 @@ class DigitalRiverService
     return $this->updateCheckout($checkoutId, taxId: $taxId);
   }
 
+  /**
+   * delete a DrCheckout
+   * @param string $id dr checkout id
+   */
   public function deleteCheckout(string $id): bool
   {
     try {
@@ -471,6 +529,11 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * attach a dr source to a dr checkout
+   * @param string $id dr checkout id
+   * @param string $sourceId dr source id 
+   */
   public function attachCheckoutSource(string $id, string $sourceId): DrSource
   {
     try {
@@ -481,7 +544,8 @@ class DigitalRiverService
   }
 
   /**
-   * source
+   * get a DrSource by id
+   * @param string $id dr source id
    */
   public function getSource(string $id): DrSource
   {
@@ -493,7 +557,8 @@ class DigitalRiverService
   }
 
   /**
-   * order
+   * get a DrOrder by id
+   * @param string $id dr order id
    */
   public function getOrder(string $id): DrOrder
   {
@@ -515,6 +580,10 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * convert a DrCheckout to a DrOrder
+   * @param string $checkoutId dr checkout id
+   */
   public function convertCheckoutToOrder(string $checkoutId): DrOrder
   {
     try {
@@ -527,6 +596,12 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * fulfill a DrOrder
+   * @param string $orderId dr order id
+   * @param DrOrder $order dr order
+   * @param bool $cancel fulfill or cancel
+   */
   public function fulfillOrder(string $orderId, DrOrder $order = null, bool $cancel = false): DrFulfillment
   {
     try {
@@ -561,7 +636,8 @@ class DigitalRiverService
   // TODO:
 
   /**
-   * subscription
+   * get a DrSubscription by id
+   * @param string $id dr subscription id
    */
   public function getSubscription(string $id): DrSubscription
   {
@@ -572,6 +648,10 @@ class DigitalRiverService
     }
   }
 
+  /** 
+   * activate a DrSubscription
+   * @param string $id dr subscription id
+   */
   public function activateSubscription(string $id): DrSubscription
   {
     $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
@@ -584,6 +664,10 @@ class DigitalRiverService
     }
   }
 
+  /** 
+   * delete a DrSubscription
+   * @param string $id dr subscription id
+   */
   public function deleteSubscription(string $id): bool
   {
     try {
@@ -595,6 +679,11 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * update a DrSubscription's source
+   * @param string $id dr subscription id
+   * @param string $sourceId dr source id
+   */
   public function updateSubscriptionSource(string $id, string $sourceId)
   {
     $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
@@ -607,7 +696,10 @@ class DigitalRiverService
     }
   }
 
-  protected function fillSubscriptionSubscriptionItem(Subscription $subscription): DrSubscriptionItems
+  /**
+   * create & fill a DrSubscriptionItems from a Subscription
+   */
+  protected function fillSubscriptionMainItem(Subscription $subscription): DrSubscriptionItems
   {
     // productDetails
     $productDetails = $this->fillSubscriptionItemProductDetails($subscription);
@@ -621,16 +713,24 @@ class DigitalRiverService
     return $item;
   }
 
-  protected function fillSubscriptionItems(Subscription $subscription)
+  /**
+   * create & fill a DrSubscriptionItemProductDetails from a Subscription
+   * @param Subscription $subscription
+   * @return DrSubscriptionItems[]
+   */
+  protected function fillSubscriptionItems(Subscription $subscription): array
   {
-    $items[] = $this->fillSubscriptionSubscriptionItem($subscription);
+    $items[] = $this->fillSubscriptionMainItem($subscription);
     return $items;
   }
 
+  /**
+   * update a DrSubscription's items
+   */
   public function updateSubscriptionItems(string $id, Subscription $subscription)
   {
     // subscription.items[0] TODO: fillNextInvoice items
-    $items[] = $this->fillSubscriptionItems($subscription);
+    $items = $this->fillSubscriptionItems($subscription);
 
     $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
     $updateSubscriptionRequest->setItems($items);
@@ -642,7 +742,10 @@ class DigitalRiverService
     }
   }
 
-  public function cancelSubscription(string $id)
+  /**
+   * cancel a DrSubscription
+   */
+  public function cancelSubscription(string $id): DrSubscription
   {
     $updateSubscriptionRequest = new DrUpdateSubscriptionRequest();
     $updateSubscriptionRequest->setState('cancelled');
@@ -709,9 +812,41 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * create a DrRefund
+   */
+  public function createRefund(Refund $refund): DrOrderRefund
+  {
+    $refundRequest = new DrRefundRequest();
+    $refundRequest->setOrderId($refund->getDrOrderId());
+    $refundRequest->setCurrency($refund->currency);
+    $refundRequest->setAmount($refund->amount);
+    $refundRequest->setReason($refund->reason ?? "");
+
+    try {
+      return $this->refundApi->createRefunds($refundRequest);
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
 
   /**
-   * webhook
+   * get a DrRefund by id
+   * @param string $id dr refund id
+   */
+  public function getRefund(string $id): DrOrderRefund
+  {
+    try {
+      return $this->refundApi->retrieveRefunds($id);
+    } catch (\Throwable $th) {
+      Log::warning('DRAPI:' . $th->getMessage());
+      throw $th;
+    }
+  }
+
+  /**
+   * list dr events
    */
   public function listEvents()
   {
@@ -723,6 +858,24 @@ class DigitalRiverService
     }
   }
 
+  /**
+   * get dr events
+   */
+  public function getEvent(string $id): DrEvent
+  {
+    try {
+      return $this->eventApi->retrieveEvents($id);
+    } catch (\Throwable $th) {
+      throw $this->throwException($th);
+    }
+  }
+
+
+  /** 
+   * create file link from file id
+   * @param string $fileId dr file id
+   * @param Carbon $expiresTime link expires time
+   */
   public function createFileLink(string $fileId, Carbon $expiresTime): DrFileLink
   {
     $fileLinkRequest = new DrFileLinkRequest();

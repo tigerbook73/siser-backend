@@ -11,7 +11,7 @@
         'date' => $helper->formatDate(now()),
         'end_date' => $helper->formatDate($subscription->current_period_end_date),
       ]
-    ) 
+    )
   !!}
   <br />
   <br />

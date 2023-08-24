@@ -28,14 +28,14 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     return $this->onOrderAccept(Subscription::find($response->json('id')));
   }
 
-  public function test_processing_to_active_invoice_completing()
+  public function test_processing_to_active_invoice_completed()
   {
     $subscription = $this->init_processing();
 
     return $this->onOrderComplete($subscription);
   }
 
-  public function test_processing_to_active_invoice_completing_error()
+  public function test_processing_to_active_invoice_completed_error()
   {
     $subscription = $this->init_processing();
 

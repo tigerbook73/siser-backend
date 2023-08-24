@@ -36,7 +36,7 @@ return new class extends Migration
       }')));
       $table->string('dr_invoice_id')->nullable();
       $table->string('dr_order_id')->nullable();
-      $table->string('status')->comment('[ open, pending -- retry capture, completing -- wait invoice-pdf, void, failed, completed ]');
+      $table->string('status')->comment('see Invoice::STATUS_*');
 
       $table->timestamps();
 

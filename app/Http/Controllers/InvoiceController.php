@@ -50,7 +50,7 @@ class InvoiceController extends SimpleController
     $this->validateUser();
 
     $invoice = $this->baseQuery()->where('user_id', $this->user->id)->findOrFail($id);
-    return $this->transformSingleResource($invoice);
+    return response()->json($this->transformSingleResource($invoice));
   }
 
   protected function commonCancel(Invoice $invoice)
@@ -61,7 +61,7 @@ class InvoiceController extends SimpleController
 
     try {
       $invoice = $this->manager->cancelOrder($invoice);
-      return ['data' => $this->transformSingleResource($invoice)];
+      return response()->json($this->transformSingleResource($invoice));
     } catch (\Throwable $th) {
       return response()->json(['message' => 'only pending subscription order can be cancelled'], 409);
     }

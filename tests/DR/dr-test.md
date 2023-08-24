@@ -29,19 +29,17 @@ stateDiagram-v2
   state Active {
   [*]                       --> Active.Normal
   state Active.Normal {
-  [*]                       --> Active.Invoice.Completing
-  Active.Invoice.Completing
-  Active.Invoice.Completing --> Active.Invoice.Completed  : order.invoice.created
+  [*]                       --> Active.Invoice.Completed
 
   Active.Invoice.Completed
   Active.Invoice.Completed  --> Active.Invoice.Open       : invoice.open
   Active.Invoice.Open
   
   Active.Invoice.Open       --> Active.Invoice.Pending    : subscription.payment.failed
-  Active.Invoice.Open       --> Active.Invoice.Completing : subscription.extended
+  Active.Invoice.Open       --> Active.Invoice.Completed : subscription.extended
   
   Active.Invoice.Pending
-  Active.Invoice.Pending    --> Active.Invoice.Completing : subscription.extended
+  Active.Invoice.Pending    --> Active.Invoice.Completed : subscription.extended
   }
   Active.Normal
   Active.Normal             --> Active.Cancelling         : cancel subscription

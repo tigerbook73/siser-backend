@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Locale;
@@ -27,6 +28,7 @@ class SubscriptionNotificationTest
     public PaymentMethod|null $paymentMethod = null,
     public Subscription|null $subscription = null,
     public Invoice|null $invoice = null,
+    public Refund|null $refund = null,
   ) {
   }
 
@@ -53,6 +55,7 @@ class SubscriptionNotificationTest
       return;
     }
 
+    $user->refunds()->delete();
     $user->invoices()->delete();
     $user->subscriptions()->delete();
     $user->payment_method()->delete();
@@ -140,7 +143,6 @@ class SubscriptionNotificationTest
       "state"       => "Test State",
       "country"     => $this->country->code,
     ];
-    $this->billingInfo->tax_id          = null;
     $this->billingInfo->save();
     return $this;
   }
@@ -246,12 +248,15 @@ class SubscriptionNotificationTest
     $this->invoice->period_start_date     = $this->subscription->current_period_start_date;
     $this->invoice->period_end_date       = $this->subscription->current_period_end_date;
     $this->invoice->currency              = $this->subscription->currency;
+    $this->invoice->billing_info          = $this->subscription->billing_info;
+    $this->invoice->tax_id_info           = $this->subscription->tax_id_info;
     $this->invoice->plan_info             = $this->subscription->plan_info;
     $this->invoice->coupon_info           = $this->subscription->coupon_info;
-    $this->invoice->payment_method_info   =  $this->user->payment_method->info();
-    $this->invoice->subtotal              =  $this->subscription->subtotal;
-    $this->invoice->total_tax             =  $this->subscription->total_tax;
-    $this->invoice->total_amount          =  $this->subscription->total_amount;
+    $this->invoice->payment_method_info   = $this->user->payment_method->info();
+    $this->invoice->subtotal              = $this->subscription->subtotal;
+    $this->invoice->total_tax             = $this->subscription->total_tax;
+    $this->invoice->total_amount          = $this->subscription->total_amount;
+    $this->invoice->total_refunded        = 0;
     $this->invoice->invoice_date          = $invoiceDate ?? $this->invoice->invoice_date ?? $this->subscription->next_invoice_date;
     $this->invoice->pdf_file              = "/robots.txt";
     $this->invoice->status                = $status ?? $this->invoice->status ?? Invoice::STATUS_PENDING;
@@ -275,5 +280,19 @@ class SubscriptionNotificationTest
     $this->invoice->total_amount     = $this->subscription->total_amount;
     $this->invoice->save();
     return $this;
+  }
+
+  public function updateRefund(bool $success = true)
+  {
+    /** @var Refund|null @refund */
+    $refund = Refund::where('dr->refund_id', 'dr-refund-id-0000')->first();
+
+    $this->refund = $refund ?? Refund::newFromInvoice($this->invoice);
+    $this->refund->setDrRefundId('dr-refund-id-0000');
+    $this->refund->setStatus($success ? Refund::STATUS_COMPLETED : Refund::STATUS_FAILED);
+    $this->refund->save();
+
+    $this->invoice->total_refunded = $success ? $this->invoice->total_amount : 0;
+    $this->invoice->save();
   }
 }

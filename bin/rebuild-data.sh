@@ -14,6 +14,7 @@ fi
 php $BASEDIR/../artisan db:seed
 php $BASEDIR/../artisan dr:cmd clear
 php $BASEDIR/../artisan dr:cmd init
+php $BASEDIR/../artisan dr:cmd enable-hook
 
 rm -rf $BASEDIR/../storage/logs/laravel.log
 

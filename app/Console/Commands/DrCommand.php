@@ -53,6 +53,19 @@ class DrCommand extends Command
       $this->info('  clear:           try to clear all test data');
       $this->info('  enable-hook:     enable webhook');
       $this->info('  disable-hook:    disable webhook');
+
+      // TODO: add more commands
+      $this->info('  get-customer:    get customer by id');
+      $this->info('  get-subscription:get subscription by id');
+      $this->info('  get-checkout:    get checkout by id');
+      $this->info('  get-order:       get order by id');
+      $this->info('  get-plan:        get plan by id');
+      $this->info('  get-webhook:     get webhook by id');
+      $this->info('  get-invoice:     get product by id');
+      $this->info('  get-refund:      get refund by id');
+      $this->info('  get-event:       get event by id');
+      $this->info('  try-event:       get event and invoke the handler');
+
       return self::SUCCESS;
     }
 

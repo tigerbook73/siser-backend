@@ -9,16 +9,19 @@ use App\Models\DrEvent;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
+use App\Services\RefundRules;
 use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
+use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxId;
 use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
@@ -76,6 +79,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.charge.capture.failed'   => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureFailed'],
       'order.complete'                => ['class' => DrOrder::class,        'handler' => 'onOrderComplete'],
       'order.chargeback'              => ['class' => DrOrder::class,        'handler' => 'onOrderChargeback'],
+      'order.refunded'                => ['class' => DrOrder::class,        'handler' => 'onOrderRefunded'],
 
       // subscription events
       'subscription.extended'         => ['class' => 'array',               'handler' => 'onSubscriptionExtended'],
@@ -85,6 +89,12 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // invoice events: see Invoice.md for state machine
       'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
+      'order.credit_memo.created'     => ['class' => 'array',               'handler' => 'onOrderCreditMemoCreated'],
+
+      // refund events
+      'refund.pending'                => ['class' => DrOrderRefund::class,  'handler' => 'onRefundPending'],
+      'refund.failed'                 => ['class' => DrOrderRefund::class,  'handler' => 'onRefundFailed'],
+      'refund.complete'               => ['class' => DrOrderRefund::class,  'handler' => 'onRefundComplete'],
 
       // tax id
       'tax_identifier.verified'       => ['class' => DrTaxId::class,        'handler' => 'onTaxIdStateChange'],
@@ -123,7 +133,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->user_id                    = $user->id;
     $subscription->plan_id                    = $plan->id;
     $subscription->coupon_id                  = $coupon->id ?? null;
-    $subscription->billing_info               = $billingInfo->toResource('customer');
+    $subscription->billing_info               = $billingInfo->info();
     $subscription->tax_id_info                = $taxId ? $taxId->info() : null;
     $subscription->plan_info                  = $publicPlan;
     $subscription->coupon_info                = $coupon ? $coupon->toResource('customer') : null;
@@ -242,7 +252,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->total_tax           = $subscription->total_tax;
       $invoice->total_amount        = $subscription->total_amount;
       $invoice->invoice_date        = now();
-      $invoice->setOrderId($order->getId());
+      $invoice->setDrOrderId($order->getId());
       $invoice->setStatus(Invoice::STATUS_PENDING);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice init => pending', $invoice);
@@ -253,29 +263,52 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
   }
 
-  public function cancelSubscription(Subscription $subscription): Subscription
+  public function cancelSubscription(Subscription $subscription, bool $needRefund = false, bool $immediate = false): Subscription
   {
     try {
+      $refund = null;
+      if ($needRefund) {
+        $result = RefundRules::customerRefundable($subscription);
+        if (!$result['refundable']) {
+          throw new Exception('try to refund non-refundable invoice', 500);
+        }
+        $refund = $this->createRefund($result['invoice'], reason: 'cancel subscription with refund option');
+      }
+
       $drSubscription = $this->drService->cancelSubscription($subscription->dr_subscription_id);
       DrLog::info(__FUNCTION__, 'dr-subscription cancelled', $subscription);
 
-      $subscription->end_date =
-        $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
-      $subscription->sub_status = Subscription::SUB_STATUS_CANCELLING;
-      $subscription->next_invoice_date = null;
-      $subscription->next_invoice = null;
-      $subscription->save();
-      DrLog::info(__FUNCTION__, 'subscription active => cancelling', $subscription);
+      $activeInvoice = $subscription->getActiveInvoice();
 
-      $invoice = $subscription->getActiveInvoice();
-      if ($invoice && $invoice->status != Invoice::STATUS_COMPLETING) {
-        $invoice->setStatus(Invoice::STATUS_VOID);
-        $invoice->save();
-        DrLog::info(__FUNCTION__, 'invoice updated => void', $subscription);
+      if ($refund) {
+        $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled with refund');
+        DrLog::info(__FUNCTION__, 'subscription active => stopped', $subscription);
+
+        $subscription->user->updateSubscriptionLevel();
+        DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+      } else {
+        $subscription->end_date =
+          $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
+        $subscription->sub_status = Subscription::SUB_STATUS_CANCELLING;
+        $subscription->next_invoice_date = null;
+        $subscription->next_invoice = null;
+        $subscription->active_invoice_id = null;
+        $subscription->save();
+        DrLog::info(__FUNCTION__, 'subscription active => cancelling', $subscription);
+      }
+
+      if ($activeInvoice) {
+        $activeInvoice->setStatus(Invoice::STATUS_CANCELLED);
+        $activeInvoice->save();
+        DrLog::info(__FUNCTION__, 'update active invoice => cancelled', $activeInvoice);
       }
 
       // send notification
-      $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
+      if ($refund) {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_REFUND, $refund->invoice);
+      } else {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
+      }
       return $subscription;
     } catch (\Throwable $th) {
       throw $th;
@@ -297,7 +330,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       $this->drService->fulfillOrder($invoice->getDrOrderId(), null, true);
       DrLog::info(__FUNCTION__, 'dr-order cancelled', $subscription);
 
-
       $invoice->setStatus(Invoice::STATUS_CANCELLED);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'dr-order pending => cancelled', $invoice);
@@ -312,6 +344,30 @@ class SubscriptionManagerDR implements SubscriptionManager
     } catch (\Throwable $th) {
       throw $th;
     }
+  }
+
+  public function createRefund(Invoice $invoice, float $amount = 0, string $reason = null): Refund
+  {
+    $result = RefundRules::invoiceRefundable($invoice);
+    if (!$result['refundable']) {
+      throw new Exception('try to refund non-refundable invoice', 500);
+    }
+
+    $refund = Refund::newFromInvoice($invoice, $amount, $reason);
+    $drRefund = $this->drService->createRefund($refund);
+    DrLog::info(__FUNCTION__, 'create dr refund', $invoice);
+
+    $refund->setDrRefundId($drRefund->getId());
+    $refund->save();
+    DrLog::info(__FUNCTION__, 'create refund', $invoice);
+
+    $invoice->setStatus(Invoice::STATUS_REFUNDING);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'update invoice status => refunding', $invoice);
+
+    return $refund;
+
+    // note: notification will be sent from event handler
   }
 
   /**
@@ -389,7 +445,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       } else {
         $paymentMethod->display_data = null;
       }
-
 
       $paymentMethod->save();
       DrLog::info($__FUNCTION__, 'payment-method updated', $user);
@@ -524,6 +579,18 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::error(__FUNCTION__, 'event processed: failed', $eventInfo);
       return response()->json($eventInfo, 400);
     }
+  }
+
+  /**
+   * trigger event
+   */
+  public function triggerEvent(string $eventId)
+  {
+    $drEvent = $this->drService->eventApi->retrieveEvents($eventId);
+    $event = (array)DrObjectSerializer::sanitizeForSerialization($drEvent);
+    $event['data'] = (array)$event['data'];
+    $result = $this->webhookHandler($event);
+    return $result;
   }
 
   /**
@@ -767,10 +834,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->next_invoice_date =
         $drSubscription->getNextInvoiceDate() ? Carbon::parse($drSubscription->getNextInvoiceDate()) : null;
       $subscription->setStatus(Subscription::STATUS_ACTIVE);
-      $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_COMPLETING;
+      $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
       $subscription->fillNextInvoice();
+      $subscription->active_invoice_id = null;
       $subscription->save();
-      DrLog::info($__FUNCTION__, 'subscription updated => invoice-completing', $subscription);
+      DrLog::info($__FUNCTION__, 'subscription updated => active', $subscription);
 
       // update user subscription level
       $user->updateSubscriptionLevel();
@@ -780,65 +848,78 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->period              = $subscription->current_period;
       $invoice->period_start_date   = $subscription->current_period_start_date;
       $invoice->period_end_date     = $subscription->current_period_end_date;
-      $invoice->setStatus(Invoice::STATUS_COMPLETING);
+      $invoice->setStatus(Invoice::STATUS_COMPLETED);
       $invoice->save();
       DrLog::info($__FUNCTION__, 'first invoice created', $subscription);
     });
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_CONFIRMED, $invoice);
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
     return $subscription;
   }
 
-  protected function onOrderInvoiceCreated(array $orderInvoice): Subscription|null
+  protected function onOrderInvoiceCreated(array $orderInvoice): Invoice|null
   {
     // validate order
-    $drOrder = $this->drService->getOrder($orderInvoice['orderId']);
-    $subscription = $this->validateOrder($drOrder, [], __FUNCTION__: __FUNCTION__);
-    if (!$subscription) {
+    $invoice = Invoice::findByDrOrderId($orderInvoice['orderId']);
+    if (!$invoice) {
+      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $orderInvoice['orderId']]);
       return null;
     }
 
-    // validate invoice - must after subscription extended
-    $invoice = $subscription->getInvoiceByOrderId($drOrder->getId());
-    if (!$invoice) {
-      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['subscription_id' => $subscription->id, 'order_id' => $drOrder->getId()]);
-      return null;
-    }
 
     // skip duplicated invoice
     if ($invoice->pdf_file) {
-      DrLog::warning(__FUNCTION__, 'invoice skipped: pdf file already exists', ['subscription_id' => $subscription->id, 'order_id' => $drOrder->getId()]);
+      DrLog::warning(__FUNCTION__, 'invoice skipped: pdf file already exists', $invoice);
       return null;
     }
 
     // create invoice pdf download link
     $fileLink = $this->drService->createFileLink($orderInvoice['fileId'], now()->addYear());
-    DrLog::info(__FUNCTION__, 'pdf file link created', $subscription);
+    DrLog::info(__FUNCTION__, 'pdf file link created', $invoice);
 
-    $__FUNCTION__ = __FUNCTION__;
-    DB::transaction(function () use ($subscription, $invoice, $fileLink, $orderInvoice, $__FUNCTION__) {
-      // update invoice
-      $invoice->pdf_file = $fileLink->getUrl();
-      $invoice->setFileId($orderInvoice['fileId']);
-      $invoice->setStatus(Invoice::STATUS_COMPLETED);
-      $invoice->save();
-      DrLog::info($__FUNCTION__, 'invoice updated => completed', $subscription);
-
-      // update subscription if appropiate
-      if ($invoice->id == $subscription->active_invoice_id) {
-        $subscription->active_invoice_id = null;
-        if ($subscription->sub_status == Subscription::SUB_STATUS_INVOICE_COMPLETING) {
-          $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
-        }
-        $subscription->save();
-        DrLog::info($__FUNCTION__, 'subscription updated => active/normal', $subscription);
-      }
-    });
+    // update invoice
+    $invoice->pdf_file = $fileLink->getUrl();
+    $invoice->setDrFileId($orderInvoice['fileId']);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice pdf file created', $invoice);
 
     // sent notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_INVOICE, $invoice);
-    return $subscription;
+    $invoice->subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_INVOICE, $invoice);
+    return $invoice;
+  }
+
+  protected function onOrderCreditMemoCreated(array $orderCreditMemo): Invoice|null
+  {
+    // validate order
+    $invoice = Invoice::findByDrOrderId($orderCreditMemo['orderId']);
+    if (!$invoice) {
+      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid credit memo', ['dr_order_id' => $orderCreditMemo['orderId']]);
+      return null;
+    }
+
+    // skip duplicated invoice
+    if ($invoice->findCreditMemoByFileId($orderCreditMemo['fileId']) !== false) {
+      DrLog::warning(__FUNCTION__, 'invoice skipped: credit memo already exists', $invoice);
+      return null;
+    }
+
+    // create credit memo download link
+    $fileLink = $this->drService->createFileLink($orderCreditMemo['fileId'], now()->addYear());
+    DrLog::info(__FUNCTION__, 'credit memo link created', $invoice);
+
+    // update invoice
+    $invoice->addCreditMemo($orderCreditMemo['fileId'], $fileLink->getUrl());
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => completed', $invoice);
+
+    // sent notification
+    $invoice->subscription->sendNotification(
+      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
+      $invoice,
+      ['file_id' => $orderCreditMemo['fileId']]
+    );
+    return $invoice;
   }
 
   protected function onOrderChargeback(DrOrder $order): Subscription|null
@@ -861,6 +942,27 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
+  protected function onOrderRefunded(DrOrder $order): Invoice|null
+  {
+    $invoice = Invoice::findByDrOrderId($order->getId());
+    if (!$invoice) {
+      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $order->getId()]);
+      return null;
+    }
+
+    if ($invoice->status != Invoice::STATUS_REFUNDED) {
+      $invoice->total_refunded = $order->getRefundedAmount();
+      $invoice->setStatus($order->getAvailableToRefundAmount() > 0 ?
+        Invoice::STATUS_PARTLY_REFUNDED :
+        Invoice::STATUS_REFUNDED);
+      $invoice->save();
+
+      $invoice->subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_REFUNDED, $invoice);
+    }
+
+    return $invoice;
+  }
+
   protected function createFirstInvoice(Subscription $subscription): Invoice
   {
     $invoice = new Invoice();
@@ -873,10 +975,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->period_start_date   = $subscription->current_period_start_date;
     $invoice->period_end_date     = $subscription->current_period_end_date;
 
+    $invoice->billing_info        = $subscription->billing_info;
+    $invoice->tax_id_info         = $subscription->tax_id_info;
     $invoice->plan_info           = $subscription->plan_info;
     $invoice->coupon_info         = $subscription->coupon_info;
 
-    $invoice->setOrderId(null);
+    $invoice->setDrOrderId(null);
     $invoice->setStatus(Invoice::STATUS_INIT);
     $invoice->save();
 
@@ -901,6 +1005,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->period_start_date   = $subscription->next_invoice['current_period_start_date'];
     $invoice->period_end_date     = $subscription->next_invoice['current_period_end_date'];
 
+    $invoice->billing_info        = $subscription->billing_info;
+    $invoice->tax_id_info         = $subscription->tax_id_info;
     $invoice->plan_info           = $subscription->next_invoice['plan_info'];
     $invoice->coupon_info         = $subscription->next_invoice['coupon_info'];
 
@@ -910,15 +1016,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->total_tax           = $drInvoice->getTotalTax();
     $invoice->total_amount        = $drInvoice->getTotalAmount();
     $invoice->invoice_date        = Carbon::parse($drInvoice->getStateTransitions()?->getOpen() ?? $drInvoice->getUpdatedTime());
-    $invoice->setInvoiceId($drInvoice->getId());
-    $invoice->setOrderId($drInvoice->getOrderId() ?? "");
+    $invoice->setDrInvoiceId($drInvoice->getId());
+    $invoice->setDrOrderId($drInvoice->getOrderId() ?? "");
     $invoice->setStatus(Invoice::STATUS_PENDING);
     $invoice->save();
 
     $subscription->active_invoice_id = $invoice->id;
-    if ($subscription->sub_status != Subscription::SUB_STATUS_CANCELLING) {
-      $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_PENDING;
-    }
     $subscription->save();
 
     return $invoice;
@@ -992,17 +1095,17 @@ class SubscriptionManagerDR implements SubscriptionManager
         $subscription->next_invoice_date = null;
         $subscription->next_invoice = null;
       } else {
-        $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_COMPLETING;
+        $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
       }
       $subscription->save();
-      DrLog::info($__FUNCTION__, 'subscription extended => invoice-completing', $subscription);
+      DrLog::info($__FUNCTION__, 'subscription extended', $subscription);
 
       // update invoice
       $invoice->payment_method_info = $subscription->user->payment_method->info();
-      $invoice->setOrderId($drInvoice->getOrderId());
-      $invoice->setStatus(Invoice::STATUS_COMPLETING);
+      $invoice->setDrOrderId($drInvoice->getOrderId());
+      $invoice->setStatus(Invoice::STATUS_COMPLETED);
       $invoice->save();
-      DrLog::info($__FUNCTION__, 'invoice updated => completing', $subscription);
+      DrLog::info($__FUNCTION__, 'invoice updated => completed', $subscription);
     });
 
     // send notification
@@ -1075,17 +1178,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info(__FUNCTION__, 'renew invoice created', $subscription);
     }
 
-
-    $__FUNCTION__ = __FUNCTION__;
-    DB::transaction(function () use ($subscription, $invoice, $__FUNCTION__) {
-      $invoice->setStatus(Invoice::STATUS_PENDING);
-      $invoice->save();
-      DrLog::info($__FUNCTION__, 'invoice updated => pending', $subscription);
-
-      $subscription->sub_status = Subscription::SUB_STATUS_INVOICE_PENDING;
-      $subscription->save();
-      DrLog::info($__FUNCTION__, 'subscription updated => invoice-pending', $subscription);
-    });
+    $invoice->setStatus(Invoice::STATUS_PENDING);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => pending', $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PENDING, $invoice);
@@ -1137,6 +1232,74 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $taxId;
   }
 
+  protected function onRefundPending(DrOrderRefund $drRefund): Refund|null
+  {
+    $refund = Refund::findByDrRefundId($drRefund->getId());
+    if (!$refund) {
+      return null;
+    }
+
+    if ($refund->status != Refund::STATUS_PENDING) {
+      $refund->status = Refund::STATUS_PENDING;
+      $refund->save();
+      DrLog::info(__FUNCTION__, 'refund status updated => pending', ['refund_id' => $refund->id]);
+
+      $invoice = $refund->invoice;
+      $invoice->setStatus(Invoice::STATUS_REFUNDING);
+      $invoice->save();
+
+      DrLog::info(__FUNCTION__, 'invoice status updated => refunding', $invoice);
+    }
+
+    // TODO: send notification here
+    return $refund;
+  }
+
+  protected function onRefundFailed(DrOrderRefund $drRefund): Refund|null
+  {
+    $refund = Refund::findByDrRefundId($drRefund->getId());
+    if (!$refund) {
+      return null;
+    }
+
+    if ($refund->status != Refund::STATUS_FAILED) {
+      $refund->status = Refund::STATUS_FAILED;
+      $refund->save();
+      DrLog::info(__FUNCTION__, 'refund status updated => failed', ['refund_id' => $refund->id]);
+
+      $invoice = $refund->invoice;
+      $invoice->setStatus(Invoice::STATUS_REFUND_FAILED);
+      $invoice->save();
+
+      DrLog::info(__FUNCTION__, 'refund status updated => refund-failed', $invoice);
+    }
+
+    $refund->invoice->subscription->sendNotification(
+      SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
+      $refund->invoice,
+      ['refund' => $refund]
+    );
+    return $refund;
+  }
+
+  protected function onRefundComplete(DrOrderRefund $drRefund): Refund|null
+  {
+    $refund = Refund::findByDrRefundId($drRefund->getId());
+    if (!$refund) {
+      return null;
+    }
+
+    if ($refund->status != Refund::STATUS_COMPLETED) {
+      $refund->status = Refund::STATUS_COMPLETED;
+      $refund->save();
+      DrLog::info(__FUNCTION__, 'refund status updated => complete', ['refund_id' => $refund->id]);
+
+      // invoice is not updated here, but in onOrderRefunded()
+    }
+
+    return $refund;
+  }
+
 
   /*
   TODO: check data integrity
@@ -1156,7 +1319,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     - subscription.payment_failed is missing    => ok => notification is missing
     - subscription.reminder is missing          => ok => notification is missing
     - invoice.open is missing                   => invoice is not created
-    - order.invoice.created is missing          => check invoice that is in completing state
+    - order.invoice.created is missing          => check invoice that is in completed state
   */
 
   // TODO: refactor validateOrder()

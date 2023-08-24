@@ -43,4 +43,11 @@ class DrSubscriptionActiveCancellingTest extends DrApiTestCase
 
     return $this->onOrderChargeback($subscription);
   }
+
+  public function test_actived_cancelling_to_pdf_created()
+  {
+    $subscription = $this->init_active_cancelling();
+    $invoice = $subscription->getInvoiceByOrderId($subscription->getDrOrderId());
+    return $this->onOrderInvoiceCreated($invoice);
+  }
 }

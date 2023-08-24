@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
       'language_code' =>  "en",
       'password'      => 'not allowed',
       'timezone'      => 'Australia/Sydney',
+      // 'type'          => User::TYPE_NORMAL,
     ]);
 
     // additional customer

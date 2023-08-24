@@ -33,10 +33,6 @@ class AccountBillingInfoTestCase extends DrApiTestCase
         'state'       => 'state',
         'country'     => 'AU',
       ],
-      'tax_id' => [
-        'type'        => 'type',
-        'value'       => 'value',
-      ],
       'language'      => 'en',
     ];
   }

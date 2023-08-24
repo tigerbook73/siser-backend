@@ -51,6 +51,21 @@ class User extends UserWithTrait
     return parent::newQuery()->whereNotNull('cognito_id');
   }
 
+  static public function typeFromEmail(string $email)
+  {
+    $type = User::TYPE_NORMAL;
+    if (config('siser.staff_emails_auto')) {
+      $email = strtolower($email);
+      foreach (config('siser.staff_emails') as $emailDomain) {
+        if (str_ends_with($email, $emailDomain)) {
+          $type = User::TYPE_STAFF;
+          break;
+        }
+      }
+    }
+    return $type;
+  }
+
   protected function beforeCreate()
   {
     $this->subscription_level = 0;
@@ -58,7 +73,7 @@ class User extends UserWithTrait
     $this->roles = null;
 
     if (!$this->type) {
-      $this->type = User::TYPE_NORMAL;
+      $this->type = User::typeFromEmail($this->email);
     }
   }
 

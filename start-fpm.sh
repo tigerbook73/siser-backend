@@ -17,5 +17,8 @@ fi
 echo "do migration ..."
 php artisan migrate --force
 
+# update webhook
+php artisan dr:cmd enable-hook
+
 echo "start $role service ..."
 php artisan octane:roadrunner --log-level=debug

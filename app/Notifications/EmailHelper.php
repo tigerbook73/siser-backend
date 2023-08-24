@@ -6,20 +6,24 @@ use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\Subscription;
 use Carbon\Carbon;
+use NumberFormatter;
 
 class EmailHelper
 {
   public string $language = "";
-  public string $countryName = "";
 
-  public function __construct(public string $locale, public string $timezone, public string $country)
+  public function __construct(public string $locale, public string $timezone, public string $country, public string $currency)
   {
-    $this->countryName = Country::findByCode($country)->name;
-    $this->language = explode('_', $locale)[0];
+    $this->language = explode('_', $locale)[0] ?? 'en';
   }
 
   public function trans(string $key, array $replace = [])
   {
+    // auto append: tax name (more can be added)
+    if (!isset($replace['tax'])) {
+      $replace['tax'] = $this->getTaxName();
+    }
+
     return __($key, $replace, $this->locale);
   }
 
@@ -65,7 +69,18 @@ class EmailHelper
 
   public function formatPrice(string|float $price)
   {
+    // TODO: en_US, 'AUD' => 'A$'
+    // $fmt = numfmt_create($this->locale, NumberFormatter::CURRENCY);
+    // return numfmt_format_currency($fmt, (float)$price, $this->currency);
     return number_format((float)$price, 2);
+  }
+
+  public function formatPriceWithCurrency(string|float $price)
+  {
+    // TODO: en_US, 'AUD' => 'A$'
+    // $fmt = numfmt_create($this->locale, NumberFormatter::CURRENCY);
+    // return numfmt_format_currency($fmt, (float)$price, $this->currency);
+    return $this->currency . ' ' . number_format((float)$price, 2);
   }
 
   public function formatPaymentMethodType(string $type)
@@ -117,7 +132,7 @@ class EmailHelper
       'US' => 'Sales Tax',
       'CA' => 'GST/HST',
       'AU' => 'GST',
-      default => $this->trans('messages.tax_name'),
+      default => __('messages.tax_name', [], $this->locale),
     };
   }
 
@@ -142,7 +157,7 @@ class EmailHelper
   public function showPeriod(string $type)
   {
     return (in_array($type, [
-      SubscriptionNotification::NOTIF_CONFIRMED,
+      SubscriptionNotification::NOTIF_ORDER_CONFIRMED,
       SubscriptionNotification::NOTIF_EXTENDED,
       SubscriptionNotification::NOTIF_ORDER_INVOICE,
       SubscriptionNotification::NOTIF_INVOICE_PENDING,
@@ -153,7 +168,7 @@ class EmailHelper
   public function showNextInvoice(string $type)
   {
     return (in_array($type, [
-      SubscriptionNotification::NOTIF_CONFIRMED,
+      SubscriptionNotification::NOTIF_ORDER_CONFIRMED,
       SubscriptionNotification::NOTIF_EXTENDED,
       SubscriptionNotification::NOTIF_ORDER_INVOICE,
       SubscriptionNotification::NOTIF_INVOICE_PENDING,

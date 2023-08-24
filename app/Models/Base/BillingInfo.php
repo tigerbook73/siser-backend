@@ -24,7 +24,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $organization
  * @property string $email
  * @property array $address
- * @property array|null $tax_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string $language
@@ -42,8 +41,7 @@ class BillingInfo extends Model
 
   protected $casts = [
     'user_id' => 'int',
-    'address' => 'json',
-    'tax_id' => 'json'
+    'address' => 'json'
   ];
 
   protected $fillable = [
@@ -55,7 +53,6 @@ class BillingInfo extends Model
     'organization',
     'email',
     'address',
-    'tax_id',
     'language',
     'locale'
   ];

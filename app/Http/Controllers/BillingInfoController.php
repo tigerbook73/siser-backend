@@ -35,9 +35,6 @@ class BillingInfoController extends SimpleController
       'address.postcode'  => ['required_with:address', 'string', 'max:255'],
       'address.state'     => ['required_with:address', 'string', 'max:255'],
       'address.country'   => ['required_with:address', 'string', 'exists:countries,code'],
-      "tax_id"            => ['nullable', 'array'],
-      "tax_id.type"       => ['required_with:tax_id', 'string', 'max:255'],
-      "tax_id.value"      => ['required_with:tax_id', 'string', 'max:255'],
       "language"          => ['filled', Rule::in(Locale::languages($inputs['address']['country'] ?? ''))],
     ];
   }

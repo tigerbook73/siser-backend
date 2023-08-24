@@ -43,18 +43,18 @@ class TestController extends Controller
         'invoice_status'              => Invoice::STATUS_REFUNDED,
         'invoice_period'              => 1,
       ],
-      SubscriptionNotification::NOTIF_CONFIRMED => [
+      SubscriptionNotification::NOTIF_ORDER_CONFIRMED => [
         'subscription_status'         => Subscription::STATUS_ACTIVE,
         'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
         'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_COMPLETING,
+        'invoice_status'              => Invoice::STATUS_COMPLETED,
         'invoice_period'              => 1,
       ],
       SubscriptionNotification::NOTIF_CANCELLED => [
         'subscription_status'         => Subscription::STATUS_ACTIVE,
         'subscription_sub_status'     => Subscription::SUB_STATUS_CANCELLING,
         'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_VOID,
+        'invoice_status'              => Invoice::STATUS_CANCELLED,
         'invoice_period'              => 1,
       ],
       SubscriptionNotification::NOTIF_CANCELLED_REFUND => [
@@ -89,7 +89,7 @@ class TestController extends Controller
         'subscription_status'         => Subscription::STATUS_ACTIVE,
         'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
         'subscription_current_period' => 2,
-        'invoice_status'              => Invoice::STATUS_COMPLETING,
+        'invoice_status'              => Invoice::STATUS_COMPLETED,
         'invoice_period'              => 2,
       ],
       SubscriptionNotification::NOTIF_ORDER_INVOICE => [
@@ -99,7 +99,7 @@ class TestController extends Controller
         'invoice_status'              => Invoice::STATUS_COMPLETED,
         'invoice_period'              => 1,
       ],
-      SubscriptionNotification::NOTIF_ORDER_CREDIT => [
+      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO => [
         'subscription_status'         => Subscription::STATUS_ACTIVE,
         'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
         'subscription_current_period' => 1,
@@ -141,6 +141,16 @@ class TestController extends Controller
       $mockup->updateSubscriptionCoupon();
       $mockup->updateInvoiceCoupon();
     }
+    if (
+      $type === SubscriptionNotification::NOTIF_ORDER_REFUNDED ||
+      $type === SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO
+    ) {
+      $mockup->updateRefund(true);
+    } else if (
+      $type === SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED
+    ) {
+      $mockup->updateRefund(false);
+    }
 
     return $mockup;
   }
@@ -181,7 +191,8 @@ class TestController extends Controller
     $mockup = $this->prepare($type, $country, $coupon);
     return (new SubscriptionNotification($type, [
       'subscription' => $mockup->subscription,
-      'invoice' => $mockup->invoice
+      'invoice' => $mockup->invoice,
+      'refund' => $mockup->refund,
     ]))->toMail($mockup->user);
   }
 }

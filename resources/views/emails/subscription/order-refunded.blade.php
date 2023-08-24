@@ -8,9 +8,10 @@
     $helper->trans(
       'messages.subscription_order_refunded.notification',
       [
+        'order_id' => $invoice->id,
         'plan_name' => $subscription->plan_info['name'],
         'currency' => $invoice->currency,
-        'refund_total' => $helper->formatPrice($invoice->total_amount),
+        'refund_total' => $helper->formatPrice($invoice->total_refunded),
       ]
     ) 
   !!}

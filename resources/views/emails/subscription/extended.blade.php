@@ -24,5 +24,5 @@
     :$helper
   />
   <br />
-  {{ $helper->trans('messages.order_confirm.agreement_claim') }}
+  {{ $helper->trans('messages.subscription_extended.agreement_claim') }}
 </x-emails.subscription.layout>

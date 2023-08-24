@@ -12,6 +12,7 @@ use App\Http\Controllers\LdsLicenseController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PlanController;
+use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
 use App\Http\Controllers\SubscriptionController;
@@ -71,6 +72,8 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
     Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
     Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
     Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+
+    Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'refundable']);
   });
 
   // account billing info
@@ -99,6 +102,12 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
     Route::get('/account/invoices/{id}', [InvoiceController::class, 'accountIndex']);
 
     Route::post('/account/invoices/{id}/cancel', [InvoiceController::class, 'accountCancel']);
+  });
+
+  // account refund
+  Route::middleware('auth:api')->group(function () {
+    Route::get('/account/refunds', [RefundController::class, 'accountList']);
+    Route::get('/account/refunds/{id}', [RefundController::class, 'accountIndex']);
   });
 
   // LDS
@@ -187,6 +196,14 @@ Route::domain($domainAdmin)->group(function () {
     Route::get('/invoices/{id}', [InvoiceController::class, 'index'])->middleware('access:invoice.get');
 
     Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel'])->middleware('access:invoice.cancel');
+  });
+
+  // refund
+  Route::middleware('auth:admin')->group(function () {
+    Route::get('/refunds', [RefundController::class, 'list'])->middleware('access:refund.list');
+    Route::get('/refunds/{id}', [RefundController::class, 'index'])->middleware('access:refund.get');
+
+    Route::post('/refunds', [RefundController::class, 'create'])->middleware('access:refund.create');
   });
 
   // subscription

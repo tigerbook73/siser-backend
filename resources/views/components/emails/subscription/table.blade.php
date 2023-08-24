@@ -1,4 +1,4 @@
-@props([ 'type', 'subscription', 'invoice' => null, 'fields', 'helper'])
+@props([ 'type', 'subscription', 'invoice' => null, 'refund' => null, 'fields', 'helper'])
 
 <div>
   @if (in_array('order', $fields))
@@ -22,6 +22,16 @@
       <td>{{ $helper->trans('messages.order.status')}}</td>
       <td>{{ $helper->formatOrderStatus($invoice->status) }}</td>
     </tr>
+    <tr>
+      <td>{{ $helper->trans('messages.order.total_amount')}}</td>
+      <td>{{ $helper->formatPriceWithCurrency($invoice->total_amount) }}</td>
+    </tr>
+    @if ($invoice->total_refunded > 0)
+    <tr>
+      <td>{{ $helper->trans('messages.order.total_refunded')}}</td>
+      <td>{{ $helper->formatPriceWithCurrency($invoice->total_refunded) }}</td>
+    </tr>
+    @endif
   </table>
   @endif
 
@@ -52,7 +62,7 @@
     <tr>
       <th width="40%" class="text-left">{{ $helper->trans('messages.order_item') }}</th>
       <th>{{ $helper->trans('messages.order_quantity') }}</th>
-      <th>{{ $helper->trans('messages.order_price_excl', ['tax' => $helper->getTaxName()]) }}</th>
+      <th>{{ $helper->trans('messages.order_price_excl') }}</th>
     </tr>
     <tr>
       <td>{{ $invoice->plan_info['name'] }}</td>
@@ -75,7 +85,7 @@
     </tr>
     <tr>
       <td rowspan="5" width="40%"></td>
-      <td class="text-right">{{ $helper->trans('messages.order_subtotal', ['tax' => $helper->getTaxName()]) }}</td>
+      <td class="text-right">{{ $helper->trans('messages.order_subtotal') }}</td>
       <td class="text-right">{{ $helper->formatPrice($invoice->subtotal) }}</td>
     </tr>
     <tr>
@@ -83,13 +93,13 @@
       <td class="text-right">{{ $helper->formatPrice($invoice->total_tax) }}</td>
     </tr>
     <tr>
-      <td class="text-right">{{ $helper->trans('messages.order_total', ['tax' => $helper->getTaxName()]) }}</td>
+      <td class="text-right">{{ $helper->trans('messages.order_total') }}</td>
       <td class="text-right">{{ $helper->formatPrice($invoice->total_amount) }}</td>
     </tr>
     {{-- TODO: adjust refund total --}}
     @if ($type === 'subscription.order-refunded')
     <tr>
-      <td class="text-right">{{ $helper->trans('messages.order_refunded', ['tax' => $helper->getTaxName()]) }}</td>
+      <td class="text-right">{{ $helper->trans('messages.order_refunded') }}</td>
       <td class="text-right">{{ $helper->formatPrice($invoice->refunded_total ?? $invoice->total_amount) }}</td>
     </tr>
     @endif
@@ -116,7 +126,7 @@
       <td colspan="2" class="highlight">{{ $helper->trans('messages.subscription.#', ['subscription_id' => $subscription->id]) }}</td>
     </tr>
     <tr>
-      <td witdh="40%">{{ $helper->trans('messages.subscription.plan_name') }}</td>
+      <td width="40%">{{ $helper->trans('messages.subscription.plan_name') }}</td>
       <td>{{ $subscription->plan_info['name'] }}</td>
     </tr>
     @if (isset($subscription->coupon_info['id']))
@@ -137,7 +147,7 @@
       </td>
     </tr>
     <tr>
-      <td>{{ $helper->trans('messages.subscription.subtotal', ['tax' => $helper->getTaxName()]) }}</td>
+      <td>{{ $helper->trans('messages.subscription.subtotal') }}</td>
       <td>
         {{ $helper->formatPrice($subscription->subtotal) }}
       </td>
@@ -149,7 +159,7 @@
       </td>
     </tr>
     <tr>
-      <td>{{ $helper->trans('messages.subscription.total_amount', ['tax' => $helper->getTaxName()]) }}</td>
+      <td>{{ $helper->trans('messages.subscription.total_amount') }}</td>
       <td>
         {{ $helper->formatPrice($subscription->total_amount) }}
       </td>
@@ -203,7 +213,7 @@
     </tr>
     <tr>
       {{-- TODO: to be fixed --}}
-      <td>{{ $helper->trans('messages.subscription.next_invoice_total_amount', ['tax' => $helper->getTaxName()]) }}</td>
+      <td>{{ $helper->trans('messages.subscription.next_invoice_total_amount') }}</td>
       <td>
         {{ $helper->formatPrice($subscription->next_invoice['total_amount'] ) }}
       </td>

@@ -22,7 +22,6 @@ class BillingInfo extends BaseBillingInfo
     'address'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'language'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'locale'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'tax_id'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'created_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -56,7 +55,6 @@ class BillingInfo extends BaseBillingInfo
         'state'       => '',
         'country'     => Country::findByCode($user->country_code)?->code ?? 'US',
       ],
-      'tax_id'        => null
     ]);
     $billingInfo->language  = Locale::defaultLanguage($user->country_code, $user->language_code);
     $billingInfo->locale    = Locale::locale($billingInfo->language, $billingInfo->address['country']);
@@ -64,5 +62,10 @@ class BillingInfo extends BaseBillingInfo
     $billingInfo->id = $user->id;
     $billingInfo->save();
     return $billingInfo;
+  }
+
+  public function info()
+  {
+    return $this->toResource('customer');
   }
 }

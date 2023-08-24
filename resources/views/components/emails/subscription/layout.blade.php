@@ -17,8 +17,7 @@
       }
 
       table,
-      table th,
-       {
+      table th {
         padding: 2px 5px 2px 5px;
         border-top: 1px solid gray;
         border-bottom: 1px solid gray;
@@ -29,7 +28,7 @@
         min-width: 600px;
         max-width: 800px;
         width: 100%;
-        margin-top: 5px
+        margin-top: 5px;
         border-top: 2px solid lightgray;
         border-bottom: 2px solid lightgray;
       }
@@ -110,7 +109,7 @@
       </div>
       <br />
       <hr />
-      <x-emails.subscription.dr-bar :country="$subscription->billing_info['address']['country']"/>
+      <x-emails.subscription.dr-bar :country="$subscription->billing_info['address']['country']" />
     </div>
   </body>
 </html>

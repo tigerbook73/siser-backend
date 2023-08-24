@@ -7,6 +7,7 @@ use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
@@ -20,7 +21,7 @@ interface SubscriptionManager
   public function updateSubscription(Subscription $subscription): Subscription;
   public function deleteSubscription(Subscription $subscription): bool;
   public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription;
-  public function cancelSubscription(Subscription $subscription): Subscription;
+  public function cancelSubscription(Subscription $subscription, bool $refund = false, bool $immediate = false): Subscription;
   public function cancelOrder(Invoice $invoice): Invoice;
 
   /**
@@ -38,6 +39,11 @@ interface SubscriptionManager
    * Payment
    */
   public function updatePaymentMethod(User $user, string $sourceId): PaymentMethod;
+
+  /**
+   * Refund
+   */
+  public function createRefund(Invoice $invoice, float $amount = 0, string $reason = null): Refund;
 
   /**
    * Default webhook

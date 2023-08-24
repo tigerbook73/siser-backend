@@ -4,10 +4,10 @@
   :$invoice
   :$helper
 >
-  {!! $helper->trans('messages.order_confirm.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
+  {!! $helper->trans('messages.subscription_order_confirm.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
   <br />
   <br />
-  {{ $helper->trans('messages.order_confirm.summary') }}
+  {{ $helper->trans('messages.subscription_order_confirm.summary') }}
   <br />
   <br />
   <x-emails.subscription.table
@@ -24,5 +24,5 @@
     :$helper
   />
   <br />
-  {{ $helper->trans('messages.order_confirm.agreement_claim') }}
+  {{ $helper->trans('messages.subscription_order_confirm.agreement_claim') }}
 </x-emails.subscription.layout>

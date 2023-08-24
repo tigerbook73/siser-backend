@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
 use App\Services\DigitalRiver\SubscriptionManager;
+use App\Services\RefundRules;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -207,13 +208,18 @@ class SubscriptionController extends SimpleController
     }
   }
 
-  public function cancel(int $id)
+  public function cancel(Request $request, int $id)
   {
     $this->validateUser();
 
+    $inputs = $request->validate([
+      'refund'        => ['filled', 'bool'],
+      'immediate'     => ['filled', 'bool'], // ignored for now
+    ]);
+
     /** @var Subscription|null $activeSubscription */
     $activeSubscription = $this->user->getActivePaidSubscription();
-    if (!$activeSubscription) {
+    if (!$activeSubscription || $activeSubscription->id != $id) {
       return response()->json(['message' => 'Subscripiton not found'], 404);
     }
 
@@ -221,12 +227,38 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Subscripiton is already on cancelling'], 422);
     }
 
+    // check refundable
+    if ($inputs['refund'] ?? false) {
+      $result = RefundRules::customerRefundable($activeSubscription);
+      if (!$result['refundable']) {
+        return response()->json(['message' => $result['reason']], 400);
+      }
+    }
+
     // cancel subscription
     try {
-      $subscription = $this->manager->cancelSubscription($activeSubscription);
+      $subscription = $this->manager->cancelSubscription($activeSubscription, $inputs['refund'] ?? false, $inputs['immediate'] ?? false);
       return  response()->json($this->transformSingleResource($subscription));
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $th->getCode());
     }
+  }
+
+  public function refundable(int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription|null $subscription */
+    $subscription = $this->user->subscriptions()->where('id', $id)->where('status', Subscription::STATUS_ACTIVE)->firstOrFail();
+
+    $result = RefundRules::customerRefundable($subscription);
+
+    $response = [
+      'result' => $result['refundable'] ? 'refundable' : 'not_refundable',
+      'reason' => $result['reason'] ?? '',
+      'subscription' => $this->transformSingleResource($subscription),
+      'invoice' => ($result['invoice'] ?? null)?->toResource('customer'),
+    ];
+    return response()->json($response);
   }
 }

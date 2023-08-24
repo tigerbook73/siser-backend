@@ -31,10 +31,6 @@ return new class extends Migration
           "state": "MN",
           "country": "US"
         },
-        "tax_id": {
-          "type": "string",
-          "value": "string"
-        }
       }')));
       $table->json('plan_info')->nullable()->comment(json_encode(json_decode('{
         "id": 0,

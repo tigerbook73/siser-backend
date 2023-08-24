@@ -62,6 +62,7 @@ class LaunchSteps extends Command
       $this->info('  init:              init data');
       $this->info('  update-countries:  update country list');
       $this->info('  update-plans:      update pro-plan');
+      $this->info('  test:              test whether configure is ready');
       return self::SUCCESS;
     }
 
@@ -70,7 +71,10 @@ class LaunchSteps extends Command
         return $this->clear();
 
       case 'init':
-        return $this->call('dr:cmd', ['subcmd' => 'init']);
+        return $this->init();
+
+      case 'test':
+        return $this->test();
 
       case 'update-countries':
         return $this->updateCountries();
@@ -329,5 +333,20 @@ class LaunchSteps extends Command
     );
 
     $this->info("Update countries ... Done!");
+  }
+
+  public function test()
+  {
+    // TODO: test whether configure is ready
+
+    // 0. check dr mode
+    printf('Check DR mode ................ ' . config('dr.dr_mode'));
+
+    // 1. check token
+    printf('Check DR Token ............... ');
+
+    // 2. check plan
+    // 3. check sku group
+    // 4. check webhook
   }
 }

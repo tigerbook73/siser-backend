@@ -21,11 +21,10 @@ class DrSubscriptionActiveInvoicePendingTest extends DrApiTestCase
     $response = $this->paySubscription($response->json('id'));
     $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
     $subscription = $this->onOrderComplete($subscription);
-    $subscription = $this->onOrderInvoiceCompleted($subscription);
     return $this->onSubscriptionPaymentFailed($subscription);
   }
 
-  public function test_active_invoice_pending_to_active_invoice_completing()
+  public function test_active_invoice_pending_to_active_invoice_completed()
   {
     $subscription = $this->init_active_invoice_pending();
 

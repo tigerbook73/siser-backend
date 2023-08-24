@@ -21,9 +21,6 @@ class Subscription extends BaseSubscription
 
   // sub_status (when status is 'active')
   public const SUB_STATUS_CANCELLING          = 'cancelling';
-  public const SUB_STATUS_INVOICE_COMPLETING  = 'invoice-completing';
-  public const SUB_STATUS_INVOICE_OPEN        = 'invoice-open';
-  public const SUB_STATUS_INVOICE_PENDING     = 'invoice-pending';
   public const SUB_STATUS_NORMAL              = 'normal';
   public const SUB_STATUS_ORDER_PENDING       = 'order_pending'; // for STATUS_PENDING
 
@@ -210,6 +207,7 @@ class Subscription extends BaseSubscription
 
     $this->end_date = $this->start_date ? now() : null;
     $this->next_invoice_date = null;
+    $this->next_invoice = null;
     $this->active_invoice_id = null;
     $this->save();
   }
@@ -221,6 +219,11 @@ class Subscription extends BaseSubscription
     } else {
       return $this->invoices()->find($this->active_invoice_id);
     }
+  }
+
+  public function getCurrentPeriodInvoice(): Invoice|null
+  {
+    return $this->invoices()->where('period', $this->current_period)->first();
   }
 
   public function getInvoiceByOrderId(string $orderId): Invoice|null

@@ -33,10 +33,6 @@ class UserBillingInfoTestCase extends ApiTestCase
         'state'       => 'state',
         'country'     => 'AU',
       ],
-      'tax_id' => [
-        'type'        => 'type',
-        'value'       => 'value',
-      ]
     ];
   }
 }

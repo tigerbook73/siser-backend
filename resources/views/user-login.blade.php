@@ -13,9 +13,6 @@
       const account = JSON.parse(atob('{!! $account !!}'));  // must be ' here
       const siserToken = JSON.parse(atob('{!! $siserToken !!}'));  // must be ' here
 
-      console.log(token);
-      console.log(account);
-
       for (const prop in token) {
         window.sessionStorage.setItem("user_token." + prop, token[prop]);
       }

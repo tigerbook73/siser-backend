@@ -3,6 +3,7 @@
 namespace Tests\DR;
 
 use App\Models\BillingInfo;
+use App\Models\Refund;
 use App\Models\Subscription;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
@@ -14,6 +15,7 @@ use DigitalRiver\ApiSdk\Model\FileLink as DrFileLink;
 use DigitalRiver\ApiSdk\Model\Fulfillment as DrFulfillment;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
+use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
 use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use Tests\DR\DrObject;
@@ -29,7 +31,7 @@ class DrTestHelper
     return 'dr_' . uuid_create();
   }
 
-  public function createCharge(string $order_id = null, string $state = null)
+  public function createCharge(string $order_id = null, string $state = null): DrCharge
   {
     $charge = DrObject::charge();
     $charge->setId($this->uuid())
@@ -38,7 +40,7 @@ class DrTestHelper
     return $charge;
   }
 
-  public function createCheckout(Subscription $subscription, string $id = null)
+  public function createCheckout(Subscription $subscription, string $id = null): DrCheckout
   {
     $checkout = DrObject::checkout();
     $checkout->setId($id ?? $subscription->dr['checkout_id'] ?? $this->uuid());
@@ -61,7 +63,7 @@ class DrTestHelper
     return $checkout;
   }
 
-  public function createCustomer(string $id = null, BillingInfo $billingInfo = null)
+  public function createCustomer(string $id = null, BillingInfo $billingInfo = null): DrCustomer
   {
     $customer = DrObject::customer();
     $customer->setId($id ?: $this->uuid());
@@ -71,14 +73,14 @@ class DrTestHelper
     return $customer;
   }
 
-  public function createFulfillment(string $id = null)
+  public function createFulfillment(string $id = null): DrFulfillment
   {
     $fulfillment = DrObject::fulfillment();
     $fulfillment->setId($id ?: $this->uuid());
     return $fulfillment;
   }
 
-  public function createInvoice(Subscription $subscription, string $id = null, string $order_id = null)
+  public function createInvoice(Subscription $subscription, string $id = null, string $order_id = null): DrInvoice
   {
     $invoice = DrObject::invoice();
     $invoice->setId($id ?: $this->uuid());
@@ -93,7 +95,7 @@ class DrTestHelper
     return $invoice;
   }
 
-  public function createOrder(Subscription $subscription, string $id = null, string $state = DrOrder::STATE_COMPLETE)
+  public function createOrder(Subscription $subscription, string $id = null, string $state = DrOrder::STATE_COMPLETE): DrOrder
   {
     $order = DrObject::order();
     $order->setId($id ?? $this->uuid());
@@ -109,7 +111,7 @@ class DrTestHelper
     return $order;
   }
 
-  public function createSource(string $id = null, string $type = null, string $lastFour = '9876', string $customerId = null)
+  public function createSource(string $id = null, string $type = null, string $lastFour = '9876', string $customerId = null): DrSource
   {
     $source = DrObject::source();
     $source->setId($id ?: $this->uuid())
@@ -121,14 +123,14 @@ class DrTestHelper
     return $source;
   }
 
-  public function createFileLink(string $url = null)
+  public function createFileLink(string $url = null): DrFileLink
   {
     $fileLink = DrObject::fileLink();
     $fileLink->setUrl($url ?: '/favicon.ico');
     return $fileLink;
   }
 
-  public function createSubscription(Subscription $subscription, string $id = null)
+  public function createSubscription(Subscription $subscription, string $id = null): DrSubscription
   {
     $drSubscripiton = DrObject::subscription();
     $drSubscripiton->setId($id ?? $subscription->dr['subscription_id'] ?? $this->uuid());
@@ -144,5 +146,17 @@ class DrTestHelper
       ->setData($data);
 
     return json_decode(json_encode($event->jsonSerialize()), true);
+  }
+
+  public function createOrderRefund(Refund $refund): DrOrderRefund
+  {
+    $drOrderRefund = new DrOrderRefund();
+    $drOrderRefund->setId($refund->getDrRefundId() ?? $this->uuid())
+      ->setCurrency($refund->currency)
+      ->setAmount($refund->amount)
+      ->setReason($refund->reason)
+      ->setState($refund->status);
+
+    return $drOrderRefund;
   }
 }

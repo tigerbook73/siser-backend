@@ -9,6 +9,7 @@ namespace App\Models\Base;
 use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\Plan;
+use App\Models\Refund;
 use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
@@ -55,6 +56,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Plan $plan
  * @property User $user
  * @property Collection|Invoice[] $invoices
+ * @property Collection|Refund[] $refunds
  *
  * @package App\Models\Base
  */
@@ -139,5 +141,10 @@ class Subscription extends Model
   public function invoices()
   {
     return $this->hasMany(Invoice::class);
+  }
+
+  public function refunds()
+  {
+    return $this->hasMany(Refund::class);
   }
 }

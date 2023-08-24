@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\LdsLicense;
 use App\Models\Machine;
 use App\Models\PaymentMethod;
+use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\TaxId;
 use Carbon\Carbon;
@@ -47,6 +48,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property LdsLicense $lds_license
  * @property Collection|Machine[] $machines
  * @property PaymentMethod $payment_method
+ * @property Collection|Refund[] $refunds
  * @property Collection|Subscription[] $subscriptions
  * @property Collection|TaxId[] $tax_ids
  *
@@ -107,6 +109,11 @@ class User extends \Illuminate\Foundation\Auth\User
   public function payment_method()
   {
     return $this->hasOne(PaymentMethod::class);
+  }
+
+  public function refunds()
+  {
+    return $this->hasMany(Refund::class);
   }
 
   public function subscriptions()

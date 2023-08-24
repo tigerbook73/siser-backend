@@ -1,21 +1,53 @@
-Use Cases:
 
 
-TODO:
+Use case:
++ subscription
+  + cancel subscription
+    + if refundable & apply refund, refund request, cancel & terminate subscription (OK)
+    + if not refundable, cancel subscription (OK)
 
-1. add invoice.type: subscription/renew, if subscription (then is order, else order & invoice)
-2. support order.accept => invoice.pending
-3. by default, hide failed order
++ order
+  + view order
+    + order status (refunding, refunded, refund-failed, refund-partly) (OK)
+  + view order's refunds (OK)
+  + create refund (admin only) (OK)
+    + no restriction (OK)
 
-create order:
-response to 409 code
-response to 4xx code
++ refund 
+  + view refund (NOK)
 
-another CC account.
-
-
-1
++ notification
+  + refund failed
+  + refund success
 
 
+Design:
++ migration & model
+  + refund table
+  + refund model
+  + invoice status
 
++ refund service
+  + is order refundable
+  + refund order
 
++ refund controller
+  + list
+
++ digitalservice.php
+  + create refund
+  + get refund
+  + list refund
+
++ managementDr
+  + refund order
+  + refund event
+    + refund requested
+    + refund failed
+    + refund success
+
++ notification
+  + ...
+  + 
+
+credit-memo

@@ -46,6 +46,23 @@ abstract class ApiTestCase extends TestCase
   {
     parent::setUp();
 
+    $this->actingAsDefault();
+
+    $this->noAssert = false;
+  }
+
+  protected function actingAsCustomer()
+  {
+    $this->actingAs(User::first(), 'api');
+  }
+
+  protected function actingAsAdmin()
+  {
+    $this->actingAs(AdminUser::first(), 'admin');
+  }
+
+  protected function actingAsDefault()
+  {
     if ($this->role == 'admin') {
       $this->user =  AdminUser::first();
       $this->actingAs($this->user, 'admin');
@@ -53,8 +70,6 @@ abstract class ApiTestCase extends TestCase
       $this->user =  User::first();
       $this->actingAs($this->user, 'api');
     }
-
-    $this->noAssert = false;
   }
 
   protected function tearDown(): void
