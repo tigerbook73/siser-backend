@@ -202,7 +202,7 @@ class LdsLicense extends BaseLdsLicense
   {
     $this->subscription_level = $subscription_level;
     $this->license_count = $license_count;
-    $this->license_free = ($this->license_count > $this->license_used) ? $this->license_count - $this->license_used : 0;
+    $this->refreshLicense();
     $this->save();
 
     LdsLog::info('update-level', 'ok', 'updated subscription', ['user_id' => $this->user_id]);
@@ -215,18 +215,29 @@ class LdsLicense extends BaseLdsLicense
     $lastest_expires_at = 0;
 
     // update license_used & license_free
+    $now = time();
     foreach ($this->devices as $device_id => $deviceData) {
       $device = LdsDevice::fromArray($deviceData);
-      if ($device->getStatus() == 'online' && $device->getExpiresAt() < time()) {
+
+      if ($device->getStatus() !== 'online') {
+        continue;
+      }
+
+      if ($this->license_count <= 0) {
+        $this->setDevice($device->checkout());
+
+        LdsLog::info('revoke', 'ok', 'license revoked', [
+          'user_id' => $this->user_id,
+          'device_id' => $device->getDeviceId(),
+        ]);
+      } else if ($device->getExpiresAt() < $now) {
         $this->setDevice($device->checkout());
 
         LdsLog::info('exipre', 'ok', 'device expired', [
           'user_id' => $this->user_id,
           'device_id' => $device->getDeviceId(),
         ]);
-      }
-
-      if ($device->getStatus() == 'online') {
+      } else {
         $license_used++;
         if ($latest_expires_at == 0 || $device->getExpiresAt() < $latest_expires_at) {
           $latest_expires_at = $device->getExpiresAt();
