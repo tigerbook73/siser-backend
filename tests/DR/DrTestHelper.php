@@ -100,6 +100,7 @@ class DrTestHelper
     $order = DrObject::order();
     $order->setId($id ?? $this->uuid());
     $order->setUpstreamId($subscription->getActiveInvoice()?->id);
+    $order->setCheckoutId($subscription->dr['checkout_id'] ?? $this->uuid());
 
     $order->setSubtotal($subscription->price);
     $order->getItems()[0]->getTax()->setRate(0.1);

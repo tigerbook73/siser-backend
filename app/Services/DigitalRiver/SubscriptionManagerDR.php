@@ -5,7 +5,7 @@ namespace App\Services\DigitalRiver;
 use App\Models\BillingInfo;
 use App\Models\Country;
 use App\Models\Coupon;
-use App\Models\DrEvent;
+use App\Models\DrEventRecord;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
@@ -238,13 +238,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       $order = $this->drService->convertCheckoutToOrder($subscription->dr['checkout_id']);
       DrLog::info(__FUNCTION__, 'dr-checkout converted to dr-order', $subscription);
 
-      // update subscription
-      $subscription->setDrOrderId($order->getId());
-      $subscription->setStatus(Subscription::STATUS_PENDING);
-      $subscription->sub_status = ($order->getState() == 'accepted') ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING;
-      $subscription->save();
-      DrLog::info(__FUNCTION__, 'subscription updated => pending', $subscription);
-
       // update invoice
       $invoice = $subscription->getActiveInvoice();
       $invoice->payment_method_info = $subscription->user->payment_method->info();
@@ -256,6 +249,13 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->setStatus(Invoice::STATUS_PENDING);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice init => pending', $invoice);
+
+      // update subscription
+      $subscription->setDrOrderId($order->getId());
+      $subscription->setStatus(Subscription::STATUS_PENDING);
+      $subscription->sub_status = ($order->getState() == 'accepted') ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING;
+      $subscription->save();
+      DrLog::info(__FUNCTION__, 'subscription updated => pending', $subscription);
 
       return $subscription;
     } catch (\Throwable $th) {
@@ -556,24 +556,25 @@ class SubscriptionManagerDR implements SubscriptionManager
       return response()->json($eventInfo);
     }
 
-    // duplicated
-    if (DrEvent::exists($event['id'])) {
-      $eventInfo['action'] = 'duplicated';
-      DrLog::warning(__FUNCTION__, 'event ignored: duplicated', $eventInfo);
-      return response()->json($eventInfo);
+    $drEvent = DrEventRecord::startProcessing($event['id'], $event['type']);
+    if ($drEvent->action == DrEventRecord::ACTION_IGNORE || $drEvent->action == DrEventRecord::ACTION_ERROR) {
+      $eventInfo['action'] = $drEvent->action;
+      DrLog::warning(__FUNCTION__, "event {$drEvent->action}: {$drEvent->error}", $eventInfo);
+      return response()->json($eventInfo, $drEvent->action == DrEventRecord::ACTION_ERROR ? 409 : 200);
     }
 
     try {
       DrLog::info(__FUNCTION__, 'event accepted: processing', $eventInfo);
       $object = DrObjectSerializer::deserialize($event['data']['object'], $eventHandler['class']);
       $handler = $eventHandler['handler'];
-      $subscription = $this->$handler($object);
-      $eventInfo['action'] = $subscription ? 'processed' : 'skipped';
-      $eventInfo['subscription_id'] = ($subscription instanceof Subscription) ?  $subscription->id : null;
+      $object = $this->$handler($object);
+      $eventInfo['action'] = $object ? 'processed' : 'skipped';
+      $eventInfo['subscription_id'] = ($object instanceof Subscription) ?  $object->id : $object?->subscription_id;
       DrLog::info(__FUNCTION__, 'event processed: ' . $eventInfo['action'], $eventInfo);
-      DrEvent::log($eventInfo);
+      $drEvent->complete($eventInfo['subscription_id']);
       return response()->json($eventInfo);
     } catch (\Throwable $th) {
+      $drEvent->fail();
       Log::error($th);
       $eventInfo['action'] = 'error';
       DrLog::error(__FUNCTION__, 'event processed: failed', $eventInfo);
@@ -605,7 +606,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    // validate the subscription
+    /** @var Subscription|null $subscription */
     $subscription = Subscription::where('dr_subscription_id', $drSubscriptionId)->first();
     if (!$subscription) {
       DrLog::warning($__FUNCTION__, 'order skipped: no invalid subscription', ['order_id' => $order->getId()]);
@@ -614,9 +615,22 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // only process the first order
     if ($options['be_first'] ?? false) {
-      if (!isset($subscription->dr['order_id']) || $subscription->dr['order_id'] != $order->getId()) {
+      if ($subscription->getDrCheckoutId() !== $order->getCheckoutId()) {
         DrLog::info($__FUNCTION__, 'order skipped: not the first one', $subscription);
         return null;
+      }
+
+      /* if required, wait for 3 seconds to let paymentSubscription to complete */
+      $maxWait = 3;
+      while (!isset($subscription->dr['order_id']) || $subscription->dr['order_id'] != $order->getId()) {
+        if (--$maxWait < 0) {
+          DrLog::info($__FUNCTION__, 'order skipped: not the first one', $subscription);
+          return null;
+        }
+        sleep(1);
+        DrLog::info($__FUNCTION__, 'waiting for paySubscription() completing', $subscription);
+
+        $subscription->refresh();
       }
     }
 

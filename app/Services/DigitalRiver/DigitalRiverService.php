@@ -140,7 +140,7 @@ class DigitalRiverService
   {
     if ($th instanceof DrApiException) {
       if ($th->getResponseObject()) {
-        $message = $th->getResponseObject()->getErrors()[0]->getMessage() ?? 'Unknown error';
+        $message = $th->getResponseObject()->getErrors()[0]?->getMessage() ?? 'Unknown error';
       } else {
         $text = $th->getResponseBody() ?? $th->getMessage();
         $body = json_decode($text);
