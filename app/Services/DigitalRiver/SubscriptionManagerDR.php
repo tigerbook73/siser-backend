@@ -1111,6 +1111,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       } else {
         $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
       }
+      $subscription->active_invoice_id = null;
       $subscription->save();
       DrLog::info($__FUNCTION__, 'subscription extended', $subscription);
 
