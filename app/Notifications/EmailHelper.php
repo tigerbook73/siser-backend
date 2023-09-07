@@ -170,7 +170,6 @@ class EmailHelper
     return (in_array($type, [
       SubscriptionNotification::NOTIF_ORDER_CONFIRMED,
       SubscriptionNotification::NOTIF_EXTENDED,
-      SubscriptionNotification::NOTIF_ORDER_INVOICE,
       SubscriptionNotification::NOTIF_INVOICE_PENDING,
       SubscriptionNotification::NOTIF_REMINDER,
     ]));

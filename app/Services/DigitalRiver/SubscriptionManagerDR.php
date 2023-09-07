@@ -931,7 +931,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->subscription->sendNotification(
       SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
       $invoice,
-      ['file_id' => $orderCreditMemo['fileId']]
+      ['credit_memo' => $fileLink->getUrl()]
     );
     return $invoice;
   }

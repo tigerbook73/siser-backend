@@ -173,7 +173,10 @@ class TestController extends Controller
     }
 
     $mockup = $this->prepare($type, $country, $coupon);
-    $mockup->subscription->sendNotification($type, $mockup->invoice);
+    $mockup->subscription->sendNotification($type, $mockup->invoice, [
+      'refund' => $mockup->refund,
+      'credit_memo' => '/credit-memo/robots.txt'
+    ]);
     return response('Please checkout your email');
   }
 
@@ -193,6 +196,7 @@ class TestController extends Controller
       'subscription' => $mockup->subscription,
       'invoice' => $mockup->invoice,
       'refund' => $mockup->refund,
+      'credit_memo' => '/credit-memo/robots.txt'
     ]))->toMail($mockup->user);
   }
 }

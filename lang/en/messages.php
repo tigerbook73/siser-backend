@@ -85,7 +85,7 @@ return [
   'subscription_order_confirm.summary'            => 'Here is a summary of your order and subscription:',
   'subscription_order_confirm.agreement_claim'    => 'You have agreed to the subscription terms unless you cancel your subscription.',
 
-  'subscription_order_credit.notification'        => 'We are pleased to provide the download link for your <a href=":invoice_pdf" download><b>credit memo</b></a> for your subscription to the <b>:plan_name</b>. You can also download the credit memo from our :customer_portal_link.',
+  'subscription_order_credit.notification'        => 'We are pleased to provide the download link for your <a href=":credit_memo" download><b>credit memo</b></a> for your subscription to the <b>:plan_name</b>. You can also download the credit memo from our :customer_portal_link.',
   'subscription_order_credit.summary'             => 'Here is a summary of your order & subscription:',
 
   'subscription_order_invoice.notification'       => 'We are pleased to provide the download link for your <a href=":invoice_pdf" download><b>invoice pdf</b></a> for your subscription to the <b>:plan_name</b>. You can also download the invoice from our :customer_portal_link.',
