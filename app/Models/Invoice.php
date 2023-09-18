@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Models\Base\Invoice as BaseInvoice;
+use Carbon\Carbon;
 
 class Invoice extends BaseInvoice
 {
-  use TraitStatusTransition;
+  use TraitStatusTransition {
+    setStatus as protected traitSetStatus;
+  }
   use TraitDrAttr;
 
   // status -- see invoice.md
@@ -21,6 +24,10 @@ class Invoice extends BaseInvoice
   public const STATUS_REFUND_FAILED   = 'refund-failed';
   public const STATUS_REFUNDED        = 'refunded';
   public const STATUS_PARTLY_REFUNDED = 'partly-refunded';
+
+  // sub status
+  public const SUB_STATUS_NONE        = 'none';
+  public const SUB_STATUS_TO_REFUND   = 'to_refund'; // only for SUB_STATUS_PROCESSING
 
   // dr attributes
   public const DR_FILE_ID           = 'file_id';
@@ -48,13 +55,37 @@ class Invoice extends BaseInvoice
     'pdf_file'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'credit_memos'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'sub_status'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'dr'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status_transitions'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
 
-  public function getDrFileId()
+  public function setStatus(string $status, Carbon $time = null): self
+  {
+    $this->traitSetStatus($status, $time);
+    $this->sub_status = self::SUB_STATUS_NONE;
+    return $this;
+  }
+
+  public function setSubStatus(string $subStatus = self::SUB_STATUS_NONE, Carbon $time = null): self
+  {
+    $this->sub_status = $subStatus;
+    if ($subStatus != self::SUB_STATUS_NONE) {
+      $status_transitions = $this->status_transitions ?? [];
+      $status_transitions[$this->status . '/' . $subStatus] = $time ?? now();
+      $this->status_transitions = $status_transitions;
+    }
+    return $this;
+  }
+
+  public function getSubStatus(): string
+  {
+    return $this->sub_status ?? self::SUB_STATUS_NONE;
+  }
+
+  public function getDrFileId(): string|null
   {
     return $this->getDrAttr(self::DR_FILE_ID);
   }

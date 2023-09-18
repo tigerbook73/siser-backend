@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Mail\InvalidNotification;
 use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
@@ -37,22 +38,22 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   public const NOTIF_COUPON_ENDED               = 'subscription.coupone-ended';
 
   static public $types = [
-    self::NOTIF_ORDER_ABORTED         => ['subject' => "Order Aborted"],
-    self::NOTIF_ORDER_CANCELLED       => ['subject' => "Order Cancelled"],
-    self::NOTIF_ORDER_CONFIRMED       => ['subject' => "Order Confirmed"],
-    self::NOTIF_ORDER_CREDIT_MEMO     => ['subject' => "Order Credit Memo"],
-    self::NOTIF_ORDER_INVOICE         => ['subject' => "Order Invoice PDF"],
-    self::NOTIF_ORDER_REFUND_FAILED   => ['subject' => "Order Refund Failed"],
-    self::NOTIF_ORDER_REFUNDED        => ['subject' => "Order Refund Confirmed"],
+    self::NOTIF_ORDER_ABORTED         => ['subject' => "Order Aborted",                       'validate' => null],
+    self::NOTIF_ORDER_CANCELLED       => ['subject' => "Order Cancelled",                     'validate' => null],
+    self::NOTIF_ORDER_CONFIRMED       => ['subject' => "Order Confirmed",                     'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_ORDER_CREDIT_MEMO     => ['subject' => "Order Credit Memo",                   'validate' => null],
+    self::NOTIF_ORDER_INVOICE         => ['subject' => "Order Invoice PDF",                   'validate' => null],
+    self::NOTIF_ORDER_REFUND_FAILED   => ['subject' => "Order Refund Failed",                 'validate' => null],
+    self::NOTIF_ORDER_REFUNDED        => ['subject' => "Order Refund Confirmed",              'validate' => null],
 
-    self::NOTIF_CANCELLED             => ['subject' => "Subscription Cancelled"],
-    self::NOTIF_CANCELLED_REFUND      => ['subject' => "Subscription Cancelled & Terminated"],
-    self::NOTIF_EXTENDED              => ['subject' => "Subscription Extended"],
-    self::NOTIF_FAILED                => ['subject' => "Subscription Failed"],
-    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription Payment Failed"],
-    self::NOTIF_REMINDER              => ['subject' => "Subscription Renew Reminder"],
-    self::NOTIF_TERMINATED            => ['subject' => "Subscription Terminated"],
-    self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription Terms Changed"],
+    self::NOTIF_CANCELLED             => ['subject' => "Subscription Cancelled",              'validate' => null],
+    self::NOTIF_CANCELLED_REFUND      => ['subject' => "Subscription Cancelled & Terminated", 'validate' => null],
+    self::NOTIF_EXTENDED              => ['subject' => "Subscription Extended",               'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_FAILED                => ['subject' => "Subscription Failed",                 'validate' => null],
+    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription Payment Failed",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_REMINDER              => ['subject' => "Subscription Renew Reminder",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_TERMINATED            => ['subject' => "Subscription Terminated",             'validate' => null],
+    self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription Terms Changed",          'validate' => null],
   ];
 
   public Subscription $subscription;
@@ -103,10 +104,16 @@ class SubscriptionNotification extends Notification implements ShouldQueue
    * Get the mail representation of the notification.
    *
    * @param  mixed  $notifiable
-   * @return \Illuminate\Notifications\Messages\MailMessage
+   * @return \Illuminate\Notifications\Messages\MailMessage|\Illuminate\Mail\Mailable
    */
   public function toMail($notifiable)
   {
+    if ($validate = static::$types[$this->type]['validate'] ?? null) {
+      if (!in_array($this->subscription->status, $validate['status'])) {
+        return new InvalidNotification($this->subscription, $this->type);
+      }
+    }
+
     $subject = static::$types[$this->type]['subject'];
     $view = static::$types[$this->type]['view'] ?? $this->type;
     return (new MailMessage)

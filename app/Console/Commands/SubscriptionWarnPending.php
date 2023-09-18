@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\SubscriptionWarning;
 use App\Services\DigitalRiver\SubscriptionManager;
@@ -41,14 +42,23 @@ class SubscriptionWarnPending extends Command
     $maxCount = 100;
     $dryRun = $this->option('dry-run');
 
-    /** @var int[] $subscriptionIds */
-    $subscriptionIds = Subscription::select('id')
-      ->whereIn('status', [Subscription::STATUS_PENDING, Subscription::STATUS_PROCESSING])
+    /** @var int[] $pendings */
+    $pendings = Subscription::select('id')
+      ->whereIn('status', [Subscription::STATUS_PENDING])
       ->where('updated_at', '<', now()->subMinutes(30))
       ->get()
       ->map(fn ($model) => $model->id)
       ->all();
 
+    /** @var int[] $processings */
+    $processings = Invoice::select('subscription_id')
+      ->whereIn('status', [Invoice::STATUS_PROCESSING])
+      ->where('updated_at', '<', now()->subDays(2))
+      ->get()
+      ->map(fn ($model) => $model->subscription_id)
+      ->all();
+
+    $subscriptionIds = array_merge($pendings, $processings);
     Log::info('There are ' . count($subscriptionIds) . ' pending or processing subscriptions: [' . implode(', ', $subscriptionIds) . '] !');
 
     if (!$dryRun && count($subscriptionIds) > 0) {

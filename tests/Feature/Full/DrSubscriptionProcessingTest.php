@@ -28,70 +28,52 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     return $this->onOrderAccept(Subscription::find($response->json('id')));
   }
 
-  public function test_processing_to_active_invoice_completed()
+  public function test_processing_to_completed()
   {
     $subscription = $this->init_processing();
 
     return $this->onOrderComplete($subscription);
   }
 
-  public function test_processing_to_active_invoice_completed_error()
+  public function test_processing_to_failed()
   {
     $subscription = $this->init_processing();
 
-    // mock up
-    $this->drMock
-      ->shouldReceive('activateSubscription')
-      ->once()
-      ->andThrow(new Exception('test', 444));
-    Notification::fake();
+    return $this->onOrderChargeCaptureFailed($subscription);
+  }
 
-    // call api
-    $response = $this->sendOrderComplete(
-      $this->drOrders[$subscription->getActiveInvoice()->getDrOrderId()]->setState(DrOrder::STATE_COMPLETE),
-      $eventId = $this->drHelper->uuid()
-    );
+  public function test_processing_to_cancell()
+  {
+    $subscription = $this->init_processing();
 
-    // refresh data
+    return $this->cancelSubscription($subscription);
+  }
+
+  public function test_processing_to_cancell_refund_to_complete()
+  {
+    $subscription = $this->init_processing();
+
+    $this->cancelSubscription($subscription, true);
+
     $subscription->refresh();
-
-    // assert
-    $response->assertStatus(400);
-    $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING);
-    $this->assertTrue($subscription->getActiveInvoice()->status == Invoice::STATUS_PROCESSING);
-    $this->assertDatabaseMissing('dr_events', [
-      'event_id' => $eventId
-    ]);
-    Notification::assertNothingSent();
+    $this->onOrderComplete($subscription);
   }
 
-  public function test_processing_to_failed_error_by_cancel_order()
+  public function test_processing_to_cancell_refund_to_failed()
   {
     $subscription = $this->init_processing();
 
-    $response = $this->cancelOrder($subscription);
-    $response->assertStatus(409);
+    $this->cancelSubscription($subscription, true);
+
+    $subscription->refresh();
+    $this->onOrderChargeCaptureFailed($subscription);
   }
 
-  public function test_processing_to_failed_blocked()
+  public function test_processing_order_invoice()
   {
     $subscription = $this->init_processing();
-
-    return $this->onOrderBlocked($subscription);
-  }
-
-  public function test_processing_to_failed_cancelled()
-  {
-    $subscription = $this->init_processing();
-
-    return $this->onOrderCancelled($subscription);
-  }
-
-  public function test_processing_to_failed_charge_failed()
-  {
-    $subscription = $this->init_processing();
-
-    return $this->onOrderChargeFailed($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $this->onOrderInvoiceCreated($invoice);
   }
 
   public function test_processing_expired()
@@ -101,10 +83,10 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
 
     Notification::fake();
 
-    Carbon::setTestNow('2023-01-01 00:31:00');
+    Carbon::setTestNow('2023-01-03 00:31:00');
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
-    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PROCESSING)->count() > 0);
+    $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() > 0);
 
     Notification::assertSentTo(
       new Developer,
@@ -119,10 +101,10 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
 
     Notification::fake();
 
-    Carbon::setTestNow('2023-01-01 00:29:00');
+    Carbon::setTestNow('2023-01-01 23:59:59'); // less than two days
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
-    $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PROCESSING)->count() > 0);
+    $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() > 0);
 
     Notification::assertNothingSent();
   }

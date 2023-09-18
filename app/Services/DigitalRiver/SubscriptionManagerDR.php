@@ -266,21 +266,37 @@ class SubscriptionManagerDR implements SubscriptionManager
   public function cancelSubscription(Subscription $subscription, bool $needRefund = false, bool $immediate = false): Subscription
   {
     try {
-      $refund = null;
+      $invoiceToRefund = null;
       if ($needRefund) {
         $result = RefundRules::customerRefundable($subscription);
         if (!$result['refundable']) {
           throw new Exception('try to refund non-refundable invoice', 500);
         }
-        $refund = $this->createRefund($result['invoice'], reason: 'cancel subscription with refund option');
+
+        /** @var Invoice $invoiceToRefund */
+        $invoiceToRefund = $result['invoice'];
+        if ($invoiceToRefund->status == Invoice::STATUS_PROCESSING) {
+          // refund later
+          $invoiceToRefund->setSubStatus(Invoice::SUB_STATUS_TO_REFUND);
+          $invoiceToRefund->save();
+          DrLog::info(__FUNCTION__, 'update invoice sub-status => to-refund', $invoiceToRefund);
+        } else {
+          // refund immediately
+          $this->createRefund($invoiceToRefund, reason: 'cancel subscription with refund option');
+        }
       }
 
       $drSubscription = $this->drService->cancelSubscription($subscription->dr_subscription_id);
       DrLog::info(__FUNCTION__, 'dr-subscription cancelled', $subscription);
 
       $activeInvoice = $subscription->getActiveInvoice();
+      if ($activeInvoice && $activeInvoice->id != $invoiceToRefund?->id) {
+        $activeInvoice->setStatus(Invoice::STATUS_CANCELLED);
+        $activeInvoice->save();
+        DrLog::info(__FUNCTION__, 'update active invoice => cancelled', $activeInvoice);
+      }
 
-      if ($refund) {
+      if ($invoiceToRefund) {
         $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled with refund');
         DrLog::info(__FUNCTION__, 'subscription active => stopped', $subscription);
 
@@ -297,15 +313,9 @@ class SubscriptionManagerDR implements SubscriptionManager
         DrLog::info(__FUNCTION__, 'subscription active => cancelling', $subscription);
       }
 
-      if ($activeInvoice) {
-        $activeInvoice->setStatus(Invoice::STATUS_CANCELLED);
-        $activeInvoice->save();
-        DrLog::info(__FUNCTION__, 'update active invoice => cancelled', $activeInvoice);
-      }
-
       // send notification
-      if ($refund) {
-        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_REFUND, $refund->invoice);
+      if ($invoiceToRefund) {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_REFUND, $invoiceToRefund);
       } else {
         $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
       }
@@ -322,9 +332,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $subscription = $invoice->subscription;
-    if ($subscription->status == Subscription::STATUS_PROCESSING) {
-      throw new Exception('Subscription is processing, can not cancel order', 409);
-    }
 
     try {
       $this->drService->fulfillOrder($invoice->getDrOrderId(), null, true);
@@ -667,15 +674,51 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    // activate dr subscription
+    $drSubscription = $this->drService->activateSubscription($subscription->dr_subscription_id);
+    DrLog::info(__FUNCTION__, 'dr-subscription activated', $subscription);
+
+    // cancel previous subscription
+    if ($previousSubscription = $subscription->user->getActiveLiveSubscription()) {
+      $this->cancelSubscription($previousSubscription);
+    }
+
+    // stop previous subscription
+    if ($previousSubscription = $subscription->user->getActiveSubscription()) {
+      $previousSubscription->stop(Subscription::STATUS_STOPPED, 'new subscrption activated');
+    }
+
+    // active current subscription
+    $this->fillSubscriptionAmount($subscription, $drOrder);
+
+    $subscription->start_date = now();
+    $subscription->current_period = 1;
+    $subscription->current_period_start_date = now();
+    $subscription->current_period_end_date =
+      $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
+    $subscription->next_invoice_date =
+      $drSubscription->getNextInvoiceDate() ? Carbon::parse($drSubscription->getNextInvoiceDate()) : null;
+    $subscription->setStatus(Subscription::STATUS_ACTIVE);
+    $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
+    $subscription->fillNextInvoice();
+    $subscription->active_invoice_id = null;
+    $subscription->save();
+    DrLog::info(__FUNCTION__, 'subscription updated => active', $subscription);
+
+    // update user subscription level
+    $subscription->user->updateSubscriptionLevel();
+    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+
+    // update invoice
+    $invoice->period              = $subscription->current_period;
+    $invoice->period_start_date   = $subscription->current_period_start_date;
+    $invoice->period_end_date     = $subscription->current_period_end_date;
     $invoice->setStatus(Invoice::STATUS_PROCESSING);
     $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => processing', $invoice);
 
-    // update subscription status
-    $subscription->setStatus(Subscription::STATUS_PROCESSING);
-    $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
-    $subscription->save();
-    DrLog::info(__FUNCTION__, 'subscription updated => processing', $subscription);
-
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
     return $subscription;
   }
 
@@ -686,14 +729,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
 
-    // must be in pending status
-    if (
-      $subscription->status != Subscription::STATUS_PENDING &&
-      $subscription->status != Subscription::STATUS_PROCESSING
-    ) {
-      DrLog::warning(__FUNCTION__, 'subscription skipped, not in pending or processing status', $subscription);
+    // skip failed
+    if ($subscription->status == Subscription::STATUS_FAILED) {
+      DrLog::warning(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
       return null;
     }
 
@@ -716,7 +756,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
@@ -743,7 +783,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
@@ -784,7 +824,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
@@ -792,10 +832,17 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    if ($subscription->status == Subscription::STATUS_ACTIVE) {
+      $this->drService->cancelSubscription($subscription->dr_subscription_id);
+      DrLog::info(__FUNCTION__, 'cancel dr subscription', $subscription);
+    }
+
     $invoice->setStatus(Invoice::STATUS_FAILED);
     $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => failed', $invoice);
 
     $subscription->stop(Subscription::STATUS_FAILED, 'first order charge capture failed');
+    $subscription->user->updateSubscriptionLevel();
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
 
     // send notification
@@ -803,73 +850,31 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  protected function onOrderComplete(DrOrder $drOrder): Subscription|null
+  protected function onOrderComplete(DrOrder $drOrder): Invoice|null
   {
-    // validate the order
-    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
-    if (!$subscription) {
-      return null;
-    }
-    $invoice = $subscription->getActiveInvoice();
-
-    // must be in processing status
-    if ($subscription->status != Subscription::STATUS_PROCESSING) {
-      DrLog::warning(__FUNCTION__, 'subscription skipped: not in processing', $subscription);
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
+    if (!$invoice || $invoice->period != 1) {
       return null;
     }
 
-    // activate dr subscription
-    $drSubscription = $this->drService->activateSubscription($subscription->dr_subscription_id);
-    DrLog::info(__FUNCTION__, 'dr-subscription activated', $subscription);
-
-    // cancel previous subscription
-    if ($previousSubscription = $subscription->user->getActiveLiveSubscription()) {
-      $this->cancelSubscription($previousSubscription);
+    if ($invoice->status == Invoice::STATUS_COMPLETED) {
+      DrLog::info(__FUNCTION__, 'invoice skipped: already in completed', $invoice);
+      return null;
     }
 
-    $__FUNCTION__ = __FUNCTION__;
-    DB::transaction(function () use ($drOrder, $subscription, $invoice, $drSubscription, $__FUNCTION__) {
-      $user = $subscription->user;
+    if ($invoice->sub_status == Invoice::SUB_STATUS_TO_REFUND) {
+      $invoice->setStatus(Invoice::STATUS_COMPLETED);
+      DrLog::info(__FUNCTION__, 'invoice updated => completed', $invoice);
 
-      // stop previous subscription
-      $previousSubscription = $user->getActiveSubscription();
-      if ($previousSubscription) {
-        $previousSubscription->stop(Subscription::STATUS_STOPPED, 'new subscrption activated');
-      }
-
-      // active current subscription
-      $this->fillSubscriptionAmount($subscription, $drOrder);
-
-      $subscription->start_date = now();
-      $subscription->current_period = 1;
-      $subscription->current_period_start_date = now();
-      $subscription->current_period_end_date =
-        $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
-      $subscription->next_invoice_date =
-        $drSubscription->getNextInvoiceDate() ? Carbon::parse($drSubscription->getNextInvoiceDate()) : null;
-      $subscription->setStatus(Subscription::STATUS_ACTIVE);
-      $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
-      $subscription->fillNextInvoice();
-      $subscription->active_invoice_id = null;
-      $subscription->save();
-      DrLog::info($__FUNCTION__, 'subscription updated => active', $subscription);
-
-      // update user subscription level
-      $user->updateSubscriptionLevel();
-      DrLog::info($__FUNCTION__, 'user subscription level updated', $subscription);
-
-      // update invoice status
-      $invoice->period              = $subscription->current_period;
-      $invoice->period_start_date   = $subscription->current_period_start_date;
-      $invoice->period_end_date     = $subscription->current_period_end_date;
+      $this->createRefund($invoice, reason: 'refund when order completed');
+      $invoice->save();
+    } else {
       $invoice->setStatus(Invoice::STATUS_COMPLETED);
       $invoice->save();
-      DrLog::info($__FUNCTION__, 'first invoice created', $subscription);
-    });
+      DrLog::info(__FUNCTION__, 'invoice updated => completed', $invoice);
+    }
 
-    // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
-    return $subscription;
+    return $invoice;
   }
 
   protected function onOrderInvoiceCreated(array $orderInvoice): Invoice|null
@@ -880,7 +885,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $orderInvoice['orderId']]);
       return null;
     }
-
 
     // skip duplicated invoice
     if ($invoice->pdf_file) {

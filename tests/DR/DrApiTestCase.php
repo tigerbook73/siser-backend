@@ -802,12 +802,13 @@ class DrApiTestCase extends ApiTestCase
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
     $activeInvoice = $subscription->getActiveInvoice();
     $currentPeriodInvoice = $subscription->getCurrentPeriodInvoice();
+    $currentPeriodInvoiceStatus = $currentPeriodInvoice->status;
 
     $this->assertNotEquals($subscription->sub_status, Subscription::SUB_STATUS_CANCELLING);
 
     // mock up
     $this->mockCancelSubscription($subscription);
-    if ($needRefund) {
+    if ($needRefund && $currentPeriodInvoiceStatus == Invoice::STATUS_COMPLETED) {
       $this->mockCreateRefund();
     }
     Notification::fake();
@@ -824,12 +825,17 @@ class DrApiTestCase extends ApiTestCase
 
     // assert
     $response->assertSuccessful();
-    if ($activeInvoice) {
+    if ($activeInvoice && $activeInvoice->id != $currentPeriodInvoice->id) {
       $this->assertEquals($activeInvoice->status, Invoice::STATUS_CANCELLED);
     }
     if ($needRefund) {
       $this->assertEquals($subscription->status, Subscription::STATUS_STOPPED);
-      $this->assertEquals($currentPeriodInvoice->status, Invoice::STATUS_REFUNDING);
+
+      if ($currentPeriodInvoiceStatus == Invoice::STATUS_PROCESSING) {
+        $this->assertEquals($currentPeriodInvoice->sub_status, Invoice::SUB_STATUS_TO_REFUND);
+      } else {
+        $this->assertEquals($currentPeriodInvoice->status, Invoice::STATUS_REFUNDING);
+      }
 
       Notification::assertSentTo(
         $subscription,
@@ -916,47 +922,23 @@ class DrApiTestCase extends ApiTestCase
   {
     /** @var Subscription $subscription */
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getActiveInvoice();
 
     // prepare
     $this->assertEquals($subscription->status, Subscription::STATUS_PENDING);
 
     // mock up
     $this->mockFulfillOrder();
-
-    // call api
-    $response = $this->sendOrderAccepted(
-      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_ACCEPTED)
-    );
-
-    // refresh data
-    $subscription->refresh();
-
-    // assert
-    $response->assertSuccessful();
-    $this->assertEquals($subscription->status, Subscription::STATUS_PROCESSING);
-
-    return $subscription;
-  }
-
-  public function onOrderComplete(Subscription|int $subscription): Subscription
-  {
-    /** @var Subscription $subscription */
-    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
-    $invoice = $subscription->getActiveInvoice();
-
-    // prepare
-    $this->assertEquals($subscription->status, Subscription::STATUS_PROCESSING);
-
-    // mock up
     $this->mockActivateSubscription($subscription);
     if ($previousSubscription = $subscription->user->getActiveLiveSubscription()) {
       $this->mockCancelSubscription($previousSubscription);
     }
     Notification::fake();
 
+
     // call api
-    $response = $this->sendOrderComplete(
-      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_COMPLETE)
+    $response = $this->sendOrderAccepted(
+      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_ACCEPTED)
     );
 
     // refresh data
@@ -966,7 +948,7 @@ class DrApiTestCase extends ApiTestCase
     // assert
     $response->assertSuccessful();
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
-    $this->assertEquals($invoice->status, Invoice::STATUS_COMPLETED);
+    $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
 
     Notification::assertSentTo(
       $subscription,
@@ -982,6 +964,41 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
+  public function onOrderComplete(Subscription|int $subscription): Subscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $invoiceBeforeSubStatus = $invoice->sub_status;
+
+    // prepare
+    $this->assertContains($invoice->status, [Invoice::STATUS_PROCESSING]);
+
+    // mock up
+    if ($invoice->sub_status == Invoice::SUB_STATUS_TO_REFUND) {
+      $this->mockCreateRefund();
+    }
+
+    // call api
+    $response = $this->sendOrderComplete(
+      $this->drOrders[$subscription->getDrOrderId()]->setState(DrOrder::STATE_COMPLETE)
+    );
+
+    // refresh data
+    $invoice->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertNull($subscription->active_invoice_id);
+    if ($invoiceBeforeSubStatus == Invoice::SUB_STATUS_TO_REFUND) {
+      $this->assertEquals($invoice->status, Invoice::STATUS_REFUNDING);
+    } else {
+      $this->assertEquals($invoice->status, Invoice::STATUS_COMPLETED);
+    }
+
+    return $subscription;
+  }
+
   private function onOrderFailed(Subscription $subscription, string $type): Subscription
   {
     /** @var Subscription $subscription */
@@ -989,10 +1006,15 @@ class DrApiTestCase extends ApiTestCase
     $invoice = $subscription->getActiveInvoice();
 
     // prepare
-    $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING || $subscription->status == Subscription::STATUS_PENDING);
+    $this->assertContains($subscription->status, [Subscription::STATUS_ACTIVE, Subscription::STATUS_PENDING]);
+    $this->assertContains($invoice->status, [Invoice::STATUS_PROCESSING, Invoice::STATUS_PENDING]);
+
 
     // mock up
     Notification::fake();
+    if ($subscription->status == Subscription::STATUS_ACTIVE) {
+      $this->mockCancelSubscription($subscription);
+    }
 
     // call api
     if ($type == 'order.blocked') {
@@ -1045,12 +1067,16 @@ class DrApiTestCase extends ApiTestCase
   {
     /** @var Subscription $subscription */
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = Invoice::findByDrOrderId($subscription->getDrOrderId());
 
     // prepare
-    $this->assertTrue($subscription->status == Subscription::STATUS_PROCESSING || $subscription->status == Subscription::STATUS_PENDING);
+    $this->assertContains($invoice->status, [Invoice::STATUS_PROCESSING]);
 
     // mock up
     $this->mockGetOrder();
+    if ($subscription->status == Subscription::STATUS_ACTIVE) {
+      $this->mockCancelSubscription();
+    }
 
     Notification::fake();
 
@@ -1060,10 +1086,12 @@ class DrApiTestCase extends ApiTestCase
 
     // refresh data
     $subscription->refresh();
+    $invoice->refresh();
 
     // assert
     $response->assertSuccessful();
     $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
+    $this->assertEquals($invoice->status, Invoice::STATUS_FAILED);
 
     Notification::assertSentTo(
       $subscription,
@@ -1081,6 +1109,7 @@ class DrApiTestCase extends ApiTestCase
 
     // prepare
     $this->assertContains($invoice->status, [
+      Invoice::STATUS_PROCESSING,
       Invoice::STATUS_COMPLETED,
       Invoice::STATUS_REFUNDED,
       Invoice::STATUS_REFUND_FAILED,

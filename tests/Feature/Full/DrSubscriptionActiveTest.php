@@ -52,6 +52,9 @@ class DrSubscriptionActiveTest extends DrApiTestCase
 
     $invoice->refresh();
     $this->onOrderRefunded($invoice);
+
+    $invoice->refresh();
+    $this->onOrderCreditMemoCreated($invoice);
   }
 
   public function test_active_to_stopped_refund_failed()
@@ -79,6 +82,9 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $invoice->refresh();
 
     $this->onOrderRefunded($invoice);
+    $invoice->refresh();
+
+    $this->onOrderCreditMemoCreated($invoice);
   }
 
   public function test_active_do_full_refund_failed()

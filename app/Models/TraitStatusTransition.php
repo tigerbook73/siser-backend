@@ -17,6 +17,11 @@ trait TraitStatusTransition
     return $this;
   }
 
+  public function getStatus(): string
+  {
+    return $this->status;
+  }
+
   public function getStatusTimestamp(string $status): Carbon|null
   {
     if (isset($this->status_transitions[$status])) {

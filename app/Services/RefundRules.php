@@ -16,7 +16,11 @@ class RefundRules
       return ['refundable' => false, 'reason' => 'invoice is already refunded'];
     }
 
-    if ($invoice->status != Invoice::STATUS_COMPLETED && $invoice->status != Invoice::STATUS_PARTLY_REFUNDED) {
+    if (
+      $invoice->status != Invoice::STATUS_COMPLETED &&
+      $invoice->status != Invoice::STATUS_PROCESSING &&
+      $invoice->status != Invoice::STATUS_PARTLY_REFUNDED
+    ) {
       return ['refundable' => false, 'reason' => "invoice in {$invoice->status} can not be refunded."];
     }
 

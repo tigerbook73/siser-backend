@@ -176,10 +176,10 @@ class User extends UserWithTrait
       ->first();
   }
 
-  public function getPendingOrProcessingSubscription(): Subscription|null
+  public function getPendingSubscription(): Subscription|null
   {
     return $this->subscriptions()
-      ->whereIn('status', [Subscription::STATUS_PENDING, Subscription::STATUS_PROCESSING])
+      ->where('status', Subscription::STATUS_PENDING)
       ->where('subscription_level', '>', 1)
       ->first();
   }

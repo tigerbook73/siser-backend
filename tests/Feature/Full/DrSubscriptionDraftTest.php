@@ -56,30 +56,4 @@ class DrSubscriptionDraftTest extends DrApiTestCase
 
     $this->paySubscription($response->json('id'));
   }
-
-  public function test_draft_to_pending_error_exception_open()
-  {
-    // prepare
-    $response = $this->init_draft();
-    $subscription = $this->user->getDraftSubscriptionById($response->json('id'));
-
-    // mockup 
-    $this->drMock
-      ->shouldReceive('attachCheckoutSource')
-      ->once()
-      ->andThrow(new Exception('Test', 444));
-
-    // call api
-    $response = $this->postJson(
-      "/api/v1/account/subscriptions/$subscription->id/pay",
-      ['terms' => 'This is test terms ...']
-    );
-
-    // refresh data
-    $subscription->refresh();
-
-    // assert
-    $response->assertStatus(444);
-    $this->assertTrue($subscription->status == Subscription::STATUS_DRAFT);
-  }
 }

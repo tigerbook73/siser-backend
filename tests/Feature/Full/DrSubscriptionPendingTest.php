@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Full;
 
+use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\Developer;
 use App\Notifications\SubscriptionNotification;
@@ -27,19 +28,20 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     return $this->paySubscription($response->json('id'));
   }
 
-  public function test_pending_to_processing()
+  public function test_pending_to_active()
   {
     $response = $this->init_pending();
 
     return $this->onOrderAccept(Subscription::find($response->json('id')));
   }
 
-  public function test_pending_to_processing_error_fulfill()
+  public function test_pending_to_failed_error_fulfill()
   {
     $response = $this->init_pending();
 
     /** @var Subscription $subscription */
     $subscription = Subscription::find($response->json('id'));
+    $invoice = $subscription->getActiveInvoice();
 
     // prepare
     $this->assertTrue($subscription->status == Subscription::STATUS_PENDING);
@@ -57,10 +59,12 @@ class DrSubscriptionPendingTest extends DrApiTestCase
 
     // refresh data
     $subscription->refresh();
+    $invoice->refresh();
 
     // assert
     $response->assertSuccessful();
     $this->assertTrue($subscription->status == Subscription::STATUS_FAILED);
+    $this->assertTrue($invoice->status == Invoice::STATUS_FAILED);
 
     Notification::assertSentTo(
       $subscription,
@@ -97,13 +101,6 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     $response = $this->init_pending();
 
     return $this->onOrderChargeFailed(Subscription::find($response->json('id')));
-  }
-
-  public function test_pending_to_failed_capture_failed()
-  {
-    $response = $this->init_pending();
-
-    return $this->onOrderChargeCaptureFailed(Subscription::find($response->json('id')));
   }
 
   public function test_pending_expired()

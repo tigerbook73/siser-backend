@@ -134,7 +134,7 @@ class SubscriptionController extends SimpleController
       $this->user->refresh();
     }
 
-    $pendingSubscription = $this->user->getPendingOrProcessingSubscription();
+    $pendingSubscription = $this->user->getPendingSubscription();
     if ($pendingSubscription) {
       return response()->json(['message' => 'There is an pending subscription'], 400);
     }
@@ -183,7 +183,7 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Subscripiton not found'], 404);
     }
 
-    $pendingSubscription = $this->user->getPendingOrProcessingSubscription();
+    $pendingSubscription = $this->user->getPendingSubscription();
     if ($pendingSubscription) {
       return response()->json(['message' => 'There is an pending subscription'], 400);
     }

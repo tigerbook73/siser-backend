@@ -13,14 +13,11 @@ stateDiagram-v2
   Draft         --> [*]           : order-rejected
 
   Pending
-  Pending       --> Processing    : order-accepted
+  Pending       --> Active        : order-accepted
   Pending       --> Failed        : failed/cancelled
 
-  Processing
-  Processing    --> Active        : payment-success
-  Processing    --> Failed        : payment-failed
-
   Active
+  Active        --> Failed        : order-charge-capture-failed
   Active        --> Active        : renew-success
   Active        --> Stopped       : renew-failed
   Active        --> Stopped       : cancel
@@ -30,7 +27,7 @@ stateDiagram-v2
   Failed        --> [*]
 
   Stopped
-  Stopped     --> [*]
+  Stopped       --> [*]
 ```
 
 ## Sequence Diagram

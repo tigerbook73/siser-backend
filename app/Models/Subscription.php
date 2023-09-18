@@ -16,7 +16,6 @@ class Subscription extends BaseSubscription
   public const STATUS_DRAFT                   = 'draft';
   public const STATUS_FAILED                  = 'failed';
   public const STATUS_PENDING                 = 'pending';
-  public const STATUS_PROCESSING              = 'processing';
   public const STATUS_STOPPED                 = 'stopped';
 
   // sub_status (when status is 'active')
