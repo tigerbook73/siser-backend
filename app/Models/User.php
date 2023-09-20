@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Events\UserSubscriptionLevelChanged;
 use App\Services\Cognito\CognitoUser;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
 class User extends UserWithTrait
 {
@@ -186,6 +187,12 @@ class User extends UserWithTrait
 
   public function updateSubscriptionLevel()
   {
+    // test code
+    $changes = [
+      'user_id'       => $this->id,
+      'origin'        => ['subscription_level' => $this->subscription_level, 'license_count' => $this->license_count],
+    ];
+
     $subscription = $this->getActiveSubscription();
     $machineCount = $this->machines()->count();
 
@@ -194,7 +201,7 @@ class User extends UserWithTrait
       $subscription = Subscription::createBasicMachineSubscription($this);
     }
 
-    // stop basic subscription is required
+    // stop basic subscription if required
     if ($subscription?->subscription_level == 1 && $machineCount <= 0) {
       $subscription->stop(Subscription::STATUS_STOPPED, 'all machine detached');
       $subscription = null;
@@ -207,6 +214,9 @@ class User extends UserWithTrait
       $this->subscription_level = 0;
       $this->license_count = 0;
     }
+
+    $changes['new'] = ['subscription_level' => $this->subscription_level, 'license_count' => $this->license_count];
+    Log::info('USER_LOG: updateSubscriptionLevel: ', $changes);
 
     $this->save();
     return $this;
