@@ -9,5 +9,8 @@
 <body>
   <p>Hi,</p>
   <p>This is test mail!</p>
+  <br/>
+  <p>Thank you,</p>
+  <p>Siser Team</p>
 </body>
 </html>

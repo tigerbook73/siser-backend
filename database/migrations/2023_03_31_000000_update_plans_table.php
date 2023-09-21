@@ -37,9 +37,9 @@ return new class extends Migration
       [
         [
           'id'                  => config('siser.plan.default_machine_plan'),
-          'name'                => 'Machine Basic Plan (free)',
+          'name'                => 'Leonardo™ Design Studio Basic Plan (free)',
           'catagory'            => 'machine',
-          'description'         => 'Machine Basic Plan (free)',
+          'description'         => 'Leonardo™ Design Studio Basic Plan (free)',
           'subscription_level'  => 1,
           'price_list'          => json_encode([
             [

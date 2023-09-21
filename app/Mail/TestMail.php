@@ -28,6 +28,10 @@ class TestMail extends Mailable
    */
   public function build()
   {
-    return $this->subject("Siser Software")->view('emails.test-mail');
+    return $this
+      ->from(config('mail.from.address'), config('mail.from.name'))
+      ->to('test@test.com')
+      ->subject("Test Mail")
+      ->view('emails.test-mail');
   }
 }

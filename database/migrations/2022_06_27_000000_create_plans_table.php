@@ -31,9 +31,9 @@ return new class extends Migration
     DB::table('plans')->insert([
       [
         'id'                  => config('siser.plan.default_machine_plan'),
-        'name'                => 'Machine Basic Plan (free)',
+        'name'                => 'Leonardo™ Design Studio Basic Plan (free)',
         'catagory'            => 'machine',
-        'description'         => 'Machine Basic Plan (free)',
+        'description'         => 'Leonardo™ Design Studio Basic Plan (free)',
         'subscription_level'  => 1,
         'contract_term'       => 'permanent',
         'price'               => json_encode([

@@ -117,7 +117,6 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     $subject = static::$types[$this->type]['subject'];
     $view = static::$types[$this->type]['view'] ?? $this->type;
     return (new MailMessage)
-      // ->from()
       ->subject($subject)
       ->bcc(config('siser.bcc_email'))
       ->view("emails.$view", [

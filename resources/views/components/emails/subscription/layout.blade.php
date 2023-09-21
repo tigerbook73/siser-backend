@@ -99,7 +99,7 @@
       <!-- thank you -->
       {{ $helper->trans('messages.layout.regards') }}
       <br />
-      {{ config("app.name") }}
+      <div>Team Siser</div>
       <br />
       <br />
 

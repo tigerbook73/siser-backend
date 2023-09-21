@@ -68,7 +68,7 @@ return [
   'layout.manage_subscription'                    => 'You can view and/or manage your subscriptions and/or orders from our :customer_portal_link.',
   'layout.faqs'                                   => 'For questions regarding cancels and refunds, please visit our :support_link.',
   'layout.contact_us'                             => 'Please contact us via email :support_email_link, or visit our :customer_support_link if you need support.',
-  'layout.regards'                                => 'Kind Regards,',
+  'layout.regards'                                => 'Thank You,',
 
   'tax_name'                                      => 'Tax',
 
