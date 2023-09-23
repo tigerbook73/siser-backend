@@ -22,23 +22,23 @@ class DesignPlanTestCase extends ApiTestCase
     $this->modelSchema['price_list'] = ['*' => array_keys((array)new Price)];
 
     $this->modelCreate = [
-      "name" => "LDS New-Test Plan",
-      "catagory" => "machine",
-      "description" => "test plan",
-      "subscription_level" => 2,
-      "url" => "",
-      "price_list" => [
+      'name' => 'LDS New-Test Plan',
+      'product_name' => 'Leonardo™ Design Studio Pro',
+      'description' => 'test plan',
+      'interval' => Plan::INTERVAL_MONTH,
+      'subscription_level' => 2,
+      'url' => '',
+      'price_list' => [
         [
-          "country" => "US",
-          "currency" => "USD",
-          "price" => 0.98,
+          'country' => 'US',
+          'currency' => 'USD',
+          'price' => 0.98,
         ]
       ]
     ];
 
     $this->modelUpdate = [
       // "name" => "LDS New-Test Plan",
-      // "catagory" => "machine",
       "description" => "updated plan",
       // "subscription_level" => 2,
       "url" => "",

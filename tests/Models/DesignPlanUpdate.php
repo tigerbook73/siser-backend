@@ -12,8 +12,11 @@ class DesignPlanUpdate {
     /** @var string $name */
     public $name = "";
 
-    /** @var string $catagory */
-    public $catagory = "";
+    /** @var string $product_name name of the software product*/
+    public $product_name = "";
+
+    /** @var string $interval */
+    public $interval = "";
 
     /** @var string $description LDS Basic plan for machine owner*/
     public $description = "";

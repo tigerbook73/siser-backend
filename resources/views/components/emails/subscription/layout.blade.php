@@ -65,7 +65,7 @@
     <div class="mail-content">
       <!-- greeting -->
       <br />
-      {{ $helper->trans('messages.layout.greeting', ['name' => $helper->formatName($subscription->billing_info)]) }}
+      {{ $helper->trans('layout.greeting', ['name' => $helper->formatName($subscription->billing_info)]) }}
       <br />
       <br />
 
@@ -76,19 +76,19 @@
       <br />
 
       <!-- customer portal -->
-      {!! $helper->trans('messages.layout.manage_subscription', ['customer_portal_link' => $helper->getCustomerPortalLink()]); !!}
+      {!! $helper->trans('layout.manage_subscription', ['customer_portal_link' => $helper->getCustomerPortalLink()]); !!}
       <br />
       <br />
 
       <!-- faq -->
-      {!! $helper->trans('messages.layout.faqs', ['support_link' => $helper->getSupportLink()]); !!}
+      {!! $helper->trans('layout.faqs', ['support_link' => $helper->getSupportLink()]); !!}
       <br />
       <br />
 
       <!-- faq -->
 
       {!!
-        $helper->trans('messages.layout.contact_us', [
+        $helper->trans('layout.contact_us', [
           'support_email_link' => $helper->getSupportEmailLink(),
           'customer_support_link' => $helper->getCustomerSupportLink(),
         ]);
@@ -97,7 +97,7 @@
       <br />
 
       <!-- thank you -->
-      {{ $helper->trans('messages.layout.regards') }}
+      {{ $helper->trans('layout.regards') }}
       <br />
       <div>Team Siser</div>
       <br />

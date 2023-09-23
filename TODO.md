@@ -1,53 +1,75 @@
+main plan x coupon
 
 
-Use case:
-+ subscription
-  + cancel subscription
-    + if refundable & apply refund, refund request, cancel & terminate subscription (OK)
-    + if not refundable, cancel subscription (OK)
++ month plan + no ocupon (ok)
+  + activated: 
+    + month plan + no coupon
+    + next: remain
+  + cancelled:
+    + refund: stopped immediately
+    + no refund: stop at end of period
+  + extended:
+    + remain
 
-+ order
-  + view order
-    + order status (refunding, refunded, refund-failed, refund-partly) (OK)
-  + view order's refunds (OK)
-  + create refund (admin only) (OK)
-    + no restriction (OK)
++ month plan + free coupon (ok)
+  + activate:
+    + month plan + free coupon
+    + next: normal plan
+  + cancelled:
+    + no refund: stopped immediately
+  + extended:
+    + normal plan
 
-+ refund 
-  + view refund (NOK)
++ month plan + percentage coupon (1 month) (ok)
+  + activate:
+    + month plan + coupon
+    + next: normal plan
+  + cancelled:
+    +  refund: stopped immediately
+    +  no refund: stop at end of period
+  + extended:
+    + normal plan
 
-+ notification
-  + refund failed
-  + refund success
++ month plan + percentage coupon (3 month) (ok)
+  + activate:
+    + month plan + coupon
+    + next: remain
+  + cancelled:
+    +  refund: stopped immediately
+    +  no refund: stop at end of period
+  + extended:
+    + remain
+
++ year plan + no ocupon (ok)
+  + activate:
+    + year plan + no coupon
+    + next: month plan + no coupon
+  + cancelled:
+    + refund: stopped immediately
+    + no refund: stop at end of period
+  + extended:
+    + month play + no coupon
+
++ year plan + free coupon (ok)
+  + activated:
+    + year plan + free coupon
+    + next: month plan + no coupon
+  + cancelled:
+    + no refund: stopped immediately
+  + extended:
+    + month plan + no coupon
+
++ year plan + percentage coupon (ok)
+  + activated:
+    + year plan + percentage coupon
+    + next: month plan + no coupon
+  + cancelled:
+    + refund: stopped immediately
+    + no refund: stop at end of period
+  + extended:
+    + month plan + no coupon
 
 
-Design:
-+ migration & model
-  + refund table
-  + refund model
-  + invoice status
-
-+ refund service
-  + is order refundable
-  + refund order
-
-+ refund controller
-  + list
-
-+ digitalservice.php
-  + create refund
-  + get refund
-  + list refund
-
-+ managementDr
-  + refund order
-  + refund event
-    + refund requested
-    + refund failed
-    + refund success
-
-+ notification
-  + ...
-  + 
-
-credit-memo
+1. generate coupon
+2. plan coupon (month, year - inactive)
+3. dr:cmd init (plan)

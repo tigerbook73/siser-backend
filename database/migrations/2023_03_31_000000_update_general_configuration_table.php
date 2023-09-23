@@ -12,31 +12,8 @@ return new class extends Migration
    */
   public function up()
   {
-    if (config('dr.dr_mode') != 'prod') {
-      $plan_billing_offset_days = config('dr.dr_test.billing_offset_days');
-      $plan_collection_period_days = config('dr.dr_test.collection_period_days');
-      $plan_reminder_offset_days = config('dr.dr_test.reminder_offset_days');
-    } else {
-      $plan_billing_offset_days = 5;
-      $plan_collection_period_days = 15;
-      $plan_reminder_offset_days = 7;
-    }
-
-    // 
     DB::table('general_configuration')->upsert(
       [
-        [
-          'name' => 'plan_reminder_offset_days',
-          'value' => json_encode($plan_reminder_offset_days),
-        ],
-        [
-          'name' => 'plan_billing_offset_days',
-          'value' => json_encode($plan_billing_offset_days),
-        ],
-        [
-          'name' => 'plan_collection_period_days',
-          'value' => json_encode($plan_collection_period_days),
-        ],
         [
           'name' => 'siser_share_rate',
           'value' => json_encode(47.5),

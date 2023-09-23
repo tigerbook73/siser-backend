@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $tax_id_info
  * @property array|null $plan_info
  * @property array|null $coupon_info
+ * @property array|null $payment_method_info
  * @property float $subtotal
  * @property float $tax_rate
  * @property float $total_tax
@@ -44,6 +45,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $current_period_start_date
  * @property Carbon|null $current_period_end_date
  * @property Carbon|null $next_invoice_date
+ * @property Carbon|null $next_reminder_date
  * @property array|null $next_invoice
  * @property array|null $dr
  * @property string|null $dr_subscription_id
@@ -77,6 +79,7 @@ class Subscription extends Model
     'tax_id_info' => 'json',
     'plan_info' => 'json',
     'coupon_info' => 'json',
+    'payment_method_info' => 'json',
     'subtotal' => 'float',
     'tax_rate' => 'float',
     'total_tax' => 'float',
@@ -86,6 +89,7 @@ class Subscription extends Model
     'current_period_start_date' => 'datetime',
     'current_period_end_date' => 'datetime',
     'next_invoice_date' => 'datetime',
+    'next_reminder_date' => 'datetime',
     'next_invoice' => 'json',
     'dr' => 'json',
     'active_invoice_id' => 'int',
@@ -105,6 +109,7 @@ class Subscription extends Model
     'tax_id_info',
     'plan_info',
     'coupon_info',
+    'payment_method_info',
     'subtotal',
     'tax_rate',
     'total_tax',
@@ -114,6 +119,7 @@ class Subscription extends Model
     'current_period_start_date',
     'current_period_end_date',
     'next_invoice_date',
+    'next_reminder_date',
     'next_invoice',
     'dr',
     'dr_subscription_id',

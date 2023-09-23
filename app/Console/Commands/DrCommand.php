@@ -2,13 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Models\SubscriptionPlan;
 use App\Models\GeneralConfiguration;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
-use DigitalRiver\ApiSdk\Model\Plan as DrPlan;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use Illuminate\Console\Command;
 
@@ -71,7 +71,7 @@ class DrCommand extends Command
 
     switch ($subcmd) {
       case 'init':
-        return $this->init();
+        return $this->initPlan();
 
       case 'clear':
         return $this->clear();
@@ -88,18 +88,20 @@ class DrCommand extends Command
     }
   }
 
-  public function init()
+  public function initPlan()
   {
     // create / update default plan
-    $this->info("Create or update default plan ...");
-    try {
-      $defaultPlan = $this->drService->getDefaultPlan();
-      $defaultPlan = $this->drService->updateDefaultPlan(GeneralConfiguration::getConfiguration());
-    } catch (\Throwable $th) {
-      $defaultPlan = $this->drService->createDefaultPlan(GeneralConfiguration::getConfiguration());
+    $this->info("Create or update plans ...");
+    foreach (SubscriptionPlan::where('status', SubscriptionPlan::STATUS_ACTIVE)->get() as $subscriptionPlan) {
+      try {
+        $drPlan = $this->drService->updatePlan($subscriptionPlan);
+        $this->info("Plan updated: {$drPlan->getId()}");
+      } catch (\Throwable $th) {
+        $drPlan = $this->drService->createPlan($subscriptionPlan);
+        $this->info("Plan created: {$drPlan->getId()}");
+      }
     }
-    $this->info("Default Plan: {$defaultPlan->getId()}");
-    $this->info("Create or update default plan ... done!");
+    $this->info("Create or update plan ... done!");
 
     return self::SUCCESS;
   }
@@ -124,13 +126,13 @@ class DrCommand extends Command
      */
     $this->info('Clear plans ...');
 
-    /** @var DrPlan[] $plans */
+    /** @var SubscriptionPlan[] $plans */
     $plans = $this->drService->planApi->listPlans(state: 'draft')->getData();
     foreach ($plans as $plan) {
-      $this->info("  delete plan " . $plan->getId());
+      $this->info("  delete plan " . $plan->name);
       $this->ignore(
         [$this->drService->planApi, 'deletePlans'],
-        $plan->getId()
+        $plan->name
       );
     }
 

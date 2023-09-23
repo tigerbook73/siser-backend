@@ -14,9 +14,10 @@ class PlanController extends SimpleController
   protected function getListRules(array $inputs = []): array
   {
     return [
-      'name'        => ['filled'],
-      'catagory'    => ['filled', 'in:machine,software'],
-      'status'      => ['filled', 'in:draft,active,inactive'],
+      'name'          => ['filled'],
+      'product_name'  => ['filled'],
+      'interval'      => ['filled', 'in:month,year'],
+      'status'        => ['filled', 'in:draft,active,inactive'],
     ];
   }
 
@@ -24,7 +25,8 @@ class PlanController extends SimpleController
   {
     return [
       'name'                  => ['required', 'string', 'max:255', 'unique:plans'],
-      'catagory'              => ['required', 'in:machine,software'],
+      'product_name'          => ['required', 'exists:products,name'],
+      'interval'              => ['required', 'in:month,year'],
       'description'           => ['string', 'max:255'],
       'subscription_level'    => ['required', 'numeric', 'between:0,9'],
       'url'                   => ['string', 'max:255'],
@@ -39,7 +41,8 @@ class PlanController extends SimpleController
   {
     return [
       'name'                  => ['filled', 'string', 'max:255', Rule::unique('plans')->ignore(request("id"))],
-      'catagory'              => ['filled', 'in:machine,software'],
+      'product_name'          => ['filled', 'exists:products,name'],
+      'interval'              => ['filled', 'in:month,year'],
       'description'           => ['string', 'max:255'],
       'subscription_level'    => ['filled', 'numeric', 'between:0,9'],
       'url'                   => ['string', 'max:255'],
@@ -59,7 +62,8 @@ class PlanController extends SimpleController
   {
     $rules = $this->getUpdateRules($inputs);
     unset($rules['name']);
-    unset($rules['catagory']);
+    unset($rules['product_name']);
+    unset($rules['interval']);
     unset($rules['subscription_level']);
     return $rules;
   }
@@ -82,9 +86,9 @@ class PlanController extends SimpleController
     $this->validateUser();
 
     $inputs = $request->validate([
-      'name'        => ['filled'],
-      'catagory'    => ['filled', 'in:machine,software'],
-      'country'     => ['required'],
+      'name'          => ['filled'],
+      'product_name'  => ['filled'],
+      'country'       => ['required'],
     ]);
 
     $country = $inputs['country'];

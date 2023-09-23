@@ -50,7 +50,7 @@ class DrApiTest extends DrApiTestCase
       ->mockAttachCheckoutSource()
       ->mockGetSource()
       ->mockGetOrder()
-      ->mockConvertCheckoutToOrder($subscription)
+      ->mockConvertCheckoutToOrder()
       ->mockFulfillOrder()
       ->mockGetSubscription()
       ->mockActivateSubscription()

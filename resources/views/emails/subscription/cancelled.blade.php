@@ -5,17 +5,16 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_cancel.notification',
+      $subscription->isFreeTrial() ? 'subscription_cancel.notification_free_trial' : 'subscription_cancel.notification',
       [
-        'plan_name' => $subscription->plan_info['name'],
-        'date' => $helper->formatDate(now()),
-        'end_date' => $helper->formatDate($subscription->current_period_end_date),
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
+        'end_date' => $helper->formatDate($subscription->end_date),
       ]
     )
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_cancel.summary') }}
+  {{ $helper->trans('subscription_cancel.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

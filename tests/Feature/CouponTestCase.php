@@ -3,10 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Coupon;
+use App\Models\Product;
 use Carbon\Carbon;
 use Tests\ApiTestCase;
 use Tests\Models\Coupon as ModelsCoupon;
-use Tests\Models\Price;
+use Tests\Models\CouponInfo;
 
 class CouponTestCase extends ApiTestCase
 {
@@ -21,36 +22,51 @@ class CouponTestCase extends ApiTestCase
   public Coupon $object;
   public Coupon $object2;
 
+  public $couponInfoSchema = [];
+
   protected function setUp(): void
   {
     parent::setUp();
 
     $this->modelSchema = array_keys((array)new ModelsCoupon);
+    $this->couponInfoSchema = array_keys((array)new CouponInfo);
 
     $this->modelCreate = [
-      "code"                    => "coupon-create20",
-      "description"             => "20% percent off",
+      "coupon_event"            => "2023",
+      "discount_type"           => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      "type"                    => Coupon::TYPE_SHARED,
+      "code"                    => "COUPON-CREATE20",
+      "product_name"            => Product::find(2)->name,
+      "name"                    => "20% percent off",
+      "percentage_off"          => 20,
+      "interval"                => Coupon::INTERVAL_MONTH,
+      "interval_count"          => 6,
       "condition" => [
         "new_customer_only"     => false,
         "new_subscription_only" => false,
         "upgrade_only"          => false
       ],
-      "percentage_off"          => 20,
-      "period"                  => 6,
+      "status"                  => 'active',
       "start_date"              => Carbon::tomorrow(),
       "end_date"                => "2099-12-31"
     ];
 
     $this->modelUpdate = [
-      "code"                    => "coupon-code20",
-      "description"             => "20% percent off",
+      "coupon_event"            => "2023",
+      "discount_type"           => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      "type"                    => Coupon::TYPE_SHARED,
+      "code"                    => "COUPON-CODE30",
+      "product_name"            => Product::find(2)->name,
+      "name"                    => "30% percent off",
+      "percentage_off"          => 30,
+      "interval"                => Coupon::INTERVAL_MONTH,
+      "interval_count"          => 6,
       "condition" => [
         "new_customer_only"     => false,
         "new_subscription_only" => false,
         "upgrade_only"          => false
       ],
-      "percentage_off"          => 20,
-      "period"                  => 6,
+      "status"                  => 'inactive',
       "start_date"              => Carbon::today(),
       "end_date"                => "2099-12-31"
     ];
@@ -64,7 +80,7 @@ class CouponTestCase extends ApiTestCase
     $createData = $this->modelCreate;
     $createData['code']         = 'test-precreate-30';
     $createData['start_date']   = Carbon::tomorrow();
-    $createData['status']       = 'active';
+    $createData['status']       = 'draft';
     $this->object2 = Coupon::create($createData);
   }
 }

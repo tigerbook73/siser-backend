@@ -24,11 +24,14 @@ class Subscription {
     /** @var \Tests\Models\TaxIdInfo $tax_id_info */
     public $tax_id_info;
 
-    /** @var \Tests\Models\Plan $plan_info */
+    /** @var \Tests\Models\PlanInfo $plan_info */
     public $plan_info;
 
-    /** @var \Tests\Models\Coupon $coupon_info */
+    /** @var \Tests\Models\CouponInfo $coupon_info */
     public $coupon_info;
+
+    /** @var \Tests\Models\PaymentMethodInfo $payment_method_info */
+    public $payment_method_info;
 
     /** @var string $currency */
     public $currency = "";

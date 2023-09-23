@@ -4,6 +4,9 @@ namespace App\Models;
 
 use App\Models\Base\Invoice as BaseInvoice;
 use Carbon\Carbon;
+use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
+use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
+use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 
 class Invoice extends BaseInvoice
 {
@@ -45,8 +48,8 @@ class Invoice extends BaseInvoice
     'billing_info'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'tax_id_info'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'plan_info'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'coupon_info'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'payment_method_info' => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'coupon_info'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subtotal'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_tax'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_amount'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -90,28 +93,28 @@ class Invoice extends BaseInvoice
     return $this->getDrAttr(self::DR_FILE_ID);
   }
 
-  public function getDrInvoiceId()
+  public function getDrInvoiceId(): string|null
   {
     return $this->getDrAttr(self::DR_INVOICE_ID);
   }
 
-  public function getDrOrderId()
+  public function getDrOrderId(): string|null
   {
     return $this->getDrAttr(self::DR_ORDER_ID);
   }
 
-  public function setDrFileId(string $drFileId)
+  public function setDrFileId(string $drFileId): self
   {
     return $this->setDrAttr(self::DR_FILE_ID, $drFileId);
   }
 
-  public function setDrInvoiceId(string $drInvoiceId)
+  public function setDrInvoiceId(string $drInvoiceId): self
   {
     $this->dr_invoice_id = $drInvoiceId;
     return $this->setDrAttr(self::DR_INVOICE_ID, $drInvoiceId);
   }
 
-  public function setDrOrderId(string|null $drOrderId)
+  public function setDrOrderId(string|null $drOrderId): self
   {
     $this->dr_order_id = $drOrderId;
     return $this->setDrAttr(self::DR_ORDER_ID, $drOrderId ?? '');
@@ -170,5 +173,66 @@ class Invoice extends BaseInvoice
   public function getActiveRefund(): Refund|null
   {
     return $this->refunds()->where('status', Refund::STATUS_PENDING)->first();
+  }
+
+  public function fillBasic(Subscription $subscription): self
+  {
+    // static part
+    $this->user_id             = $subscription->user_id;
+    $this->subscription_id     = $subscription->id;
+    $this->currency            = $subscription->currency;
+
+    $this->billing_info        = $subscription->billing_info;
+    $this->tax_id_info         = $subscription->tax_id_info;
+    $this->plan_info           = $subscription->plan_info;
+    $this->coupon_info         = $subscription->coupon_info;
+
+    // dynamic part
+    $this->payment_method_info = $subscription->payment_method_info;
+
+    return $this;
+  }
+
+  public function fillPeriod(Subscription $subscription, bool $next = false): self
+  {
+    if ($next) {
+      $this->period             = $subscription->next_invoice['current_period'];
+      $this->period_start_date  = $subscription->next_invoice['current_period_start_date'];
+      $this->period_end_date    = $subscription->next_invoice['current_period_end_date'];
+      $this->invoice_date       = $subscription->next_invoice_date;
+    } else {
+      $this->period             = $subscription->current_period;
+      $this->period_start_date  = $subscription->current_period_start_date;
+      $this->period_end_date    = $subscription->current_period_end_date;
+      $this->invoice_date       = now();
+    }
+    return $this;
+  }
+
+  public function fillFromDrObject(DrCheckout|DrOrder|DrInvoice $drObject): self
+  {
+    // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
+
+    $this->subtotal = $drObject->getSubtotal();
+    $this->total_tax = $drObject->getTotalTax();
+    $this->total_amount = $drObject->getTotalAmount();
+
+    $source = $drObject->getPayment()->getSources()[0] ?? null;
+    if ($source) {
+      $paymentMethod = $source->getGooglePay() ?? $source->getCreditCard();
+      $display_data =      $paymentMethod ? [
+        'brand'             => $paymentMethod->getBrand(),
+        'last_four_digits'  => $paymentMethod->getLastFourDigits(),
+        'expiration_year'   => $paymentMethod->getExpirationYear(),
+        'expiration_month'  => $paymentMethod->getExpirationMonth(),
+      ] : null;
+      $this->payment_method_info = [
+        'type'          => $source->getType(),
+        'display_data'  => $display_data,
+        'dr'            => ['source_id' => $source->getId()],
+      ];
+    }
+
+    return $this;
   }
 }

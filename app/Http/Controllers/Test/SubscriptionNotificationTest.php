@@ -12,17 +12,16 @@ use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\Locale;
+use DateTimeZone;
 use Illuminate\Support\Carbon;
 
 class SubscriptionNotificationTest
 {
-  public const CouponCode = 'SNT-A1B2C3D4';
-
   public function __construct(
     public Country|null $country = null,
     public Plan|null $plan = null,
     public Coupon|null $coupon = null,
-    public array|null $publicPlan = null,
+    public array|null $planInfo = null,
     public User|null $user = null,
     public BillingInfo|null $billingInfo = null,
     public PaymentMethod|null $paymentMethod = null,
@@ -32,18 +31,18 @@ class SubscriptionNotificationTest
   ) {
   }
 
-  static public function init(string $country = 'US')
+  static public function init(string $country, string $plan, string $coupon)
   {
     $inst = new self();
     $inst->updateCountry($country);
-    $inst->updatePlan();
+    $inst->updatePlan($plan);
     $inst->updateUser();
     $inst->updateBillingInfo();
     $inst->updatePaymentMethod();
 
     $orderDate = now()->subHour();
     $inst->updateSubscription(startDate: $orderDate);
-    $inst->updateInvoice(invoiceDate: $orderDate, status: Invoice::STATUS_PENDING);
+    $inst->updateInvoice(Invoice::STATUS_PENDING);
     return $inst;
   }
 
@@ -72,31 +71,63 @@ class SubscriptionNotificationTest
     return $this;
   }
 
-  public function updatePlan()
+  public function updatePlan(string $interval)
   {
     /** @var Plan|null $plan */
-    $plan = Plan::public()->first();
+    $plan = Plan::public()->where('interval', $interval)->first();
 
     $this->plan = $plan;
-    $this->publicPlan = $this->plan->toPublicPlan($this->country->code);
+    $this->planInfo = $this->plan->info($this->country->code);
     return $this;
   }
 
-  public function updateCoupon(string $code = null)
+  public function updateCoupon(string $type = null)
   {
+    if ($type == 'free-trial') {
+      $code = 'free3m-test';
+      $discount_type = Coupon::DISCOUNT_TYPE_FREE_TRIAL;
+      $interval = Coupon::INTERVAL_DAY;
+      $interval_count = 20;
+      $percentage_off = 100;
+      $name = 'LDS Pro 20-day free trial';
+    } else if ($type == 'percentage') {
+      $code = '15off0m-test';
+      $discount_type = Coupon::DISCOUNT_TYPE_PERCENTAGE;
+      $interval = $this->plan->interval;
+      $interval_count = 0;
+      $percentage_off = 15;
+      $name = '15% OFF';
+    } else if ($type == 'percentage-fixed-term') {
+      $code = '15off3m-test';
+      $discount_type = Coupon::DISCOUNT_TYPE_PERCENTAGE;
+      $interval = $this->plan->interval;
+      $interval_count = $this->plan->interval == Coupon::INTERVAL_MONTH ? 3 : 1;
+      $name = "15% OFF for $interval_count $interval";
+      $percentage_off = 15;
+    } else {
+      // ignore
+      return $this;
+    }
+
     /** @var Coupon|null $coupon */
-    $coupon = Coupon::where('code', self::CouponCode)->first();
-    $this->coupon =  $coupon ?? new Coupon();
-    $this->coupon->code = self::CouponCode;
-    $this->coupon->description = ($code == 'percentage-off') ? '10% off' : 'First 1 month free, then full price';
-    $this->coupon->condition = [
+    $coupon = Coupon::where('code', $code)->first();
+    $this->coupon                 = $coupon ?? new Coupon();
+    $this->coupon->code           = $code;
+    $this->coupon->coupon_event   = 'php-unit';
+    $this->coupon->type           = Coupon::TYPE_SHARED;
+    $this->coupon->discount_type  = $discount_type;
+    $this->coupon->name           = $name;
+    $this->coupon->interval       = $interval;
+    $this->coupon->interval_count = $interval_count;
+    $this->coupon->percentage_off = $percentage_off;
+    $this->coupon->condition      = [
       'new_customer_only' => false,
       'new_subscription_only' => false,
       'upgrade_only' => false
     ];
-    $this->coupon->period = 0;
-    $this->coupon->percentage_off = ($code == 'percentage-off') ? 10 : 100;
     $this->coupon->start_date = now();
+    $this->coupon->start_date = Carbon::parse('2099-12-31');
+    $this->coupon->status = Coupon::STATUS_ACTIVE;
     $this->coupon->save();
 
     return $this;
@@ -117,7 +148,7 @@ class SubscriptionNotificationTest
     $this->user->phone_number = "+61400000000";
     $this->user->country_code = $this->country->code;
     $this->user->language_code = Locale::defaultLanguage($this->country->code);
-    $this->user->timezone = "Australia/Sydney";
+    $this->user->timezone = DateTimeZone::listIdentifiers(DateTimeZone::PER_COUNTRY, $this->country->code)[0] ?? 'Australia/Melbourne';
     $this->user->password = "Not allowed!";
     $this->user->save();
     return $this;
@@ -133,6 +164,7 @@ class SubscriptionNotificationTest
     $this->billingInfo->first_name      = $this->user->given_name;
     $this->billingInfo->last_name       = $this->user->family_name;
     $this->billingInfo->phone           = $this->user->phone_number;
+    $this->billingInfo->customer_type   = BillingInfo::CUSTOMER_TYPE_INDIVIDUAL;
     $this->billingInfo->organization    = "";
     $this->billingInfo->email           = $this->user->email;
     $this->billingInfo->address         = [
@@ -156,14 +188,12 @@ class SubscriptionNotificationTest
     $this->paymentMethod->user_id       = $this->user->id;
     $this->paymentMethod->type          = $type ?? $this->paymentMethod->type ?? "googlePay";
     $this->paymentMethod->display_data  = [
-      "brand"               => "Visa",
-      "expiration_year"     => 2099,
-      "expiration_month"    => 12,
-      "last_four_digits"    => "1111"
+      'brand'               => 'Visa',
+      'expiration_year'     => 2099,
+      'expiration_month'    => 12,
+      'last_four_digits'    => '1111'
     ];
-    $this->paymentMethod->dr            = [
-      "source_id" => "dr-source-0000"
-    ];
+    $this->paymentMethod->setDrSourceId('dr-source-0000');
     $this->paymentMethod->save();
     return $this;
   }
@@ -171,93 +201,88 @@ class SubscriptionNotificationTest
   public function updateSubscription(Carbon $startDate = null, $currentPeriod = null, $taxRate = null, $status = null, $subStatus = null)
   {
     $this->subscription = $this->subscription ?? new Subscription();
-    $this->subscription->user_id                      = $this->user->id;
-    $this->subscription->plan_id                      = $this->plan->id;
-    $this->subscription->coupon_id                    = null;
-    $this->subscription->coupon_info                  = null;
-    $this->subscription->billing_info                 = $this->billingInfo->toResource("customer");
-    $this->subscription->plan_info                    = $this->plan->toPublicPlan($this->billingInfo->address["country"]);
-    $this->subscription->currency                     = $this->country->currency;
-    $this->subscription->price                        = $this->publicPlan['price']['price'];
-    $this->subscription->subtotal                     = $this->publicPlan['price']['price'];
+    $this->subscription->fillBillingInfo($this->billingInfo);
+    $this->subscription->fillPaymentMethod($this->paymentMethod);
+    $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon);
+    $this->subscription->subtotal                     = $this->subscription->price;
     $this->subscription->tax_rate                     = $taxRate && $this->subscription->tax_rate ?: 0.1;
     $this->subscription->total_tax                    = $this->subscription->subtotal * $this->subscription->tax_rate;
     $this->subscription->total_amount                 = $this->subscription->subtotal * (1 + $this->subscription->tax_rate);
-    $this->subscription->subscription_level           = $this->plan->subscription_level;
+
     $this->subscription->current_period               = $currentPeriod ?? $this->subscription->current_period ?? 0;
     $this->subscription->start_date                   = $startDate ?? $this->subscription->start_date ?? now();
-    $this->subscription->end_date                     = $this->subscription->start_date->addMonths(10);
-    $this->subscription->current_period_start_date    = $this->subscription->start_date->addMonths(($this->subscription->current_period ?: 1) - 1);
-    $this->subscription->current_period_end_date      = $this->subscription->start_date->addMonths(($this->subscription->current_period ?: 1));
-    $this->subscription->next_invoice_date            = $this->subscription->start_date->addMonths(($this->subscription->current_period ?: 1))->subDays(5);
-    $this->subscription->next_invoice                 = [
-      "price"                       => $this->subscription->price,
-      "subtotal"                    => $this->subscription->subtotal,
-      "tax_rate"                    => $this->subscription->tax_rate,
-      "plan_info"                   => $this->subscription->plan_info,
-      "total_tax"                   => $this->subscription->total_tax,
-      "coupon_info"                 => $this->subscription->coupon_info,
-      "total_amount"                => $this->subscription->total_amount,
-      "current_period_start_date"   => $this->subscription->current_period_start_date->addMonths(1),
-      "current_period_end_date"     => $this->subscription->current_period_end_date->addMonths(1),
-    ];
-    $this->subscription->status                       = $status ?? $this->subscription->status ?? Subscription::STATUS_PENDING;
-    $this->subscription->sub_status                   = $subStatus ?? $this->subscription->sub_status ?? Subscription::SUB_STATUS_NORMAL;
 
+    // period start & end date
+    if ($this->subscription->isFreeTrial()) {
+      if ($this->subscription->current_period <= 1) {
+        // free trial
+        $this->subscription->current_period_start_date  = $this->subscription->start_date;
+        $this->subscription->current_period_end_date    = $this->subscription->start_date->addUnit(
+          $this->subscription->coupon_info['interval'],
+          $this->subscription->coupon_info['interval_count']
+        );
+      } else {
+        // free trial
+        $this->subscription->current_period_start_date    = $this->subscription->start_date->addUnit(
+          $this->subscription->coupon_info['interval'],
+          $this->subscription->coupon_info['interval_count']
+        );
+        // normal
+        $this->subscription->current_period_start_date    = $this->subscription->current_period_start_date->add(
+          $this->subscription->plan_info['interval'],
+          $this->subscription->plan_info['interval_count'] * ($this->subscription->current_period - 2)
+        );
+        $this->subscription->current_period_end_date    = $this->subscription->start_date->addUnit(
+          $this->subscription->plan_info['interval'],
+          $this->subscription->plan_info['interval_count']
+        );
+      }
+    } else {
+      $this->subscription->current_period_end_date    = $this->subscription->start_date->addUnit(
+        $this->subscription->plan_info['interval'],
+        $this->subscription->plan_info['interval_count']
+      );
+      $this->subscription->current_period_start_date      = $this->subscription->current_period_end_date->subUnit(
+        $this->subscription->plan_info['interval'],
+        $this->subscription->plan_info['interval_count']
+      );
+    }
+    $this->subscription->next_invoice_date            = $this->subscription->current_period_end_date->subDays(1);
+
+    $this->subscription->fillNextInvoice();
+    $this->subscription->status                       = $status ?? $this->subscription->status ?? Subscription::STATUS_DRAFT;
+    $this->subscription->sub_status                   = $subStatus ?? $this->subscription->sub_status ?? Subscription::SUB_STATUS_NORMAL;
     $this->subscription->save();
     return $this;
   }
 
   public function updateSubscriptionCoupon()
   {
-    // if ($this->subscription->current_period > 1) {
-    //   return $this;
-    // }
-
-    $this->subscription->coupon_id        = $this->coupon->id;
-    $this->subscription->coupon_info      = $this->coupon->info();
-    $this->subscription->subtotal         = $this->subscription->price * (100 - $this->coupon->percentage_off) / 100;
-    $this->subscription->total_tax        = $this->subscription->subtotal * $this->subscription->tax_rate;
-    $this->subscription->total_amount     = $this->subscription->subtotal * (1 + $this->subscription->tax_rate);
-
-    $next_invoice = $this->subscription->next_invoice;
-    if ($this->subscription->coupon_info['percentage_off'] >= 100) {
-      $next_invoice['coupon_info']        = null;
-      $next_invoice["subtotal"]           = $this->subscription->price;
-      $next_invoice["total_tax"]          = $next_invoice["subtotal"] * $this->subscription->tax_rate;
-      $next_invoice["total_amount"]       = $next_invoice["subtotal"] * (1 + $this->subscription->tax_rate);
-    } else {
-      $next_invoice['coupon_info']        = $this->subscription->coupon_info;
-      $next_invoice["subtotal"]           = $this->subscription->subtotal;
-      $next_invoice["total_tax"]          = $this->subscription->total_tax;
-      $next_invoice["total_amount"]       = $this->subscription->total_amount;
-    }
-    $this->subscription->next_invoice = $next_invoice;
-
+    $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon);
+    $this->subscription->fillNextInvoice();
     $this->subscription->save();
     return $this;
   }
 
-  public function updateInvoice(int $period = null, Carbon $invoiceDate = null, string $status = null)
+  public function updateInvoice(string $status = null, bool $next = false)
   {
     $this->invoice = $this->invoice ?? new Invoice();
 
-    $this->invoice->user_id               =  $this->user->id;
-    $this->invoice->subscription_id       =  $this->subscription->id;
-    $this->invoice->period                = $period ?? $this->invoice->period ?? $this->subscription->current_period;
-    $this->invoice->period_start_date     = $this->subscription->current_period_start_date;
-    $this->invoice->period_end_date       = $this->subscription->current_period_end_date;
-    $this->invoice->currency              = $this->subscription->currency;
-    $this->invoice->billing_info          = $this->subscription->billing_info;
-    $this->invoice->tax_id_info           = $this->subscription->tax_id_info;
-    $this->invoice->plan_info             = $this->subscription->plan_info;
-    $this->invoice->coupon_info           = $this->subscription->coupon_info;
-    $this->invoice->payment_method_info   = $this->user->payment_method->info();
-    $this->invoice->subtotal              = $this->subscription->subtotal;
-    $this->invoice->total_tax             = $this->subscription->total_tax;
-    $this->invoice->total_amount          = $this->subscription->total_amount;
-    $this->invoice->total_refunded        = 0;
-    $this->invoice->invoice_date          = $invoiceDate ?? $this->invoice->invoice_date ?? $this->subscription->next_invoice_date;
+    $this->invoice->fillBasic($this->subscription);
+    $this->invoice->fillPeriod($this->subscription, $next);
+
+    if ($next) {
+      $this->invoice->subtotal              = $this->subscription->next_invoice['subtotal'];
+      $this->invoice->total_tax             = $this->subscription->next_invoice['total_tax'];
+      $this->invoice->total_amount          = $this->subscription->next_invoice['total_amount'];
+      $this->invoice->total_refunded        = 0;
+    } else {
+      $this->invoice->subtotal              = $this->subscription->subtotal;
+      $this->invoice->total_tax             = $this->subscription->total_tax;
+      $this->invoice->total_amount          = $this->subscription->total_amount;
+      $this->invoice->total_refunded        = 0;
+    }
+
     $this->invoice->pdf_file              = "/robots.txt";
     $this->invoice->status                = $status ?? $this->invoice->status ?? Invoice::STATUS_PENDING;
     $this->invoice->dr                    = [
@@ -274,7 +299,7 @@ class SubscriptionNotificationTest
     //   return $this;
     // }
 
-    $this->invoice->coupon_info      = $this->coupon->info();
+    $this->invoice->$this->invoice->coupon_info      = $this->coupon->info();
     $this->invoice->subtotal         = $this->subscription->subtotal;
     $this->invoice->total_tax        = $this->subscription->total_tax;
     $this->invoice->total_amount     = $this->subscription->total_amount;

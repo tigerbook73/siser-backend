@@ -14,7 +14,7 @@ return <<<EOD
   "sourceId": "411e8194-bce6-4b52-a8e2-4dc06639c792",
   "taxInclusive": false,
   "currency": "AUD",
-  "planId": "default-3-day-test-plan",
+  "planId": "test-3-day",
   "state": "active",
   "items": [
       {

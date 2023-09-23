@@ -15,8 +15,11 @@ class Plan {
     /** @var string $name */
     public $name = "";
 
-    /** @var string $catagory */
-    public $catagory = "";
+    /** @var string $product_name name of the software product*/
+    public $product_name = "";
+
+    /** @var string $interval */
+    public $interval = "";
 
     /** @var string $description LDS Basic plan for machine owner*/
     public $description = "";
@@ -26,6 +29,9 @@ class Plan {
 
     /** @var string $url */
     public $url = "";
+
+    /** @var int $interval_count */
+    public $interval_count = 0;
 
     /** @var \Tests\Models\Price $price */
     public $price;

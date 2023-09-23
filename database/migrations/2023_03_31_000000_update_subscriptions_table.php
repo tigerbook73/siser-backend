@@ -112,7 +112,7 @@ return new class extends Migration
       ->where('plan_id', '<=', config('siser.plan.default_machine_plan'))
       ->update([
         'plan_id' => config('siser.plan.default_machine_plan'),
-        'plan_info' => Plan::find(config('siser.plan.default_machine_plan'))->toPublicPlan('US'),
+        'plan_info' => Plan::find(config('siser.plan.default_machine_plan'))->info('US'),
         'subscription_level'        => 1,
         'processing_fee_info'       => [
           'explicit_processing_fee' => false,

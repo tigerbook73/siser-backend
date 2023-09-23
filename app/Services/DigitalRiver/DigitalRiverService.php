@@ -4,6 +4,8 @@ namespace App\Services\DigitalRiver;
 
 use App\Models\BillingInfo;
 use App\Models\Configuration;
+use App\Models\Coupon;
+use App\Models\SubscriptionPlan;
 use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
@@ -151,7 +153,8 @@ class DigitalRiverService
       $body = json_decode($text);
       $message = $body->errors[0]->message ?? $text;
     }
-    return new Exception("{$message}", $th->getCode());
+    Log::error($th);
+    return new Exception("{$message}", ($th->getCode() >= 100 && $th->getCode() < 600) ? $th->getCode() : 500);
   }
 
   /**
@@ -220,8 +223,7 @@ class DigitalRiverService
   {
     $productDetails = new DrProductDetails();
     $productDetails->setSkuGroupId(config('dr.sku_grp_subscription'));
-    $productName = $subscription->plan_info['name'] . ($subscription->coupon_info ? '(' . $subscription->coupon_info['code'] . ')' : '');
-    $productDetails->setName($productName);
+    $productDetails->setName($subscription->getPlanName());
     $productDetails->setDescription("");
     $productDetails->setCountryOfOrigin('AU');
 
@@ -229,44 +231,36 @@ class DigitalRiverService
   }
 
   /**
-   * get the default DrPlan. TODO: yearly plan is not supported yet
+   * get DrPlan
    */
-  public function getDefaultPlan(): DrPlan
+  public function getPlan(string $drPlanId): DrPlan
   {
     try {
-      return $this->planApi->retrievePlans(config('dr.default_plan'));
+      return $this->planApi->retrievePlans($drPlanId);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }
   }
 
   /**
-   * create the default DrPlan (monthly plan)
+   * create DrPlan
    */
-  public function createDefaultPlan(Configuration $configuration): DrPlan
+  public function createPlan(SubscriptionPlan $myPlan): DrPlan
   {
-    $planRequest = new DrPlanRequest();
-
-    $planRequest->setId(config('dr.default_plan'));
-    $planRequest->setTerms('These are the terms...');
-    $planRequest->setContractBindingDays(10000);
-    if (config('dr.dr_mode') != 'prod') {
-      $planRequest->setName(config('dr.dr_test.name'));
-      $planRequest->setInterval('day');
-      $planRequest->setIntervalCount(config('dr.dr_test.interval_count'));
-    } else {
-      $planRequest->setName('default-plan');
-      $planRequest->setInterval('day');
-      $planRequest->setInterval('month');
-      $planRequest->setIntervalCount(1);
-    }
-    $planRequest->setBillingOffsetDays($configuration->plan_billing_offset_days);
-    $planRequest->setReminderOffsetDays($configuration->plan_reminder_offset_days);
-    $planRequest->setCollectionPeriodDays($configuration->plan_collection_period_days);
-
-    $planRequest->setState('active');
-
     try {
+      $planRequest = new DrPlanRequest();
+
+      $planRequest->setId($myPlan->name);
+      $planRequest->setTerms('These are the terms...');
+      $planRequest->setContractBindingDays($myPlan->contract_binding_days);
+      $planRequest->setName($myPlan->name);
+      $planRequest->setInterval($myPlan->interval);
+      $planRequest->setIntervalCount($myPlan->interval_count);
+      $planRequest->setBillingOffsetDays($myPlan->billing_offset_days);
+      $planRequest->setReminderOffsetDays($myPlan->reminder_offset_days);
+      $planRequest->setCollectionPeriodDays($myPlan->collection_period_days);
+      $planRequest->setState($myPlan->status);
+
       return $this->planApi->createPlans($planRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -274,17 +268,18 @@ class DigitalRiverService
   }
 
   /**
-   * update the default DrPlan (monthly plan)
+   * update DrPlan
    */
-  public function UpdateDefaultPlan(Configuration $configuration): DrPlan
+  public function updatePlan(SubscriptionPlan $myPlan): DrPlan
   {
-    $planRequest = new DrUpdatePlanRequest();
-    $planRequest->setReminderOffsetDays($configuration->plan_reminder_offset_days);
-    $planRequest->setBillingOffsetDays($configuration->plan_billing_offset_days);
-    $planRequest->setCollectionPeriodDays($configuration->plan_collection_period_days);
-
     try {
-      return $this->planApi->updatePlans(config('dr.default_plan'), $planRequest);
+      $planRequest = new DrUpdatePlanRequest();
+      $planRequest->setBillingOffsetDays($myPlan->billing_offset_days);
+      $planRequest->setReminderOffsetDays($myPlan->reminder_offset_days);
+      $planRequest->setCollectionPeriodDays($myPlan->collection_period_days);
+      $planRequest->setState($myPlan->status);
+
+      return $this->planApi->updatePlans($myPlan->name, $planRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }
@@ -322,13 +317,13 @@ class DigitalRiverService
    */
   public function createCustomer(BillingInfo $billingInfo): DrCustomer
   {
-    $customerRequest = new DrCustomerRequest();
-    $customerRequest->setType($billingInfo->customer_type); // @phpstan-ignore-line
-    $customerRequest->setEmail($billingInfo->email);
-    $customerRequest->setShipping($this->fillShipping($billingInfo));
-    $customerRequest->setMetadata(['user_id' => $billingInfo->user_id]);
-
     try {
+      $customerRequest = new DrCustomerRequest();
+      $customerRequest->setType($billingInfo->customer_type); // @phpstan-ignore-line
+      $customerRequest->setEmail($billingInfo->email);
+      $customerRequest->setShipping($this->fillShipping($billingInfo));
+      $customerRequest->setMetadata(['user_id' => $billingInfo->user_id]);
+
       return $this->customerApi->createCustomers($customerRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -341,12 +336,12 @@ class DigitalRiverService
    */
   public function updateCustomer(string $id, BillingInfo $billingInfo): DrCustomer
   {
-    $customerRequest = new DrUpdateCustomerRequest();
-    $customerRequest->setType($billingInfo->customer_type); // @phpstan-ignore-line
-    $customerRequest->setEmail($billingInfo->email);
-    $customerRequest->setShipping($this->fillShipping($billingInfo));
-
     try {
+      $customerRequest = new DrUpdateCustomerRequest();
+      $customerRequest->setType($billingInfo->customer_type); // @phpstan-ignore-line
+      $customerRequest->setEmail($billingInfo->email);
+      $customerRequest->setShipping($this->fillShipping($billingInfo));
+
       return $this->customerApi->updateCustomers($id, $customerRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -401,21 +396,28 @@ class DigitalRiverService
    */
   protected function fillCheckoutSubscriptionItem(Subscription $subscription): DrSkuRequestItem
   {
+    // free trial
+    if ($subscription->isFreeTrial()) {
+      $drPlanId = SubscriptionPlan::findFreePlanDrId(
+        $subscription->coupon_info['interval'],
+        $subscription->coupon_info['interval_count']
+      );
+    } else {
+      $drPlanId = SubscriptionPlan::findNormalPlanDrId(
+        $subscription->plan_info['interval'],
+        $subscription->plan_info['interval_count']
+      );
+    }
+
     // productDetails
     $productDetails = $this->fillSubscriptionItemProductDetails($subscription);
 
     // subscriptionInfo
     $subscriptionInfo = new DrSubscriptionInfo();
-    $subscriptionInfo->setPlanId(config('dr.default_plan'));
+    $subscriptionInfo->setPlanId($drPlanId);
     $subscriptionInfo->setTerms('These are the terms...');
     $subscriptionInfo->setAutoRenewal(true);
-
-    // discount
-    $discount = null;
-    if ($subscription->coupon_info) {
-      $discount = new DrSkuDiscount();
-      $discount->setPercentOff($subscription->coupon_info['percentage_off']);
-    }
+    $subscriptionInfo->setFreeTrial($subscription->isFreeTrial());
 
     // item
     $item = new DrSkuRequestItem();
@@ -423,10 +425,7 @@ class DigitalRiverService
     $item->setSubscriptionInfo($subscriptionInfo);
     $item->setPrice($subscription->price);
     $item->setQuantity(1);
-    $item->setMetadata(['subscription' => $subscription->id]);
-    if ($discount) {
-      $item->setDiscount($discount);
-    }
+    $item->setMetadata(['subscription_id' => $subscription->id]);
 
     return $item;
   }
@@ -445,29 +444,29 @@ class DigitalRiverService
    */
   public function createCheckout(Subscription $subscription): DrCheckout
   {
-    // checkout
-    $checkoutRequest = new DrCheckoutRequest();
-    $checkoutRequest->setCustomerId((string)$subscription->user->dr['customer_id']);
-    $checkoutRequest->setCustomerType($subscription->billing_info['customer_type']);
-    $checkoutRequest->setEmail($subscription->billing_info['email']);
-    $checkoutRequest->setLocale($subscription->billing_info['locale']);
-    $checkoutRequest->setBrowserIp(request()->ip());
-    $checkoutRequest->setBillTo($this->fillBilling($subscription->billing_info));
-    $checkoutRequest->setCurrency($subscription->currency);
-    $checkoutRequest->setTaxInclusive(false);
-    $checkoutRequest->setItems($this->fillCheckoutItems($subscription));
-    $checkoutRequest->setChargeType(DrChargeType::CUSTOMER_INITIATED); // @phpstan-ignore-line
-    $checkoutRequest->setMetadata(['subscription_id' => $subscription->id]);
-    $checkoutRequest->setUpstreamId((string)$subscription->active_invoice_id);
-
-    // set tax id
-    if (!empty($subscription->tax_id_info)) {
-      $checkoutRequest->setTaxIdentifiers([(new DrCheckoutTaxIdentifierRequest())->setId($subscription->tax_id_info['dr_tax_id'])]);
-    } else {
-      $checkoutRequest->setTaxIdentifiers([]);
-    }
-
     try {
+      // checkout
+      $checkoutRequest = new DrCheckoutRequest();
+      $checkoutRequest->setCustomerId((string)$subscription->user->getDrCustomerId());
+      $checkoutRequest->setCustomerType($subscription->billing_info['customer_type']);
+      $checkoutRequest->setEmail($subscription->billing_info['email']);
+      $checkoutRequest->setLocale($subscription->billing_info['locale']);
+      $checkoutRequest->setBrowserIp(request()->ip());
+      $checkoutRequest->setBillTo($this->fillBilling($subscription->billing_info));
+      $checkoutRequest->setCurrency($subscription->currency);
+      $checkoutRequest->setTaxInclusive(false);
+      $checkoutRequest->setItems($this->fillCheckoutItems($subscription));
+      $checkoutRequest->setChargeType(DrChargeType::CUSTOMER_INITIATED); // @phpstan-ignore-line
+      $checkoutRequest->setMetadata(['subscription_id' => $subscription->id]);
+      $checkoutRequest->setUpstreamId((string)$subscription->active_invoice_id);
+
+      // set tax id
+      if (!empty($subscription->tax_id_info)) {
+        $checkoutRequest->setTaxIdentifiers([(new DrCheckoutTaxIdentifierRequest())->setId($subscription->tax_id_info['dr_tax_id'])]);
+      } else {
+        $checkoutRequest->setTaxIdentifiers([]);
+      }
+
       return $this->checkoutApi->createCheckouts($checkoutRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -480,7 +479,6 @@ class DigitalRiverService
       $checkout = $this->getCheckout($checkoutId);
 
       // update checkout terms
-
       $updateCheckoutRequest = new DrUpdateCheckoutRequest();
       if ($terms) {
         $items = [];
@@ -654,11 +652,61 @@ class DigitalRiverService
    */
   public function activateSubscription(string $id): DrSubscription
   {
-    $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
-    $updateSubscriptionRequest->setState('active');
-
     try {
+      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
+      $updateSubscriptionRequest->setState('active');
+
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
+    } catch (\Throwable $th) {
+      throw $this->throwException($th);
+    }
+  }
+
+  public function convertSubscriptionToStandard(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
+  {
+    try {
+      $items = $drSubscription->getItems();
+      $items[0]->setPrice($subscription->plan_info['price']['price']);
+      $items[0]->getProductDetails()->setName($subscription->plan_info['name']);
+
+      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
+      $updateSubscriptionRequest->setPlanId(
+        SubscriptionPlan::findNormalPlanDrId(
+          $subscription->plan_info['interval'],
+          $subscription->plan_info['interval_count']
+        )
+      );
+      $updateSubscriptionRequest->setItems($items);
+
+      return $this->subscriptionApi->updateSubscriptions($drSubscription->getId(), $updateSubscriptionRequest);
+    } catch (\Throwable $th) {
+      throw $this->throwException($th);
+    }
+  }
+
+  public function convertSubscriptionToNext(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
+  {
+    try {
+      $nextInvoice = $subscription->next_invoice;
+
+      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
+
+      // update dr plan if requied
+      $newDrPlanId = SubscriptionPlan::findNormalPlanDrId(
+        $nextInvoice['plan_info']['interval'],
+        $nextInvoice['plan_info']['interval_count']
+      );
+      if ($newDrPlanId != $drSubscription->getPlanId()) {
+        $updateSubscriptionRequest->setPlanId($newDrPlanId);
+      }
+
+      // update items
+      $items = $drSubscription->getItems();
+      $items[0]->setPrice($nextInvoice['price']);
+      $items[0]->getProductDetails()->setName(Subscription::buildPlanName($nextInvoice['plan_info'], $nextInvoice['coupon_info']));
+      $updateSubscriptionRequest->setItems($items);
+
+      return $this->subscriptionApi->updateSubscriptions($drSubscription->getId(), $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }
@@ -686,10 +734,10 @@ class DigitalRiverService
    */
   public function updateSubscriptionSource(string $id, string $sourceId)
   {
-    $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
-    $updateSubscriptionRequest->setSourceId($sourceId);
-
     try {
+      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
+      $updateSubscriptionRequest->setSourceId($sourceId);
+
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -729,13 +777,13 @@ class DigitalRiverService
    */
   public function updateSubscriptionItems(string $id, Subscription $subscription)
   {
-    // subscription.items[0] TODO: fillNextInvoice items
-    $items = $this->fillSubscriptionItems($subscription);
-
-    $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
-    $updateSubscriptionRequest->setItems($items);
-
     try {
+      // subscription.items[0] TODO: fillNextInvoice items
+      $items = $this->fillSubscriptionItems($subscription);
+
+      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
+      $updateSubscriptionRequest->setItems($items);
+
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -747,10 +795,10 @@ class DigitalRiverService
    */
   public function cancelSubscription(string $id): DrSubscription
   {
-    $updateSubscriptionRequest = new DrUpdateSubscriptionRequest();
-    $updateSubscriptionRequest->setState('cancelled');
-
     try {
+      $updateSubscriptionRequest = new DrUpdateSubscriptionRequest();
+      $updateSubscriptionRequest->setState('cancelled');
+
       return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -763,11 +811,11 @@ class DigitalRiverService
 
   public function createTaxId(string $type, string $value): DrCustomerTaxIdentifier
   {
-    $taxIdRequest = new DrTaxIdentifierRequest();
-    $taxIdRequest->setType($type);
-    $taxIdRequest->setValue($value);
-
     try {
+      $taxIdRequest = new DrTaxIdentifierRequest();
+      $taxIdRequest->setType($type);
+      $taxIdRequest->setValue($value);
+
       return $this->taxIdentifierApi->createTaxIdentifiers($taxIdRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
@@ -878,11 +926,11 @@ class DigitalRiverService
    */
   public function createFileLink(string $fileId, Carbon $expiresTime): DrFileLink
   {
-    $fileLinkRequest = new DrFileLinkRequest();
-    $fileLinkRequest->setFileId($fileId);
-    $fileLinkRequest->setExpiresTime($expiresTime->toIso8601ZuluString()); // @phpstan-ignore-line
-
     try {
+      $fileLinkRequest = new DrFileLinkRequest();
+      $fileLinkRequest->setFileId($fileId);
+      $fileLinkRequest->setExpiresTime($expiresTime->toIso8601ZuluString()); // @phpstan-ignore-line
+
       return $this->fileLinkApi->createFileLinks($fileLinkRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);

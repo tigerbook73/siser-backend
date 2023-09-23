@@ -18,10 +18,13 @@ interface SubscriptionManager
    * Subscription
    */
   public function createSubscription(User $user, Plan $plan, Coupon|null $coupon = null, TaxId|null $taxId = null): Subscription;
-  public function updateSubscription(Subscription $subscription): Subscription;
   public function deleteSubscription(Subscription $subscription): bool;
   public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription;
   public function cancelSubscription(Subscription $subscription, bool $refund = false, bool $immediate = false): Subscription;
+
+  /**
+   * Invoice
+   */
   public function cancelOrder(Invoice $invoice): Invoice;
 
   /**

@@ -6,18 +6,18 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_order_refunded.notification',
+      'subscription_order_refunded.notification',
       [
-        'order_id' => $invoice->id,
-        'plan_name' => $subscription->plan_info['name'],
-        'currency' => $invoice->currency,
-        'refund_total' => $helper->formatPrice($invoice->total_refunded),
+        'order_id'        => $invoice->id,
+        'plan_name'       => $helper->formatOrderPlanName($invoice),
+        'currency'        => $invoice->currency,
+        'refund_total'    => $helper->formatPrice($invoice->total_refunded),
       ]
     ) 
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_order_refunded.summary') }}
+  {{ $helper->trans('subscription_order_refunded.summary') }}
   <br />
   <br />
   <x-emails.subscription.table
@@ -29,7 +29,6 @@
       'customer',
       'items',
       'payment_method',
-      'subscription',
     ]"
     :$helper
   />

@@ -89,7 +89,7 @@ class RefundController extends SimpleController
       $refund = $this->manager->createRefund($invoice, $inputs['amount'] ?? 0, $inputs['reason'] ?? null);
       return  response()->json($this->transformSingleResource($refund));
     } catch (\Throwable $th) {
-      return response()->json(['message' => $th->getMessage()], $th->getCode());
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
   }
 }

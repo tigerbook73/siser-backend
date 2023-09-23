@@ -312,4 +312,9 @@ class SimpleController extends Controller
     }
     return $inputs;
   }
+
+  protected function toHttpCode(int $code)
+  {
+    return ($code >= 100 && $code < 600) ? $code : 500;
+  }
 }

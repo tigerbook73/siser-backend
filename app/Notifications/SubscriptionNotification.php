@@ -33,27 +33,23 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   public const NOTIF_TERMINATED                 = 'subscription.terminated';
   public const NOTIF_TERMS_CHANGED              = 'subscription.terms-changed';
 
-  // TODO: implement these
-  public const NOTIF_FREE_TRIAL_ENDED           = 'subscription.free-trial-ended';
-  public const NOTIF_COUPON_ENDED               = 'subscription.coupone-ended';
-
   static public $types = [
-    self::NOTIF_ORDER_ABORTED         => ['subject' => "Order Aborted",                       'validate' => null],
-    self::NOTIF_ORDER_CANCELLED       => ['subject' => "Order Cancelled",                     'validate' => null],
-    self::NOTIF_ORDER_CONFIRMED       => ['subject' => "Order Confirmed",                     'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_ORDER_CREDIT_MEMO     => ['subject' => "Order Credit Memo",                   'validate' => null],
-    self::NOTIF_ORDER_INVOICE         => ['subject' => "Order Invoice PDF",                   'validate' => null],
-    self::NOTIF_ORDER_REFUND_FAILED   => ['subject' => "Order Refund Failed",                 'validate' => null],
-    self::NOTIF_ORDER_REFUNDED        => ['subject' => "Order Refund Confirmed",              'validate' => null],
+    self::NOTIF_ORDER_ABORTED         => ['subject' => "Order ##O Aborted",                       'validate' => null],
+    self::NOTIF_ORDER_CANCELLED       => ['subject' => "Order ##O Cancelled",                     'validate' => null],
+    self::NOTIF_ORDER_CONFIRMED       => ['subject' => "Order ##O Confirmed",                     'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_ORDER_CREDIT_MEMO     => ['subject' => "Order ##O Credit Memo",                   'validate' => null],
+    self::NOTIF_ORDER_INVOICE         => ['subject' => "Order ##O Invoice PDF",                   'validate' => null],
+    self::NOTIF_ORDER_REFUND_FAILED   => ['subject' => "Order ##O Refund Failed",                 'validate' => null],
+    self::NOTIF_ORDER_REFUNDED        => ['subject' => "Order ##O Refund Confirmed",              'validate' => null],
 
-    self::NOTIF_CANCELLED             => ['subject' => "Subscription Cancelled",              'validate' => null],
-    self::NOTIF_CANCELLED_REFUND      => ['subject' => "Subscription Cancelled & Terminated", 'validate' => null],
-    self::NOTIF_EXTENDED              => ['subject' => "Subscription Extended",               'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_FAILED                => ['subject' => "Subscription Failed",                 'validate' => null],
-    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription Payment Failed",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_REMINDER              => ['subject' => "Subscription Renew Reminder",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_TERMINATED            => ['subject' => "Subscription Terminated",             'validate' => null],
-    self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription Terms Changed",          'validate' => null],
+    self::NOTIF_CANCELLED             => ['subject' => "Subscription ##S Cancelled",              'validate' => null],
+    self::NOTIF_CANCELLED_REFUND      => ['subject' => "Subscription ##S Cancelled & Terminated", 'validate' => null],
+    self::NOTIF_EXTENDED              => ['subject' => "Subscription ##S Extended",               'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_FAILED                => ['subject' => "Subscription ##S Failed",                 'validate' => null],
+    self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription ##S Payment Failed",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_REMINDER              => ['subject' => "Subscription ##S Renew Reminder",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_TERMINATED            => ['subject' => "Subscription ##S Terminated",             'validate' => null],
+    self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription ##S Terms Changed",          'validate' => null],
   ];
 
   public Subscription $subscription;
@@ -115,6 +111,8 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     }
 
     $subject = static::$types[$this->type]['subject'];
+    $subject = str_replace('##S', '#' . $this->subscription->id, $subject);
+    $subject = str_replace('##O', '#' . ($this->invoice?->id ?? '#'), $subject);
     $view = static::$types[$this->type]['view'] ?? $this->type;
     return (new MailMessage)
       ->subject($subject)

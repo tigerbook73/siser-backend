@@ -17,7 +17,7 @@ class CouponCustomerValidateApiTest extends CouponTestCase
 
     unset($this->modelSchema[array_search('status', $this->modelSchema)]);
     $response->assertStatus(200)
-      ->assertJsonStructure($this->modelSchema);
+      ->assertJsonStructure($this->couponInfoSchema);
   }
 
   public function testMore()

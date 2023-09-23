@@ -45,7 +45,7 @@ return <<<EOD
       },
       "subscriptionInfo": {
         "subscriptionId": "e5ad8813-69bf-4515-ba5a-d399ee0efc98",
-        "planId": "default-3-day-test-plan",
+        "planId": "test-3-day",
         "autoRenewal": true,
         "freeTrial": false,
         "billingAgreementId": "7019f4be-fdb3-4416-8d26-60b670a6c480"

@@ -36,10 +36,10 @@ class Invoice {
     /** @var \Tests\Models\TaxIdInfo $tax_id_info */
     public $tax_id_info;
 
-    /** @var \Tests\Models\Plan $plan_info */
+    /** @var \Tests\Models\PlanInfo $plan_info */
     public $plan_info;
 
-    /** @var \Tests\Models\Coupon $coupon_info */
+    /** @var \Tests\Models\CouponInfo $coupon_info */
     public $coupon_info;
 
     /** @var \Tests\Models\PaymentMethodInfo $payment_method_info */
@@ -71,5 +71,8 @@ class Invoice {
 
     /** @var string $status */
     public $status = "";
+
+    /** @var string $sub_status */
+    public $sub_status = "";
 
 }

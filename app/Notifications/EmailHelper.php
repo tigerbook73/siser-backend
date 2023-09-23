@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Country;
 use App\Models\Coupon;
+use App\Models\Invoice;
 use App\Models\Subscription;
 use Carbon\Carbon;
 use NumberFormatter;
@@ -24,7 +25,12 @@ class EmailHelper
       $replace['tax'] = $this->getTaxName();
     }
 
-    return __($key, $replace, $this->locale);
+    return __('messages.' . $key, $replace, $this->locale);
+  }
+
+  public function transWithoutAppend(string $key, array $replace = [])
+  {
+    return __('messages.' . $key, $replace, $this->locale);
   }
 
   public function formatDate(Carbon|null $date)
@@ -41,7 +47,7 @@ class EmailHelper
 
   public function formatOrderStatus(string $status)
   {
-    return $this->trans('messages.order.status.' . $status);
+    return $this->trans('order.status.' . $status);
   }
 
   public function formatName(array $billing_info)
@@ -85,19 +91,17 @@ class EmailHelper
 
   public function formatPaymentMethodType(string $type)
   {
-    return $this->trans('messages.payment_method.' . $type);
+    return $this->trans('payment_method.' . $type);
   }
 
   public function formatPaymentMethod(string $type, array|null $display_data)
   {
     if ($type == 'creditCard' || $type == 'googlePay') {
-      $text  = '<div>' . $this->trans('messages.credit_card.brand', ['brand' => $display_data['brand']]) . '</div>';
-      $text .= '<div>' . $this->trans('messages.credit_card.card_no', ['last_four_digits' => $display_data['last_four_digits']])  . '</div>';
-      $text .= '<div>' . $this->trans('messages.credit_card.expire_at', ['month' => $display_data['expiration_month'], 'year' =>  $display_data['expiration_year']])  . '</div>';
-
+      $text  = '<div>' . $this->trans('credit_card.brand', ['brand' => $display_data['brand']]) . '</div>';
+      $text .= '<div>' . $this->trans('credit_card.card_no', ['last_four_digits' => $display_data['last_four_digits']])  . '</div>';
+      $text .= '<div>' . $this->trans('credit_card.expire_at', ['month' => $display_data['expiration_month'], 'year' =>  $display_data['expiration_year']])  . '</div>';
       return $text;
     }
-
     return '';
   }
 
@@ -177,23 +181,51 @@ class EmailHelper
 
   public function formatCouponDescription(array $coupon)
   {
-    return $this->trans('messages.coupon.description', [
+    return $this->trans('coupon.description', [
       'code' => $coupon['code'],
-      'description' => $coupon['description'],
-      'tax' => $this->getTaxName()
+      'name' => $coupon['name'],
     ]);
   }
 
   public function formatBillingPeriod(Subscription $subscription)
   {
-    return $this->trans('messages.subscription.billing_period.monthly' .
-      (($subscription->coupon_info && $subscription->coupon_info['percentage_off'] >= 100) ? '_trial' : ''));
+    if ($subscription->isFreeTrial()) {
+      return $this->trans(
+        "subscription.billing_period.count_{$subscription->coupon_info['interval']}",
+        ['interval_count' => $subscription->coupon_info['interval_count']]
+      );
+    }
+    return $this->trans("subscription.billing_period.one_{$subscription->plan_info['interval']}");
   }
 
   public function formatPeriod(Subscription $subscription)
   {
     return ($subscription->coupon_info && $subscription->coupon_info['percentage_off'] >= 100) ?
-      $this->trans('messages.subscription.period_free_trial') :
+      $this->trans('subscription.period_free_trial') :
       $subscription->current_period;
+  }
+
+  public function formatPlanName(array $planInfo, array|null $couponInfo)
+  {
+    return Subscription::buildPlanName($planInfo, $couponInfo);
+  }
+
+  public function formatSubscriptionPlanName(Subscription $subscription, bool $next = false)
+  {
+    $planInfo = $subscription->plan_info;
+    $couponInfo = $next ?  $subscription->next_invoice['coupon_info'] : $subscription->coupon_info;
+    return $this->formatPlanName($planInfo, $couponInfo);
+  }
+
+  public function formatOrderPlanName(Invoice $invoice)
+  {
+    $planInfo = $invoice->plan_info;
+    $couponInfo = $invoice->coupon_info;
+    return $this->formatPlanName($planInfo, $couponInfo);
+  }
+
+  public function formatOrderPrice(Invoice $invoice)
+  {
+    return $this->formatPrice($invoice->subtotal);
   }
 }

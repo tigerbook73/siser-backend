@@ -5,16 +5,16 @@
 >
   {!! 
     $helper->trans(
-      'messages.subscription_terminated.notification',
+      'subscription_terminated.notification',
       [
-        'plan_name' => $subscription->plan_info['name'],
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
         'end_date' => $subscription->end_date
       ]
     ) 
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_terminated.summary') }}
+  {{ $helper->trans('subscription_terminated.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

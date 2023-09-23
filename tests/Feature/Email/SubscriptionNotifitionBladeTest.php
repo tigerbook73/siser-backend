@@ -10,30 +10,13 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
   public string $baseUrl = '/be-test/notification';
   public ?string $role = 'customer';
 
-  public $notifications = [
-    SubscriptionNotification::NOTIF_ORDER_ABORTED,
-    SubscriptionNotification::NOTIF_ORDER_CANCELLED,
-    SubscriptionNotification::NOTIF_ORDER_CONFIRMED,
-    SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
-    SubscriptionNotification::NOTIF_ORDER_INVOICE,
-    SubscriptionNotification::NOTIF_ORDER_REFUNDED,
-    SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
-
-    SubscriptionNotification::NOTIF_CANCELLED,
-    SubscriptionNotification::NOTIF_CANCELLED_REFUND,
-    SubscriptionNotification::NOTIF_EXTENDED,
-    SubscriptionNotification::NOTIF_FAILED,
-    SubscriptionNotification::NOTIF_INVOICE_PENDING,
-    SubscriptionNotification::NOTIF_REMINDER,
-    SubscriptionNotification::NOTIF_TERMINATED,
-    SubscriptionNotification::NOTIF_TERMS_CHANGED,
-  ];
   public $countries = ['US', 'AU', 'CA', 'DE', 'ES', 'FR', 'GB', 'IT', 'JP', 'NZ'];
+  public $plans = ['month', 'year'];
+  public $coupons = ['', 'free-trial', 'percentage', 'percentage-fixed-term'];
 
-
-  public function viewNotification(string $type, string $country)
+  public function viewNotification(string $type, string $country, string $plan, string $coupon = "")
   {
-    return $this->get("{$this->baseUrl}/{$type}?country={$country}");
+    return $this->get("{$this->baseUrl}/{$type}?country={$country}&plan={$plan}&coupon={$coupon}");
   }
 
   public function clean()
@@ -44,10 +27,14 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
   public function viewNotificationType(string $type)
   {
     foreach ($this->countries as $country) {
-      $this->viewNotification($type, $country)
-        ->assertStatus(200)
-        ->assertSeeText('Siser Software')
-        ->assertDontSeeText('messages.');
+      foreach ($this->plans as $plan) {
+        foreach ($this->coupons as $coupon) {
+          $this->viewNotification($type, $country, $plan, $coupon)
+            ->assertStatus(200)
+            ->assertSeeText('Team Siser')
+            ->assertDontSeeText('messages.');
+        }
+      }
     }
   }
 
@@ -76,16 +63,15 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
     $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_INVOICE);
   }
 
-  public function testNotificationOrderRefunded()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_REFUNDED);
-  }
-
   public function testNotificationOrderRefundFailed()
   {
     $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED);
   }
 
+  public function testNotificationOrderRefunded()
+  {
+    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_REFUNDED);
+  }
 
   public function testNotificationCancelled()
   {

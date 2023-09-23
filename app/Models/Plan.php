@@ -12,14 +12,24 @@ use App\Models\Base\Plan as BasePlan;
  */
 class Plan extends BasePlan
 {
+  const TYPE_STANDARD             = 'standard';
+  const TYPE_TEST                 = 'test';
+
+  const INTERVAL_DAY              = 'day';
+  const INTERVAL_MONTH            = 'month';
+  const INTERVAL_YEAR             = 'year';
+  const INTERVAL_LONGTERM         = 'long-term'; // only for machine plan
+
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'name'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'catagory'            => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
-    'description'         => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'product_name'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
+    'interval'            => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
+    'interval_count'      => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
+    'description'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'url'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'price'               => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_0_1],
     'price_list'          => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
@@ -33,33 +43,32 @@ class Plan extends BasePlan
       ->where('status', 'active');
   }
 
-  public function toPublicPlan(string $country)
+  public function info(string $country): array|null
   {
-    $priceInCountry = null;
-    foreach ($this->price_list as $price) {
-      if ($price['country'] === $country) {
-        $priceInCountry = $price;
-      }
+    if ($priceInCountry = $this->getPrice($country)) {
+      return [
+        'id'                 => $this->id,
+        'name'               => $this->name,
+        'product_name'       => $this->product_name,
+        'description'        => $this->description,
+        'interval'           => $this->interval,
+        'interval_count'     => $this->interval_count,
+        'price'              => $priceInCountry,
+        'subscription_level' => $this->subscription_level,
+        'url'                => $this->url,
+      ];
     }
-
-    if (!$priceInCountry) {
-      return null;
-    }
-
-    // return customer plan
-    return [
-      'id'                 => $this->id,
-      'name'               => $this->name,
-      'catagory'           => $this->catagory,
-      'description'        => $this->description,
-      'price'              => $priceInCountry,
-      'subscription_level' => $this->subscription_level,
-      'url'                => $this->url,
-      'status'             => $this->status,
-    ];
+    return null;
   }
 
-  public function toSimplePlan(string $country)
+  /**
+   * @return array|null [
+   *    'country'   => string,
+   *    'currency'  => string,
+   *    'price'     => float
+   * ]
+   */
+  public function getPrice(string $country): array|null
   {
     $priceInCountry = null;
     foreach ($this->price_list as $price) {
@@ -67,18 +76,7 @@ class Plan extends BasePlan
         $priceInCountry = $price;
       }
     }
-
-    if (!$priceInCountry) {
-      return null;
-    }
-
-    // return customer plan
-    return [
-      'name'      => $this->name,
-      'country'   => $priceInCountry['country'],
-      'currency'  => $priceInCountry['currency'],
-      'price'     => $priceInCountry['price'],
-    ];
+    return $priceInCountry;
   }
 
   public function activate()

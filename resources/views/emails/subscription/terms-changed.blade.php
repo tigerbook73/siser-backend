@@ -5,7 +5,7 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_terms_changed.notification',
+      'subscription_terms_changed.notification',
       [
         'plan_name'     => $subscription->plan_info['name'],
         'terms'         => $helper->getTermsLink(),
@@ -15,7 +15,7 @@
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_terms_changed.summary') }}
+  {{ $helper->trans('subscription_terms_changed.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

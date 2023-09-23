@@ -6,50 +6,48 @@ use App\Models\Base\Coupon as BaseCoupon;
 
 class Coupon extends BaseCoupon
 {
+  const TYPE_SHARED               = 'shared';
+  const TYPE_ONCE_OFF             = 'once-off';
+
+  const INTERVAL_DAY              = 'day';
+  const INTERVAL_WEEK             = 'week';
+  const INTERVAL_MONTH            = 'month';
+  const INTERVAL_YEAR             = 'year';
+
+  const DISCOUNT_TYPE_FREE_TRIAL  = 'free-trial';
+  const DISCOUNT_TYPE_PERCENTAGE  = 'percentage';
+
+  const STATUS_DRAFT              = 'draft';
+  const STATUS_ACTIVE             = 'active';
+  const STATUS_INACTIVE           = 'inactive';
+
   static protected $attributesOption = [
-    'id'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'code'            => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'description'     => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'condition'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'percentage_off'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'period'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'start_date'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'end_date'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'status'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
-    'created_at'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
-    'updated_at'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
+    'id'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'code'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'name'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'product_name'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'type'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'coupon_event'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'discount_type'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'percentage_off'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'interval'            => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'interval_count'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'start_date'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'end_date'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'condition'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'status'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
+    'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
+    'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
 
+  protected function beforeSave()
+  {
+    $this->code = strtoupper($this->code);
+  }
 
   public function scopePublic($query)
   {
-    return $query->where('status', 'active');
-  }
-
-  protected function beforeCreate()
-  {
-    // update status
-    if ($this->start_date > today()) {
-      $this->status = 'draft';
-    } else {
-      $this->status = 'active';
-    }
-  }
-
-  protected function beforeUpdate()
-  {
-    if ($this->status !== 'draft' && $this->status !== 'active') {
-      return;
-    }
-
-    // update status
-    if ($this->status == 'draft' && $this->start_date <= today()) {
-      $this->status = 'active';
-    }
-
-    if ($this->status == 'active' && $this->end_date < today()) {
-      $this->status = 'inactive';
-    }
+    return $query->where('status', Coupon::STATUS_ACTIVE);
   }
 
   public function info()
@@ -57,19 +55,51 @@ class Coupon extends BaseCoupon
     return [
       'id'              => $this->id,
       'code'            => $this->code,
-      'description'     => $this->description,
-      'condition'       => $this->condition,
+      'name'            => $this->name,
+      'product_name'    => $this->product_name,
+      'type'            => $this->type,
+      'coupon_event'    => $this->coupon_event,
+      'discount_type'   => $this->discount_type,
       'percentage_off'  => $this->percentage_off,
-      'period'          => $this->period,
+      'interval'        => $this->interval,
+      'interval_count'  => $this->interval_count,
     ];
   }
 
-  public function validate(bool $new_customer, bool $new_subscription = true, bool $upgrade_subscription = false): bool
+  /**
+   * set the usage of the coupon, including:
+   *  - subscription_id:  the latest subscription_id will be stored
+   *  - count:            the number of usage
+   * @param int $subscription_id
+   */
+  public function setUsage(int $subscription_id): self
   {
-    return !(
-      ($this->condition['new_customer_only'] && !$new_customer) ||
-      ($this->condition['new_subscription_only'] && !$new_subscription) ||
-      ($this->condition['upgrade_only'] && !$upgrade_subscription)
-    );
+    if ($this->type === self::TYPE_ONCE_OFF) {
+      $this->status = self::STATUS_INACTIVE;
+    }
+
+    $usage = $this->usage ?? [];
+    $usage['subscription_id'] = $subscription_id;
+    $usage['count'] = ($usage['count'] ?? 0) + 1;
+    $usage['updated_at'] = now()->toString();
+    $this->usage = $usage;
+    return $this;
+  }
+
+  public function releaseUsage(int $subscription_id): self
+  {
+    if (!$usage = $this->usage) {
+      return $this;
+    }
+
+    if ($this->type === self::TYPE_ONCE_OFF && ($usage['subscription_id'] ?? null) === $subscription_id) {
+      $this->status = self::STATUS_ACTIVE;
+    }
+
+    $usage['subscription_id'] = null;
+    $usage['count'] = ($usage['count'] ?? 1) - 1;
+    $usage['updated_at'] = now()->toString();
+    $this->usage = $usage;
+    return $this;
   }
 }

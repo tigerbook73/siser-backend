@@ -4,10 +4,17 @@
   :$invoice
   :$helper
 >
-  {!! $helper->trans('messages.subscription_failed.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
+  {!!
+    $helper->trans(
+      'subscription_failed.notification',
+      [
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription)
+      ]
+    )
+  !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_failed.summary') }}
+  {{ $helper->trans('subscription_failed.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

@@ -6,17 +6,18 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_order_invoice.notification',
+      'subscription_order_invoice.notification',
       [
-        'plan_name' => $subscription->plan_info['name'],
-        'invoice_pdf' => $invoice->pdf_file,
-        'customer_portal_link' => $helper->getCustomerPortalLink(),
+        'order_id'              => $invoice->id,
+        'plan_name'             => $helper->formatOrderPlanName($invoice),
+        'invoice_pdf'           => $invoice->pdf_file,
+        'customer_portal_link'  => $helper->getCustomerPortalLink(),
       ]
     )
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_order_invoice.summary') }}
+  {{ $helper->trans('subscription_order_invoice.summary') }}
   <br />
   <br />
   <x-emails.subscription.table
@@ -28,7 +29,6 @@
       'customer',
       'items',
       'payment_method',
-      'subscription',
     ]"
     :$helper
   />

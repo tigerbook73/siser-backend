@@ -16,18 +16,15 @@ class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
     $this->createOrUpdateBillingInfo();
     $this->createOrUpdatePaymentMethod();
 
-    $plan = Plan::public()->first();
-    $createResponse = $this->createSubscription([
-      "plan_id"   => $plan->id
-    ]);
+    $createResponse = $this->createSubscription(Plan::INTERVAL_MONTH);
 
     /**
      * mock up functions
      */
     $subscription = Subscription::find($createResponse->json()['id']);
     $this->mockAttachCheckoutSource();
-    $this->mockUpdateCheckoutTerms($subscription);
-    $this->mockConvertCheckoutToOrder($subscription);
+    $this->mockUpdateCheckoutTerms();
+    $this->mockConvertCheckoutToOrder();
 
     $response = $this->postJson(
       $this->baseUrl . '/' . $createResponse->json()['id'] . '/pay',
@@ -44,10 +41,7 @@ class AccountSubscriptionPayApiTest extends AccountSubscriptionTestCase
     $this->createOrUpdateBillingInfo();
     $this->createOrUpdatePaymentMethod();
 
-    $plan = Plan::public()->first();
-    $createResponse = $this->createSubscription([
-      "plan_id"   => $plan->id
-    ]);
+    $createResponse = $this->createSubscription(Plan::INTERVAL_MONTH);
 
     // mock up
     $this->user->type = User::TYPE_BLACKLISTED;

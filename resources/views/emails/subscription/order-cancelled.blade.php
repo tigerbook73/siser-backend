@@ -6,17 +6,15 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_order_cancel.notification',
+      'subscription_order_cancel.notification',
       [
-        'plan_name' => $subscription->plan_info['name'],
-        'date' => $helper->formatDate(now()),
-        'end_date' => $helper->formatDate(now()),
+        'plan_name' => $helper->formatOrderPlanName($invoice),
       ]
     ) 
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_order_cancel.summary') }}
+  {{ $helper->trans('subscription_order_cancel.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

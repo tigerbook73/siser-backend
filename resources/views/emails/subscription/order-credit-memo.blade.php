@@ -6,17 +6,18 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_order_credit.notification',
+      'subscription_order_credit.notification',
       [
-        'plan_name' => $subscription->plan_info['name'],
-        'credit_memo' => $credit_memo,
-        'customer_portal_link' => $helper->getCustomerPortalLink(),
+        'order_id'              => $invoice->id,
+        'plan_name'             => $helper->formatOrderPlanName($invoice),
+        'credit_memo'           => $credit_memo,
+        'customer_portal_link'  => $helper->getCustomerPortalLink(),
       ]
     )
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_order_credit.summary') }}
+  {{ $helper->trans('subscription_order_credit.summary') }}
   <br />
   <br />
   <x-emails.subscription.table
@@ -28,7 +29,6 @@
       'customer',
       'items',
       'payment_method',
-      'subscription',
     ]"
     :$helper
   />

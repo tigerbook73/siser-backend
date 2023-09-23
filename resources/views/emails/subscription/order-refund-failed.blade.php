@@ -4,20 +4,19 @@
   :$invoice
   :$helper
 >
-  {{-- TODO:  --}}
   {!!
     $helper->trans(
-      'messages.subscription_order_refund_failed.notification',
+      'subscription_order_refund_failed.notification',
       [
-        'order_id' => $invoice->id,
-        'plan_name' => $subscription->plan_info['name'],
-        'amount' => $helper->formatPriceWithCurrency($refund->amount),
+        'order_id'  => $invoice->id,
+        'plan_name' => $helper->formatOrderPlanName($invoice),
+        'amount'    => $helper->formatPriceWithCurrency($refund->amount),
       ]
     ) 
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_order_refund_failed.summary') }}
+  {{ $helper->trans('subscription_order_refund_failed.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

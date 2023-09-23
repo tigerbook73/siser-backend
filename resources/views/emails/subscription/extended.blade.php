@@ -4,10 +4,44 @@
   :$invoice
   :$helper
 >
-  {!! $helper->trans('messages.subscription_extended.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
+  {!!
+    $helper->trans(
+      'subscription_extended.notification',
+      [
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription)
+      ]
+    )
+  !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_extended.summary') }}
+  @if ($subscription->plan_info['interval'] == 'year')
+  {!!
+    $helper->trans(
+      'subscription_order_confirm.annual_plan_claim',
+      [
+        'plan_end_date' => $helper->formatDate($subscription->current_period_end_date),
+        'monthly_plan' => $helper->formatPlanName($subscription->next_invoice['plan_info'], $subscription->next_invoice['coupon_info']),
+      ]
+    )
+  !!}
+  <br />
+  <br />
+  @elseif ($subscription->isFixedTermPercentage())
+  {!!
+    $helper->trans(
+      'subscription_order_confirm.percentage_claim',
+      [
+        'coupon_end_date' => $helper->formatDate($subscription->start_date->addUnit($subscription->coupon_info['interval'], $subscription->coupon_info['interval_count'])),
+        'standard_plan' => $helper->formatPlanName($subscription->next_invoice['plan_info'], $subscription->next_invoice['coupon_info']),
+      ]
+    )
+  !!}
+  <br />
+  <br />
+  @endif
+
+
+  {{ $helper->trans('subscription_extended.summary') }}
   <br />
   <br />
   <x-emails.subscription.table
@@ -24,5 +58,5 @@
     :$helper
   />
   <br />
-  {{ $helper->trans('messages.subscription_extended.agreement_claim') }}
+  {{ $helper->trans('subscription_extended.agreement_claim') }}
 </x-emails.subscription.layout>

@@ -10,6 +10,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
+use App\Services\CouponRules;
 use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\RefundRules;
 use Illuminate\Http\Request;
@@ -106,8 +107,12 @@ class SubscriptionController extends SimpleController
     if ((isset($inputs['coupon_id']) && !$coupon) || ($coupon && $coupon->status !== 'active')) {
       return response()->json(['message' => 'Invalid coupon!'], 400);
     }
-    if ($coupon && !$coupon->validate($this->user->isNewCustomer())) {
-      return response()->json(['message' => 'Coupone is not applicable!'], 400);
+
+    if ($coupon) {
+      $applicable = CouponRules::couponApplicable($coupon, $plan, $this->user);
+      if (!$applicable['applicable']) {
+        return response()->json(['message' => 'Coupone is not applicable!'], 400);
+      }
     }
 
     /** @var BillingInfo|null $billingInfo */
@@ -129,7 +134,7 @@ class SubscriptionController extends SimpleController
     }
 
     // create dr customer is required
-    if (empty($this->user->dr['customer_id'])) {
+    if (!$this->user->getDrCustomerId()) {
       $this->manager->createOrUpdateCustomer($billingInfo);
       $this->user->refresh();
     }
@@ -144,7 +149,7 @@ class SubscriptionController extends SimpleController
       $subscription = $this->manager->createSubscription($this->user, $plan, $coupon, $taxId);
       return  response()->json($this->transformSingleResource($subscription), 201);
     } catch (\Throwable $th) {
-      return response()->json(['message' => $th->getMessage()], $th->getCode());
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
   }
 
@@ -162,7 +167,7 @@ class SubscriptionController extends SimpleController
       $this->manager->deleteSubscription($draftSubscription);
       return 1;
     } catch (\Throwable $th) {
-      return response()->json(['message' => $th->getMessage()], $th->getCode());
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
   }
 
@@ -180,7 +185,7 @@ class SubscriptionController extends SimpleController
 
     $draftSubscription = $this->user->getDraftSubscriptionById($id);
     if (!$draftSubscription) {
-      return response()->json(['message' => 'Subscripiton not found'], 404);
+      return response()->json(['message' => 'Subscription not found'], 404);
     }
 
     $pendingSubscription = $this->user->getPendingSubscription();
@@ -195,7 +200,7 @@ class SubscriptionController extends SimpleController
 
     /** @var PaymentMethod|null $paymentMethod */
     $paymentMethod = $this->user->payment_method;
-    if (!$paymentMethod || !$paymentMethod->dr['source_id']) {
+    if (!$paymentMethod || !$paymentMethod->getDrSourceId()) {
       return response()->json(['message' => 'Payment method is not defined'], 400);
     }
 
@@ -204,7 +209,7 @@ class SubscriptionController extends SimpleController
       $subscription = $this->manager->paySubscription($draftSubscription, $paymentMethod, $inputs['terms'] ?? null);
       return  response()->json($this->transformSingleResource($subscription));
     } catch (\Throwable $th) {
-      return response()->json(['message' => $th->getMessage()], $th->getCode());
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
   }
 
@@ -220,11 +225,11 @@ class SubscriptionController extends SimpleController
     /** @var Subscription|null $activeSubscription */
     $activeSubscription = $this->user->getActivePaidSubscription();
     if (!$activeSubscription || $activeSubscription->id != $id) {
-      return response()->json(['message' => 'Subscripiton not found'], 404);
+      return response()->json(['message' => 'Subscription not found'], 404);
     }
 
     if ($activeSubscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
-      return response()->json(['message' => 'Subscripiton is already on cancelling'], 422);
+      return response()->json(['message' => 'Subscription is already on cancelling'], 422);
     }
 
     // check refundable
@@ -240,7 +245,7 @@ class SubscriptionController extends SimpleController
       $subscription = $this->manager->cancelSubscription($activeSubscription, $inputs['refund'] ?? false, $inputs['immediate'] ?? false);
       return  response()->json($this->transformSingleResource($subscription));
     } catch (\Throwable $th) {
-      return response()->json(['message' => $th->getMessage()], $th->getCode());
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
   }
 

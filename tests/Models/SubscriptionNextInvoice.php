@@ -9,10 +9,19 @@ namespace Tests\Models;
  */
 class SubscriptionNextInvoice {
 
-    /** @var \Tests\Models\Plan $plan_info */
+    /** @var int $current_period */
+    public $current_period = 0;
+
+    /** @var \DateTime $current_period_start_date */
+    public $current_period_start_date;
+
+    /** @var \DateTime $current_period_end_date */
+    public $current_period_end_date;
+
+    /** @var \Tests\Models\PlanInfo $plan_info */
     public $plan_info;
 
-    /** @var \Tests\Models\Coupon $coupon_info */
+    /** @var \Tests\Models\CouponInfo $coupon_info */
     public $coupon_info;
 
     /** @var float $price beautified price (beautified price)*/
@@ -29,11 +38,5 @@ class SubscriptionNextInvoice {
 
     /** @var float $total_amount */
     public $total_amount = 0;
-
-    /** @var \DateTime $current_period_start_date */
-    public $current_period_start_date;
-
-    /** @var \DateTime $current_period_end_date */
-    public $current_period_end_date;
 
 }

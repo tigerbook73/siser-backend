@@ -3,6 +3,7 @@
 namespace Tests\Feature\Full;
 
 use App\Models\Invoice;
+use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
 use Carbon\Carbon;
@@ -19,7 +20,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
   {
     $this->createOrUpdateBillingInfo();
     $this->createOrUpdatePaymentMethod();
-    $response = $this->createSubscription();
+    $response = $this->createSubscription(Plan::INTERVAL_MONTH);
     $response = $this->paySubscription($response->json('id'));
     $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
     $subscription = $this->onOrderComplete($subscription);

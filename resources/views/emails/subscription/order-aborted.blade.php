@@ -4,10 +4,17 @@
   :$invoice
   :$helper
 >
-  {!! $helper->trans('messages.subscription_order_abort.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
+  {!!
+    $helper->trans(
+      'subscription_order_abort.notification',
+      [
+        'plan_name' => $helper->formatOrderPlanName($invoice)
+      ]
+    ) 
+  !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_order_abort.summary') }}
+  {{ $helper->trans('subscription_order_abort.summary') }}
   <br />
   <br />  
   <x-emails.subscription.table

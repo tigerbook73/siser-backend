@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\BillingInfo;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
@@ -199,7 +200,7 @@ class LaunchSteps extends Command
         ['code' => 'MY', 'name' => 'Malaysia',                  'currency' => 'MYR', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'NI', 'name' => 'Nicaragua',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'NL', 'name' => 'Netherlands',               'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'NO', 'name' => 'Norway',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'NO', 'name' => 'Norway',                    'currency' => 'NOK', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'NZ', 'name' => 'New Zealand',               'currency' => 'NZD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'PA', 'name' => 'Panama',                    'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'PH', 'name' => 'Philippines',               'currency' => 'PHP', 'created_at' => $now, 'updated_at' => $now],
@@ -240,7 +241,7 @@ class LaunchSteps extends Command
       [
         [
           'name'                => 'Leonardo™ Design Studio Pro Monthly Plan',
-          'catagory'            => 'machine',
+          'product_name'        => 'Leonardo™ Design Studio Pro',
           'description'         => 'Leonardo™ Design Studio Pro Monthly Plan',
           'subscription_level'  => 2,
           'price_list'          => json_encode([
@@ -296,7 +297,7 @@ class LaunchSteps extends Command
             ['country' => 'MY', 'currency' => 'MYR', 'price' => 40],
             ['country' => 'NI', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'NL', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'NO', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'NO', 'currency' => 'NOK', 'price' => 10.49],
             ['country' => 'NZ', 'currency' => 'NZD', 'price' => 14.49],
             ['country' => 'PA', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'PH', 'currency' => 'PHP', 'price' => 500],
@@ -348,5 +349,33 @@ class LaunchSteps extends Command
     // 2. check plan
     // 3. check sku group
     // 4. check webhook
+  }
+
+  public function createOrUpdateAnnualPlan()
+  {
+    /** @var Plan|null $annualPlan */
+    $annualPlan = Plan::public()
+      ->where('interval', Plan::INTERVAL_YEAR)
+      ->where('interval_count', 1)
+      ->first();
+
+    if (!$annualPlan) {
+      /** @var Plan $monthPlan */
+      $monthPlan = Plan::where('name', 'Leonardo™ Design Studio Pro Monthly Plan')->first();
+      $annualPlan = $monthPlan->replicate();
+    }
+
+    $annualPlan->name = 'Leonardo™ Design Studio Pro Annual Plan';
+    $annualPlan->description = '1 year plan, will convert to "Leonardo™ Design Studio Pro Monthly Plan" after 1 year';
+    $annualPlan->interval = Plan::INTERVAL_YEAR;
+    $annualPlan->interval_count = 1;
+
+    $price_list = $annualPlan->price_list;
+    for ($i = 0; $i < count($price_list); $i++) {
+      $price_list[$i]['price'] = $price_list[$i]['price'] * 10;
+    }
+    $annualPlan->price_list = $price_list;
+
+    $annualPlan->save();
   }
 }

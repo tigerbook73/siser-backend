@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Test\SubscriptionNotificationTest;
 use App\Models\Country;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TestController extends Controller
 {
@@ -19,139 +20,192 @@ class TestController extends Controller
     return response()->json(['message' => 'test data reset successfully!']);
   }
 
-  public function prepare(string $type, string $country, string $coupon = null)
+  public function prepare(string $type, string $country, string $plan, string $coupon = null): SubscriptionNotificationTest|null
   {
-    $notificationConfigures = [
-      SubscriptionNotification::NOTIF_ORDER_ABORTED => [
-        'subscription_status'         => Subscription::STATUS_FAILED,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 0,
-        'invoice_status'              => Invoice::STATUS_FAILED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_ORDER_CANCELLED => [
-        'subscription_status'         => Subscription::STATUS_FAILED,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 0,
-        'invoice_status'              => Invoice::STATUS_CANCELLED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_ORDER_REFUNDED => [
-        'subscription_status'         => null,
-        'subscription_sub_status'     => null,
-        'subscription_current_period' => null,
-        'invoice_status'              => Invoice::STATUS_REFUNDED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_ORDER_CONFIRMED => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_COMPLETED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_CANCELLED => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_CANCELLING,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_CANCELLED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_CANCELLED_REFUND => [
-        'subscription_status'         => Subscription::STATUS_STOPPED,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_REFUNDING,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_REMINDER => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_OPEN,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_INVOICE_PENDING => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_PENDING,
-        'invoice_period'              => 2,
-      ],
-      SubscriptionNotification::NOTIF_FAILED => [
-        'subscription_status'         => Subscription::STATUS_STOPPED,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_FAILED,
-        'invoice_period'              => 2,
-      ],
-      SubscriptionNotification::NOTIF_EXTENDED => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 2,
-        'invoice_status'              => Invoice::STATUS_COMPLETED,
-        'invoice_period'              => 2,
-      ],
-      SubscriptionNotification::NOTIF_ORDER_INVOICE => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_COMPLETED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_REFUNDED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_TERMINATED => [
-        'subscription_status'         => Subscription::STATUS_STOPPED,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_COMPLETED,
-        'invoice_period'              => 1,
-      ],
-      SubscriptionNotification::NOTIF_TERMS_CHANGED => [
-        'subscription_status'         => Subscription::STATUS_ACTIVE,
-        'subscription_sub_status'     => Subscription::SUB_STATUS_NORMAL,
-        'subscription_current_period' => 1,
-        'invoice_status'              => Invoice::STATUS_COMPLETED,
-        'invoice_period'              => 1,
-      ],
-    ];;
+    $mockup = SubscriptionNotificationTest::init($country, $plan, $coupon);
 
-
-    $mockup = SubscriptionNotificationTest::init($country);
-    $config = $notificationConfigures[$type] ?? [];
-    if (!empty($config)) {
-      $mockup->updateSubscription(
-        status: $config['subscription_status'],
-        subStatus: $config['subscription_sub_status'],
-        currentPeriod: $config['subscription_current_period']
-      );
-      $mockup->updateInvoice(
-        status: $config['invoice_status'],
-        period: $config['invoice_period']
-      );
+    // skip invalid scenario
+    if (in_array($type, [
+      SubscriptionNotification::NOTIF_CANCELLED_REFUND,
+      SubscriptionNotification::NOTIF_FAILED,
+      SubscriptionNotification::NOTIF_INVOICE_PENDING,
+      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
+      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
+      SubscriptionNotification::NOTIF_ORDER_INVOICE,
+      SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
+      SubscriptionNotification::NOTIF_ORDER_REFUNDED,
+      SubscriptionNotification::NOTIF_EXTENDED,
+    ]) && $coupon == 'free-trial') {
+      return null;
     }
+
+    if (
+      in_array($type, []) && $coupon == 'free-trial'
+    ) {
+      return null;
+    }
+
     if ($coupon) {
       $mockup->updateCoupon($coupon);
-      $mockup->updateSubscriptionCoupon();
-      $mockup->updateInvoiceCoupon();
-    }
-    if (
-      $type === SubscriptionNotification::NOTIF_ORDER_REFUNDED ||
-      $type === SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO
-    ) {
-      $mockup->updateRefund(true);
-    } else if (
-      $type === SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED
-    ) {
-      $mockup->updateRefund(false);
     }
 
+    switch ($type) {
+      case SubscriptionNotification::NOTIF_ORDER_ABORTED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_FAILED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 0
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_FAILED);
+        break;
+
+      case SubscriptionNotification::NOTIF_ORDER_CANCELLED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_FAILED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 0
+        );
+        $mockup->subscription->end_date = now();
+        $mockup->subscription->save();
+        $mockup->updateInvoice(status: Invoice::STATUS_CANCELLED);
+        break;
+
+      case SubscriptionNotification::NOTIF_ORDER_REFUNDED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_REFUNDED);
+        $mockup->updateRefund(true);
+        break;
+
+      case SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_REFUND_FAILED);
+        $mockup->updateRefund(false);
+        break;
+
+      case SubscriptionNotification::NOTIF_ORDER_CONFIRMED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_CANCELLED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_CANCELLING,
+          currentPeriod: 1
+        );
+        if ($mockup->subscription->isFreeTrial()) {
+          $mockup->subscription->stop(Subscription::STATUS_STOPPED, 'cancelled');
+        } else {
+          $mockup->subscription->end_date = $mockup->subscription->current_period_end_date;
+        }
+        $mockup->subscription->save();
+
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_CANCELLED_REFUND:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_STOPPED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->stop(Subscription::STATUS_STOPPED, 'cancelled and refunded');
+        $mockup->updateInvoice(status: Invoice::STATUS_REFUNDING);
+        break;
+
+      case SubscriptionNotification::NOTIF_REMINDER:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_INIT, next: true);
+        break;
+
+      case SubscriptionNotification::NOTIF_INVOICE_PENDING:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_PENDING, next: true);
+        break;
+
+      case SubscriptionNotification::NOTIF_FAILED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_STOPPED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->end_date = now();
+        $mockup->subscription->save();
+        $mockup->updateInvoice(
+          status: Invoice::STATUS_FAILED,
+          next: true
+        );
+        break;
+
+      case SubscriptionNotification::NOTIF_EXTENDED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->moveToNext();
+        $mockup->subscription->fillNextInvoice();
+        $mockup->subscription->save();
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_ORDER_INVOICE:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_REFUNDED);
+        $mockup->updateRefund(true);
+        break;
+
+      case SubscriptionNotification::NOTIF_TERMINATED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_STOPPED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->stop(Subscription::STATUS_STOPPED);
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_TERMS_CHANGED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+    }
     return $mockup;
   }
 
@@ -161,37 +215,47 @@ class TestController extends Controller
     return "Cleaned!";
   }
 
-  public function sendMail(Request $request, string $type)
+  protected function validateNotificationRequest(Request $request, string $type)
   {
     $country = strtoupper($request->country ?? 'US');
-    if ($country && Country::findByCode($country) === null) {
-      return response('Country not found', 404);
+    if (Country::findByCode($country) === null) {
+      throw new HttpException(400, 'Country not found');
+    }
+    $plan = $request->plan ?? 'month';
+    if (!in_array($plan, ['month', 'year'])) {
+      throw new HttpException(400, 'Invalid Plan');
     }
     $coupon = $request->coupon;
-    if ($coupon && !in_array($request->coupon, ['free-trial', 'percentage-off'])) {
-      return response("Invalid coupon", 400);
+    if ($coupon && !in_array($coupon, ['free-trial', 'percentage', 'percentage-fixed-term'])) {
+      throw new HttpException(400, 'Invalid coupon');
+    }
+    return ['country' => $country, 'plan' => $plan, 'coupon' => $coupon];
+  }
+
+  public function sendMail(Request $request, string $type)
+  {
+    $data = $this->validateNotificationRequest($request, $type);
+    $mockup = $this->prepare($type, $data['country'], $data['plan'], $data['coupon']);
+    if (!$mockup) {
+      return response("Team Siser ... Skipped!");
     }
 
-    $mockup = $this->prepare($type, $country, $coupon);
     $mockup->subscription->sendNotification($type, $mockup->invoice, [
       'refund' => $mockup->refund,
       'credit_memo' => '/credit-memo/robots.txt'
     ]);
+
     return response('Please checkout your email');
   }
 
   public function viewNotification(Request $request, string $type)
   {
-    $country = strtoupper($request->country ?? 'US');
-    if ($country && Country::findByCode($country) === null) {
-      return response('Country not found', 404);
-    }
-    $coupon = $request->coupon;
-    if ($coupon && !in_array($request->coupon, ['free-trial', 'percentage-off'])) {
-      return response("Invalid coupon", 400);
+    $data = $this->validateNotificationRequest($request, $type);
+    $mockup = $this->prepare($type, $data['country'], $data['plan'], $data['coupon']);
+    if (!$mockup) {
+      return response("Team Siser ... Skipped!");
     }
 
-    $mockup = $this->prepare($type, $country, $coupon);
     return (new SubscriptionNotification($type, [
       'subscription' => $mockup->subscription,
       'invoice' => $mockup->invoice,

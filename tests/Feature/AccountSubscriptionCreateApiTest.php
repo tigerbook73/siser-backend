@@ -14,10 +14,7 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
   {
     $this->createOrUpdateBillingInfo();
 
-    $plan = Plan::public()->first();
-    $response = $this->createSubscription([
-      "plan_id"   => $plan->id
-    ]);
+    $response = $this->createSubscription(Plan::INTERVAL_MONTH);
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema);
 
@@ -28,13 +25,7 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
   {
     $this->createOrUpdateBillingInfo();
 
-    $plan = Plan::public()->first();
-    $coupon = Coupon::public()->first();
-
-    $response = $this->createSubscription([
-      "plan_id"     => $plan->id,
-      "coupon_id"   => $coupon->id
-    ]);
+    $response = $this->createSubscription();
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema);
 
@@ -47,13 +38,7 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
 
     $this->user->machines()->delete();
 
-    $plan = Plan::public()->first();
-    $coupon = Coupon::public()->first();
-
-    $response = $this->createSubscription([
-      "plan_id"     => $plan->id,
-      "coupon_id"   => $coupon->id
-    ]);
+    $response = $this->createSubscription(Plan::INTERVAL_MONTH);
     $response->assertStatus(201)
       ->assertJsonStructure($this->modelSchema);
 
@@ -63,17 +48,13 @@ class AccountSubscriptionCreateApiTest extends AccountSubscriptionTestCase
   public function testAccountSubscriptionCreateBlocked()
   {
     $this->createOrUpdateBillingInfo();
-
-    $plan = Plan::public()->first();
-    $coupon = Coupon::public()->first();
-
     // mock up
     $this->user->type = User::TYPE_BLACKLISTED;
     $this->user->save();
 
+    $plan = Plan::public()->where('interval', Plan::INTERVAL_MONTH)->first();
     $response = $this->postJson('/api/v1/account/subscriptions', [
       "plan_id"     => $plan->id,
-      "coupon_id"   => $coupon->id
     ]);
 
     $response->assertStatus(400);

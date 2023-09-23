@@ -6,6 +6,7 @@
 
 namespace App\Models\Base;
 
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\TraitModel;
 use Carbon\Carbon;
@@ -18,16 +19,23 @@ use Illuminate\Database\Eloquent\Model;
  * 
  * @property int $id
  * @property string $code
- * @property string|null $description
+ * @property string $name
+ * @property string $product_name
+ * @property string $type
+ * @property string|null $coupon_event
+ * @property string $discount_type
  * @property float $percentage_off
- * @property int $period
+ * @property string $interval
+ * @property int $interval_count
  * @property array $condition
  * @property Carbon $start_date
  * @property Carbon $end_date
  * @property string $status
+ * @property array|null $usage
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
+ * @property Product $product
  * @property Collection|Subscription[] $subscriptions
  *
  * @package App\Models\Base
@@ -40,22 +48,34 @@ class Coupon extends Model
 
   protected $casts = [
     'percentage_off' => 'float',
-    'period' => 'int',
+    'interval_count' => 'int',
     'condition' => 'json',
     'start_date' => 'datetime',
-    'end_date' => 'datetime'
+    'end_date' => 'datetime',
+    'usage' => 'json'
   ];
 
   protected $fillable = [
     'code',
-    'description',
+    'name',
+    'product_name',
+    'type',
+    'coupon_event',
+    'discount_type',
     'percentage_off',
-    'period',
+    'interval',
+    'interval_count',
     'condition',
     'start_date',
     'end_date',
-    'status'
+    'status',
+    'usage'
   ];
+
+  public function product()
+  {
+    return $this->belongsTo(Product::class, 'product_name', 'name');
+  }
 
   public function subscriptions()
   {

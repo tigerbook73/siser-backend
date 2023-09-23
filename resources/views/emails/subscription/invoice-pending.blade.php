@@ -4,10 +4,17 @@
   :$invoice
   :$helper
 >
-  {!! $helper->trans('messages.subscription_invoice_pending.notification', ['plan_name' => $subscription->plan_info['name']]) !!}
+  {!!
+    $helper->trans(
+      'subscription_invoice_pending.notification',
+      [
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription)
+      ]
+    ) 
+  !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_invoice_pending.summary') }}
+  {{ $helper->trans('subscription_invoice_pending.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

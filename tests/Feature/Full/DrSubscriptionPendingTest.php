@@ -55,7 +55,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderAccepted($this->drOrders[$subscription->getActiveInvoice()->getDrOrderId()]->setState(DrOrder::STATE_ACCEPTED));
+    $response = $this->sendOrderAccepted($this->drHelper->getDrOrder($subscription->getActiveInvoice()->getDrOrderId())->setState(DrOrder::STATE_ACCEPTED));
 
     // refresh data
     $subscription->refresh();

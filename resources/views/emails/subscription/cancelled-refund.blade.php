@@ -5,9 +5,9 @@
 >
   {!!
     $helper->trans(
-      'messages.subscription_cancel_refund.notification',
+      'subscription_cancel_refund.notification',
       [
-        'plan_name' => $subscription->plan_info['name'],
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
         'date' => $helper->formatDate(now()),
         'end_date' => $helper->formatDate(now()),
       ]
@@ -15,7 +15,7 @@
   !!}
   <br />
   <br />
-  {{ $helper->trans('messages.subscription_cancel_refund.summary') }}
+  {{ $helper->trans('subscription_cancel_refund.summary') }}
   <br />
   <br />
   <x-emails.subscription.table

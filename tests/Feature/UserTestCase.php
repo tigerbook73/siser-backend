@@ -26,7 +26,7 @@ class UserTestCase extends ApiTestCase
     "plan_info" => [
       "id",
       "name",
-      "catagory",
+      "product_name",
       "description",
       "subscription_level",
       "price" => [

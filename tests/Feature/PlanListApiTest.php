@@ -30,15 +30,15 @@ class PlanListApiTest extends PlanTestCase
 
   public function testPlanListSuccess()
   {
-    $this->listAssert(200, ['country' => 'US'], 1);
+    $this->listAssert(200, ['country' => 'US']);
 
-    $this->listAssert(200, ['country' => 'US', 'name' => 'Leonardo™ Design Studio Pro Monthly Plan'], 1);
+    $this->listAssert(200, ['country' => 'US', 'name' => 'Leonardo™ Design Studio Pro Monthly Plan']);
 
-    $this->listAssert(200, ['country' => 'US', 'catagory' => 'machine'], 1);
+    $this->listAssert(200, ['country' => 'US', 'product_name' => 'Leonardo™ Design Studio Basic'], 0);
 
-    $this->listAssert(200, ['country' => 'US', 'catagory' => 'software'], 0);
+    $this->listAssert(200, ['country' => 'US', 'product_name' => 'Leonardo™ Design Studio Pro']);
 
-    $this->listAssert(200, ['country' => $this->object->price_list[0]['country'], 'catagory' => $this->object->catagory], 1);
+    $this->listAssert(200, ['country' => $this->object->price_list[0]['country'], 'product_name' => $this->object->product_name]);
 
     $this->markTestIncomplete('more filter to do');
   }

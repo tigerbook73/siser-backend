@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use App\Services\RefundRules;
 use Carbon\Carbon;
+use Closure;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
@@ -35,14 +36,31 @@ use Illuminate\Support\Facades\Log;
  */
 class DrLog
 {
-  static public function log(string $level, string $location, string $action, Subscription|Invoice|User|array $context = [])
+  static public function log(string $level, string $location, string $action, Subscription|Invoice|User|Refund|array $context = [])
   {
     if ($context instanceof Subscription) {
-      $context = ['subscription_id' => $context->id, 'subscription_status' => $context->status];
+      $context = [
+        'subscription_id' => $context->id,
+        'subscription_status' => $context->status
+      ];
     } else if ($context instanceof Invoice) {
-      $context = ['subscription_id' => $context->subscription_id, 'invoice_id' => $context->id, 'invoice_status' => $context->status];
+      $context = [
+        'subscription_id' => $context->subscription_id,
+        'invoice_id' => $context->id,
+        'invoice_status' => $context->status
+      ];
+    } else if ($context instanceof Refund) {
+      $context = [
+        'subscription_id' => $context->subscription_id,
+        'invoice_id' => $context->invoice_id,
+        'refund_id' => $context->id,
+        'refund_status' => $context->status
+      ];
     } else if ($context instanceof User) {
-      $context = ['user_id' => $context->id, 'subscription_level' => $context->subscription_level];
+      $context = [
+        'user_id' => $context->id,
+        'subscription_level' => $context->subscription_level
+      ];
     }
     Log::log($level, 'DR_LOG: ' . $location . ': ' . $action . ($context ? ':' : ''), $context);
   }
@@ -60,6 +78,14 @@ class DrLog
   static public function error(string $location, string $action, Subscription|Invoice|User|array $context = [])
   {
     self::log(__FUNCTION__, $location, $action, $context);
+  }
+}
+
+class WebhookException extends Exception
+{
+  public function __construct(string $message, int $code = 599, \Throwable $previous = null)
+  {
+    parent::__construct($message, $code, $previous);
   }
 }
 
@@ -102,54 +128,40 @@ class SubscriptionManagerDR implements SubscriptionManager
     ];
   }
 
-  protected function fillSubscriptionAmount(Subscription $subscription, DrCheckout|DrOrder|DrInvoice $drOrder)
+  /**
+   * wait for condition become true
+   */
+  protected function wait(Closure $check, Closure $postCheck = null, string $location = __FUNCTION__, string $message = 'condition', int $maxWait = 5, int $interval = 200_000)
   {
-    $subscription->subtotal = $drOrder->getSubtotal();
-    $subscription->tax_rate = $drOrder->getItems()[0]->getTax()->getRate();
-    $subscription->total_tax = $drOrder->getTotalTax();
-    $subscription->total_amount = $drOrder->getTotalAmount();
-  }
+    $wait = 0;
+    while ($wait < $maxWait) {
+      if ($check()) {
+        if ($wait > 0) {
+          DrLog::info($location, "wait $wait intervals for '$message' and success");
+        }
+        return;
+      }
 
-  protected function fillSubscriptionNextAmount(Subscription $subscription, DrInvoice $drInvoice)
-  {
-    $next_invoice = $subscription->next_invoice;
-    $next_invoice['subtotal'] = $drInvoice->getSubtotal();
-    $next_invoice['tax_rate'] = $drInvoice->getItems()[0]->getTax()->getRate();
-    $next_invoice['total_tax'] = $drInvoice->getTotalTax();
-    $next_invoice['total_amount'] = $drInvoice->getTotalAmount();
+      usleep($interval);
+      $wait++;
 
-    $subscription->next_invoice = $next_invoice;
+      if ($postCheck) {
+        $postCheck();
+      }
+    }
+
+    DrLog::info($location, "wait $wait intervals for '$message' and failed");
+    throw new WebhookException("wait for '$message' failed", 500);
   }
 
   public function createSubscription(User $user, Plan $plan, Coupon|null $coupon = null, TaxId|null $taxId = null): Subscription
   {
-    $billingInfo = $user->billing_info;
-    $country = Country::findByCode($billingInfo->address['country']);
-    $publicPlan = $plan->toPublicPlan($billingInfo->address['country']);
-    $couponDiscount = $coupon->percentage_off ?? 0;
-
     // create subscription
-    $subscription = new Subscription();
-    $subscription->user_id                    = $user->id;
-    $subscription->plan_id                    = $plan->id;
-    $subscription->coupon_id                  = $coupon->id ?? null;
-    $subscription->billing_info               = $billingInfo->info();
-    $subscription->tax_id_info                = $taxId ? $taxId->info() : null;
-    $subscription->plan_info                  = $publicPlan;
-    $subscription->coupon_info                = $coupon ? $coupon->toResource('customer') : null;
-    $subscription->currency                   = $country->currency;
-    $subscription->price                      = round($publicPlan['price']['price'] * (1 -  $couponDiscount / 100), 2);
-    $subscription->start_date                 = null;
-    $subscription->end_date                   = null;
-    $subscription->subscription_level         = $publicPlan['subscription_level'];
-    $subscription->current_period             = 0;
-    $subscription->current_period_start_date  = null;
-    $subscription->current_period_end_date    = null;
-    $subscription->next_invoice_date          = null;
-    $subscription->stop_reason                = null;
-    $subscription->sub_status                 = Subscription::SUB_STATUS_NORMAL;
-    $subscription->setStatus(Subscription::STATUS_DRAFT);
-
+    $subscription = (new Subscription())
+      ->initFill()
+      ->fillBillingInfo($user->billing_info)
+      ->fillPlanAndCoupon($plan, $coupon)
+      ->fillTaxId($taxId);
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription (init) created => draft', $subscription);
 
@@ -169,28 +181,18 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // update subscription
-    $this->fillSubscriptionAmount($subscription, $checkout);
     $subscription
+      ->fillAmountFromDrObject($checkout)
       ->setDrCheckoutId($checkout->getId())
       ->setDrSubscriptionId($checkout->getItems()[0]->getSubscriptionInfo()->getSubscriptionId())
-      ->setDrSessionId($checkout->getPayment()->getSession()->getId());
-    $subscription->save();
+      ->setDrSessionId($checkout->getPayment()->getSession()->getId())
+      ->save();
     DrLog::info(__FUNCTION__, 'subscription updated: amounts & dr', $subscription);
 
-    return $subscription;
-  }
+    // update invoice
+    $invoice->fillFromDrObject($checkout)->save();
+    DrLog::info(__FUNCTION__, 'invoice updated: amounts & payment', $invoice);
 
-  /** TODO: update: price/coupon/tax/items */
-  public function updateSubscription(Subscription $subscription): Subscription
-  {
-    /*
-    NOTE: subscrption can not be updated between remindered and extended
-    */
-
-    /*
-    1. update $subscription.next_invoice (include items)
-    2. update drSubscription
-    */
     return $subscription;
   }
 
@@ -201,9 +203,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     try {
-      if (isset($subscription->dr['checkout_id'])) {
-
-        $this->drService->deleteCheckout($subscription->dr['checkout_id']);
+      if ($subscription->getDrCheckoutId()) {
+        $this->drService->deleteCheckout($subscription->getDrCheckoutId());
         DrLog::info(__FUNCTION__, 'dr-checkout deleted', $subscription);
       }
       if (isset($subscription->dr_subscription_id)) {
@@ -214,7 +215,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $invoice = $subscription->getActiveInvoice();
-    $invoice->delete();
+    $invoice?->delete();
     $subscription->delete();
     DrLog::info(__FUNCTION__, 'subscription and invoice deleted', $subscription);
 
@@ -225,37 +226,36 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     try {
       // attach source_id to checkout
-      $this->drService->attachCheckoutSource($subscription->dr['checkout_id'], $paymentMethod->dr['source_id']);
+      $this->drService->attachCheckoutSource($subscription->getDrCheckoutId(), $paymentMethod->getDrSourceId());
       DrLog::info(__FUNCTION__, 'dr-source attached to dr-checkout', $subscription);
 
       // update checkout terms
       if ($terms) {
-        $this->drService->updateCheckoutTerms($subscription->dr['checkout_id'], $terms);
+        $this->drService->updateCheckoutTerms($subscription->getDrCheckoutId(), $terms);
         DrLog::info(__FUNCTION__, 'dr-checkout terms update', $subscription);
       }
 
       // convert checkout to order
-      $order = $this->drService->convertCheckoutToOrder($subscription->dr['checkout_id']);
+      $drOrder = $this->drService->convertCheckoutToOrder($subscription->getDrCheckoutId());
       DrLog::info(__FUNCTION__, 'dr-checkout converted to dr-order', $subscription);
 
       // update invoice
       $invoice = $subscription->getActiveInvoice();
-      $invoice->payment_method_info = $subscription->user->payment_method->info();
-      $invoice->subtotal            = $subscription->subtotal;
-      $invoice->total_tax           = $subscription->total_tax;
-      $invoice->total_amount        = $subscription->total_amount;
-      $invoice->invoice_date        = now();
-      $invoice->setDrOrderId($order->getId());
+      $invoice->fillFromDrObject($drOrder);
+      $invoice->invoice_date = now();
+      $invoice->setDrOrderId($drOrder->getId());
       $invoice->setStatus(Invoice::STATUS_PENDING);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice init => pending', $invoice);
 
       // update subscription
-      $subscription->setDrOrderId($order->getId());
+      $subscription->fillPaymentMethod($paymentMethod);
+      $subscription->fillAmountFromDrObject($drOrder);
+      $subscription->setDrOrderId($drOrder->getId());
       $subscription->setStatus(Subscription::STATUS_PENDING);
-      $subscription->sub_status = ($order->getState() == 'accepted') ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING;
+      $subscription->sub_status = ($drOrder->getState() == 'accepted') ? Subscription::SUB_STATUS_NORMAL : Subscription::SUB_STATUS_ORDER_PENDING;
       $subscription->save();
-      DrLog::info(__FUNCTION__, 'subscription updated => pending', $subscription);
+      DrLog::info(__FUNCTION__, "subscription updated => pending ({$subscription->sub_status})", $subscription);
 
       return $subscription;
     } catch (\Throwable $th) {
@@ -296,8 +296,8 @@ class SubscriptionManagerDR implements SubscriptionManager
         DrLog::info(__FUNCTION__, 'update active invoice => cancelled', $activeInvoice);
       }
 
-      if ($invoiceToRefund) {
-        $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled with refund');
+      if ($invoiceToRefund || $subscription->isFreeTrial()) {
+        $subscription->stop(Subscription::STATUS_STOPPED, $invoiceToRefund ? 'cancelled with refund' : 'cancell during free trial');
         DrLog::info(__FUNCTION__, 'subscription active => stopped', $subscription);
 
         $subscription->user->updateSubscriptionLevel();
@@ -383,7 +383,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   public function createOrUpdateCustomer(BillingInfo $billingInfo)
   {
     $user = $billingInfo->user;
-    if (empty($user->dr['customer_id'])) {
+    if (!$user->getDrCustomerId()) {
       $customer = $this->drService->createCustomer($billingInfo);
       DrLog::info(__FUNCTION__, 'dr-customer created', $user);
 
@@ -391,7 +391,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $user->save();
       DrLog::info(__FUNCTION__, 'user updated: dr.customer_id', $user);
     } else {
-      $customer = $this->drService->updateCustomer($user->dr['customer_id'], $billingInfo);
+      $customer = $this->drService->updateCustomer($user->getDrCustomerId(), $billingInfo);
       DrLog::info(__FUNCTION__, 'dr-customer updated', $user);
     }
 
@@ -405,20 +405,22 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     /** @var PaymentMethod|null $paymentMethod */
     $paymentMethod = $user->payment_method()->first();
-    $previousSourceId = $paymentMethod ? $paymentMethod->dr['source_id'] : null;
+    $previousSourceId = $paymentMethod ? $paymentMethod->getDrSourceId() : null;
 
     if ($previousSourceId == $sourceId) {
       return $paymentMethod;
     }
 
     // attach source to customer
-    $source = $this->drService->attachCustomerSource($user->dr['customer_id'], $sourceId);
+    $source = $this->drService->attachCustomerSource($user->getDrCustomerId(), $sourceId);
     DrLog::info(__FUNCTION__, 'dr-source attached to dr-customer', $user);
 
     // detach previous source
     if ($previousSourceId) {
-      $this->drService->detachCustomerSource($user->dr['customer_id'], $previousSourceId);
+      $this->drService->detachCustomerSource($user->getDrCustomerId(), $previousSourceId);
       DrLog::info(__FUNCTION__, 'old dr-source detached from dr-customer', $user);
+
+      // TODO: send notifcation to notify user payment method updated
     }
 
     // attach source to active subscription
@@ -430,39 +432,16 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     $paymentMethod = $paymentMethod ?: new PaymentMethod(['user_id' => $user->id]);
 
-    $__FUNCTION__ = __FUNCTION__;
-    DB::transaction(function () use ($user, $paymentMethod, $source, $subscription, $__FUNCTION__) {
-      // create / update payment method
-      $paymentMethod->type = $source->getType();
-      $paymentMethod->dr = ['source_id' => $source->getId()];
-      if ($source->getType() == 'creditCard') {
-        $paymentMethod->display_data = [
-          'brand'             => $source->getCreditCard()->getBrand(),
-          'last_four_digits'  => $source->getCreditCard()->getLastFourDigits(),
-          'expiration_year'   => $source->getCreditCard()->getExpirationYear(),
-          'expiration_month'  => $source->getCreditCard()->getExpirationMonth(),
-        ];
-      } else if ($source->getType() == 'googlePay') {
-        $paymentMethod->display_data = [
-          'brand'             => $source->getGooglePay()->getBrand(),
-          'last_four_digits'  => $source->getGooglePay()->getLastFourDigits(),
-          'expiration_year'   => $source->getGooglePay()->getExpirationYear(),
-          'expiration_month'  => $source->getGooglePay()->getExpirationMonth(),
-        ];
-      } else {
-        $paymentMethod->display_data = null;
-      }
+    $paymentMethod->fillFromDrObject($source);
+    $paymentMethod->save();
+    DrLog::info(__FUNCTION__, 'payment-method updated', $user);
 
-      $paymentMethod->save();
-      DrLog::info($__FUNCTION__, 'payment-method updated', $user);
-
-      // update active subscription
-      if ($subscription) {
-        $subscription->setDrSourceId($source->getId());
-        $subscription->save();
-        DrLog::info($__FUNCTION__, 'subscription updated: dr.source_id', $subscription);
-      }
-    });
+    // update active subscription
+    if ($subscription) {
+      $subscription->fillPaymentMethod($paymentMethod);
+      $subscription->save();
+      DrLog::info(__FUNCTION__, 'subscription updated: payment_method', $subscription);
+    }
 
     return $paymentMethod;
   }
@@ -496,7 +475,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info(__FUNCTION__, 'remove dr-taxId of same type', $user);
     }
 
-    $this->drService->attachCustomerTaxId($user->dr['customer_id'], $drTaxId->getId());
+    $this->drService->attachCustomerTaxId($user->getDrCustomerId(), $drTaxId->getId());
     DrLog::info(__FUNCTION__, 'dr-taxId attach to customer', $user);
 
     $taxId = $taxId ?? new TaxId();
@@ -582,7 +561,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       return response()->json($eventInfo);
     } catch (\Throwable $th) {
       $drEvent->fail();
-      Log::error($th);
+      if ($th instanceof WebhookException) {
+        Log::error($th->getMessage());
+      } else {
+        Log::error($th);
+      }
       $eventInfo['action'] = 'error';
       DrLog::error(__FUNCTION__, 'event processed: failed', $eventInfo);
       return response()->json($eventInfo, 400);
@@ -627,18 +610,12 @@ class SubscriptionManagerDR implements SubscriptionManager
         return null;
       }
 
-      /* if required, wait for 3 seconds to let paymentSubscription to complete */
-      $maxWait = 3;
-      while (!isset($subscription->dr['order_id']) || $subscription->dr['order_id'] != $order->getId()) {
-        if (--$maxWait < 0) {
-          DrLog::info($__FUNCTION__, 'order skipped: not the first one', $subscription);
-          return null;
-        }
-        sleep(1);
-        DrLog::info($__FUNCTION__, 'waiting for paySubscription() completing', $subscription);
-
-        $subscription->refresh();
-      }
+      $this->wait(
+        check: fn () => $subscription->getDrOrderId() == $order->getId(),
+        postCheck: fn () => $subscription->refresh(),
+        location: $__FUNCTION__,
+        message: 'paymentSubscrition() to complete'
+      );
     }
 
     return $subscription;
@@ -689,15 +666,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // active current subscription
-    $this->fillSubscriptionAmount($subscription, $drOrder);
-
-    $subscription->start_date = now();
-    $subscription->current_period = 1;
-    $subscription->current_period_start_date = now();
-    $subscription->current_period_end_date =
-      $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
-    $subscription->next_invoice_date =
-      $drSubscription->getNextInvoiceDate() ? Carbon::parse($drSubscription->getNextInvoiceDate()) : null;
+    $subscription->fillAmountFromDrObject($drOrder);
+    $subscription->fillPeriodFromDrObject($drSubscription);
     $subscription->setStatus(Subscription::STATUS_ACTIVE);
     $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
     $subscription->fillNextInvoice();
@@ -705,17 +675,27 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription updated => active', $subscription);
 
+    // update dr subscription
+    if ($subscription->isNextPlanDifferent()) {
+      $this->drService->convertSubscriptionToNext($drSubscription, $subscription);
+      DrLog::info(__FUNCTION__, 'dr-subscription converted to next', $subscription);
+    }
+
     // update user subscription level
     $subscription->user->updateSubscriptionLevel();
     DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
 
-    // update invoice
-    $invoice->period              = $subscription->current_period;
-    $invoice->period_start_date   = $subscription->current_period_start_date;
-    $invoice->period_end_date     = $subscription->current_period_end_date;
+    // update invoice status
+    $invoice->fillPeriod($subscription);
+    $invoice->fillFromDrObject($drOrder);
     $invoice->setStatus(Invoice::STATUS_PROCESSING);
     $invoice->save();
     DrLog::info(__FUNCTION__, 'invoice updated => processing', $invoice);
+
+    if ($subscription->coupon_info) {
+      $subscription->coupon->setUsage($subscription->id)->save();
+      DrLog::info(__FUNCTION__, "coupon usage updated: status = {$subscription->coupon->status}", $subscription);
+    }
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
@@ -845,6 +825,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->user->updateSubscriptionLevel();
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
 
+    if ($subscription->coupon_info) {
+      $subscription->coupon->releaseUsage($subscription->id);
+      DrLog::info(__FUNCTION__, "coupon usage updated: status = {$subscription->coupon->status}", $subscription);
+    }
+
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
     return $subscription;
@@ -853,9 +838,17 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onOrderComplete(DrOrder $drOrder): Invoice|null
   {
     $invoice = Invoice::findByDrOrderId($drOrder->getId());
-    if (!$invoice || $invoice->period != 1) {
+    if (!$invoice || $invoice->getDrInvoiceId()) {
       return null;
     }
+
+    // wait for onOrderAccept to complete
+    $this->wait(
+      check: fn () => $invoice->period == 1,
+      postCheck: fn () => $invoice->refresh(),
+      location: __FUNCTION__,
+      message: 'onOrderAccept() to complete'
+    );
 
     if ($invoice->status == Invoice::STATUS_COMPLETED) {
       DrLog::info(__FUNCTION__, 'invoice skipped: already in completed', $invoice);
@@ -984,23 +977,11 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function createFirstInvoice(Subscription $subscription): Invoice
   {
     $invoice = new Invoice();
-
-    $invoice->user_id             = $subscription->user_id;
-    $invoice->subscription_id     = $subscription->id;
-    $invoice->currency            = $subscription->currency;
-
-    $invoice->period              = $subscription->current_period;
-    $invoice->period_start_date   = $subscription->current_period_start_date;
-    $invoice->period_end_date     = $subscription->current_period_end_date;
-
-    $invoice->billing_info        = $subscription->billing_info;
-    $invoice->tax_id_info         = $subscription->tax_id_info;
-    $invoice->plan_info           = $subscription->plan_info;
-    $invoice->coupon_info         = $subscription->coupon_info;
-
-    $invoice->setDrOrderId(null);
-    $invoice->setStatus(Invoice::STATUS_INIT);
-    $invoice->save();
+    $invoice->fillBasic($subscription)
+      ->fillPeriod($subscription)
+      ->setDrOrderId(null)
+      ->setStatus(Invoice::STATUS_INIT)
+      ->save();
 
     $subscription->active_invoice_id = $invoice->id;
     $subscription->save();
@@ -1015,29 +996,13 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $invoice = new Invoice();
-    $invoice->user_id             = $subscription->user_id;
-    $invoice->subscription_id     = $subscription->id;
-    $invoice->currency            = $subscription->currency;
-
-    $invoice->period              = $subscription->current_period + 1;
-    $invoice->period_start_date   = $subscription->next_invoice['current_period_start_date'];
-    $invoice->period_end_date     = $subscription->next_invoice['current_period_end_date'];
-
-    $invoice->billing_info        = $subscription->billing_info;
-    $invoice->tax_id_info         = $subscription->tax_id_info;
-    $invoice->plan_info           = $subscription->next_invoice['plan_info'];
-    $invoice->coupon_info         = $subscription->next_invoice['coupon_info'];
-
-    $invoice->payment_method_info = $subscription->user->payment_method->info();
-
-    $invoice->subtotal            = $drInvoice->getSubtotal();
-    $invoice->total_tax           = $drInvoice->getTotalTax();
-    $invoice->total_amount        = $drInvoice->getTotalAmount();
-    $invoice->invoice_date        = Carbon::parse($drInvoice->getStateTransitions()?->getOpen() ?? $drInvoice->getUpdatedTime());
-    $invoice->setDrInvoiceId($drInvoice->getId());
-    $invoice->setDrOrderId($drInvoice->getOrderId() ?? "");
-    $invoice->setStatus(Invoice::STATUS_PENDING);
-    $invoice->save();
+    $invoice->fillBasic($subscription)
+      ->fillPeriod($subscription, true)
+      ->fillFromDrObject($drInvoice)
+      ->setDrInvoiceId($drInvoice->getId())
+      ->setDrOrderId($drInvoice->getOrderId() ?? "")
+      ->setStatus(Invoice::STATUS_INIT)
+      ->save();
 
     $subscription->active_invoice_id = $invoice->id;
     $subscription->save();
@@ -1094,38 +1059,34 @@ class SubscriptionManagerDR implements SubscriptionManager
       throw $th;
     }
 
-    $__FUNCTION__ = __FUNCTION__;
-    DB::transaction(function () use ($subscription, $drSubscription, $invoice, $drInvoice, $__FUNCTION__) {
-      // update subscription data
-      $this->fillSubscriptionAmount($subscription, $drInvoice);
-      $subscription->current_period = $subscription->current_period + 1;
-      $subscription->current_period_start_date = $subscription->current_period_end_date;
-      $subscription->current_period_end_date = Carbon::parse($drSubscription->getCurrentPeriodEndDate());
-      $subscription->next_invoice_date = Carbon::parse($drSubscription->getNextInvoiceDate());
+    // update subscription data
+    $subscription->moveToNext();
+    $subscription->fillAmountFromDrObject($drInvoice);
+    $subscription->fillPeriodFromDrObject($drSubscription);
+    $subscription->fillNextInvoice();
 
-      $subscription->plan_info = $subscription->next_invoice['plan_info'];
-      $subscription->coupon_info = $subscription->next_invoice['coupon_info'];
+    // TODO: if in some abnormal situation, this event comes after cancell subscripton operation
+    if ($subscription->sub_status == Subscription::SUB_STATUS_CANCELLING) {
+      $subscription->next_invoice_date = null;
+      $subscription->next_invoice = null;
+    } else {
+      $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
+    }
+    $subscription->save();
+    DrLog::info(__FUNCTION__, 'subscription extended', $subscription);
 
-      $subscription->fillNextInvoice();
+    // update dr subscription
+    if ($subscription->isNextPlanDifferent()) {
+      $this->drService->convertSubscriptionToNext($drSubscription, $subscription);
+      DrLog::info(__FUNCTION__, 'dr-subscription converted to next', $subscription);
+    }
 
-      // if in some abnormal situation, this event comes after cancell subscripton operation
-      if ($subscription->sub_status == Subscription::SUB_STATUS_CANCELLING) {
-        $subscription->next_invoice_date = null;
-        $subscription->next_invoice = null;
-      } else {
-        $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
-      }
-      $subscription->active_invoice_id = null;
-      $subscription->save();
-      DrLog::info($__FUNCTION__, 'subscription extended', $subscription);
-
-      // update invoice
-      $invoice->payment_method_info = $subscription->user->payment_method->info();
-      $invoice->setDrOrderId($drInvoice->getOrderId());
-      $invoice->setStatus(Invoice::STATUS_COMPLETED);
-      $invoice->save();
-      DrLog::info($__FUNCTION__, 'invoice updated => completed', $subscription);
-    });
+    // update invoice
+    $invoice->fillFromDrObject($drInvoice);
+    $invoice->setDrOrderId($drInvoice->getOrderId());
+    $invoice->setStatus(Invoice::STATUS_COMPLETED);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => completed', $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED, $invoice);
@@ -1155,7 +1116,6 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // stop invoice
     if ($invoice) {
-      $invoice->payment_method_info = $subscription->user->payment_method->info();
       $invoice->setStatus(Invoice::STATUS_FAILED);
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
@@ -1197,9 +1157,15 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info(__FUNCTION__, 'renew invoice created', $subscription);
     }
 
+    $invoice->fillFromDrObject($drInvoice);
     $invoice->setStatus(Invoice::STATUS_PENDING);
     $invoice->save();
     DrLog::info(__FUNCTION__, 'invoice updated => pending', $subscription);
+
+    // update subscription
+    $subscription->fillNextInvoiceAmountFromDrObject($drInvoice);
+    $subscription->save();
+    DrLog::info(__FUNCTION__, 'subscription amount updated from dr object ', $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_INVOICE_PENDING, $invoice);
@@ -1210,7 +1176,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     /** @var DRSubscription $drSubscription */
     $drSubscription = DrObjectSerializer::deserialize($event['subscription'], DrSubscription::class);
-    // $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
+    $drInvoice = DrObjectSerializer::deserialize($event['invoice'], DrInvoice::class);
 
     $subscription = $this->validateSubscription($drSubscription, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
@@ -1224,10 +1190,18 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::warning(__FUNCTION__, 'subscription skipped: not in active or in cancelling status', $subscription);
       return null;
     }
-    DrLog::info(__FUNCTION__, 'subscription renew reminded', $subscription);
+
+    // create invoice
+    $invoice = $this->createRenewInvoice($subscription, $drInvoice);
+    DrLog::info(__FUNCTION__, 'renew invoice created', $subscription);
+
+    // update subscription
+    $subscription->fillNextInvoiceAmountFromDrObject($drInvoice);
+    $subscription->save();
+    DrLog::info(__FUNCTION__, 'subscription amount updated from dr object ', $subscription);
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER, $invoice);
     return $subscription;
   }
 

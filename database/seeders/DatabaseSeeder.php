@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Base\BillingInfo;
+use App\Models\BillingInfo;
 use App\Models\Coupon;
 use App\Models\Machine;
 use App\Models\Plan;
@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
     /**
      * create users
      */
-    // $customer = User::createOrUpdateFromCognitoUser((new CognitoProvider)->getUserByName('user1.test'));
+    /** @var User $customer */
     $customer = User::create([
       'id'            =>  3,
       'name'          =>  "user1.test",
@@ -44,6 +44,21 @@ class DatabaseSeeder extends Seeder
       'timezone'      => 'Australia/Sydney',
       // 'type'          => User::TYPE_NORMAL,
     ]);
+
+    $billingInfo = $customer->billing_info ?? BillingInfo::createDefault($customer);
+    $billingInfo->fill([
+      "address" => [
+        "line1" => "101 Collins Street",
+        "line2" => "",
+        "city" => "Melbourne",
+        "postcode" => "3000",
+        "state" => "VIC",
+        "country" => "AU"
+      ],
+      "language" => "en",
+      "locale" => "en_US"
+    ]);
+    $billingInfo->save();
 
     // additional customer
     User::create([
@@ -92,11 +107,222 @@ class DatabaseSeeder extends Seeder
       'url'                 => '/favicon.ico',
     ]);
 
+    // create annual plan
+    /** @var Plan $monthPlan */
+    $monthPlan = Plan::public()->where('interval', 'month')->where('interval_count', 1)->first();
+    $annualPlanPriceList = $monthPlan->price_list;
+    for ($index = 0; $index < count($annualPlanPriceList); $index++) {
+      $annualPlanPriceList[$index]['price'] = $annualPlanPriceList[$index]['price'] * 10;
+    }
+    $annualPlanData = [
+      'name' => 'Leonardo™ Design Studio Pro Anual Plan',
+      'product_name' => $monthPlan->product_name,
+      'interval' => Plan::INTERVAL_YEAR,
+      'interval_count' => 1,
+      'description' => 'annual plan',
+      'subscription_level' => $monthPlan->subscription_level,
+      'url' => $monthPlan->url,
+      'price_list' => $annualPlanPriceList,
+      'status' => 'active',
+    ];
+    Plan::create($annualPlanData);
+
+    Plan::create([
+      'name' => 'LDS Test 2-day Plan',
+      'product_name' => 'Leonardo™ Design Studio Pro',
+      'interval' => Plan::INTERVAL_DAY,
+      'interval_count' => 2,
+      'description' => '2-day plan',
+      'subscription_level' => 2,
+      'url' => 'https://www.siserna.com/leonardo-design-studio/',
+      'price_list' => [
+        [
+          'country' => 'US',
+          'currency' => 'USD',
+          'price' => 20.00,
+        ],
+        [
+          'country' => 'AU',
+          'currency' => 'AUD',
+          'price' => 22.00,
+        ],
+      ],
+      'status' => 'active',
+    ]);
+
+    Plan::create([
+      'name' => 'LDS Test 3-day Plan',
+      'product_name' => 'Leonardo™ Design Studio Pro',
+      'interval' => Plan::INTERVAL_DAY,
+      'interval_count' => 3,
+      'description' => '3-day plan',
+      'subscription_level' => 2,
+      'url' => 'https://www.siserna.com/leonardo-design-studio/',
+      'price_list' => [
+        [
+          'country' => 'US',
+          'currency' => 'USD',
+          'price' => 30.00,
+        ],
+        [
+          'country' => 'AU',
+          'currency' => 'AUD',
+          'price' => 33.00,
+        ],
+      ],
+      'status' => 'active',
+    ]);
+
+    // 33 off 1 month shared
     Coupon::create([
-      'code' => 'seeder23',
-      'description' => '23% discount in 3 month --test--',
+      'code' => '33OFF1MS',
+      'name' => '33% off for 1 month',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      'percentage_off' => 33,
+      'interval' => Coupon::INTERVAL_MONTH,
+      'interval_count' => 1,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // 23 off 3 month shared
+    Coupon::create([
+      'code' => '23OFF3MS',
+      'name' => '23% off for 3 months',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 23,
-      'period' => 3,
+      'interval' => Coupon::INTERVAL_MONTH,
+      'interval_count' => 3,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // 23 off 3 month once off
+    Coupon::create([
+      'code' => '23OFF3MO',
+      'name' => '23% off for 3 months',
+      'type' => Coupon::TYPE_ONCE_OFF,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      'percentage_off' => 23,
+      'interval' => Coupon::INTERVAL_MONTH,
+      'interval_count' => 3,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // 9 off 1 year shared
+    Coupon::create([
+      'code' => '9OFF1YS',
+      'name' => '9% off for 1 year',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      'percentage_off' => 9,
+      'interval' => Coupon::INTERVAL_YEAR,
+      'interval_count' => 1,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // free 2 day shared
+    Coupon::create([
+      'code' => 'FREE2DS',
+      'name' => 'Leonardo™ Design Studio Pro 2-day Free Trial',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+      'percentage_off' => 100,
+      'interval' => Coupon::INTERVAL_DAY,
+      'interval_count' => 2,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // free 2 day once off
+    Coupon::create([
+      'code' => 'FREE2DO',
+      'name' => 'Leonardo™ Design Studio Pro 2-day Free Trial',
+      'type' => Coupon::TYPE_ONCE_OFF,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+      'percentage_off' => 100,
+      'interval' => Coupon::INTERVAL_DAY,
+      'interval_count' => 2,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // free 3 day shared
+    Coupon::create([
+      'code' => 'FREE3DS',
+      'name' => 'Leonardo™ Design Studio Pro 3-day Free Trial',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+      'percentage_off' => 100,
+      'interval' => Coupon::INTERVAL_DAY,
+      'interval_count' => 3,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // free 3 day shared
+    Coupon::create([
+      'code' => 'FREE3MS',
+      'name' => 'Leonardo™ Design Studio Pro 3-month Free Trial',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => null,
+      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+      'percentage_off' => 100,
+      'interval' => Coupon::INTERVAL_MONTH,
+      'interval_count' => 3,
       'condition' => [
         "new_customer_only" => false,
         "new_subscription_only" => false,
