@@ -11,9 +11,11 @@ class AccountInvoiceCancelApiTest extends AccountInvoiceTestCase
 
   public function testAccountInvoiceCancelOk()
   {
+    $this->markTestIncomplete('This test has not been implemented yet.');
   }
 
   public function testMore()
   {
+    $this->markTestIncomplete('More ...');
   }
 }
