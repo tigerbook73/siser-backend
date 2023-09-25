@@ -11,8 +11,84 @@ use App\Models\TaxId;
 use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
+use DigitalRiver\ApiSdk\Model\UpdateSubscriptionRequest;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+
+class PriceBeautify
+{
+  public static function beautifyToInt(float $in): float
+  {
+    if ($in < 50) {
+      return self::roundUnder50($in);
+    }
+    return self::round50AndGreater($in);
+  }
+
+
+  /**
+   * the last digit 
+   * 0 - Round down to 9
+   * 1 - Round down to 9
+   * 2 - Round down to 9
+   * 3 - Round down to 9
+   * 4 - Round down to 9
+   * 5 - Leave at 5
+   * 6 - Round down to 5
+   * 7 - Round down to 5
+   * 8 - Round down to 5
+   * 9 - Leave at 9
+   */
+  public static function round50AndGreater(float $in): float
+  {
+    $result    = round($in);
+    $lastDigit = $result % 10;
+    $result    = floor($result / 10) * 10;
+
+    if ($lastDigit <= 4) {
+      $result = $result - 1;
+    } elseif ($lastDigit <= 8) {
+      $result = $result + 5;
+    } else {
+      $result = $result + 9;
+    }
+
+    return $result;
+  }
+
+
+  /**
+   * 0 - Leave at 0
+   * 1 - Round down to 0
+   * 2 - Leave at 2
+   * 3 - Leave at 3
+   * 4 - Leave at 4
+   * 5 - Leave at 5
+   * 6 - Round down to 5
+   * 7 - Leave at 7
+   * 8 - Leave at 8
+   * 9 - Leave at 9
+   */
+  public static function roundUnder50(float $in): float
+  {
+    $result = round($in);
+    if ($result < 2) {
+
+      return $result;
+    }
+
+    $lastDigit = $result % 10;
+
+    if ($lastDigit === 1) {
+      $result = $result - 1;
+    } elseif ($lastDigit === 6) {
+      $result = $result - 1;
+    }
+
+    return $result;
+  }
+}
+
 
 class LaunchSteps extends Command
 {
@@ -59,7 +135,6 @@ class LaunchSteps extends Command
       $this->info('Usage: php artisan dr:cmd {subcmd}');
       $this->info('');
       $this->info('subcmd:');
-      $this->info('  clear:             remove old data');
       $this->info('  init:              init data');
       $this->info('  update-countries:  update country list');
       $this->info('  update-plans:      update pro-plan');
@@ -68,9 +143,6 @@ class LaunchSteps extends Command
     }
 
     switch ($subcmd) {
-      case 'clear':
-        return $this->clear();
-
       case 'init':
         return $this->init();
 
@@ -89,44 +161,6 @@ class LaunchSteps extends Command
     }
   }
 
-  public function clear()
-  {
-    if (config('dr.dr_mode') == 'prod') {
-      $this->warn('This command can not be executed under "prod" mode');
-      return self::FAILURE;
-    }
-
-    // clear dr information
-    $this->info("--------------------------------------------");
-    $this->call('dr:cmd', ['subcmd' => 'clear']);
-
-    // disable hook
-    $this->info("--------------------------------------------");
-    $this->call('dr:cmd', ['subcmd' => 'disable-hook']);
-
-    /**
-     * table
-     */
-    $this->info("");
-    $this->info("--------------------------------------------");
-    TaxId::whereNotNull('id')->delete();
-    BillingInfo::whereNotNull('id')->delete();
-    PaymentMethod::whereNotNull('id')->delete();
-    Invoice::whereNotNull('id')->delete();
-    Subscription::where('subscription_level', '>', 1)->delete();
-
-    // create subscription
-    foreach (User::all() as $user) {
-      $user->dr = null;
-      $user->save();
-
-      BillingInfo::createDefault($user);
-      $user->updateSubscriptionLevel();
-    }
-
-    return self::SUCCESS;
-  }
-
   public function init()
   {
     if (config('dr.dr_mode') == 'prod') {
@@ -139,6 +173,10 @@ class LaunchSteps extends Command
 
     // enable hook
     $this->call('dr:cmd', ['subcmd' => 'enable-hook']);
+
+    // create annual plan
+    $this->createOrUpdateAnnualPlan();
+    $this->updatePreviousSubscriptionsPlan();
   }
 
   public function updateCountries()
@@ -353,15 +391,18 @@ class LaunchSteps extends Command
 
   public function createOrUpdateAnnualPlan()
   {
+    $this->info('Create or update annual plan ...');
+
     /** @var Plan|null $annualPlan */
     $annualPlan = Plan::public()
       ->where('interval', Plan::INTERVAL_YEAR)
       ->where('interval_count', 1)
       ->first();
 
+    /** @var Plan $monthPlan */
+    $monthPlan = Plan::where('name', 'Leonardo™ Design Studio Pro Monthly Plan')->first();
+
     if (!$annualPlan) {
-      /** @var Plan $monthPlan */
-      $monthPlan = Plan::where('name', 'Leonardo™ Design Studio Pro Monthly Plan')->first();
       $annualPlan = $monthPlan->replicate();
     }
 
@@ -370,12 +411,26 @@ class LaunchSteps extends Command
     $annualPlan->interval = Plan::INTERVAL_YEAR;
     $annualPlan->interval_count = 1;
 
-    $price_list = $annualPlan->price_list;
+    $price_list = $monthPlan->price_list;
     for ($i = 0; $i < count($price_list); $i++) {
-      $price_list[$i]['price'] = $price_list[$i]['price'] * 10;
+      $price_list[$i]['price'] = round($price_list[$i]['price'] * 12 * 0.9);
     }
     $annualPlan->price_list = $price_list;
 
     $annualPlan->save();
+
+    $this->info('Create or update annual plan ... Done!');
+  }
+
+  public function updatePreviousSubscriptionsPlan()
+  {
+    $response = $this->drService->subscriptionApi->listSubscriptions(state: 'active', plan_id: 'default-monthly-plan');
+    $drSubscriptions = $response->getData();
+
+    foreach ($drSubscriptions as $drSubscription) {
+      $request = new UpdateSubscriptionRequest();
+      $request->setPlanId('standard-1-month');
+      $this->drService->subscriptionApi->updateSubscriptions($drSubscription->getId(), $request);
+    }
   }
 }
