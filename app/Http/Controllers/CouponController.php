@@ -24,6 +24,7 @@ class CouponController extends SimpleController
       'coupon_event'    => ['filled'],
       'discount_type'   => ['filled'],
       'interval'        => ['filled'],
+      'status'          => ['filled'],
     ];
   }
 

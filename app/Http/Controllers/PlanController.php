@@ -14,10 +14,11 @@ class PlanController extends SimpleController
   protected function getListRules(array $inputs = []): array
   {
     return [
-      'name'          => ['filled'],
-      'product_name'  => ['filled'],
-      'interval'      => ['filled', 'in:month,year'],
-      'status'        => ['filled', 'in:draft,active,inactive'],
+      'name'                => ['filled'],
+      'product_name'        => ['filled'],
+      'interval'            => ['filled', 'in:month,year'],
+      'subscription_level'  => ['filled', 'in:1,2'],
+      'status'              => ['filled', 'in:draft,active,inactive'],
     ];
   }
 
