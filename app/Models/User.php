@@ -125,7 +125,7 @@ class User extends UserWithTrait
         'phone_number'  => $cognitoUser->phone_number,
         'country_code'  => $cognitoUser->country_code,
         'language_code' => $cognitoUser->language_code,
-        'timezone'      => $cognitoUser->timezone,
+        'timezone'      => $cognitoUser->timezone ?? 'UTC',
         'password'      => 'not allowed',
       ]);
     }
