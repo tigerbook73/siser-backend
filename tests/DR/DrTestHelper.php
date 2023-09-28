@@ -3,9 +3,12 @@
 namespace Tests\DR;
 
 use App\Models\BillingInfo;
+use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\SubscriptionPlan;
 use App\Services\DigitalRiver\DigitalRiverService;
+use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Api\CheckoutsApi as DrCheckoutsApi;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
@@ -26,6 +29,7 @@ use DigitalRiver\ApiSdk\Model\ProductDetails;
 use DigitalRiver\ApiSdk\Model\Session;
 use DigitalRiver\ApiSdk\Model\SkuItem;
 use DigitalRiver\ApiSdk\Model\Tax;
+use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxIdentifier;
 use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
 use Tests\DR\DrObject;
 
@@ -58,9 +62,17 @@ class DrTestHelper
   {
   }
 
-  protected function convertModel($object, string $model)
+  protected function convertModel($object, string $model): mixed
   {
     $data = $object->jsonSerialize();
+
+    // remove $data->state
+    if (is_array($data)) {
+      unset($data['state']);
+    } else if (is_object($data)) {
+      unset($data->state);
+    }
+
     return DrObjectSerializer::deserialize($data, $model);
   }
 
@@ -251,6 +263,13 @@ class DrTestHelper
     return $checkout;
   }
 
+  public function updateCheckoutTerms(string $checkoutId, string $terms): DrCheckout
+  {
+    $checkout = $this->getDrCheckout($checkoutId);
+    $checkout->getItems()[0]->getSubscriptionInfo()->setTerms($terms);
+    return $checkout;
+  }
+
   public function deleteCheckout(string $id)
   {
     $this->unsetDrCheckout($id);
@@ -294,6 +313,11 @@ class DrTestHelper
     return $fulfillment;
   }
 
+  public function getSource(string $id): DrSource
+  {
+    return $this->getDrSource($id);
+  }
+
   /**
    * create renew dr invoice
    */
@@ -309,30 +333,52 @@ class DrTestHelper
     $invoice->setTotalTax($subscription->next_invoice['total_tax']);
     $invoice->setTotalAmount($subscription->next_invoice['total_amount']);
     $invoice->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
+    $invoice->getItems()[0]->getTax()->setRate($this->taxRate);
+    $invoice->setState(DrInvoice::STATE_DRAFT);
     if ($order_id) {
       $invoice->setOrderId($order_id);
     }
+    $this->setDrInvoice($invoice);
     return $invoice;
   }
 
-  public function createOrder(Subscription $subscription, string $state = DrOrder::STATE_COMPLETE): DrOrder
+  public function createInvoiceOrder(DrInvoice $invoice): DrOrder
   {
-    $order = DrObject::order();
-    $order->setId($id ?? $this->uuid());
-    $order->setUpstreamId($subscription->getActiveInvoice()?->id);
-    $order->setCheckoutId($subscription->getDrCheckoutId() ?? $this->uuid());
+    /** @var DrOrder $order */
+    $order = $this->convertModel($invoice, DrOrder::class);
 
-    $order->setSubtotal($subscription->price);
-    $order->getItems()[0]->getTax()->setRate(0.1);
-    $order->setTotalTax($order->getSubtotal() * 0.1);
-    $order->setTotalAmount($order->getSubtotal() + $order->getTotalTax());
+    $order->setId($this->uuid());
+    $order->setState(DrOrder::STATE_COMPLETE);
+    return $order;
+  }
 
-    $order->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->getDrSubscriptionId() ?? $this->uuid());
-    $order->setState($state);
+  /**
+   * create renew order from dr invoice
+   */
+  public function createOrderFromInvoice(Invoice $invoice): DrOrder
+  {
+    $drInvoice = $this->getDrInvoice($invoice->getDrInvoiceId());
+
+    /** @var DrOrder $order */
+    $order = $this->convertModel($drInvoice, DrOrder::class);
+    $order->setId($this->uuid());
+    $order->setUpstreamId($invoice->id);
+    $order->setState(DrOrder::STATE_ACCEPTED);
     $this->setDrOrder($order);
     return $order;
   }
 
+  public function getOrder(string $id): DrOrder
+  {
+    return $this->getDrOrder($id);
+  }
+
+  public function updateOrderUpstreamId(string $id, string|int $upstreamId): DrOrder
+  {
+    $order = $this->getDrOrder($id);
+    $order->setUpstreamId($upstreamId);
+    return $order;
+  }
 
   public function convertChekcoutToOrder(string $checkoutId, string $state = DrOrder::STATE_ACCEPTED): DrOrder
   {
@@ -352,6 +398,13 @@ class DrTestHelper
     return $order;
   }
 
+  public function fulfillOrder(string $orderId, DrOrder $order = null, bool $cancel = false): DrFulfillment
+  {
+    $newFulfillment = $this->createFulfillment($orderId);
+    $order = $this->getDrOrder($orderId);
+    $order->setState($cancel ? DrOrder::STATE_CANCELLED : DrOrder::STATE_FULFILLED);
+    return $newFulfillment;
+  }
 
   public function createSource(string $id = null, string $type = null, string $lastFour = '9876', string $customerId = null, int $expireMonth = 12, int $expireYear = 2099): DrSource
   {
@@ -375,6 +428,11 @@ class DrTestHelper
     return $fileLink;
   }
 
+  public function getSubscription(string $id): DrSubscription
+  {
+    return $this->getDrSubscription($id);
+  }
+
   public function createSubscription(Subscription $subscription, string $id): DrSubscription
   {
     $drSubscription = DrObject::subscription();
@@ -386,6 +444,93 @@ class DrTestHelper
   public function deleteSubscription(string $id): void
   {
     unset($this->drSubscriptions[$id]);
+  }
+
+  public function activateSubscription(string $id): DrSubscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = Subscription::where('dr_subscription_id', $id)->first();
+    $updatedSubscription = $this->getDrSubscription($id);
+    $updatedSubscription
+      ->setCurrentPeriodStartDate(now())
+      ->setCurrentPeriodEndDate(now()->addUnit(
+        $subscription->isFreeTrial() ? $subscription->coupon_info['interval'] : $subscription->plan_info['interval'],
+        $subscription->isFreeTrial() ? $subscription->coupon_info['interval_count'] : $subscription->plan_info['interval_count']
+      ))
+      ->setNextInvoiceDate(
+        Carbon::parse($updatedSubscription->getCurrentPeriodEndDate())->subDays(1)
+      );
+    return $updatedSubscription;
+  }
+
+  public function convertSubscriptionToStandard(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
+  {
+    $items = $drSubscription->getItems();
+    $items[0]->setPrice($subscription->plan_info['price']['price']);
+    $items[0]->getProductDetails()->setName($subscription->plan_info['name']);
+
+    $drSubscription->setPlanId(
+      SubscriptionPlan::findNormalPlanDrId(
+        $subscription->plan_info['interval'],
+        $subscription->plan_info['interval_count']
+      )
+    );
+    return $drSubscription;
+  }
+
+  public function convertSubscriptionToNext(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
+  {
+    $nextInvoice = $subscription->next_invoice;
+
+    // update dr plan if requied
+    $newDrPlanId = SubscriptionPlan::findNormalPlanDrId(
+      $nextInvoice['plan_info']['interval'],
+      $nextInvoice['plan_info']['interval_count']
+    );
+
+    $items = $drSubscription->getItems();
+    $items[0]->setPrice($nextInvoice['price']);
+    $items[0]->getProductDetails()->setName(Subscription::buildPlanName($nextInvoice['plan_info'], $nextInvoice['coupon_info']));
+
+    $drSubscription->setPlanId($newDrPlanId);
+    return $drSubscription;
+  }
+
+  public function updateSubscriptionSource(string $id, string $sourceId)
+  {
+    $drSubscription = $this->getDrSubscription($id);
+    return $drSubscription->setSourceId($sourceId);
+  }
+
+  public function cancelSubscription(string $id): DrSubscription
+  {
+    $drSubscription = $this->getDrSubscription($id);
+    return $drSubscription->setState('cancelled');
+  }
+
+  public function createTaxId(string $type, string $value): DrCustomerTaxIdentifier
+  {
+    $taxId = new DrCustomerTaxIdentifier();
+    $taxId->setType($type);
+    $taxId->setValue($value);
+    $this->setDrTaxId($taxId);
+    return $taxId;
+  }
+
+  public function getTaxId(string $id): DrCustomerTaxIdentifier
+  {
+    return $this->getDrTaxId($id);
+  }
+
+  public function deleteTaxId(string $id)
+  {
+    $this->unsetDrTaxId($id);
+  }
+
+  public function attachCustomerTaxId(string $customerId, string $taxId): DrTaxIdentifier
+  {
+    $drCustomerTaxId = $this->getTaxId($taxId);
+    return $this->convertModel($drCustomerTaxId, DrTaxIdentifier::class);
   }
 
   public function createEvent(string $eventType, object|array $object, string $id = null): array
@@ -409,8 +554,28 @@ class DrTestHelper
     $this->setDrRefund($drOrderRefund);
     return $drOrderRefund;
   }
-}
 
+  /**
+   * create a DrRefund
+   */
+  public function createRefund(Refund $refund): DrOrderRefund
+  {
+    return $this->createOrderRefund($refund);
+  }
+
+  public function createChargeBackRefund(Invoice $invoice): DrOrderRefund
+  {
+    $drRefund = new DrOrderRefund();
+    $drRefund->setOrderId($invoice->getDrOrderId())
+      ->setCurrency($invoice->currency)
+      ->setAmount($invoice->total_amount)
+      ->setReason('charge back')
+      ->setState(DrOrderRefund::STATE_PENDING)
+      ->setId($this->uuid());
+    $this->setDrRefund($drRefund);
+    return $drRefund;
+  }
+}
 
 class TestDigitalRiverService extends DigitalRiverService
 {

@@ -377,6 +377,30 @@ class SubscriptionManagerDR implements SubscriptionManager
     // note: notification will be sent from event handler
   }
 
+  public function createRefundFromDrObject(DrOrderRefund $drRefund): Refund|null
+  {
+    if ($refund = Refund::findByDrRefundId($drRefund->getId())) {
+      return $refund;
+    }
+
+    $invoice = Invoice::findByDrOrderId($drRefund->getOrderId());
+    if (!$invoice) {
+      DrLog::warning(__FUNCTION__, 'invalid dr-refund: no invoice found', ['dr_refund_id' => $drRefund->getId()]);
+      return null;
+    }
+
+    $refund = Refund::newFromInvoice($invoice, $drRefund->getAmount(), $drRefund->getReason());
+    $refund->setDrRefundId($drRefund->getId());
+    $refund->save();
+    DrLog::info(__FUNCTION__, 'create refund from dr-refund', $invoice);
+
+    $invoice->setStatus(Invoice::STATUS_REFUNDING);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'update invoice status => refunding', $invoice);
+
+    return $refund;
+  }
+
   /**
    * customer
    */
@@ -1072,6 +1096,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     } else {
       $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
     }
+    $subscription->active_invoice_id = null;
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription extended', $subscription);
 
@@ -1228,24 +1253,12 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onRefundPending(DrOrderRefund $drRefund): Refund|null
   {
     $refund = Refund::findByDrRefundId($drRefund->getId());
-    if (!$refund) {
+    if ($refund) {
       return null;
     }
 
-    if ($refund->status != Refund::STATUS_PENDING) {
-      $refund->status = Refund::STATUS_PENDING;
-      $refund->save();
-      DrLog::info(__FUNCTION__, 'refund status updated => pending', ['refund_id' => $refund->id]);
-
-      $invoice = $refund->invoice;
-      $invoice->setStatus(Invoice::STATUS_REFUNDING);
-      $invoice->save();
-
-      DrLog::info(__FUNCTION__, 'invoice status updated => refunding', $invoice);
-    }
-
-    // TODO: send notification here
-    return $refund;
+    // create refund is not exist
+    return $this->createRefundFromDrObject($drRefund);
   }
 
   protected function onRefundFailed(DrOrderRefund $drRefund): Refund|null

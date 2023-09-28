@@ -49,6 +49,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
 
     $this->cancelSubscription($subscription, true);
     $invoice->refresh();
+    $this->onRefundPending($invoice);
     $this->onRefundComplete($invoice);
 
     $invoice->refresh();
@@ -66,6 +67,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $this->cancelSubscription($subscription, true);
     $invoice->refresh();
 
+    $this->onRefundPending($invoice);
     $this->onRefundFailed($invoice);
   }
 
@@ -79,6 +81,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $invoice->refresh();
     $this->actingAsDefault();
 
+    $this->onRefundPending($invoice);
     $this->onRefundComplete($invoice);
     $invoice->refresh();
 
@@ -98,6 +101,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $invoice->refresh();
     $this->actingAsDefault();
 
+    $this->onRefundPending($invoice);
     $this->onRefundFailed($invoice);
   }
 
@@ -115,6 +119,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
 
 
     // step1: refund complete & order refunded
+    $this->onRefundPending($invoice);
     $this->onRefundComplete($invoice);
     $invoice->refresh();
     $refund->refresh();
@@ -135,6 +140,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
 
 
     // step2: refund complete & order refunded
+    $this->onRefundPending($invoice);
     $this->onRefundComplete($invoice);
     $invoice->refresh();
     $refund->refresh();
@@ -158,6 +164,10 @@ class DrSubscriptionActiveTest extends DrApiTestCase
   {
     $subscription = $this->init_active();
 
-    return $this->onOrderChargeback($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+
+    $this->onOrderChargeback($invoice);
+    $this->onRefundPending($invoice, true);
+    $this->onRefundComplete($invoice);
   }
 }

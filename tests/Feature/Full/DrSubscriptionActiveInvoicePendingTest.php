@@ -49,7 +49,11 @@ class DrSubscriptionActiveInvoicePendingTest extends DrApiTestCase
   {
     $subscription = $this->init_active_invoice_pending();
 
-    return $this->onOrderChargeback($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+
+    $this->onOrderChargeback($invoice);
+    $this->onRefundPending($invoice, true);
+    $this->onRefundComplete($invoice);
   }
 
   public function test_active_invoice_pending_to_failed()

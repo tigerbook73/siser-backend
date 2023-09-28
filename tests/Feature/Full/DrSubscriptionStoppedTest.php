@@ -37,6 +37,10 @@ class DrSubscriptionStoppedTest extends DrApiTestCase
   {
     $subscription = $this->init_stopped();
 
-    $this->onOrderChargeback($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+
+    $this->onOrderChargeback($invoice);
+    $this->onRefundPending($invoice, true);
+    $this->onRefundComplete($invoice);
   }
 }

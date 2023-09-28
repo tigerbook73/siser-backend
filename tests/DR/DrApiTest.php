@@ -56,7 +56,6 @@ class DrApiTest extends DrApiTestCase
       ->mockActivateSubscription()
       ->mockDeleteSubscription()
       ->mockUpdateSubscriptionSource()
-      ->mockUpdateSubscriptionItems()
       ->mockCancelSubscription()
       ->mockCreateFileLink();
 
@@ -78,7 +77,6 @@ class DrApiTest extends DrApiTestCase
     $this->assertTrue($drService->activateSubscription($id) instanceof DrSubscription);
     $this->assertTrue(is_bool($drService->deleteSubscription($id)));
     $this->assertTrue($drService->updateSubscriptionSource($id, $id) instanceof DrSubscription);
-    $this->assertTrue($drService->updateSubscriptionItems($id, $subscription) instanceof DrSubscription);
     $this->assertTrue($drService->cancelSubscription($id) instanceof DrSubscription);
     $this->assertTrue($drService->createFileLink($id, now()) instanceof DrFileLink);
   }

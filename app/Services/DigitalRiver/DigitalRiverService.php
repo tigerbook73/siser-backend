@@ -567,7 +567,7 @@ class DigitalRiverService
     }
   }
 
-  public function updateOrderUpstreamId(string $id, string|int $upstreamId)
+  public function updateOrderUpstreamId(string $id, string|int $upstreamId): DrOrder
   {
     try {
       $orderUpdateRequest = new UpdateOrderRequest();
@@ -770,24 +770,6 @@ class DigitalRiverService
   {
     $items[] = $this->fillSubscriptionMainItem($subscription);
     return $items;
-  }
-
-  /**
-   * update a DrSubscription's items
-   */
-  public function updateSubscriptionItems(string $id, Subscription $subscription)
-  {
-    try {
-      // subscription.items[0] TODO: fillNextInvoice items
-      $items = $this->fillSubscriptionItems($subscription);
-
-      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
-      $updateSubscriptionRequest->setItems($items);
-
-      return $this->subscriptionApi->updateSubscriptions($id, $updateSubscriptionRequest);
-    } catch (\Throwable $th) {
-      throw $this->throwException($th);
-    }
   }
 
   /**
