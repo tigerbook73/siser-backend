@@ -146,7 +146,7 @@ class User extends UserWithTrait
     $this->phone_number   = $cognitoUser->phone_number;
     $this->country_code   = $cognitoUser->country_code;
     $this->language_code  = $cognitoUser->language_code;
-    $this->timezone       = $cognitoUser->timezone;
+    $this->timezone       = $cognitoUser->timezone ?? 'UTC';
     $this->save();
 
     return $this;
