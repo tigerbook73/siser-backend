@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\BillingInfo;
+use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
@@ -136,6 +137,7 @@ class LaunchSteps extends Command
       $this->info('');
       $this->info('subcmd:');
       $this->info('  init:              init data');
+      $this->info('  launch:            launch new release (shall be updated every release)');
       $this->info('  update-countries:  update country list');
       $this->info('  update-plans:      update pro-plan');
       $this->info('  test:              test whether configure is ready');
@@ -145,6 +147,9 @@ class LaunchSteps extends Command
     switch ($subcmd) {
       case 'init':
         return $this->init();
+
+      case 'launch':
+        return $this->launch();
 
       case 'test':
         return $this->test();
@@ -173,10 +178,24 @@ class LaunchSteps extends Command
 
     // enable hook
     $this->call('dr:cmd', ['subcmd' => 'enable-hook']);
+  }
+
+  public function launch()
+  {
+    // init plan
+    $this->call('dr:cmd', ['subcmd' => 'init']);
+
+    // enable hook
+    $this->call('dr:cmd', ['subcmd' => 'enable-hook']);
 
     // create annual plan
     $this->createOrUpdateAnnualPlan();
+
+    // update previous subscriptions plan to 'standard-1-month'
     $this->updatePreviousSubscriptionsPlan();
+
+    // create all coupon
+    $this->createHsnCoupons();
   }
 
   public function updateCountries()
@@ -432,5 +451,50 @@ class LaunchSteps extends Command
       $request->setPlanId('standard-1-month');
       $this->drService->subscriptionApi->updateSubscriptions($drSubscription->getId(), $request);
     }
+  }
+
+  public function createHsnCoupons()
+  {
+    $testCoupons = [
+      '$-0000-0001',
+      '$-0000-0002',
+      '$-0000-0003',
+      '$-0000-0004',
+      '$-0000-0005',
+    ];
+
+    $this->info("Create HSN coupons ...");
+
+    if (Coupon::where('code', $testCoupons[0])->count() > 0) {
+      $this->info("Create HSN coupons ... Skipped -- already exists!");
+      return;
+    }
+
+    $hsnCouponCodes = require(__DIR__ . '/hsn-coupon-codes.php');
+    foreach ($testCoupons as $code) {
+      $hsnCouponCodes[] = $code;
+    }
+
+    foreach ($hsnCouponCodes as $code) {
+      Coupon::create([
+        'code' => $code,
+        'name' => 'Leonardo™ Design Studio Pro 3-Month Free Trial',
+        'type' => Coupon::TYPE_ONCE_OFF,
+        'coupon_event' => 'HSN',
+        'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+        'percentage_off' => 100,
+        'interval' => Coupon::INTERVAL_MONTH,
+        'interval_count' => 3,
+        'condition' => [
+          "new_customer_only" => false,
+          "new_subscription_only" => false,
+          "upgrade_only" => false,
+        ],
+        'start_date' => '2023-09-28',
+        'end_date' => '2099-12-31',
+        'status' => 'active',
+      ]);
+    }
+    $this->info("Create HSN coupons ... Done!");
   }
 }

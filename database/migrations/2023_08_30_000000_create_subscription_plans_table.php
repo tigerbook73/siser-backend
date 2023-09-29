@@ -29,6 +29,9 @@ return new class extends Migration
       $table->timestamps();
     });
 
+    $billing_offset_days = 1;
+    $reminder_offset_days = 8;
+    $collection_period_days = 10;
     $subscriptionPlans = [
       [
         // standard-1-month
@@ -36,9 +39,9 @@ return new class extends Migration
         'interval'                  => SubscriptionPlan::INTERVAL_MONTH,
         'interval_count'            => 1,
         'contract_binding_days'     => 365,
-        'billing_offset_days'       => 1,
-        'reminder_offset_days'      => 8,
-        'collection_period_days'    => 10,
+        'billing_offset_days'       => $billing_offset_days,
+        'reminder_offset_days'      => $reminder_offset_days,
+        'collection_period_days'    => $collection_period_days,
         'status'                    => 'active',
       ],
       [
@@ -47,9 +50,9 @@ return new class extends Migration
         'interval'                  => SubscriptionPlan::INTERVAL_YEAR,
         'interval_count'            => 1,
         'contract_binding_days'     => 365,
-        'billing_offset_days'       => 1,
-        'reminder_offset_days'      => 8,
-        'collection_period_days'    => 10,
+        'billing_offset_days'       => $billing_offset_days,
+        'reminder_offset_days'      => $reminder_offset_days,
+        'collection_period_days'    => $collection_period_days,
         'status'                    => 'active',
       ],
       [
@@ -80,9 +83,9 @@ return new class extends Migration
         'interval'                  => SubscriptionPlan::INTERVAL_MONTH,
         'interval_count'            => 1,
         'contract_binding_days'     => 365,
-        'billing_offset_days'       => 1,
-        'reminder_offset_days'      => 1,
-        'collection_period_days'    => 2,
+        'billing_offset_days'       => $billing_offset_days,
+        'reminder_offset_days'      => $reminder_offset_days,
+        'collection_period_days'    => $collection_period_days,
         'status'                    => 'active',
       ],
       [
@@ -91,9 +94,9 @@ return new class extends Migration
         'interval'                  => SubscriptionPlan::INTERVAL_MONTH,
         'interval_count'            => 3,
         'contract_binding_days'     => 365,
-        'billing_offset_days'       => 3,
-        'reminder_offset_days'      => 3,
-        'collection_period_days'    => 6,
+        'billing_offset_days'       => $billing_offset_days,
+        'reminder_offset_days'      => $reminder_offset_days,
+        'collection_period_days'    => $collection_period_days,
         'status'                    => 'active',
       ],
       [
