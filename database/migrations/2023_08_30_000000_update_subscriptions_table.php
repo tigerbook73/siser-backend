@@ -25,7 +25,7 @@ return new class extends Migration
         /** @var Subscription[] $subscriptions */
         foreach ($subscriptions as $subscription) {
           $subscription->payment_method_info = $subscription->user->payment_method?->info();
-          $subscription->next_reminder_date = $subscription->next_invoice_date->subDays(7);
+          $subscription->next_reminder_date = $subscription->next_invoice_date?->subDays(7);
           $subscription->save();
         }
       });
