@@ -18,7 +18,4 @@ class XRaySummaryItem {
     /** @var float $value */
     public $value = 0;
 
-    /** @var float $average daily average since 2022-10-17*/
-    public $average = 0;
-
 }

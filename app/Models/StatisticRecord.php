@@ -23,11 +23,11 @@ class StatisticRecord extends BaseStatisticRecord
       $record = [];
       $record['user'] = User::whereDate('created_at', '<=', $date)->count();
       $record['machine'] = Machine::whereDate('created_at', '<=', $date)->count();
-      $record['licensed_user'] = Machine::whereDate('created_at', '<=', $date)  // @phpstan-ignore-line
-        ->selectRaw('count(distinct user_id) as count')
-        ->first()
-        ->count;
-      $record['licensed_user_1'] = $record['licensed_user'];
+      $record['licensed_user_1'] = User::where('subscription_level', 1)->whereDate('created_at', '<=', $date)->count();
+      $record['licensed_user_2'] = Subscription::where('status', 'active')
+        ->where('subscription_level', 2)
+        ->whereDate('created_at', '<=', $date)->count();
+      $record['licensed_user'] = $record['licensed_user_1'] + $record['licensed_user_2'];
 
       $records[] = [
         'date'   => $date->toDateString(),
@@ -36,6 +36,21 @@ class StatisticRecord extends BaseStatisticRecord
     }
     if (count($records) > 0) {
       DB::table('statistic_records')->insert($records);
+    }
+  }
+
+  /**
+   * This is one time jobs to calculate licensed_user_2
+   */
+  static public function prepareLicensedUser2()
+  {
+    foreach (StatisticRecord::all() as $statisticRecord) {
+      $record = $statisticRecord->record;
+      $record['licensed_user_2'] = Subscription::where('status', 'active')
+        ->where('subscription_level', 2)
+        ->whereDate('created_at', '<=', $statisticRecord->date)->count();
+      $statisticRecord->record = $record;
+      $statisticRecord->save();
     }
   }
 }

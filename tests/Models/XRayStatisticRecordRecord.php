@@ -21,4 +21,7 @@ class XRayStatisticRecordRecord {
     /** @var int $licensed_user_1 */
     public $licensed_user_1 = 0;
 
+    /** @var int $licensed_user_2 */
+    public $licensed_user_2 = 0;
+
 }

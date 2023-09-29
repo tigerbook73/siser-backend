@@ -498,3 +498,14 @@ class LaunchSteps extends Command
     $this->info("Create HSN coupons ... Done!");
   }
 }
+
+
+/**
+ * Update the timezone for users who have a null timezone value to UTC.
+ *
+ * @return void
+ */
+function updateTimeZone()
+{
+  User::whereNull('timezone')->update(['timezone' => 'UTC']);
+}
