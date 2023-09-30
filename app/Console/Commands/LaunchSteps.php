@@ -408,6 +408,7 @@ class LaunchSteps extends Command
     // 4. check webhook
   }
 
+  // abandoned
   public function createOrUpdateAnnualPlan()
   {
     $this->info('Create or update annual plan ...');
@@ -432,6 +433,7 @@ class LaunchSteps extends Command
 
     $price_list = $monthPlan->price_list;
     for ($i = 0; $i < count($price_list); $i++) {
+      // remove decimal part for annual plan
       $price_list[$i]['price'] = round($price_list[$i]['price'] * 12 * 0.9);
     }
     $annualPlan->price_list = $price_list;
@@ -497,15 +499,32 @@ class LaunchSteps extends Command
     }
     $this->info("Create HSN coupons ... Done!");
   }
-}
 
 
-/**
- * Update the timezone for users who have a null timezone value to UTC.
- *
- * @return void
- */
-function updateTimeZone()
-{
-  User::whereNull('timezone')->update(['timezone' => 'UTC']);
+  /**
+   * Update the timezone for users who have a null timezone value to UTC.
+   *
+   * @return void
+   */
+  static public function updateTimeZone()
+  {
+    User::whereNull('timezone')->update(['timezone' => 'UTC']);
+  }
+
+  static public function fixSubscriptionNextInvoiceTotalAmount()
+  {
+    Subscription::where('status', 'active')
+      ->where('subscription_level', 2)
+      ->chunkById(100, function ($subscriptions) {
+        /** @var Subscription $subscription */
+        foreach ($subscriptions as $subscription) {
+          $next_invoice = $subscription->next_invoice;
+          if ($next_invoice) {
+            $next_invoice['total_amount'] = $next_invoice['total_tax'] + $next_invoice['subtotal'];
+            $subscription->next_invoice = $next_invoice;
+            $subscription->save();
+          }
+        }
+      });
+  }
 }
