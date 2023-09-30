@@ -299,7 +299,7 @@ class Subscription extends BaseSubscription
     $next_invoice['subtotal'] = $next_invoice['price'];
     $next_invoice['tax_rate'] = $this->tax_rate; // TODO: free-trial's tax rate is not correct, always 0
     $next_invoice['total_tax'] = round($next_invoice['price'] * $next_invoice['tax_rate'], 2);
-    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax']);
+    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
 
     $this->next_invoice = [
       'current_period'            => $next_invoice['current_period'],
