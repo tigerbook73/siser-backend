@@ -80,7 +80,7 @@ return new class extends Migration
         ['code' => 'MY', 'name' => 'Malaysia',                  'currency' => 'MYR', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'NI', 'name' => 'Nicaragua',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'NL', 'name' => 'Netherlands',               'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'NO', 'name' => 'Norway',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'NO', 'name' => 'Norway',                    'currency' => 'NOK', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'NZ', 'name' => 'New Zealand',               'currency' => 'NZD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'PA', 'name' => 'Panama',                    'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'PH', 'name' => 'Philippines',               'currency' => 'PHP', 'created_at' => $now, 'updated_at' => $now],

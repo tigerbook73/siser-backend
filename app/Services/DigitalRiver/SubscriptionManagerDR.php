@@ -198,8 +198,12 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   public function retrieveTaxRate(User $user, TaxId|null $taxId = null): float
   {
-    /** @var Plan $plan any active plan */
-    $plan = Plan::public()->first();
+    /** @var Plan $plan standard monthly plan must cover all countries */
+    $plan = Plan::public()
+      ->where('interval', Plan::INTERVAL_MONTH)
+      ->where('interval_count', 1)
+      ->whereJsonContains('price_list', ['country' => $user->billing_info->address['country']])
+      ->first();
 
     // create subscription
     $subscription = (new Subscription())

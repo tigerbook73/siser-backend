@@ -117,7 +117,7 @@ return new class extends Migration
             ['country' => 'MY', 'currency' => 'MYR', 'price' => 40],
             ['country' => 'NI', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'NL', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'NO', 'currency' => 'EUR', 'price' => 7.99],
+            ['country' => 'NO', 'currency' => 'NOK', 'price' => 10.49],
             ['country' => 'NZ', 'currency' => 'NZD', 'price' => 14.49],
             ['country' => 'PA', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'PH', 'currency' => 'PHP', 'price' => 500],

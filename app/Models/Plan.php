@@ -20,6 +20,10 @@ class Plan extends BasePlan
   const INTERVAL_YEAR             = 'year';
   const INTERVAL_LONGTERM         = 'long-term'; // only for machine plan
 
+  const STATUS_DRAFT              = 'draft';
+  const STATUS_ACTIVE             = 'active';
+  const STATUS_INACTIVE           = 'inactive';
+
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'name'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],

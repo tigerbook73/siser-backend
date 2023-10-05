@@ -146,7 +146,7 @@ class DrCommand extends Command
     $this->info('Clear subscriptions ...');
 
     /** @var DrSubscription[] $subscriptions */
-    $subscriptions = $this->drService->subscriptionApi->listSubscriptions(state: 'draft')->getData();
+    $subscriptions = $this->drService->subscriptionApi->listSubscriptions(state: 'draft', limit: 50)->getData();
     foreach ($subscriptions as $subscription) {
       $checkouts = $this->drService->checkoutApi->listCheckouts(subscription_id: $subscription->getId())->getData();
       if ($checkouts && isset($checkouts[0])) {
@@ -236,7 +236,7 @@ class DrCommand extends Command
       array_shift($args);
 
       // sleep 1/20 seconds to prevent to exceed limits
-      usleep(1000000 / 20);
+      // usleep(1000000 / 20);
       return call_user_func_array($callback, $args);
     } catch (\Throwable $th) {
       $this->info($th->getMessage());

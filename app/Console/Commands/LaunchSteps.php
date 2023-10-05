@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\BillingInfo;
+use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\PaymentMethod;
@@ -12,7 +13,9 @@ use App\Models\TaxId;
 use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
+use DigitalRiver\ApiSdk\Model\CheckoutRequest as DrCheckoutRequest;
 use DigitalRiver\ApiSdk\Model\UpdateSubscriptionRequest;
+use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -154,12 +157,6 @@ class LaunchSteps extends Command
       case 'test':
         return $this->test();
 
-      case 'update-countries':
-        return $this->updateCountries();
-
-      case 'update-plans':
-        return $this->updatePlans();
-
       default:
         $this->error("Invalid subcmd: {$subcmd}");
         return self::FAILURE;
@@ -182,216 +179,11 @@ class LaunchSteps extends Command
 
   public function launch()
   {
-    // init plan
-    $this->call('dr:cmd', ['subcmd' => 'init']);
+    $this->updateCountries();
 
-    // enable hook
-    $this->call('dr:cmd', ['subcmd' => 'enable-hook']);
-
-    // create annual plan
-    $this->createOrUpdateAnnualPlan();
-
-    // update previous subscriptions plan to 'standard-1-month'
-    $this->updatePreviousSubscriptionsPlan();
-
-    // create all coupon
-    $this->createHsnCoupons();
+    $this->updatePlans();
   }
 
-  public function updateCountries()
-  {
-    $this->info("Update countries ...");
-
-    $now = now();
-    DB::table('countries')->upsert(
-      [
-        ['code' => 'AE', 'name' => 'United Arab Emirates',      'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'AT', 'name' => 'Austria',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'AU', 'name' => 'Australia',                 'currency' => 'AUD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'AW', 'name' => 'Andorra',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'BE', 'name' => 'Belgium',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'BG', 'name' => 'Bulgaria',                  'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'BN', 'name' => 'Brunei Darussalam',         'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'BR', 'name' => 'Brazil',                    'currency' => 'BRL', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'BS', 'name' => 'Bahamas',                   'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CA', 'name' => 'Canada',                    'currency' => 'CAD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CH', 'name' => 'Switzerland',               'currency' => 'CHF', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CL', 'name' => 'Chile',                     'currency' => 'CLP', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CO', 'name' => 'Columbia',                  'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CR', 'name' => 'Costa Rica',                'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CY', 'name' => 'Cyprus',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'CZ', 'name' => 'Czechia',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'DE', 'name' => 'Germany',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'DK', 'name' => 'Denmark',                   'currency' => 'DKK', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'DO', 'name' => 'Dominican Republic',        'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'EC', 'name' => 'Ecuador',                   'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'EE', 'name' => 'Estonia',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'ES', 'name' => 'Spain',                     'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'FI', 'name' => 'Finland',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'FR', 'name' => 'France',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'GB', 'name' => 'Great Britain',             'currency' => 'GBP', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'GF', 'name' => 'French Guiana',             'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'GP', 'name' => 'Guadeloupe',                'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'GR', 'name' => 'Greece',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'GT', 'name' => 'Guatemala',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'HN', 'name' => 'Honduras',                  'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'HR', 'name' => 'Croatia',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'HU', 'name' => 'Hungary',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'ID', 'name' => 'Indonesia',                 'currency' => 'IDR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'IE', 'name' => 'Ireland',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'IL', 'name' => 'Isreal',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'IN', 'name' => 'India',                     'currency' => 'INR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'IS', 'name' => 'Iceland',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'IT', 'name' => 'Italy',                     'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'JM', 'name' => 'Jamaica',                   'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'JP', 'name' => 'Japan',                     'currency' => 'JPY', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'KR', 'name' => 'Korea',                     'currency' => 'KRW', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'LI', 'name' => 'Liechtenstein',             'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'LT', 'name' => 'Lithuania',                 'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'LU', 'name' => 'Luxembourg',                'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'LV', 'name' => 'Latvia',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'MN', 'name' => 'Mongolia',                  'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'MT', 'name' => 'Malta',                     'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'MU', 'name' => 'Mauritius',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'MX', 'name' => 'Mexico',                    'currency' => 'MXN', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'MY', 'name' => 'Malaysia',                  'currency' => 'MYR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'NI', 'name' => 'Nicaragua',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'NL', 'name' => 'Netherlands',               'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'NO', 'name' => 'Norway',                    'currency' => 'NOK', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'NZ', 'name' => 'New Zealand',               'currency' => 'NZD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PA', 'name' => 'Panama',                    'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PH', 'name' => 'Philippines',               'currency' => 'PHP', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PL', 'name' => 'Poland',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PM', 'name' => 'Saint Pierre and Miquelon', 'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PR', 'name' => 'Puerto Rico',               'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PT', 'name' => 'Portugal',                  'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'PY', 'name' => 'Paraguay',                  'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'RE', 'name' => 'Reunion',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'RO', 'name' => 'Romania',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'RS', 'name' => 'Serbia',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'SE', 'name' => 'Sweden',                    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'SG', 'name' => 'Singapore',                 'currency' => 'SGD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'SI', 'name' => 'Slovenia',                  'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'SK', 'name' => 'Slovakia',                  'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'SV', 'name' => 'El Salvador',               'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'TH', 'name' => 'Thailand',                  'currency' => 'THB', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'TR', 'name' => 'Turkiye',                   'currency' => 'TRY', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'TT', 'name' => 'Trinidad and Tobago',       'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'TW', 'name' => 'Taiwan',                    'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'UA', 'name' => 'Ukraine',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'US', 'name' => 'United States of America',  'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'VE', 'name' => 'Venezuela',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'VI', 'name' => 'Virgin Islands',            'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'ZA', 'name' => 'South Africa',              'currency' => 'ZAR', 'created_at' => $now, 'updated_at' => $now],
-      ],
-      ['code']
-    );
-
-    $this->info("Update countries ... Done!");
-  }
-
-  public function updatePlans()
-  {
-    $this->info("Update countries ...");
-
-    DB::table('plans')->upsert(
-      [
-        [
-          'name'                => 'Leonardo™ Design Studio Pro Monthly Plan',
-          'product_name'        => 'Leonardo™ Design Studio Pro',
-          'description'         => 'Leonardo™ Design Studio Pro Monthly Plan',
-          'subscription_level'  => 2,
-          'price_list'          => json_encode([
-            ['country' => 'AE', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'AT', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'AU', 'currency' => 'AUD', 'price' => 12.99],
-            ['country' => 'AW', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'BE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'BG', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'BN', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'BR', 'currency' => 'BRL', 'price' => 39.99],
-            ['country' => 'BS', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'CA', 'currency' => 'CAD', 'price' => 11.49],
-            ['country' => 'CH', 'currency' => 'CHF', 'price' => 7.5],
-            ['country' => 'CL', 'currency' => 'CLP', 'price' => 6999],
-            ['country' => 'CO', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'CR', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'CY', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'CZ', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'DE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'DK', 'currency' => 'DKK', 'price' => 59.99],
-            ['country' => 'DO', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'EC', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'EE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'ES', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'FI', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'FR', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'GB', 'currency' => 'GBP', 'price' => 6.99],
-            ['country' => 'GF', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'GP', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'GR', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'GT', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'HN', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'HR', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'HU', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'ID', 'currency' => 'IDR', 'price' => 130000],
-            ['country' => 'IE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'IL', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'IN', 'currency' => 'INR', 'price' => 700],
-            ['country' => 'IS', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'IT', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'JM', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'JP', 'currency' => 'JPY', 'price' => 1299],
-            ['country' => 'KR', 'currency' => 'KRW', 'price' => 11699],
-            ['country' => 'LI', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'LT', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'LU', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'LV', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'MN', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'MT', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'MU', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'MX', 'currency' => 'MXN', 'price' => 149],
-            ['country' => 'MY', 'currency' => 'MYR', 'price' => 40],
-            ['country' => 'NI', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'NL', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'NO', 'currency' => 'NOK', 'price' => 10.49],
-            ['country' => 'NZ', 'currency' => 'NZD', 'price' => 14.49],
-            ['country' => 'PA', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'PH', 'currency' => 'PHP', 'price' => 500],
-            ['country' => 'PL', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'PM', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'PR', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'PT', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'PY', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'RE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'RO', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'RS', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'SE', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'SG', 'currency' => 'SGD', 'price' => 12.00],
-            ['country' => 'SI', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'SK', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'SV', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'TH', 'currency' => 'THB', 'price' => 300],
-            ['country' => 'TR', 'currency' => 'TRY', 'price' => 235],
-            ['country' => 'TT', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'TW', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'UA', 'currency' => 'EUR', 'price' => 7.99],
-            ['country' => 'US', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'VE', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'VI', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'ZA', 'currency' => 'ZAR', 'price' => 169.99],
-          ]),
-          'url'                 => 'https://www.siserna.com/leonardo-design-studio/',
-          'status'              => 'active',
-          'created_at'          => now(),
-          'updated_at'          => now(),
-        ]
-      ],
-      ['name']
-    );
-
-    $this->info("Update countries ... Done!");
-  }
 
   public function test()
   {
@@ -408,10 +200,68 @@ class LaunchSteps extends Command
     // 4. check webhook
   }
 
-  // abandoned
-  public function createOrUpdateAnnualPlan()
+  public function updateCountries()
   {
-    $this->info('Create or update annual plan ...');
+    $now = now();
+    DB::table('countries')->upsert(
+      [
+        ['code' => 'AD', 'name' => 'Andorra',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'AL', 'name' => 'Albania',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'AM', 'name' => 'Armenia',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'BA', 'name' => 'Bosnia And Herzegovina',    'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'ME', 'name' => 'Montenegro',                'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+        ['code' => 'MK', 'name' => 'Macedonia',                 'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
+      ],
+      ['code'],
+    );
+  }
+
+  public function updatePlans()
+  {
+    $countryData = [
+      'AD' => ['code' => 'AD', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'AL' => ['code' => 'AL', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'AM' => ['code' => 'AM', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'AT' => ['code' => 'AT', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'BA' => ['code' => 'BA', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'BE' => ['code' => 'BE', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'BG' => ['code' => 'BG', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'CY' => ['code' => 'CY', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'CZ' => ['code' => 'CZ', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'DE' => ['code' => 'DE', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'DK' => ['code' => 'DK', 'currency' =>  'DKK', 'month_amount' => 59.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'EE' => ['code' => 'EE', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'ES' => ['code' => 'ES', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'FI' => ['code' => 'FI', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'FR' => ['code' => 'FR', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'GP' => ['code' => 'GP', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'GR' => ['code' => 'GR', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'HR' => ['code' => 'HR', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'HU' => ['code' => 'HU', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'IE' => ['code' => 'IE', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'IL' => ['code' => 'IL', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'IS' => ['code' => 'IS', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'IT' => ['code' => 'IT', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'LI' => ['code' => 'LI', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'LT' => ['code' => 'LT', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'LU' => ['code' => 'LU', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'LV' => ['code' => 'LV', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'ME' => ['code' => 'ME', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'MK' => ['code' => 'MK', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'MT' => ['code' => 'MT', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'NL' => ['code' => 'NL', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'NO' => ['code' => 'NO', 'currency' =>  'NOK', 'month_amount' => 10.49, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'PL' => ['code' => 'PL', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'PM' => ['code' => 'PM', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'PT' => ['code' => 'PT', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'RE' => ['code' => 'RE', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'RO' => ['code' => 'RO', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'RS' => ['code' => 'RS', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'SE' => ['code' => 'SE', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'SI' => ['code' => 'SI', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'SK' => ['code' => 'SK', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+      'UA' => ['code' => 'UA', 'currency' =>  'EUR', 'month_amount' => 7.99, 'tax_rate' => 1.0, 'month_price' => 0.0, 'year_amount' => 0.0, 'year_price' => 0.0],
+    ];
 
     /** @var Plan|null $annualPlan */
     $annualPlan = Plan::public()
@@ -420,84 +270,108 @@ class LaunchSteps extends Command
       ->first();
 
     /** @var Plan $monthPlan */
-    $monthPlan = Plan::where('name', 'Leonardo™ Design Studio Pro Monthly Plan')->first();
+    $monthPlan = Plan::public()
+      ->where('interval', Plan::INTERVAL_MONTH)
+      ->where('interval_count', 1)
+      ->first();
 
-    if (!$annualPlan) {
-      $annualPlan = $monthPlan->replicate();
-    }
-
-    $annualPlan->name = 'Leonardo™ Design Studio Pro Annual Plan';
-    $annualPlan->description = '1 year plan, will convert to "Leonardo™ Design Studio Pro Monthly Plan" after 1 year';
-    $annualPlan->interval = Plan::INTERVAL_YEAR;
-    $annualPlan->interval_count = 1;
-
-    $price_list = $monthPlan->price_list;
-    for ($i = 0; $i < count($price_list); $i++) {
-      // remove decimal part for annual plan
-      $price_list[$i]['price'] = round($price_list[$i]['price'] * 12 * 0.9);
-    }
-    $annualPlan->price_list = $price_list;
-
-    $annualPlan->save();
-
-    $this->info('Create or update annual plan ... Done!');
-  }
-
-  public function updatePreviousSubscriptionsPlan()
-  {
-    $response = $this->drService->subscriptionApi->listSubscriptions(state: 'active', plan_id: 'default-monthly-plan');
-    $drSubscriptions = $response->getData();
-
-    foreach ($drSubscriptions as $drSubscription) {
-      $request = new UpdateSubscriptionRequest();
-      $request->setPlanId('standard-1-month');
-      $this->drService->subscriptionApi->updateSubscriptions($drSubscription->getId(), $request);
-    }
-  }
-
-  public function createHsnCoupons()
-  {
-    $testCoupons = [
-      '$-0000-0001',
-      '$-0000-0002',
-      '$-0000-0003',
-      '$-0000-0004',
-      '$-0000-0005',
-    ];
-
-    $this->info("Create HSN coupons ...");
-
-    if (Coupon::where('code', $testCoupons[0])->count() > 0) {
-      $this->info("Create HSN coupons ... Skipped -- already exists!");
-      return;
-    }
-
-    $hsnCouponCodes = require(__DIR__ . '/hsn-coupon-codes.php');
-    foreach ($testCoupons as $code) {
-      $hsnCouponCodes[] = $code;
-    }
-
-    foreach ($hsnCouponCodes as $code) {
-      Coupon::create([
-        'code' => $code,
-        'name' => 'Leonardo™ Design Studio Pro 3-Month Free Trial',
-        'type' => Coupon::TYPE_ONCE_OFF,
-        'coupon_event' => 'HSN',
-        'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
-        'percentage_off' => 100,
-        'interval' => Coupon::INTERVAL_MONTH,
-        'interval_count' => 3,
-        'condition' => [
-          "new_customer_only" => false,
-          "new_subscription_only" => false,
-          "upgrade_only" => false,
+    $rawRequest = [
+      "currency" => "USD",
+      "email" => "user1.test@iifuture.com",
+      "billTo" => [
+        "address" => [
+          "country" => "AU"
         ],
-        'start_date' => '2023-09-28',
-        'end_date' => '2099-12-31',
-        'status' => 'active',
-      ]);
+      ],
+      "items" => [
+        [
+          "productDetails" => [
+            "skuGroupId" => "software-subscription-01",
+            "name" => "Leonardo™ Design Studio Pro Monthly Plan"
+          ],
+          "subscriptionInfo" => [
+            "freeTrial" => false,
+            "autoRenewal" => true,
+            "terms" => "These are the terms...",
+            "planId" => "standard-1-month"
+          ],
+          "price" => 100
+        ]
+      ],
+      "taxInclusive" => false,
+      "chargeType" => "customer_initiated",
+      "customerType" => "individual"
+    ];
+    /** @var DrCheckoutRequest $checkoutRequest */
+    $checkoutRequest = DrObjectSerializer::deserialize(json_encode($rawRequest), DrCheckoutRequest::class);
+
+    // retrieve tax rate
+    foreach ($countryData as $code => $data) {
+      $checkoutRequest->setCurrency($data['currency']);
+      $checkoutRequest->getBillTo()->getAddress()->setCountry($code);
+
+      $checkout = $this->drService->checkoutApi->createCheckouts($checkoutRequest);
+      $taxRate = $checkout->getItems()[0]->getTax()->getRate();
+      $countryData[$code]['tax_rate'] = $taxRate;
+      $this->drService->subscriptionApi->deleteSubscriptions($checkout->getItems()[0]->getSubscriptionInfo()->getSubscriptionId());
+      $this->drService->checkoutApi->deleteCheckouts($checkout->getId());
+      printf("code: %s, tax_rate: %4s, country: %s\n", $code, (string)$taxRate, Country::findByCode($code)->name);
     }
-    $this->info("Create HSN coupons ... Done!");
+
+    // update annual amount
+    foreach ($countryData as $code => $data) {
+      $countryData[$code]['year_amount'] = floor($countryData[$code]['month_amount'] * 12 * 0.9);
+    }
+
+    // update monthly plan
+    $price_list = array_merge(
+      $monthPlan->price_list,
+      [
+        ['country' => 'AD', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'AL', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'AM', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'BA', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'ME', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'MK', 'currency' => 'EUR', 'price' => 7.99],
+      ]
+    );
+    for ($i = 0; $i < count($price_list); $i++) {
+      $data = $countryData[$price_list[$i]['country']] ?? null;
+      if (!$data) {
+        continue;
+      }
+
+      $price_list[$i]['price'] = round($data['month_amount'] / (1 + $data['tax_rate']), 2);
+      $price_list[$i]['currency'] = $data['currency'];
+    }
+    array_multisort(array_column($price_list, 'country'), SORT_ASC, $price_list);
+    $monthPlan->price_list = $price_list;
+    $monthPlan->save();
+
+    // update annual plan
+    $price_list = array_merge(
+      $annualPlan->price_list,
+      [
+        ['country' => 'AD', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'AL', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'AM', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'BA', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'ME', 'currency' => 'EUR', 'price' => 7.99],
+        ['country' => 'MK', 'currency' => 'EUR', 'price' => 7.99],
+      ]
+    );
+    for ($i = 0; $i < count($price_list); $i++) {
+      $data = $countryData[$price_list[$i]['country']] ?? null;
+      if (!$data) {
+        continue;
+      }
+
+      $price_list[$i]['price'] = round($data['year_amount'] / (1 + $data['tax_rate']), 2);
+      $price_list[$i]['currency'] = $data['currency'];
+    }
+    array_multisort(array_column($price_list, 'country'), SORT_ASC, $price_list);
+    $annualPlan->price_list = $price_list;
+    $annualPlan->save();
   }
 
 
