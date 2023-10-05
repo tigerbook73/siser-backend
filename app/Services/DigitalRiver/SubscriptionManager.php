@@ -57,4 +57,9 @@ interface SubscriptionManager
    * Webhook event handler
    */
   public function webhookHandler(array $event): \Illuminate\Http\JsonResponse;
+
+  /**
+   * Tax rate
+   */
+  public function retrieveTaxRate(User $user, TaxId|null $taxId = null): float;
 }

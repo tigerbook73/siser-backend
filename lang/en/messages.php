@@ -65,6 +65,7 @@ return [
   'subscription.period_free_trial'                => 'Free Trial Period',
   'subscription.next_invoice_date'                => 'Next Period Invoice Date',
   'subscription.next_invoice_plan'                => 'Next Period Plan',
+  'subscription.next_invoice_price'               => 'Next Period Price (Excl. :tax)',
   'subscription.next_invoice_subtotal'            => 'Next Period Subtotal (Excl. :tax)',
   'subscription.next_invoice_total_amount'        => 'Next Period Grand Total (Incl. :tax)',
 

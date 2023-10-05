@@ -86,6 +86,30 @@ class SubscriptionController extends SimpleController
   // default implementation
 
 
+  // GET /account/tax_rate
+  public function taxRate(Request $request)
+  {
+    $this->validateUser();
+
+    $inputs = $request->validate([
+      'tax_id'   => ['filled', Rule::exists('tax_ids', 'id')->where(fn ($q) => $q->whereNot('status', TaxId::STATUS_INVALID))],
+    ]);
+
+    /** @var TaxId|null @taxId */
+    $taxId = isset($inputs['tax_id']) ? $this->user->tax_ids()->find($inputs['tax_id']) : null;
+    if ((isset($inputs['tax_id']) && !$taxId) || ($taxId && $taxId->status == TaxID::STATUS_INVALID)) {
+      return response()->json(['message' => 'Invalid tax id!'], 400);
+    }
+
+    // retrieve tax rate
+    try {
+      $taxRate = $this->manager->retrieveTaxRate($this->user, $taxId);
+      return  response()->json(['tax_rate' => $taxRate]);
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
+  }
+
   // POST /account/subscriptions
   public function create(Request $request)
   {

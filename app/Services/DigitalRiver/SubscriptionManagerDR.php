@@ -196,6 +196,34 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
+  public function retrieveTaxRate(User $user, TaxId|null $taxId = null): float
+  {
+    /** @var Plan $plan any active plan */
+    $plan = Plan::public()->first();
+
+    // create subscription
+    $subscription = (new Subscription())
+      ->initFill()
+      ->fillBillingInfo($user->billing_info)
+      ->fillPlanAndCoupon($plan)
+      ->fillTaxId($taxId);
+    $subscription->id = 9999999;
+
+    // create checkout
+    try {
+      $checkout = $this->drService->createCheckout($subscription);
+      DrLog::info(__FUNCTION__, 'tax calculation checkout created');
+      $taxRate = $checkout->getItems()[0]->getTax()->getRate();
+
+      // $this->drService->deleteCheckout($checkout->getId());
+      // DrLog::info(__FUNCTION__, 'tax calculation checkout deleted');
+
+      return $taxRate;
+    } catch (\Throwable $th) {
+      throw $th;
+    }
+  }
+
   public function deleteSubscription(Subscription $subscription): bool
   {
     if ($subscription->status != Subscription::STATUS_DRAFT) {
@@ -411,7 +439,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $customer = $this->drService->createCustomer($billingInfo);
       DrLog::info(__FUNCTION__, 'dr-customer created', $user);
 
-      $user->dr = ['customer_id' => $customer->getId()];
+      $user->setDrCustomerId($customer->getId());
       $user->save();
       DrLog::info(__FUNCTION__, 'user updated: dr.customer_id', $user);
     } else {

@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\DigitalRiverService;
@@ -16,6 +17,7 @@ use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\CreditCard as DrCreditCard;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
+use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\Event as DrEvent;
 use DigitalRiver\ApiSdk\Model\FileLink as DrFileLink;
 use DigitalRiver\ApiSdk\Model\Fulfillment as DrFulfillment;
@@ -122,6 +124,45 @@ class DrApiTestCase extends ApiTestCase
         }
       );
 
+    return $this;
+  }
+
+  public function mockCreateTaxId(): self
+  {
+    $this->drMock
+      ->shouldReceive('createTaxId')
+      ->once()
+      ->andReturnUsing(
+        function (string $type, string $value): DrCustomerTaxIdentifier {
+          return  $this->drHelper->createTaxId($type, $value);
+        }
+      );
+    return $this;
+  }
+
+  public function mockDeleteTaxId(): self
+  {
+    $this->drMock
+      ->shouldReceive('deleteTaxId')
+      ->once()
+      ->andReturnUsing(
+        function (string $id): void {
+          $this->drHelper->deleteTaxId($id);
+        }
+      );
+    return $this;
+  }
+
+  public function mockAttachCustomerTaxId(): self
+  {
+    $this->drMock
+      ->shouldReceive('attachCustomerTaxId')
+      ->once()
+      ->andReturnUsing(
+        function (string $customerId, string $taxId) {
+          return $this->drHelper->attachCustomerTaxId($customerId, $taxId);
+        }
+      );
     return $this;
   }
 
@@ -589,7 +630,47 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function createSubscription($planInterval = Plan::INTERVAL_MONTH, string|null $couponType = null)
+  public function createTaxId(string $type = 'au', string $value = 'ABN12345678901'): TaxId
+  {
+    // prepare
+    $data = [
+      'type' => $type,
+      'value' => $value,
+    ];
+
+    // mock up
+    $this->mockCreateTaxId();
+    $this->mockAttachCustomerTaxId();
+
+    $response = $this->postJson('/api/v1/account/tax-ids', $data);
+
+    // refresh authenticated user data
+    $taxId = $this->user->tax_ids()->where('type', $type)->where('value', $value)->first();
+
+    // assert 
+    $response->assertSuccessful();
+    $this->assertNotNull($taxId);
+
+    return $taxId;
+  }
+
+  public function retrieveTaxRate(string $taxId = null)
+  {
+    // prepare
+    $data = $taxId ? ['tax_id' => $taxId] : [];
+
+    // mock up
+    $this->mockCreateCheckout();
+
+    $response = $this->postJson('/api/v1/account/tax-rate', $data);
+
+    // assert 
+    $response->assertSuccessful();
+    $response->assertJson($taxId ? ['tax_rate' => 0] : ['tax_rate' => $this->drHelper->getTaxRate()]);
+    return $response;
+  }
+
+  public function createSubscription($planInterval = Plan::INTERVAL_MONTH, string|null $couponType = null, string $taxId = null)
   {
     /** @var Plan $plan */
     $plan = Plan::public()->where('interval', $planInterval)->first();
@@ -612,6 +693,9 @@ class DrApiTestCase extends ApiTestCase
     $data = ['plan_id' => $plan->id];
     if ($coupon) {
       $data['coupon_id'] = $coupon->id;
+    }
+    if ($taxId) {
+      $data['tax_id'] = $taxId;
     }
 
 

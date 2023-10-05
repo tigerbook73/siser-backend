@@ -10,6 +10,8 @@ use App\Models\SubscriptionPlan;
 use App\Services\DigitalRiver\DigitalRiverService;
 use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Api\CheckoutsApi as DrCheckoutsApi;
+use DigitalRiver\ApiSdk\Model\Address;
+use DigitalRiver\ApiSdk\Model\Applicability;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\CreditCard as DrCreditCard;
@@ -27,6 +29,7 @@ use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\Payments;
 use DigitalRiver\ApiSdk\Model\ProductDetails;
 use DigitalRiver\ApiSdk\Model\Session;
+use DigitalRiver\ApiSdk\Model\Shipping;
 use DigitalRiver\ApiSdk\Model\SkuItem;
 use DigitalRiver\ApiSdk\Model\Tax;
 use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxIdentifier;
@@ -74,6 +77,11 @@ class DrTestHelper
     }
 
     return DrObjectSerializer::deserialize($data, $model);
+  }
+
+  public function getTaxRate($taxIdInfo = null)
+  {
+    return ($taxIdInfo) ? 0 : $this->taxRate;
   }
 
   public function getDrCheckout(string|null $id): DrCheckout|null
@@ -251,9 +259,9 @@ class DrTestHelper
     $checkout->setId($this->uuid());
     $subscripitonId = $this->uuid();
     $checkout->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscripitonId);
-    $checkout->getItems()[0]->setTax((new Tax())->setRate($this->taxRate));
+    $checkout->getItems()[0]->setTax((new Tax())->setRate($this->getTaxRate($subscription->tax_id_info)));
     $checkout->setSubtotal($subscription->price);
-    $checkout->setTotalTax($checkout->getSubtotal() * $this->taxRate);
+    $checkout->setTotalTax($checkout->getSubtotal() * $this->getTaxRate($subscription->tax_id_info));
     $checkout->setTotalAmount($checkout->getSubtotal() + $checkout->getTotalTax());
     $checkout->setPayment((new Payments())->setSession((new Session())->setId($this->uuid())));
 
@@ -279,16 +287,29 @@ class DrTestHelper
   {
     $customer = DrObject::customer();
     $customer->setId($this->uuid());
-    $customer->setEmail($billingInfo->email);
     $this->setDrCustomer($customer);
+
+    $this->updateCustomer($customer->getId(), $billingInfo);
     return $customer;
   }
 
-  public function updateCustomer(string $id, BillingInfo $billingInfo = null): DrCustomer
+  public function updateCustomer(string $id, BillingInfo $billingInfo): DrCustomer
   {
     $customer = $this->getDrCustomer($id);
     if ($billingInfo) {
-      $customer->setEmail($billingInfo->email);
+      $customer
+        ->setEmail($billingInfo->email)
+        ->setShipping(
+          (new Shipping())->setAddress(
+            (new Address())->setCountry($billingInfo->address['country'])
+              ->setState($billingInfo->address['state'])
+              ->setPostalCode($billingInfo->address['postcode'])
+              ->setLine1($billingInfo->address['line1'])
+              ->setLine2($billingInfo->address['line2'])
+              ->setCity($billingInfo->address['city'])
+          )
+        )
+        ->setType($billingInfo->customer_type);
     }
     return $customer;
   }
@@ -333,7 +354,7 @@ class DrTestHelper
     $invoice->setTotalTax($subscription->next_invoice['total_tax']);
     $invoice->setTotalAmount($subscription->next_invoice['total_amount']);
     $invoice->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
-    $invoice->getItems()[0]->getTax()->setRate($this->taxRate);
+    $invoice->getItems()[0]->getTax()->setRate($this->getTaxRate($subscription->tax_id_info));
     $invoice->setState(DrInvoice::STATE_DRAFT);
     if ($order_id) {
       $invoice->setOrderId($order_id);
@@ -511,8 +532,11 @@ class DrTestHelper
   public function createTaxId(string $type, string $value): DrCustomerTaxIdentifier
   {
     $taxId = new DrCustomerTaxIdentifier();
+    $taxId->setId($this->uuid());
     $taxId->setType($type);
     $taxId->setValue($value);
+    $taxId->setState(DrCustomerTaxIdentifier::STATE_PENDING);
+    $taxId->setApplicability([new Applicability()]);
     $this->setDrTaxId($taxId);
     return $taxId;
   }
@@ -529,7 +553,17 @@ class DrTestHelper
 
   public function attachCustomerTaxId(string $customerId, string $taxId): DrTaxIdentifier
   {
+    $drCustomer = $this->getDrCustomer($customerId);
     $drCustomerTaxId = $this->getTaxId($taxId);
+
+    $drCustomer->setTaxIdentifiers([$drCustomerTaxId]);
+    $drCustomerTaxId->setCustomerId($customerId);
+    $drCustomerTaxId->setApplicability([
+      (new Applicability())
+        ->setCountry($drCustomer->getShipping()->getAddress()->getCountry())
+        ->setEntity('DR_IRELAND-ENTITY')
+        ->setCustomerType($drCustomer->getType())
+    ]);
     return $this->convertModel($drCustomerTaxId, DrTaxIdentifier::class);
   }
 

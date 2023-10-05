@@ -74,6 +74,8 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
     Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
 
     Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'refundable']);
+
+    Route::post('/account/tax-rate', [SubscriptionController::class, 'taxRate']);
   });
 
   // account billing info

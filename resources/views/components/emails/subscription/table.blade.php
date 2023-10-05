@@ -127,8 +127,12 @@
       <td>{{ $subscription->currency }}</td>
     </tr>
     <tr>
-      <td>{{ $helper->trans('subscription.subtotal') }}</td>
-      <td>{{ $helper->formatPrice($subscription->subtotal) }}</td>
+      <td>{{ $helper->trans('subscription.price') }}</td>
+      <td>{{ $helper->formatPrice($subscription->price) }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->trans('subscription.total_amount') }}</td>
+      <td>{{ $helper->formatPrice($subscription->total_amount) }}</td>
     </tr>
 
     @if ($helper->showStart($type))
@@ -174,9 +178,12 @@
       <td>{{ $helper->formatDate($subscription->next_invoice_date) }}</td>
     </tr>
     <tr>
-      {{-- TODO: to be fixed --}}
-      <td>{{ $helper->trans('subscription.next_invoice_subtotal') }}</td>
-      <td>{{ $helper->formatPrice($subscription->next_invoice['subtotal'] ) }}</td>
+      <td>{{ $helper->trans('subscription.next_invoice_price') }}</td>
+      <td>{{ $helper->formatPrice($subscription->next_invoice['price'] ) }}</td>
+    </tr>
+    <tr>
+      <td>{{ $helper->trans('subscription.next_invoice_total_amount') }}</td>
+      <td>{{ $helper->formatPrice($subscription->next_invoice['total_amount'] ) }}</td>
     </tr>
     @endif
   </table>
