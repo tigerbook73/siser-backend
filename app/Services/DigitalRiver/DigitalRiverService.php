@@ -745,34 +745,6 @@ class DigitalRiverService
   }
 
   /**
-   * create & fill a DrSubscriptionItems from a Subscription
-   */
-  protected function fillSubscriptionMainItem(Subscription $subscription): DrSubscriptionItems
-  {
-    // productDetails
-    $productDetails = $this->fillSubscriptionItemProductDetails($subscription);
-
-    // item
-    $item = new DrSubscriptionItems();
-    $item->setProductDetails($productDetails);
-    $item->setPrice($subscription->price);
-    $item->setQuantity(1);
-
-    return $item;
-  }
-
-  /**
-   * create & fill a DrSubscriptionItemProductDetails from a Subscription
-   * @param Subscription $subscription
-   * @return DrSubscriptionItems[]
-   */
-  protected function fillSubscriptionItems(Subscription $subscription): array
-  {
-    $items[] = $this->fillSubscriptionMainItem($subscription);
-    return $items;
-  }
-
-  /**
    * cancel a DrSubscription
    */
   public function cancelSubscription(string $id): DrSubscription
