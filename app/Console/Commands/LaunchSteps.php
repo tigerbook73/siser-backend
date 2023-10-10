@@ -268,6 +268,9 @@ class LaunchSteps extends Command
     return $s;
   }
 
+  /**
+   * run: LaunchSteps::cleanOldPreCalculateTaxCheckouts()
+   */
   static public function cleanOldPreCalculateTaxCheckouts()
   {
     $maxCount = 100;

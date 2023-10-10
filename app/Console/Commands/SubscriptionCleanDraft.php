@@ -38,7 +38,6 @@ class SubscriptionCleanDraft extends Command
   public function handle()
   {
     $this->cleanDraftSubscriptions();
-    // $this->cleanPreCalculateTaxCheckouts();
 
     return Command::SUCCESS;
   }
@@ -90,25 +89,25 @@ class SubscriptionCleanDraft extends Command
     return Command::SUCCESS;
   }
 
-  public function cleanPreCalculateTaxCheckouts()
-  {
-    $maxCount = 100;
+  // public function cleanPreCalculateTaxCheckouts()
+  // {
+  //   $maxCount = 100;
 
-    try {
-      Log::info('Artisan: subscription:clean-checkout: start');
+  //   try {
+  //     Log::info('Artisan: subscription:clean-checkout: start');
 
-      $response =  $this->drService->checkoutApi->listCheckouts(upstream_ids: [config('dr.tax_rate_pre_calcualte_id')], limit: $maxCount);
-      $drCheckouts = $response->getData();
-      $count = 0;
-      foreach ($drCheckouts as $drCheckout) {
-        $this->drService->checkoutApi->deleteCheckouts($drCheckout->getId());
-        $count++;
-      }
+  //     $response =  $this->drService->checkoutApi->listCheckouts(upstream_ids: [config('dr.tax_rate_pre_calcualte_id')], limit: $maxCount);
+  //     $drCheckouts = $response->getData();
+  //     $count = 0;
+  //     foreach ($drCheckouts as $drCheckout) {
+  //       $this->drService->checkoutApi->deleteCheckouts($drCheckout->getId());
+  //       $count++;
+  //     }
 
-      Log::info("Artisan: subscription:clean-checkout: clean $count draft subscriptions.");
-    } catch (\Throwable $th) {
-      //throw $th;
-      Log::info($th->getMessage());
-    }
-  }
+  //     Log::info("Artisan: subscription:clean-checkout: clean $count draft subscriptions.");
+  //   } catch (\Throwable $th) {
+  //     //throw $th;
+  //     Log::info($th->getMessage());
+  //   }
+  // }
 }
