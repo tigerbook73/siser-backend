@@ -198,29 +198,10 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   public function retrieveTaxRate(User $user, TaxId|null $taxId = null): float
   {
-    /** @var Plan $plan standard monthly plan must cover all countries */
-    $plan = Plan::public()
-      ->where('interval', Plan::INTERVAL_MONTH)
-      ->where('interval_count', 1)
-      ->whereJsonContains('price_list', ['country' => $user->billing_info->address['country']])
-      ->first();
-
-    // create subscription
-    $subscription = (new Subscription())
-      ->initFill()
-      ->fillBillingInfo($user->billing_info)
-      ->fillPlanAndCoupon($plan)
-      ->fillTaxId($taxId);
-    $subscription->id = 9999999;
-
-    // create checkout
+    // create tax pre-calculate checkout
     try {
-      $checkout = $this->drService->createCheckout($subscription);
-      DrLog::info(__FUNCTION__, 'tax calculation checkout created');
-      $taxRate = $checkout->getItems()[0]->getTax()->getRate();
-
-      // $this->drService->deleteCheckout($checkout->getId());
-      // DrLog::info(__FUNCTION__, 'tax calculation checkout deleted');
+      $taxRate = $this->drService->retrieveTaxRate($user, $taxId);
+      DrLog::info(__FUNCTION__, "tax rate retrieved: $taxRate");
 
       return $taxRate;
     } catch (\Throwable $th) {

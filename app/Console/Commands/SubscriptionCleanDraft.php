@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Subscription;
+use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,7 +25,7 @@ class SubscriptionCleanDraft extends Command
    */
   protected $description = 'clean draft subscriptions';
 
-  public function __construct(public SubscriptionManager $manager)
+  public function __construct(public SubscriptionManager $manager, public DigitalRiverService $drService)
   {
     parent::__construct();
   }
@@ -35,6 +36,14 @@ class SubscriptionCleanDraft extends Command
    * @return int
    */
   public function handle()
+  {
+    $this->cleanDraftSubscriptions();
+    // $this->cleanPreCalculateTaxCheckouts();
+
+    return Command::SUCCESS;
+  }
+
+  public function cleanDraftSubscriptions()
   {
     Log::info('Artisan: subscription:clean-draft: start');
 
@@ -79,5 +88,27 @@ class SubscriptionCleanDraft extends Command
     }
 
     return Command::SUCCESS;
+  }
+
+  public function cleanPreCalculateTaxCheckouts()
+  {
+    $maxCount = 100;
+
+    try {
+      Log::info('Artisan: subscription:clean-checkout: start');
+
+      $response =  $this->drService->checkoutApi->listCheckouts(upstream_ids: [config('dr.tax_rate_pre_calcualte_id')], limit: $maxCount);
+      $drCheckouts = $response->getData();
+      $count = 0;
+      foreach ($drCheckouts as $drCheckout) {
+        $this->drService->checkoutApi->deleteCheckouts($drCheckout->getId());
+        $count++;
+      }
+
+      Log::info("Artisan: subscription:clean-checkout: clean $count draft subscriptions.");
+    } catch (\Throwable $th) {
+      //throw $th;
+      Log::info($th->getMessage());
+    }
   }
 }

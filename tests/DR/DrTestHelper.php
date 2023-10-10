@@ -7,6 +7,8 @@ use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
+use App\Models\TaxId;
+use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
 use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Api\CheckoutsApi as DrCheckoutsApi;
@@ -269,6 +271,13 @@ class DrTestHelper
 
     $this->createSubscription($subscription, $subscripitonId);
     return $checkout;
+  }
+
+  public function retrieveTaxRate(User $user, TaxId $taxId = null): float
+  {
+    $checkout = DrObject::checkout();
+    $checkout->getItems()[0]->setTax((new Tax())->setRate($this->getTaxRate($taxId?->info())));
+    return $checkout->getItems()[0]->getTax()->getRate();
   }
 
   public function updateCheckoutTerms(string $checkoutId, string $terms): DrCheckout

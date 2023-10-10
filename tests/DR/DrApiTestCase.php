@@ -179,6 +179,19 @@ class DrApiTestCase extends ApiTestCase
     return $this;
   }
 
+  public function mockRetrieveTaxRate(): self
+  {
+    $this->drMock
+      ->shouldReceive('retrieveTaxRate')
+      ->once()
+      ->andReturnUsing(
+        function (User $user, TaxId|null $taxId): float {
+          return  $this->drHelper->retrieveTaxRate($user, $taxId);
+        }
+      );
+    return $this;
+  }
+
   public function mockUpdateCheckoutTerms(): self
   {
     $this->drMock
@@ -660,7 +673,7 @@ class DrApiTestCase extends ApiTestCase
     $data = $taxId ? ['tax_id' => $taxId] : [];
 
     // mock up
-    $this->mockCreateCheckout();
+    $this->mockRetrieveTaxRate();
 
     $response = $this->postJson('/api/v1/account/tax-rate', $data);
 

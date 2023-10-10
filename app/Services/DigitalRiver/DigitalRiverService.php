@@ -9,6 +9,8 @@ use App\Models\SubscriptionPlan;
 use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\TaxId;
+use App\Models\User;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
@@ -468,6 +470,55 @@ class DigitalRiverService
       }
 
       return $this->checkoutApi->createCheckouts($checkoutRequest);
+    } catch (\Throwable $th) {
+      throw $this->throwException($th);
+    }
+  }
+
+  /**
+   * retrieve tax rate
+   */
+
+  public function retrieveTaxRate(User $user, TaxId $taxId = null): float
+  {
+    $billing_info = $user->billing_info->info();
+
+    try {
+      // tax retrieve checkout
+      $checkoutRequest = new DrCheckoutRequest();
+      $checkoutRequest->setCustomerId($user->getDrCustomerId());
+      $checkoutRequest->setCurrency('USD');
+      $checkoutRequest->setEmail($billing_info['email']);
+      $checkoutRequest->setBrowserIp(request()->ip());
+      $checkoutRequest->setBillTo((new DrBilling())
+        ->setEmail($billing_info['email'])
+        ->setAddress((new DrAddress())
+          ->setLine1($billing_info['address']['line1'])
+          ->setLine2($billing_info['address']['line2'])
+          ->setCity($billing_info['address']['city'])
+          ->setPostalCode($billing_info['address']['postcode'])
+          ->setState($billing_info['address']['state'])
+          ->setCountry($billing_info['address']['country'])));
+      $checkoutRequest->setItems([
+        (new DrSkuRequestItem())
+          ->setProductDetails((new DrProductDetails())
+            ->setSkuGroupId(config('dr.sku_grp_subscription'))
+            ->setName('Tax Rate Precalculation'))
+          ->setPrice(1.00)
+      ]);
+      $checkoutRequest->setTaxInclusive(false);
+      $checkoutRequest->setCustomerType($billing_info['customer_type']);
+      $checkoutRequest->setTaxIdentifiers($taxId ? [(new DrCheckoutTaxIdentifierRequest())->setId($taxId->dr_tax_id)] : []);
+      $checkoutRequest->setUpstreamId(config('dr.tax_rate_pre_calcualte_id'));
+
+      // retrieve tax rate
+      $checkout = $this->checkoutApi->createCheckouts($checkoutRequest);
+      $taxRate = $checkout->getItems()[0]->getTax()->getRate();
+
+      // remove checkout (TODO: moved to after response?)
+      $this->checkoutApi->deleteCheckouts($checkout->getId());
+
+      return $taxRate;
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }

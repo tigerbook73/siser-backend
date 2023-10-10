@@ -7,4 +7,7 @@ return [
   'host' => env('DR_HOST', 'https://api.digitalriver.com'),
   'default_webhook' => env('DR_DEFAULT_WEBHOOK'),
   'sku_grp_subscription' => env('DR_SKU_GRP_SUBSCRIPTION', 'software-subscription-01'),
+
+  // tax rate pre-calculate checkout's upstream id
+  'tax_rate_pre_calcualte_id' => 'tax-rate-pre-calculation',
 ];
