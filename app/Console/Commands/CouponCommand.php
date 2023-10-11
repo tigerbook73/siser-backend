@@ -75,7 +75,7 @@ class CouponCommand extends Command
     // collect data
     while (true) {
       while (true) {
-        $coupon_number = (int)$this->ask('Number of Coupons to Generate (1~5000)', $coupon_number);
+        $coupon_number = (int)$this->ask('Number of Coupons to Generate (1~5000)', (string)$coupon_number);
         if ($coupon_number >= 1 && $coupon_number <= 5000) {
           break;
         }
@@ -99,7 +99,7 @@ class CouponCommand extends Command
           $percentage_off = 100;
           break;
         }
-        $percentage_off = (int)$this->ask('Percentage Off (1~99)', $percentage_off);
+        $percentage_off = (int)$this->ask('Percentage Off (1~99)', (string)$percentage_off);
         if ($percentage_off >= 1 && $percentage_off <= 99) {
           break;
         }
@@ -110,7 +110,7 @@ class CouponCommand extends Command
         $interval = $this->choice('Interval', [Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR], $interval);
       }
       while (true) {
-        $interval_count = (int)$this->ask('Interval Count (0 ~ 30)', $interval_count);
+        $interval_count = (int)$this->ask('Interval Count (0 ~ 30)', (string)$interval_count);
         if ($interval_count >= 0 && $interval_count <= 30) {
           break;
         }
