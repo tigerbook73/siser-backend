@@ -85,7 +85,7 @@ class RefundController extends SimpleController
     }
 
     // check amount
-    if ($inputs['amount'] <= 0 || $inputs['amount'] > $invoice->total_amount - $invoice->total_refunded) {
+    if ($inputs['amount'] <= 0 || $inputs['amount'] > $invoice->total_amount - $invoice->total_refunded + 0.000001) {
       return response()->json(['message' => 'amount must be greater than 0 and less or equal than total refundable'], 400);
     }
 
