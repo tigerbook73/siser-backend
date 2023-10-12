@@ -312,7 +312,8 @@ class SubscriptionNotificationTest
     /** @var Refund|null @refund */
     $refund = Refund::where('dr->refund_id', 'dr-refund-id-0000')->first();
 
-    $this->refund = $refund ?? Refund::newFromInvoice($this->invoice);
+    $this->refund = $refund ??
+      Refund::newFromInvoice($this->invoice, $this->invoice->total_amount - $this->invoice->total_refunded, "test reason");
     $this->refund->setDrRefundId('dr-refund-id-0000');
     $this->refund->setStatus($success ? Refund::STATUS_COMPLETED : Refund::STATUS_FAILED);
     $this->refund->save();

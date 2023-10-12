@@ -58,16 +58,14 @@ class Refund extends BaseRefund
   /**
    * create a new Refund model (without saving to database) from Invoice
    */
-  static public function newFromInvoice(Invoice $invoice, float $amount = 0, string $reason = null): Refund
+  static public function newFromInvoice(Invoice $invoice, float $amount, string $reason = null): Refund
   {
     $refund = new self();
     $refund->user_id              = $invoice->user_id;
     $refund->subscription_id      = $invoice->subscription_id;
     $refund->invoice_id           = $invoice->id;
     $refund->currency             = $invoice->currency;
-    $refund->amount               = ($amount > 0 && $amount < ($invoice->total_amount - $invoice->total_refunded)) ?
-      $amount :
-      $invoice->total_amount - $invoice->total_refunded;
+    $refund->amount               = $amount;
     $refund->payment_method_info  = $invoice->payment_method_info;
     $refund->reason               = $reason ?? "";
     $refund->setDrOrderId($invoice->getDrOrderId());

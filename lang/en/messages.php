@@ -8,6 +8,7 @@ return [
   'order.status.void'                             => 'Cancelled',
   'order.status.failed'                           => 'Failed',
   'order.status.refunding'                        => 'Refunded',
+  'order.status.partly-refunded'                  => 'Partially Refunded',
   'order.status.refunded'                         => 'Refunded',
   'order.status.refund-failed'                    => 'Refund Failed',
 

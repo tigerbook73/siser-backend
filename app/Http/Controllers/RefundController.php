@@ -31,8 +31,8 @@ class RefundController extends SimpleController
   {
     return [
       'invoice_id'      => ['required', 'exists:invoices,id'],
-      'amount'          => ['filled', 'decimal:0,2'],
-      'reason'          => ['string'],
+      'amount'          => ['required', 'decimal:0,2'],
+      'reason'          => ['required', 'string', 'max:255'],
     ];
   }
 
@@ -84,9 +84,14 @@ class RefundController extends SimpleController
       return response()->json(['message' => $result['reason']], 400);
     }
 
+    // check amount
+    if ($inputs['amount'] <= 0 || $inputs['amount'] > $invoice->total_amount - $invoice->total_refunded) {
+      return response()->json(['message' => 'amount must be greater than 0 and less or equal than total refundable'], 400);
+    }
+
     // create refund
     try {
-      $refund = $this->manager->createRefund($invoice, $inputs['amount'] ?? 0, $inputs['reason'] ?? null);
+      $refund = $this->manager->createRefund($invoice, $inputs['amount'], $inputs['reason']);
       return  response()->json($this->transformSingleResource($refund));
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));

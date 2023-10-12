@@ -901,7 +901,7 @@ class DrApiTestCase extends ApiTestCase
     // call api
     $response = $this->postJson("/api/v1/refunds", [
       'invoice_id' => $invoice->id,
-      'amount' => $amount,
+      'amount' => ($amount == 0) ? $invoice->total_amount - $invoice->total_refunded : $amount,
       'reason' => $reason,
     ]);
 

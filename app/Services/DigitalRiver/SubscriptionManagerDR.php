@@ -372,6 +372,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$result['refundable']) {
       throw new Exception('try to refund non-refundable invoice', 500);
     }
+    // adjust amount
+    if ($amount == 0) {
+      $amount = $invoice->total_amount - $invoice->total_refunded;
+    }
 
     $refund = Refund::newFromInvoice($invoice, $amount, $reason);
     $drRefund = $this->drService->createRefund($refund);
