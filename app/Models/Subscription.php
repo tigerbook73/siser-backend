@@ -274,14 +274,7 @@ class Subscription extends BaseSubscription
     if ($this->isFreeTrial()) {
       $next_invoice['coupon_info'] = null;
     } else if ($this->plan_info['interval'] == Plan::INTERVAL_YEAR) {
-      /** @var Plan @newPlan */
-      $newPlan = Plan::public()
-        ->where('interval', Plan::INTERVAL_MONTH)
-        ->where('interval_count', 1)
-        ->where('subscription_level', $this->plan_info['subscription_level'])
-        ->where('product_name', $this->plan_info['product_name'])
-        ->first();
-      $next_invoice['plan_info'] = $newPlan->info($this->billing_info['address']['country']);
+      $next_invoice['plan_info'] = Plan::findNextMonthPlan($this->plan)?->info($this->billing_info['address']['country']);
       $next_invoice['coupon_info'] = null;
     } else if ($this->isFixedTermPercentage()) {
       if ($next_invoice['current_period'] * $this->plan_info['interval_count'] > $this->coupon_info['interval_count']) {

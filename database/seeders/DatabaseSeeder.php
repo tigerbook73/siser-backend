@@ -112,7 +112,7 @@ class DatabaseSeeder extends Seeder
     $monthPlan = Plan::public()->where('interval', 'month')->where('interval_count', 1)->first();
     $annualPlanPriceList = $monthPlan->price_list;
     for ($index = 0; $index < count($annualPlanPriceList); $index++) {
-      $annualPlanPriceList[$index]['price'] = round($annualPlanPriceList[$index]['price'] * 12 * 0.9);
+      $annualPlanPriceList[$index]['price'] = floor($annualPlanPriceList[$index]['price'] * 12 * 0.9);
     }
     $annualPlanData = [
       'name' => 'Leonardo™ Design Studio Pro Anual Plan',
