@@ -34,8 +34,9 @@ class Plan extends BasePlan
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_1, 'listable' => 0b0_1_1],
     'url'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
-    'price'               => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_0_1],
-    'price_list'          => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
+    'price'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_0_1],
+    'price_list'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
+    'next_plan_info'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -65,6 +66,76 @@ class Plan extends BasePlan
     return null;
   }
 
+  public function buildNextPlanInfo()
+  {
+    return [
+      'id'                  => $this->id,
+      'name'                => $this->name,
+      'product_name'        => $this->product_name,
+      'description'         => $this->description,
+      'interval'            => $this->interval,
+      'interval_count'      => $this->interval_count,
+    ];
+  }
+
+  static public function findNextMonthPlan(Plan $annualPlan): Plan|null
+  {
+    if ($annualPlan->interval !== Plan::INTERVAL_YEAR) {
+      return null;
+    }
+
+    $monthPlan = Plan::public()
+      ->where('interval', Plan::INTERVAL_MONTH)
+      ->where('interval_count', 1)
+      ->where('subscription_level', $annualPlan->subscription_level)
+      ->where('product_name', $annualPlan->product_name)
+      ->whereJsonContains('price_list', ['country' => $annualPlan->price_list[0]['country']])
+      ->first();
+    return $monthPlan;
+  }
+
+  static public function validPlanPair(Plan $annualPlan, Plan $monthPlan = null)
+  {
+    if (!$monthPlan) {
+      throw new \Exception('month plan not found for annual plan ' . $annualPlan->id, 400);
+    }
+
+    $annualPlanPriceList = $annualPlan->price_list;
+    foreach ($annualPlanPriceList as $annualPlanPrice) {
+      $monthPlanPrice = $monthPlan->getPrice($annualPlanPrice['country']);
+      if (!$monthPlanPrice) {
+        throw new \Exception('month plan price not found for country ' . $annualPlanPrice['country'], 400);
+      }
+
+      if ($monthPlanPrice['currency'] !== $annualPlanPrice['currency']) {
+        throw new \Exception('currency not match for country ' . $annualPlanPrice['country'], 400);
+      }
+    }
+  }
+
+  public function validatePlan()
+  {
+    if ($this->interval === Plan::INTERVAL_YEAR) {
+      self::validPlanPair($this, $this->next_plan);
+    } else if ($this->interval === Plan::INTERVAL_MONTH) {
+      foreach (Plan::public()->where('next_plan_id', $this->id)->get() as $annualPlan) {
+        self::validPlanPair($annualPlan, $this);
+      }
+    }
+  }
+
+  protected function beforeSave()
+  {
+    if (!$this->next_plan_id) {
+      $this->next_plan_id = Plan::findNextMonthPlan($this)?->id;
+      if ($this->next_plan_id) {
+        $this->next_plan_info = $this->next_plan->buildNextPlanInfo();
+      }
+    }
+
+    $this->validatePlan();
+  }
+
   /**
    * @return array|null [
    *    'country'   => string,
@@ -74,13 +145,12 @@ class Plan extends BasePlan
    */
   public function getPrice(string $country): array|null
   {
-    $priceInCountry = null;
     foreach ($this->price_list as $price) {
       if ($price['country'] === $country) {
-        $priceInCountry = $price;
+        return $price;
       }
     }
-    return $priceInCountry;
+    return null;
   }
 
   public function activate()

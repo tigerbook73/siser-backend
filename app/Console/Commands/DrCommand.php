@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\SubscriptionPlan;
 use App\Models\GeneralConfiguration;
+use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
@@ -102,6 +103,11 @@ class DrCommand extends Command
       }
     }
     $this->info("Create or update plan ... done!");
+
+    // create default customer
+    $this->info("Create default customer 'user1.test'");
+    $user = User::where('name', 'user1.test')->first();
+    $this->manager->createOrUpdateCustomer($user->billing_info);
 
     return self::SUCCESS;
   }

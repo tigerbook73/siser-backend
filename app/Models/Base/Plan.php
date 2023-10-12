@@ -29,8 +29,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array $price_list
+ * @property int|null $next_plan_id
+ * @property array|null $next_plan_info
  * 
+ * @property \App\Models\Plan|null $next_plan
  * @property Product $product
+ * @property Collection|\App\Models\Plan[] $plans_where_next_plan
  * @property Collection|Subscription[] $subscriptions
  *
  * @package App\Models\Base
@@ -44,7 +48,9 @@ class Plan extends Model
   protected $casts = [
     'interval_count' => 'int',
     'subscription_level' => 'int',
-    'price_list' => 'json'
+    'price_list' => 'json',
+    'next_plan_id' => 'int',
+    'next_plan_info' => 'json'
   ];
 
   protected $fillable = [
@@ -56,12 +62,24 @@ class Plan extends Model
     'subscription_level',
     'url',
     'status',
-    'price_list'
+    'price_list',
+    'next_plan_id',
+    'next_plan_info'
   ];
+
+  public function next_plan()
+  {
+    return $this->belongsTo(\App\Models\Plan::class, 'next_plan_id');
+  }
 
   public function product()
   {
     return $this->belongsTo(Product::class, 'product_name', 'name');
+  }
+
+  public function plans_where_next_plan()
+  {
+    return $this->hasMany(\App\Models\Plan::class, 'next_plan_id');
   }
 
   public function subscriptions()

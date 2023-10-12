@@ -98,17 +98,17 @@ class PlanController extends SimpleController
     /** @var Plan[] $planList */
     $planList = $this->standardQuery($inputs)
       ->public()
+      ->whereJsonContains('price_list', ['country' => $country])
       ->get();
 
-    $returnPlanList = collect();
     foreach ($planList as $plan) {
-      $plan->price = $this->findPriceForCountry($plan->price_list, $country);
-      if ($plan->price) {
-        $returnPlanList->push($plan);
+      $price = $plan->getPrice($country);
+      if ($price) {
+        $plan->price = $price;
       }
     }
 
-    return ['data' => $this->transformMultipleResources($returnPlanList)];
+    return ['data' => $this->transformMultipleResources($planList)];
   }
 
   /**
@@ -161,9 +161,12 @@ class PlanController extends SimpleController
 
     $plan = new Plan($inputs);
     $plan->status = 'draft';
-    DB::transaction(
-      fn () => $plan->save()
-    );
+
+    if ($plan->interval === Plan::INTERVAL_YEAR) {
+      $plan->next_plan_id = Plan::findNextMonthPlan($plan)->id;
+    }
+    $plan->validatePlan();
+    $plan->save();
     return  response()->json($this->transformSingleResource($plan), 201);
   }
 
