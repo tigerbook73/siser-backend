@@ -19,7 +19,9 @@ class DesignPlanTestCase extends ApiTestCase
     parent::setUp();
 
     $this->modelSchema = array_keys((array)new ModelsDesignPlan);
+    $this->modelSchema = array_filter($this->modelSchema, fn ($value) => $value !== 'next_plan');
     $this->modelSchema['price_list'] = ['*' => array_keys((array)new Price)];
+    $this->modelSchema[] = 'next_plan_info';
 
     $this->modelCreate = [
       'name' => 'LDS New-Test Plan',
@@ -56,6 +58,11 @@ class DesignPlanTestCase extends ApiTestCase
       ]
     ];
 
-    $this->object = Plan::where('subscription_level', '>', 1)->first();
+    $this->object = Plan::public()
+      ->where('product_name', 'Leonardo™ Design Studio Pro')
+      ->where('interval', Plan::INTERVAL_MONTH)
+      ->where('interval_count', 1)
+      ->where('subscription_level', 2)
+      ->first();
   }
 }

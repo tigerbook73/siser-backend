@@ -36,7 +36,4 @@ class PlanInfo {
     /** @var \Tests\Models\Price $price */
     public $price;
 
-    /** @var \Tests\Models\NextPlanInfo $next_plan */
-    public $next_plan;
-
 }

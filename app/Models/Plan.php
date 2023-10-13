@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Plan as BasePlan;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Class Plan
@@ -80,7 +81,7 @@ class Plan extends BasePlan
 
   static public function findNextMonthPlan(Plan $annualPlan): Plan|null
   {
-    if ($annualPlan->interval !== Plan::INTERVAL_YEAR) {
+    if ($annualPlan->interval !== Plan::INTERVAL_YEAR || $annualPlan->status !== Plan::STATUS_ACTIVE) {
       return null;
     }
 
@@ -97,29 +98,39 @@ class Plan extends BasePlan
   static public function validPlanPair(Plan $annualPlan, Plan $monthPlan = null)
   {
     if (!$monthPlan) {
-      throw new \Exception('month plan not found for annual plan ' . $annualPlan->id, 400);
+      throw new HttpException(400, 'month plan not found for annual plan ' . $annualPlan->id);
+    }
+
+    if ($monthPlan->status != Plan::STATUS_ACTIVE) {
+      throw new HttpException(400, 'month plan not active for annual plan ' . $annualPlan->id);
     }
 
     $annualPlanPriceList = $annualPlan->price_list;
     foreach ($annualPlanPriceList as $annualPlanPrice) {
       $monthPlanPrice = $monthPlan->getPrice($annualPlanPrice['country']);
       if (!$monthPlanPrice) {
-        throw new \Exception('month plan price not found for country ' . $annualPlanPrice['country'], 400);
+        throw new HttpException(400, 'month plan price not found for country ' . $annualPlanPrice['country']);
       }
 
       if ($monthPlanPrice['currency'] !== $annualPlanPrice['currency']) {
-        throw new \Exception('currency not match for country ' . $annualPlanPrice['country'], 400);
+        throw new HttpException(400, 'currency not match for country ' . $annualPlanPrice['country']);
       }
     }
   }
 
   public function validatePlan()
   {
-    if ($this->interval === Plan::INTERVAL_YEAR) {
+    /**
+     * only validate active annual plan
+     */
+    if ($this->interval === Plan::INTERVAL_YEAR && $this->status == Plan::STATUS_ACTIVE) {
       self::validPlanPair($this, $this->next_plan);
     } else if ($this->interval === Plan::INTERVAL_MONTH) {
-      foreach (Plan::public()->where('next_plan_id', $this->id)->get() as $annualPlan) {
-        self::validPlanPair($annualPlan, $this);
+      // not new plan
+      if ($this->id) {
+        foreach (Plan::public()->where('next_plan_id', $this->id)->get() as $annualPlan) {
+          self::validPlanPair($annualPlan, $this);
+        }
       }
     }
   }

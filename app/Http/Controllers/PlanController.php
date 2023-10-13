@@ -25,7 +25,7 @@ class PlanController extends SimpleController
   protected function getCreateRules(array $inputs = []): array
   {
     return [
-      'name'                  => ['required', 'string', 'max:255', 'unique:plans'],
+      'name'                  => ['required', 'string', 'max:255'],
       'product_name'          => ['required', 'exists:products,name'],
       'interval'              => ['required', 'in:month,year'],
       'description'           => ['string', 'max:255'],
@@ -41,7 +41,7 @@ class PlanController extends SimpleController
   protected function getUpdateRules(array $inputs = []): array
   {
     return [
-      'name'                  => ['filled', 'string', 'max:255', Rule::unique('plans')->ignore(request("id"))],
+      'name'                  => ['filled', 'string', 'max:255'],
       'product_name'          => ['filled', 'exists:products,name'],
       'interval'              => ['filled', 'in:month,year'],
       'description'           => ['string', 'max:255'],
@@ -162,9 +162,6 @@ class PlanController extends SimpleController
     $plan = new Plan($inputs);
     $plan->status = 'draft';
 
-    if ($plan->interval === Plan::INTERVAL_YEAR) {
-      $plan->next_plan_id = Plan::findNextMonthPlan($plan)->id;
-    }
     $plan->validatePlan();
     $plan->save();
     return  response()->json($this->transformSingleResource($plan), 201);
