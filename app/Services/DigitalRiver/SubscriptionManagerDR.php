@@ -1041,7 +1041,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       ->fillPeriod($subscription, true)
       ->fillFromDrObject($drInvoice)
       ->setDrInvoiceId($drInvoice->getId())
-      ->setDrOrderId($drInvoice->getOrderId() ?? "")
+      ->setDrOrderId($drInvoice->getOrderId())
       ->setStatus(Invoice::STATUS_INIT)
       ->save();
 

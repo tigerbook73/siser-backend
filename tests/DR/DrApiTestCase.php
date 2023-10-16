@@ -1376,7 +1376,7 @@ class DrApiTestCase extends ApiTestCase
     $response->assertSuccessful();
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
     $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_NORMAL);
-    $this->assertNull($subscription->getActiveInvoice());
+    $this->assertNotNull($subscription->getActiveInvoice());
 
     Notification::assertSentTo(
       $subscription,

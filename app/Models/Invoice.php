@@ -117,7 +117,7 @@ class Invoice extends BaseInvoice
   public function setDrOrderId(string|null $drOrderId): self
   {
     $this->dr_order_id = $drOrderId;
-    return $this->setDrAttr(self::DR_ORDER_ID, $drOrderId ?? '');
+    return $this->setDrAttr(self::DR_ORDER_ID, $drOrderId);
   }
 
   static public function findByDrOrderId(string $drOrderId): Invoice|null

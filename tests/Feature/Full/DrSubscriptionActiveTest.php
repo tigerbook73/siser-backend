@@ -153,11 +153,34 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $this->assertEquals($refund->status, Refund::STATUS_COMPLETED);
   }
 
+  public function test_active_reminder()
+  {
+    $subscription = $this->init_active();
+
+    $this->onSubscriptionReminder($subscription);
+  }
+
   public function test_active_to_failed()
   {
     $subscription = $this->init_active();
 
     return $this->onSubscriptionFailed($subscription);
+  }
+
+  public function test_active_to_reminder_failed()
+  {
+    $subscription = $this->init_active();
+
+    $this->onSubscriptionReminder($subscription);
+    return $this->onSubscriptionFailed($subscription);
+  }
+
+  public function test_active_to_reminder_extended()
+  {
+    $subscription = $this->init_active();
+
+    $this->onSubscriptionReminder($subscription);
+    return $this->onSubscriptionExtended($subscription);
   }
 
   public function test_active_chargeback()
