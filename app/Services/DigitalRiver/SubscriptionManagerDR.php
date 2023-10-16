@@ -67,6 +67,7 @@ class DrLog
 
   static public function info(string $location, string $action, Subscription|Invoice|User|array $context = [])
   {
+    // level == __FUNCTION__, same the other functions
     self::log(__FUNCTION__, $location, $action, $context);
   }
 

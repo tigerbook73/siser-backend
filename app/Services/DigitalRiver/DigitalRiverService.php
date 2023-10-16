@@ -140,7 +140,7 @@ class DigitalRiverService
     $this->fileLinkApi      = new DrfileLinksApi($this->client, $this->config);
   }
 
-  protected function throwException(\Throwable $th): Exception
+  protected function throwException(\Throwable $th, string $level = 'error'): Exception
   {
     if ($th instanceof DrApiException) {
       if ($th->getResponseObject()) {
@@ -155,7 +155,7 @@ class DigitalRiverService
       $body = json_decode($text);
       $message = $body->errors[0]->message ?? $text;
     }
-    Log::error($th);
+    Log::log($level, $th);
     return new Exception("{$message}", ($th->getCode() >= 100 && $th->getCode() < 600) ? $th->getCode() : 500);
   }
 
@@ -520,7 +520,7 @@ class DigitalRiverService
 
       return $taxRate;
     } catch (\Throwable $th) {
-      throw $this->throwException($th);
+      throw $this->throwException($th, 'warning');
     }
   }
 
@@ -641,7 +641,7 @@ class DigitalRiverService
       $orderRequest->setBrowserIp(request()->ip());
       return $this->orderApi->createOrders($orderRequest);
     } catch (\Throwable $th) {
-      throw $this->throwException($th);
+      throw $this->throwException($th, 'warning');
     }
   }
 
