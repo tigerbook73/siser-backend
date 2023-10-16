@@ -518,6 +518,9 @@ class DigitalRiverService
       // remove checkout (TODO: moved to after response?)
       $this->checkoutApi->deleteCheckouts($checkout->getId());
 
+      if ($taxRate === null) {
+        throw new Exception('Can not retrieve tax rate, please check your billing information.', 400);
+      }
       return $taxRate;
     } catch (\Throwable $th) {
       throw $this->throwException($th, 'warning');
