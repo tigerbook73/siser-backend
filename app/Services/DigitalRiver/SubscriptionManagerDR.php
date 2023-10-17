@@ -569,9 +569,9 @@ class SubscriptionManagerDR implements SubscriptionManager
   public function webhookHandler(array $event): \Illuminate\Http\JsonResponse
   {
     $eventInfo = [
-      'type' => $event['type'],
-      'action' => 'received',
-      'id' => $event['id'],
+      'type'            => $event['type'],
+      'action'          => 'received',
+      'id'              => $event['id'],
       'subscription_id' => null,
     ];
 
@@ -580,25 +580,31 @@ class SubscriptionManagerDR implements SubscriptionManager
     // no handler
     if (!$eventHandler || !method_exists($this, $eventHandler['handler'])) {
       $event['action'] = 'no-handler';
-      DrLog::error(__FUNCTION__, 'event ignored: no-handler', $eventInfo);
+      DrLog::error(__FUNCTION__, "event {$event['type']} ignored: no-handler", $eventInfo);
       return response()->json($eventInfo);
     }
 
     $drEvent = DrEventRecord::startProcessing($event['id'], $event['type']);
-    if ($drEvent->action == DrEventRecord::ACTION_IGNORE || $drEvent->action == DrEventRecord::ACTION_ERROR) {
-      $eventInfo['action'] = $drEvent->action;
-      DrLog::warning(__FUNCTION__, "event {$drEvent->action}: {$drEvent->error}", $eventInfo);
-      return response()->json($eventInfo, $drEvent->action == DrEventRecord::ACTION_ERROR ? 409 : 200);
+    $eventInfo['action'] = $drEvent->action;
+
+    if ($drEvent->action == DrEventRecord::ACTION_ERROR) {
+      DrLog::warning(__FUNCTION__, "event {$drEvent->type} {$drEvent->action}: {$drEvent->error}", $eventInfo);
+      return response()->json($eventInfo, 409);
+    }
+
+    if ($drEvent->action == DrEventRecord::ACTION_IGNORE) {
+      DrLog::info(__FUNCTION__, "event {$drEvent->type} {$drEvent->action}: {$drEvent->error}", $eventInfo);
+      return response()->json($eventInfo, 200);
     }
 
     try {
-      DrLog::info(__FUNCTION__, 'event accepted: processing', $eventInfo);
+      DrLog::info(__FUNCTION__, "event {$drEvent->type} accepted: processing", $eventInfo);
       $object = DrObjectSerializer::deserialize($event['data']['object'], $eventHandler['class']);
       $handler = $eventHandler['handler'];
       $object = $this->$handler($object);
       $eventInfo['action'] = $object ? 'processed' : 'skipped';
       $eventInfo['subscription_id'] = ($object instanceof Subscription) ?  $object->id : $object?->subscription_id;
-      DrLog::info(__FUNCTION__, 'event processed: ' . $eventInfo['action'], $eventInfo);
+      DrLog::info(__FUNCTION__, "event {$drEvent->type} processed: " . $eventInfo['action'], $eventInfo);
       $drEvent->complete($eventInfo['subscription_id']);
       return response()->json($eventInfo);
     } catch (\Throwable $th) {
@@ -609,7 +615,7 @@ class SubscriptionManagerDR implements SubscriptionManager
         Log::error($th);
       }
       $eventInfo['action'] = 'error';
-      DrLog::error(__FUNCTION__, 'event processed: failed', $eventInfo);
+      DrLog::error(__FUNCTION__, "event {$drEvent->type} processed: failed", $eventInfo);
       return response()->json($eventInfo, 400);
     }
   }
