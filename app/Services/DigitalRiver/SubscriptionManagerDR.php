@@ -610,12 +610,14 @@ class SubscriptionManagerDR implements SubscriptionManager
     } catch (\Throwable $th) {
       $drEvent->fail();
       if ($th instanceof WebhookException) {
-        Log::error($th->getMessage());
+        Log::warning($th->getMessage());
+        $eventInfo['action'] = 'error';
+        DrLog::warning(__FUNCTION__, "event {$drEvent->type} processed: failed", $eventInfo);
       } else {
         Log::error($th);
+        $eventInfo['action'] = 'error';
+        DrLog::error(__FUNCTION__, "event {$drEvent->type} processed: failed", $eventInfo);
       }
-      $eventInfo['action'] = 'error';
-      DrLog::error(__FUNCTION__, "event {$drEvent->type} processed: failed", $eventInfo);
       return response()->json($eventInfo, 400);
     }
   }
