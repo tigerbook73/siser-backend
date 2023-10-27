@@ -109,6 +109,7 @@ class TestController extends Controller
           subStatus: Subscription::SUB_STATUS_NORMAL,
           currentPeriod: 1
         );
+        $mockup->subscription->createRenewal();
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
         break;
 
@@ -221,6 +222,7 @@ class TestController extends Controller
         $mockup->subscription->moveToNext();
         $mockup->subscription->fillNextInvoice();
         $mockup->subscription->save();
+        $mockup->subscription->createRenewal();
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
         break;
 

@@ -7,7 +7,7 @@
     $helper->trans(
       'subscription_renew_req_confirmed.notification', 
       [
-        'plan_name'         => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name'         => $helper->formatSubscriptionPlanName($subscription, true),
         'next_invoice_date' => $helper->formatDate($subscription->next_invoice_date),
       ]
     ) 

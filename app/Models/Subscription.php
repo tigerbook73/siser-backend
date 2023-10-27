@@ -454,7 +454,6 @@ class Subscription extends BaseSubscription
         $this->renewal_info['status'] === SubscriptionRenewal::STATUS_ACTIVE);
   }
 
-
   public function createRenewal(): SubscriptionRenewal|null
   {
     if (!$this->isRenewalRequired()) {

@@ -7,7 +7,7 @@
     $helper->trans(
       'subscription_renew_required.notification', 
       [
-        'plan_name'     => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name'     => $helper->formatSubscriptionPlanName($subscription, true),
         'expire_date'   => $helper->formatDate($subscription->renewal_info['expire_at']),
         'renew_link'    => $helper->getRenewLink(),
       ]
