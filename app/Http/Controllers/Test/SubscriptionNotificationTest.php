@@ -10,6 +10,7 @@ use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewal;
 use App\Models\User;
 use App\Services\Locale;
 use DateTimeZone;
@@ -56,6 +57,7 @@ class SubscriptionNotificationTest
 
     $user->refunds()->delete();
     $user->invoices()->delete();
+    $user->subscription_renewals()->delete();
     $user->subscriptions()->delete();
     $user->payment_method()->delete();
     $user->billing_info()->delete();
@@ -248,6 +250,7 @@ class SubscriptionNotificationTest
       );
     }
     $this->subscription->next_invoice_date            = $this->subscription->current_period_end_date->subDays(1);
+    $this->subscription->next_reminder_date           = $this->subscription->current_period_end_date->subDays(8);
 
     $this->subscription->fillNextInvoice();
     $this->subscription->status                       = $status ?? $this->subscription->status ?? Subscription::STATUS_DRAFT;

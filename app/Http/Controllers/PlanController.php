@@ -162,7 +162,6 @@ class PlanController extends SimpleController
     $plan = new Plan($inputs);
     $plan->status = 'draft';
 
-    $plan->validatePlan();
     $plan->save();
     return  response()->json($this->transformSingleResource($plan), 201);
   }

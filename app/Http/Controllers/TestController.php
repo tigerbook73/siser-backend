@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Test\SubscriptionNotificationTest;
 use App\Models\Country;
+use App\Models\SubscriptionRenewal;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TestController extends Controller
@@ -24,23 +25,35 @@ class TestController extends Controller
   {
     $mockup = SubscriptionNotificationTest::init($country, $plan, $coupon);
 
-    // skip invalid scenario
-    if (in_array($type, [
-      SubscriptionNotification::NOTIF_CANCELLED_REFUND,
-      SubscriptionNotification::NOTIF_FAILED,
-      SubscriptionNotification::NOTIF_INVOICE_PENDING,
-      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
-      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
-      SubscriptionNotification::NOTIF_ORDER_INVOICE,
-      SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
-      SubscriptionNotification::NOTIF_ORDER_REFUNDED,
-      SubscriptionNotification::NOTIF_EXTENDED,
-    ]) && $coupon == 'free-trial') {
+    // skip invalid free-trial scenario
+    if (
+      in_array($type, [
+        SubscriptionNotification::NOTIF_CANCELLED_REFUND,
+        SubscriptionNotification::NOTIF_FAILED,
+        SubscriptionNotification::NOTIF_INVOICE_PENDING,
+        SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
+        SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
+        SubscriptionNotification::NOTIF_ORDER_INVOICE,
+        SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
+        SubscriptionNotification::NOTIF_ORDER_REFUNDED,
+        SubscriptionNotification::NOTIF_EXTENDED,
+        SubscriptionNotification::NOTIF_RENEW_REQUIRED,
+        SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+        SubscriptionNotification::NOTIF_RENEW_EXPIRED,
+      ])
+      && $coupon == 'free-trial'
+    ) {
       return null;
     }
 
+    // skip invalid renewal scenario
     if (
-      in_array($type, []) && $coupon == 'free-trial'
+      in_array($type, [
+        SubscriptionNotification::NOTIF_RENEW_REQUIRED,
+        SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+        SubscriptionNotification::NOTIF_RENEW_EXPIRED,
+      ])
+      && ($plan !== 'year' || $country !== 'DE')
     ) {
       return null;
     }
@@ -134,6 +147,48 @@ class TestController extends Controller
         $mockup->updateInvoice(status: Invoice::STATUS_INIT, next: true);
         break;
 
+      case SubscriptionNotification::NOTIF_RENEW_REQUIRED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->createRenewal();
+        $mockup->subscription->activatePendingRenewal();
+        $mockup->subscription->updateActiveRenewalSubstatus(SubscriptionRenewal::SUB_STATUS_FIRST_REMINDERED);
+        break;
+
+      case SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->createRenewal();
+        $mockup->subscription->activatePendingRenewal();
+        $mockup->subscription->completeActiveRenewal();
+        break;
+
+      case SubscriptionNotification::NOTIF_RENEW_EXPIRED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->createRenewal();
+        $mockup->subscription->activatePendingRenewal();
+        $mockup->subscription->expireActiveRenewal();
+
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_CANCELLING,
+          currentPeriod: 1
+        );
+        $mockup->subscription->end_date = $mockup->subscription->current_period_end_date;
+        $mockup->subscription->save();
+
+        break;
+
       case SubscriptionNotification::NOTIF_INVOICE_PENDING:
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
@@ -205,6 +260,23 @@ class TestController extends Controller
           currentPeriod: 1
         );
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        break;
+
+      case SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        break;
     }
     return $mockup;
   }

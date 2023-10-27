@@ -103,6 +103,36 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
     $this->viewNotificationType(SubscriptionNotification::NOTIF_REMINDER);
   }
 
+  public function testNotificationRenewRequired()
+  {
+    foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
+      $this->viewNotification(SubscriptionNotification::NOTIF_RENEW_REQUIRED, 'DE', 'year', $coupon)
+        ->assertStatus(200)
+        ->assertSeeText('Team Siser')
+        ->assertDontSeeText('messages.');
+    }
+  }
+
+  public function testNotificationRenewConfirmed()
+  {
+    foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
+      $this->viewNotification(SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED, 'DE', 'year', $coupon)
+        ->assertStatus(200)
+        ->assertSeeText('Team Siser')
+        ->assertDontSeeText('messages.');
+    }
+  }
+
+  public function testNotificationRenewExpired()
+  {
+    foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
+      $this->viewNotification(SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED, 'DE', 'year', $coupon)
+        ->assertStatus(200)
+        ->assertSeeText('Team Siser')
+        ->assertDontSeeText('messages.');
+    }
+  }
+
   public function testNotificationTerminated()
   {
     $this->viewNotificationType(SubscriptionNotification::NOTIF_TERMINATED);
@@ -111,5 +141,15 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
   public function testNotificationTermsChanged()
   {
     $this->viewNotificationType(SubscriptionNotification::NOTIF_TERMS_CHANGED);
+  }
+
+  public function testNotificationPlanUpdatedGerman()
+  {
+    $this->viewNotificationType(SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN);
+  }
+
+  public function testNotificationPlanUpdatedOther()
+  {
+    $this->viewNotificationType(SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER);
   }
 }

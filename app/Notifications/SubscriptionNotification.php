@@ -30,8 +30,15 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   public const NOTIF_FAILED                     = 'subscription.failed';
   public const NOTIF_INVOICE_PENDING            = 'subscription.invoice-pending';
   public const NOTIF_REMINDER                   = 'subscription.reminder';
+  public const NOTIF_RENEW_REQUIRED             = 'subscription.renew-required';
+  public const NOTIF_RENEW_REQ_CONFIRMED        = 'subscription.renew-req-confirmed';
+  public const NOTIF_RENEW_EXPIRED              = 'subscription.renew-expired';
   public const NOTIF_TERMINATED                 = 'subscription.terminated';
   public const NOTIF_TERMS_CHANGED              = 'subscription.terms-changed';
+
+  // the following notification is once off and can be removed when done!
+  public const NOTIF_PLAN_UPDATED_GERMAN        = 'subscription.plan-updated-german';
+  public const NOTIF_PLAN_UPDATED_OTHER         = 'subscription.plan-updated-other';
 
   static public $types = [
     self::NOTIF_ORDER_ABORTED         => ['subject' => "Order ##O Aborted",                       'validate' => null],
@@ -48,8 +55,15 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     self::NOTIF_FAILED                => ['subject' => "Subscription ##S Failed",                 'validate' => null],
     self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription ##S Payment Failed",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_REMINDER              => ['subject' => "Subscription ##S Renew Reminder",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_RENEW_REQUIRED        => ['subject' => "Subscription ##S Renew Required",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_RENEW_REQ_CONFIRMED   => ['subject' => "Subscription ##S Renew Request Confirmed", 'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_RENEW_EXPIRED         => ['subject' => "Subscription ##S Renew Expired",          'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_TERMINATED            => ['subject' => "Subscription ##S Terminated",             'validate' => null],
     self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription ##S Terms Changed",          'validate' => null],
+
+    // the following notification is once off and can be removed when done!
+    self::NOTIF_PLAN_UPDATED_GERMAN   => ['subject' => "Subscription ##S Plan Updated",           'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_PLAN_UPDATED_OTHER    => ['subject' => "Subscription ##S Plan Updated",           'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
   ];
 
   public Subscription $subscription;

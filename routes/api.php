@@ -72,6 +72,7 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
     Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
     Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
     Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+    Route::post('/account/subscriptions/{id}/renewal', [SubscriptionController::class, 'confirmRenewal']);
 
     Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'refundable']);
 

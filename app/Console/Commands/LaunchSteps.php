@@ -11,6 +11,7 @@ use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
+use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
 use DigitalRiver\ApiSdk\Model\CheckoutRequest as DrCheckoutRequest;
@@ -303,6 +304,60 @@ class LaunchSteps extends Command
     } catch (\Throwable $th) {
       //throw $th;
       Log::info($th->getMessage());
+    }
+  }
+
+  static public function updateAnnualPlans()
+  {
+    $drService = new DigitalRiverService();
+
+    /**
+     * 1. find active annual subscriptions
+     * 2. for each subscription
+     *    A. update subscription's next plan
+     *    B. update subscription's dr-subscription
+     *    C. create subscription renewal (german only)
+     *    D. send notification (update plan)
+     */
+
+
+    /** @var Subscription[] $subscriptions */
+    $subscriptions = Subscription::where('status', Subscription::STATUS_ACTIVE)
+      ->where('sub_status', '<>', Subscription::SUB_STATUS_CANCELLING)
+      ->where('subscription_level', 2)
+      ->where('plan_info->interval', Plan::INTERVAL_YEAR)
+      ->get();
+
+    foreach ($subscriptions as $subscription) {
+      try {
+        if ($subscription->isFreeTrial()) {
+          continue;
+        }
+
+        //code...
+        $drSubscription = $drService->getSubscription($subscription->dr_subscription_id);
+
+        // A. update subscription's next plan
+        $subscription->fillNextInvoice();
+        $subscription->save();
+
+        // B. update subscription's dr-subscription
+        $drService->convertSubscriptionToNext($drSubscription, $subscription);
+
+        Log::info("Update subscription {$subscription->id} next plan to {$subscription->plan_info['name']}");
+
+        // C. create subscription renewal (german only)
+        $renewal = $subscription->createRenewal();
+
+        // D. send notification (update plan)
+        if (isset($renewal)) {
+          $subscription->sendNotification(SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN);
+        } else {
+          $subscription->sendNotification(SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER);
+        }
+      } catch (\Throwable $th) {
+        Log::warning("Update subscription {$subscription->id} failed: {$th->getMessage()}");
+      }
     }
   }
 }

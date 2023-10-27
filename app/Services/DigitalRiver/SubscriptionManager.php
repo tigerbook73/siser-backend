@@ -62,4 +62,9 @@ interface SubscriptionManager
    * Tax rate
    */
   public function retrieveTaxRate(User $user, TaxId|null $taxId = null): float;
+
+  /**
+   * Manully renew subscription
+   */
+  public function renewSubscription(Subscription $subscription): Subscription;
 }

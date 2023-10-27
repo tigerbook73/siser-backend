@@ -19,9 +19,7 @@ class DesignPlanTestCase extends ApiTestCase
     parent::setUp();
 
     $this->modelSchema = array_keys((array)new ModelsDesignPlan);
-    $this->modelSchema = array_filter($this->modelSchema, fn ($value) => $value !== 'next_plan');
     $this->modelSchema['price_list'] = ['*' => array_keys((array)new Price)];
-    $this->modelSchema[] = 'next_plan_info';
 
     $this->modelCreate = [
       'name' => 'LDS New-Test Plan',

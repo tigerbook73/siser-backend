@@ -16,13 +16,6 @@ class DesignPlanDeactivateApiTest extends DesignPlanTestCase
     $response->assertStatus(200);
   }
 
-  public function testDesignPlanDeactivateMonthPlanFailedOk()
-  {
-    // monthly plan can not be deactivated if referenced by a annual plan
-    $response = $this->postJson($this->baseUrl . '/' . $this->object->id . '/deactivate');
-    $response->assertStatus(400);
-  }
-
   public function testMore()
   {
     $this->markTestIncomplete('more test cases to come');

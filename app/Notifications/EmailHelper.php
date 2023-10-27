@@ -33,9 +33,9 @@ class EmailHelper
     return __('messages.' . $key, $replace, $this->locale);
   }
 
-  public function formatDate(Carbon|null $date)
+  public function formatDate(Carbon|string|null $date)
   {
-    return $date ? $date->setTimezone($this->timezone)
+    return $date ? (Carbon::parse($date))->setTimezone($this->timezone)
       ->locale($this->locale)
       ->isoFormat('lll z') : '';
   }
@@ -130,6 +130,11 @@ class EmailHelper
     return '<a href="https://fcl.software/legal/eula" target="_blank">terms and conditions</a>';
   }
 
+  public function getRenewLink()
+  {
+    return '<a href="https://software.siser.com/account/subscription" target="_blank">here</a>';
+  }
+
   public function getTaxName()
   {
     return match ($this->country) {
@@ -154,6 +159,7 @@ class EmailHelper
       SubscriptionNotification::NOTIF_CANCELLED,
       SubscriptionNotification::NOTIF_CANCELLED_REFUND,
       SubscriptionNotification::NOTIF_FAILED,
+      SubscriptionNotification::NOTIF_RENEW_EXPIRED,
       SubscriptionNotification::NOTIF_TERMINATED,
     ]));
   }
@@ -166,6 +172,9 @@ class EmailHelper
       SubscriptionNotification::NOTIF_ORDER_INVOICE,
       SubscriptionNotification::NOTIF_INVOICE_PENDING,
       SubscriptionNotification::NOTIF_REMINDER,
+      SubscriptionNotification::NOTIF_RENEW_REQUIRED,
+      SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+      SubscriptionNotification::NOTIF_RENEW_EXPIRED,
     ]));
   }
 
@@ -176,6 +185,11 @@ class EmailHelper
       SubscriptionNotification::NOTIF_EXTENDED,
       SubscriptionNotification::NOTIF_INVOICE_PENDING,
       SubscriptionNotification::NOTIF_REMINDER,
+      SubscriptionNotification::NOTIF_RENEW_REQUIRED,
+      SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+
+      SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN,
+      SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER,
     ]));
   }
 

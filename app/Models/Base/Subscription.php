@@ -10,6 +10,7 @@ use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Refund;
+use App\Models\SubscriptionRenewal;
 use App\Models\TraitModel;
 use App\Models\User;
 use Carbon\Carbon;
@@ -47,6 +48,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $next_invoice_date
  * @property Carbon|null $next_reminder_date
  * @property array|null $next_invoice
+ * @property array|null $renewal_info
  * @property array|null $dr
  * @property string|null $dr_subscription_id
  * @property string|null $stop_reason
@@ -59,6 +61,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property User $user
  * @property Collection|Invoice[] $invoices
  * @property Collection|Refund[] $refunds
+ * @property Collection|SubscriptionRenewal[] $subscription_renewals
  *
  * @package App\Models\Base
  */
@@ -91,6 +94,7 @@ class Subscription extends Model
     'next_invoice_date' => 'datetime',
     'next_reminder_date' => 'datetime',
     'next_invoice' => 'json',
+    'renewal_info' => 'json',
     'dr' => 'json',
     'active_invoice_id' => 'int',
     'status_transitions' => 'json'
@@ -121,6 +125,7 @@ class Subscription extends Model
     'next_invoice_date',
     'next_reminder_date',
     'next_invoice',
+    'renewal_info',
     'dr',
     'dr_subscription_id',
     'stop_reason',
@@ -152,5 +157,10 @@ class Subscription extends Model
   public function refunds()
   {
     return $this->hasMany(Refund::class);
+  }
+
+  public function subscription_renewals()
+  {
+    return $this->hasMany(SubscriptionRenewal::class);
   }
 }

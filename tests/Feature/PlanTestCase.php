@@ -20,9 +20,7 @@ class PlanTestCase extends ApiTestCase
     parent::setUp();
 
     $this->modelSchema = array_keys((array)new ModelsPlan);
-    $this->modelSchema[] = 'next_plan_info';
     $this->modelSchema['price'] = array_keys((array)new ModelsPrice);
-    $this->modelSchema = array_filter($this->modelSchema, fn ($value) => $value !== 'next_plan');
     unset($this->modelSchema['price_list']);
 
     $this->modelCreate = [];

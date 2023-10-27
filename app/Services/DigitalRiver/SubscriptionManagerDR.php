@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
@@ -325,10 +326,14 @@ class SubscriptionManagerDR implements SubscriptionManager
         $subscription->active_invoice_id = null;
         $subscription->save();
         DrLog::info(__FUNCTION__, 'subscription active => cancelling', $subscription);
+
+        $subscription->cancelPendingOrActiveRenewal();
       }
 
       // send notification
-      if ($invoiceToRefund) {
+      if ($subscription->renewal_info && $subscription->renewal_info['status'] == SubscriptionRenewal::STATUS_EXPIRED) {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_RENEW_EXPIRED);
+      } else if ($invoiceToRefund) {
         $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_REFUND, $invoiceToRefund);
       } else {
         $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
@@ -337,6 +342,28 @@ class SubscriptionManagerDR implements SubscriptionManager
     } catch (\Throwable $th) {
       throw $th;
     }
+  }
+
+  public function renewSubscription(Subscription $subscription): Subscription
+  {
+    if (!$subscription->renewal_info || $subscription->renewal_info['status'] !== SubscriptionRenewal::STATUS_ACTIVE) {
+      throw new Exception('subscription has no active renewal', 500);
+    }
+
+    // complete renewal
+    $subscription->completeActiveRenewal();
+
+    // send confirmation notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED);
+
+    // re-send reminder notification if it has been remindered but not starting to invoice
+    $invoice = $subscription->getActiveInvoice();
+    if ($invoice && $invoice->status == Invoice::STATUS_INIT) {
+      // reminder event has been triggered, but not starting to charge
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
+    }
+
+    return $subscription;
   }
 
   public function cancelOrder(Invoice $invoice): Invoice
@@ -747,6 +774,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info(__FUNCTION__, "coupon usage updated: status = {$subscription->coupon->status}", $subscription);
     }
 
+    // create renewal if required
+    $subscription->createRenewal();
+
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
     return $subscription;
@@ -1109,6 +1139,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       throw $th;
     }
 
+    // if there is an open renewal, expires it (before move to next period)
+    $subscription->expireActiveRenewal();
+
     // update subscription data
     $subscription->moveToNext();
     $subscription->fillAmountFromDrObject($drInvoice);
@@ -1131,6 +1164,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       $this->drService->convertSubscriptionToNext($drSubscription, $subscription);
       DrLog::info(__FUNCTION__, 'dr-subscription converted to next', $subscription);
     }
+
+    // create renewal is required
+    $subscription->createRenewal();
 
     // update invoice
     $invoice->fillFromDrObject($drInvoice);
@@ -1252,7 +1288,11 @@ class SubscriptionManagerDR implements SubscriptionManager
     DrLog::info(__FUNCTION__, 'subscription amount updated from dr object ', $subscription);
 
     // send notification
-    $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER, $invoice);
+    if ($subscription->isRenewalPendingOrActive()) {
+      $subscription->sendRenewNotification();
+    } else {
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
+    }
     return $subscription;
   }
 

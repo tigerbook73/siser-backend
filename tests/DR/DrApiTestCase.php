@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
@@ -827,7 +828,15 @@ class DrApiTestCase extends ApiTestCase
     if ($activeInvoice && $activeInvoice->id != $currentPeriodInvoice->id) {
       $this->assertEquals($activeInvoice->status, Invoice::STATUS_CANCELLED);
     }
-    if ($needRefund) {
+
+    if ($subscription->renewal_info && $subscription->renewal_info['status'] == SubscriptionRenewal::STATUS_EXPIRED) {
+      $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_CANCELLING);
+
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_EXPIRED
+      );
+    } else if ($needRefund) {
       $this->assertEquals($subscription->status, Subscription::STATUS_STOPPED);
 
       if ($currentPeriodInvoiceStatus == Invoice::STATUS_PROCESSING) {
@@ -933,7 +942,6 @@ class DrApiTestCase extends ApiTestCase
       $this->mockCancelSubscription($previousSubscription);
     }
     if (
-      $subscription->plan_info['interval'] == Plan::INTERVAL_YEAR ||
       ($subscription->coupon_info['discount_type'] ?? null) == Coupon::DISCOUNT_TYPE_FREE_TRIAL ||
       (($subscription->coupon_info['discount_type'] ?? null) == Coupon::DISCOUNT_TYPE_PERCENTAGE &&
         ($subscription->coupon_info['interval_count'] ?? null) == $subscription->plan_info['interval_count'])
@@ -961,12 +969,6 @@ class DrApiTestCase extends ApiTestCase
     if ($subscription->isFreeTrial()) {
       $this->assertLessThan(0.004, abs($subscription->price - 0));
       $this->assertLessThan(0.004, abs($subscription->next_invoice['price'] - $subscription->plan_info['price']['price']));
-      $this->assertNull($subscription->next_invoice['coupon_info']);
-    } else if (
-      $subscription->plan_info['interval'] == Plan::INTERVAL_YEAR
-    ) {
-      $this->assertNotEquals($subscription->plan_info['id'], $subscription->next_invoice['plan_info']['id']);
-      $this->assertLessThan(0.004, abs($subscription->next_invoice['price'] - $subscription->next_invoice['plan_info']['price']['price']));
       $this->assertNull($subscription->next_invoice['coupon_info']);
     } else if (
       $subscription->isFixedTermPercentage() &&
@@ -1378,10 +1380,16 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_NORMAL);
     $this->assertNotNull($subscription->getActiveInvoice());
 
-    Notification::assertSentTo(
-      $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
-    );
+    if (
+      !$subscription->renewal_info ||
+      ($subscription->renewal_info['status'] != SubscriptionRenewal::STATUS_PENDING &&
+        $subscription->renewal_info['status'] != SubscriptionRenewal::STATUS_ACTIVE)
+    ) {
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
+      );
+    }
 
     return $subscription;
   }
@@ -1419,7 +1427,7 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
     $this->assertEquals($subscription->getActiveInvoice()->status, Invoice::STATUS_PENDING);
 
-    if ($invoiceStatus == Invoice::STATUS_OPEN) {
+    if ($invoiceStatus == Invoice::STATUS_INIT) {
       Notification::assertSentTo(
         $subscription,
         fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_INVOICE_PENDING

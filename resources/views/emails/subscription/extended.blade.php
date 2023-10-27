@@ -14,13 +14,12 @@
   !!}
   <br />
   <br />
-  @if ($subscription->plan_info['interval'] == 'year')
+  @if ($subscription->renewal_info)
   {!!
     $helper->trans(
-      'subscription_order_confirm.annual_plan_claim',
+      'subscription_order_confirm.manual_renewal',
       [
         'plan_end_date' => $helper->formatDate($subscription->current_period_end_date),
-        'monthly_plan' => $helper->formatPlanName($subscription->next_invoice['plan_info'], $subscription->next_invoice['coupon_info']),
       ]
     )
   !!}

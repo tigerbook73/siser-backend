@@ -13,6 +13,7 @@ use App\Models\Machine;
 use App\Models\PaymentMethod;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -49,6 +50,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property Collection|Machine[] $machines
  * @property PaymentMethod $payment_method
  * @property Collection|Refund[] $refunds
+ * @property Collection|SubscriptionRenewal[] $subscription_renewals
  * @property Collection|Subscription[] $subscriptions
  * @property Collection|TaxId[] $tax_ids
  *
@@ -114,6 +116,11 @@ class User extends \Illuminate\Foundation\Auth\User
   public function refunds()
   {
     return $this->hasMany(Refund::class);
+  }
+
+  public function subscription_renewals()
+  {
+    return $this->hasMany(SubscriptionRenewal::class);
   }
 
   public function subscriptions()

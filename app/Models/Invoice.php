@@ -16,8 +16,8 @@ class Invoice extends BaseInvoice
   use TraitDrAttr;
 
   // status -- see invoice.md
-  public const STATUS_INIT            = 'init';         // first invoice only
-  public const STATUS_OPEN            = 'open';         // renew invoice only
+  public const STATUS_INIT            = 'init';
+  public const STATUS_OPEN            = 'open';   // TODO: remove this status
   public const STATUS_PENDING         = 'pending';
   public const STATUS_CANCELLED       = 'cancelled';
   public const STATUS_PROCESSING      = 'processing';   // first invoice only

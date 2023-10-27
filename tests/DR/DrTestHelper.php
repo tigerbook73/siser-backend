@@ -489,6 +489,9 @@ class DrTestHelper
       ))
       ->setNextInvoiceDate(
         Carbon::parse($updatedSubscription->getCurrentPeriodEndDate())->subDays(1)
+      )
+      ->setNextReminderDate(
+        Carbon::parse($updatedSubscription->getCurrentPeriodEndDate())->subDays(8)
       );
     return $updatedSubscription;
   }

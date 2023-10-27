@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
+use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use App\Models\User;
 use App\Services\CouponRules;
@@ -289,5 +290,31 @@ class SubscriptionController extends SimpleController
       'invoice' => ($result['invoice'] ?? null)?->toResource('customer'),
     ];
     return response()->json($response);
+  }
+
+  public function confirmRenewal(int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription|null $activeSubscription */
+    $activeSubscription = $this->user->getActivePaidSubscription();
+    if (!$activeSubscription || $activeSubscription->id != $id) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    if ($activeSubscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
+      return response()->json(['message' => 'Subscription is already on cancelling'], 422);
+    }
+
+    if (!$activeSubscription->renewal_info || $activeSubscription->renewal_info['status'] !== SubscriptionRenewal::STATUS_ACTIVE) {
+      return response()->json(['message' => 'Subscription can not or need not to renew manually'], 400);
+    }
+
+    try {
+      $subscription = $this->manager->renewSubscription($activeSubscription);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
   }
 }

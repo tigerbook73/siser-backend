@@ -10,6 +10,7 @@ use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 
 class Subscription extends BaseSubscription
 {
@@ -24,9 +25,9 @@ class Subscription extends BaseSubscription
   public const STATUS_STOPPED                 = 'stopped';
 
   // sub_status (when status is 'active')
-  public const SUB_STATUS_CANCELLING          = 'cancelling';
-  public const SUB_STATUS_NORMAL              = 'normal';
-  public const SUB_STATUS_ORDER_PENDING       = 'order_pending'; // for STATUS_PENDING
+  public const SUB_STATUS_CANCELLING          = 'cancelling';     // to be cancelled at the end of current period
+  public const SUB_STATUS_NORMAL              = 'normal';         // default sub status for all status
+  public const SUB_STATUS_ORDER_PENDING       = 'order_pending';  // for STATUS_PENDING
 
   // dr attributes
   public const DR_CUSTOMER_ID       = 'customer_id';
@@ -61,6 +62,7 @@ class Subscription extends BaseSubscription
     'next_invoice_date'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'next_reminder_date'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'next_invoice'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'renewal_info'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'dr'                        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'stop_reason'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status'                    => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -273,9 +275,6 @@ class Subscription extends BaseSubscription
 
     if ($this->isFreeTrial()) {
       $next_invoice['coupon_info'] = null;
-    } else if ($this->plan_info['interval'] == Plan::INTERVAL_YEAR) {
-      $next_invoice['plan_info'] = Plan::findNextMonthPlan($this->plan)?->info($this->billing_info['address']['country']);
-      $next_invoice['coupon_info'] = null;
     } else if ($this->isFixedTermPercentage()) {
       if ($next_invoice['current_period'] * $this->plan_info['interval_count'] > $this->coupon_info['interval_count']) {
         $next_invoice['coupon_info'] = null;
@@ -290,7 +289,7 @@ class Subscription extends BaseSubscription
 
     $next_invoice['price'] = self::calcPlanPrice($next_invoice['plan_info'], $next_invoice['coupon_info']);
     $next_invoice['subtotal'] = $next_invoice['price'];
-    $next_invoice['tax_rate'] = $this->tax_rate; // TODO: free-trial's tax rate is not correct, always 0
+    $next_invoice['tax_rate'] = $this->tax_rate;
     $next_invoice['total_tax'] = round($next_invoice['price'] * $next_invoice['tax_rate'], 2);
     $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
 
@@ -339,6 +338,8 @@ class Subscription extends BaseSubscription
     $this->stop_reason = $stopReason;
     $this->sub_status = $subStatus;
     $this->save();
+
+    $this->cancelPendingOrActiveRenewal();
   }
 
   public function getActiveInvoice(): Invoice|null
@@ -368,6 +369,8 @@ class Subscription extends BaseSubscription
     $context['subscription'] = $this;
     $context['invoice'] = $invoice;
     $this->notify(new SubscriptionNotification($type, $context));
+
+    Log::Info("NOTIF_LOG: {$type} sent to user: {$this->user_id}, email: {$this->billing_info['email']} for subscription: {$this->id}");
   }
 
   public function isFreeTrial(): bool
@@ -417,5 +420,218 @@ class Subscription extends BaseSubscription
   public function getPlanName(): string
   {
     return self::buildPlanName($this->plan_info, $this->coupon_info);
+  }
+
+  public function isRenewalRequired(): bool
+  {
+    // must be active and not cancelling
+    if ($this->status !== Subscription::STATUS_ACTIVE || $this->sub_status === Subscription::SUB_STATUS_CANCELLING) {
+      return false;
+    }
+
+    //  must have next invoice date
+    if (!$this->next_invoice_date) {
+      return false;
+    }
+
+    // must be annual plan & german
+    if ($this->plan_info['interval'] !== Plan::INTERVAL_YEAR || $this->billing_info['address']['country'] !== 'DE') {
+      return false;
+    }
+
+    // must not be free trial
+    if ($this->isFreeTrial()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  public function isRenewalPendingOrActive(): bool
+  {
+    return $this->renewal_info &&
+      ($this->renewal_info['status'] === SubscriptionRenewal::STATUS_PENDING ||
+        $this->renewal_info['status'] === SubscriptionRenewal::STATUS_ACTIVE);
+  }
+
+
+  public function createRenewal(): SubscriptionRenewal|null
+  {
+    if (!$this->isRenewalRequired()) {
+      return null;
+    }
+
+    /**
+     *  Germany annual plan
+     */
+    $renewal = new SubscriptionRenewal();
+    $renewal->user_id = $this->user_id;
+    $renewal->subscription_id = $this->id;
+    $renewal->period = $this->current_period + 1;
+
+    /**
+     *  renew date offsets (see config/dr.php for real offsets)
+     *          |--------------------------------------------| next_invoice_date 
+     *          |                 |            |<-- 2 day -->|
+     *          |                 |<-- 4 days             -->|
+     *          |<-- 30 days                              -->|
+     *         start_at                       expire_at
+     *         first_reminder_date 
+     *                          final_reminder_date
+     */
+    $renewal->start_at = min($this->next_invoice_date->subDays(config('dr.renewal.start_offset')), $this->next_reminder_date);
+    $renewal->expire_at = $this->next_invoice_date->subDays(config('dr.renewal.expire_offset'));
+    $renewal->first_reminder_at = $this->next_invoice_date->subDays(config('dr.renewal.first_reminder_offset'));
+    $renewal->final_reminder_at = $this->next_invoice_date->subDays(config('dr.renewal.final_reminder_offset'));
+
+    $renewal->pending();
+    $renewal->save();
+
+    $this->renewal_info = $renewal->info();
+    $this->save();
+    return $renewal;
+  }
+
+  public function getOpenRenewal(): SubscriptionRenewal|null
+  {
+    return $this->subscription_renewals()
+      ->where('period', $this->current_period + 1)
+      ->whereIn('status', [SubscriptionRenewal::STATUS_PENDING, SubscriptionRenewal::STATUS_ACTIVE])
+      ->first();
+  }
+
+  public function getActiveRenewal(): SubscriptionRenewal|null
+  {
+    return $this->subscription_renewals()
+      ->where('period', $this->current_period + 1)
+      ->where('status', SubscriptionRenewal::STATUS_ACTIVE)
+      ->first();
+  }
+
+  public function activatePendingRenewal(): SubscriptionRenewal|null
+  {
+    $renewal = $this->getOpenRenewal();
+    if ($renewal && $renewal->status === SubscriptionRenewal::STATUS_PENDING) {
+      $renewal->activate();
+      $renewal->save();
+
+      $this->renewal_info = $renewal->info();
+      $this->save();
+    }
+    return $renewal;
+  }
+
+  public function updateActiveRenewalSubstatus(string $substatus)
+  {
+    $renewal = $this->getActiveRenewal();
+    if ($renewal) {
+      $renewal->setSubStatus($substatus);
+      $renewal->save();
+
+      $this->renewal_info = $renewal->info();
+      $this->save();
+    }
+    return $renewal;
+  }
+
+  public function cancelPendingOrActiveRenewal(): SubscriptionRenewal|null
+  {
+    $renewal = $this->getOpenRenewal();
+    if (!$renewal) {
+      return null;
+    }
+
+    if ($renewal->isPending()) {
+      $renewal->delete();
+      $this->renewal_info = null;
+      $this->save();
+    } else {
+      // active
+      $renewal->cancel();
+      $renewal->save();
+
+      $this->renewal_info = $renewal->info();
+      $this->save();
+    }
+    return $renewal;
+  }
+
+  public function expireActiveRenewal(): SubscriptionRenewal|null
+  {
+    $renewal = $this->getActiveRenewal();
+    if ($renewal) {
+      $renewal->expire();
+      $renewal->save();
+
+      $this->renewal_info = $renewal->info();
+      $this->save();
+    }
+    return $renewal;
+  }
+
+  public function completeActiveRenewal(): SubscriptionRenewal|null
+  {
+    $renewal = $this->getActiveRenewal();
+    if ($renewal) {
+      $renewal->complete();
+      $renewal->save();
+
+      $this->renewal_info = $renewal->info();
+      $this->save();
+    }
+    return $renewal;
+  }
+
+  /**
+   * Send notification if renewal is required
+   */
+  public function sendRenewNotification(): self|null
+  {
+    if (!$renewal = $this->getOpenRenewal()) {
+      return null;
+    }
+
+    $now = now();
+
+    if ($renewal->isPending()) {
+      if ($renewal->start_at <= $now && $renewal->expire_at > $now) {
+        $renewal->activate();
+      }
+    }
+
+    if ($renewal->isActive()) {
+      // try first notification
+      if (
+        $renewal->sub_status === SubscriptionRenewal::SUB_STATUS_READY &&
+        ($renewal->first_reminder_at && $renewal->first_reminder_at <= $now) &&
+        (!$renewal->final_reminder_at || $renewal->final_reminder_at > $now) &&
+        $renewal->expire_at > $now
+      ) {
+        $this->sendNotification(SubscriptionNotification::NOTIF_RENEW_REQUIRED);
+
+        $renewal->setSubStatus(SubscriptionRenewal::SUB_STATUS_FIRST_REMINDERED);
+        $this->renewal_info = $renewal->info();
+        $renewal->save();
+        $this->save();
+        return $this;
+      }
+
+      // try final notification
+      if (
+        ($renewal->sub_status === SubscriptionRenewal::SUB_STATUS_READY || $renewal->sub_status === SubscriptionRenewal::SUB_STATUS_FIRST_REMINDERED) &&
+        ($renewal->final_reminder_at && $renewal->final_reminder_at->lte($now)) &&
+        $renewal->expire_at->gt($now)
+      ) {
+        $this->sendNotification(SubscriptionNotification::NOTIF_RENEW_REQUIRED);
+
+        $renewal->setSubStatus(SubscriptionRenewal::SUB_STATUS_FINAL_REMINDERED);
+        $this->renewal_info = $renewal->info();
+        $renewal->save();
+        $this->save();
+        return $this;
+      }
+    }
+
+    return null;
   }
 }

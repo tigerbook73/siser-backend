@@ -75,6 +75,9 @@ class Subscription {
     /** @var \Tests\Models\SubscriptionNextInvoice $next_invoice */
     public $next_invoice;
 
+    /** @var \Tests\Models\SubscriptionRenewalInfo $renewal_info */
+    public $renewal_info;
+
     /** @var \Tests\Models\SubscriptionDR $dr */
     public $dr;
 
