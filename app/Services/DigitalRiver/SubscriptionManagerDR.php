@@ -922,6 +922,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    // DR-BUG: $drOrder->getState() is not completed
+    if ($drOrder->getState() !== DrOrder::STATE_COMPLETE) {
+      throw new WebhookException("the state of dr-order in order.complete event is {$drOrder->getState()}.", 500);
+    }
+
     // wait for onOrderAccept to complete
     $this->wait(
       check: fn () => $invoice->period == 1,
