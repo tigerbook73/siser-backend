@@ -45,6 +45,9 @@ class User {
     /** @var int $subscription_level */
     public $subscription_level = \Tests\Models\SubscriptionLevel::NUMBER_0;
 
+    /** @var int $machine_count */
+    public $machine_count = 0;
+
     /** @var int $license_count */
     public $license_count = 0;
 
