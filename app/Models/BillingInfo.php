@@ -53,7 +53,7 @@ class BillingInfo extends BaseBillingInfo
         'city'        => '',
         'postcode'    => '',
         'state'       => '',
-        'country'     => Country::findByCode($user->country_code)?->code ?? 'US',
+        'country'     => Country::findByCode($user->country_code ?? 'US')?->code ?? 'US',
       ],
     ]);
     $billingInfo->language  = Locale::defaultLanguage($user->country_code, $user->language_code);
