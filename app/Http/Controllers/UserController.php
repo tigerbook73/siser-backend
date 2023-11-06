@@ -14,6 +14,7 @@ class UserController extends SimpleController
   protected function getListRules(array $inputs = []): array
   {
     return [
+      'id'                  => ['filled'],
       'name'                => ['filled'],
       'email'               => ['filled'],
       'full_name'           => ['filled'],

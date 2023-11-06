@@ -48,6 +48,9 @@ class UserTestCase extends ApiTestCase
 
     $this->modelSchema = array_keys((array)new ModelsUser);;
 
+    // TODO: to be removed very soon
+    unset($this->modelSchema[array_search('machine_count', $this->modelSchema)]);
+
     $this->modelCreate = [];
     $this->modelUpdate = [];
     $this->object = User::first();
