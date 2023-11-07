@@ -473,11 +473,11 @@ class DrApiTestCase extends ApiTestCase
     );
   }
 
-  public function sendOrderChargeback(DrOrder $drOrder, string $eventId = null)
+  public function sendOrderChargeback(array $drChargeback, string $eventId = null)
   {
     return $this->postJson(
       '/api/v1/dr/webhooks',
-      $this->drHelper->createEvent('order.chargeback', $drOrder, $eventId)
+      $this->drHelper->createEvent('order.chargeback', $drChargeback, $eventId)
     );
   }
 
@@ -1529,9 +1529,10 @@ class DrApiTestCase extends ApiTestCase
 
     // prepare
     $this->assertEquals(Invoice::STATUS_COMPLETED, $invoice->status);
-    $drOrder = $invoice->getDrInvoiceId() ?
-      $this->drHelper->createInvoiceOrder($this->drHelper->getDrInvoice($invoice->getDrInvoiceId())) :
-      $this->drHelper->getDrOrder($invoice->getDrOrderId());
+    $drChargeback = [
+      'amount' => -$invoice->total_amount,
+      'orderId' => $invoice->getDrOrderId(),
+    ];
 
     // mock up
     if (
@@ -1543,7 +1544,7 @@ class DrApiTestCase extends ApiTestCase
     Notification::fake();
 
     // call api
-    $response = $this->sendOrderChargeback($drOrder);
+    $response = $this->sendOrderChargeback($drChargeback);
 
     // refresh data
     $subscription->refresh();

@@ -106,7 +106,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.charge.capture.complete' => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureComplete'],
       'order.charge.capture.failed'   => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureFailed'],
       'order.complete'                => ['class' => DrOrder::class,        'handler' => 'onOrderComplete'],
-      'order.chargeback'              => ['class' => DrOrder::class,        'handler' => 'onOrderChargeback'],
+      'order.chargeback'              => ['class' => 'array',               'handler' => 'onOrderChargeback'],
       'order.refunded'                => ['class' => DrOrder::class,        'handler' => 'onOrderRefunded'],
 
       // subscription events
@@ -1018,10 +1018,20 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
-  protected function onOrderChargeback(DrOrder $order): Subscription|null
+  protected function onOrderChargeback(array $chargeback): Subscription|null
   {
-    $subscription = $this->validateOrder($order, [], __FUNCTION__: __FUNCTION__);
+    if ($chargeback['amount'] == 0) {
+      // skip chargeback fee event
+      return null;
+    }
 
+    $invoice = Invoice::findByDrOrderId($chargeback['orderId']);
+    if (!$invoice) {
+      DrLog::error(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $chargeback['orderId']]);
+      return null;
+    }
+
+    $subscription = $invoice->subscription;
     if (
       $subscription->status == Subscription::STATUS_ACTIVE &&
       $subscription->sub_status != Subscription::SUB_STATUS_CANCELLING
