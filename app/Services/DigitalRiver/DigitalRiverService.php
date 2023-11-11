@@ -22,6 +22,7 @@ use DigitalRiver\ApiSdk\Api\CustomersApi as DrCustomersApi;
 use DigitalRiver\ApiSdk\Api\EventsApi as DrEventsApi;
 use DigitalRiver\ApiSdk\Api\FileLinksApi as DrFileLinksApi;
 use DigitalRiver\ApiSdk\Api\FulfillmentsApi as DrFulfillmentsApi;
+use DigitalRiver\ApiSdk\Api\InvoicesApi as DrInvoicesApi;
 use DigitalRiver\ApiSdk\Api\OrdersApi as DrOrdersApi;
 use DigitalRiver\ApiSdk\Api\PlansApi as DrPlansApi;
 use DigitalRiver\ApiSdk\Api\RefundsApi as DrRefundsApi;
@@ -45,6 +46,7 @@ use DigitalRiver\ApiSdk\Model\FileLinkRequest as DrFileLinkRequest;
 use DigitalRiver\ApiSdk\Model\Fulfillment as DrFulfillment;
 use DigitalRiver\ApiSdk\Model\FulfillmentRequest as DrFulfillmentRequest;
 use DigitalRiver\ApiSdk\Model\FulfillmentRequestItem as DrFulfillmentRequestItem;
+use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
 use DigitalRiver\ApiSdk\Model\OrderRequest as DrOrderRequest;
@@ -97,6 +99,9 @@ class DigitalRiverService
   /** @var DrOrdersApi|null */
   public $orderApi = null;
 
+  /** @var DrInvoicesApi|null */
+  public $invoiceApi = null;
+
   /** @var DrFulfillmentsApi|null */
   public $fulfillmentApi = null;
 
@@ -131,6 +136,7 @@ class DigitalRiverService
     $this->subscriptionApi  = new DrSubscriptionsApi($this->client, $this->config);
     $this->taxIdentifierApi = new DrTaxIdentifiersApi($this->client, $this->config);
     $this->orderApi         = new DrOrdersApi($this->client, $this->config);
+    $this->invoiceApi       = new DrInvoicesApi($this->client, $this->config);
     $this->refundApi        = new DrRefundsApi($this->client, $this->config);
     $this->fulfillmentApi   = new DrFulfillmentsApi($this->client, $this->config);
     $this->customerApi      = new DrCustomersApi($this->client, $this->config);
@@ -504,7 +510,7 @@ class DigitalRiverService
           ->setProductDetails((new DrProductDetails())
             ->setSkuGroupId(config('dr.sku_grp_subscription'))
             ->setName('Tax Rate Precalculation'))
-          ->setPrice(1.00)
+          ->setPrice(10.00)
       ]);
       $checkoutRequest->setTaxInclusive(false);
       $checkoutRequest->setCustomerType($billing_info['customer_type']);
@@ -513,7 +519,7 @@ class DigitalRiverService
 
       // retrieve tax rate
       $checkout = $this->checkoutApi->createCheckouts($checkoutRequest);
-      $taxRate = $checkout->getItems()[0]->getTax()->getRate();
+      $taxRate = ($checkout->getItems()[0]->getTax()->getAmount() == 0) ? 0 : $checkout->getItems()[0]->getTax()->getRate();
 
       // remove checkout (TODO: moved to after response?)
       $this->checkoutApi->deleteCheckouts($checkout->getId());
@@ -683,9 +689,18 @@ class DigitalRiverService
   }
 
   /**
-   * invoice
+   * get a DrInvoice by id
+   * @param string $id dr invoice id
    */
-  // TODO:
+  public function getInvoice(string $id): DrInvoice
+  {
+    try {
+      return $this->invoiceApi->retrieveInvoices($id);
+    } catch (\Throwable $th) {
+      throw $this->throwException($th);
+    }
+  }
+
 
   /**
    * get a DrSubscription by id

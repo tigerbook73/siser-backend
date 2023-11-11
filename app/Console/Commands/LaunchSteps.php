@@ -360,4 +360,93 @@ class LaunchSteps extends Command
       }
     }
   }
+
+  static public function fixTaxRateAndTaxAmount()
+  {
+    $drService = new DigitalRiverService();
+
+    $count = 0;
+    Subscription::whereNotNull('next_invoice')
+      ->chunkById(100, function ($subscriptions) use (&$count, $drService) {
+        /** @var Subscription $subscription*/
+        foreach ($subscriptions as $subscription) {
+          $origin = [
+            'tax_rate' => $subscription->tax_rate,
+            'total_tax' => $subscription->total_tax,
+            'total_amount' => $subscription->total_amount,
+          ];
+          $originalNext = $subscription->next_invoice;
+          $next_invoice = $subscription->next_invoice;
+
+          /**
+           * update current period
+           */
+
+          /** @var Invoice $invoice */
+          $invoice = $subscription->invoices()->where('period', $subscription->current_period)->first();
+          $drOrder = $drService->getOrder($invoice->getDrOrderId());
+          // update tax rate => 0 if total_tax is 0
+          $subscription->tax_rate = ($drOrder->getSubtotal() != 0 && $drOrder->getTotalTax() == 0) ? 0 : $drOrder->getItems()[0]->getTax()->getRate();
+
+          /**
+           * update next invoice
+           */
+
+          /** @var Invoice|null $nextInvoice */
+          $nextInvoice = $subscription->invoices()->where('period', $subscription->next_invoice['current_period'])->first();
+          if ($nextInvoice) {
+            $drInvoice = $drService->getInvoice($nextInvoice->getDrInvoiceId());
+            // update tax rate => 0 if total_tax is 0
+            $tax_rate = ($drInvoice->getSubtotal() != 0 && $drInvoice->getTotalTax() == 0) ? 0 : $drInvoice->getItems()[0]->getTax()->getRate();
+            if ($next_invoice['tax_rate'] != $tax_rate) {
+              $next_invoice['tax_rate'] = $tax_rate;
+              $subscription->next_invoice = $next_invoice;
+            }
+          } else {
+            // tax rate should be same as this period
+            if ($next_invoice['tax_rate'] != $subscription->tax_rate) {
+              $next_invoice['tax_rate'] = $subscription->tax_rate;
+              $subscription->next_invoice = $next_invoice;
+            }
+
+            if ($next_invoice['subtotal'] == $subscription->subtotal) {
+              // total tax and total amount should be same as this period
+              if (
+                $next_invoice['total_tax'] != $subscription->total_tax ||
+                $next_invoice['total_amount'] != $subscription->total_amount
+              ) {
+                $next_invoice['total_tax'] = $subscription->total_tax;
+                $next_invoice['total_amount'] = $subscription->total_amount;
+                $subscription->next_invoice = $next_invoice;
+              }
+            } else {
+              // recalc total tax and total amount
+              $total_tax = round($next_invoice['subtotal'] * $next_invoice['tax_rate'], 2);
+              if ($next_invoice['total_tax'] != $total_tax) {
+                $next_invoice['total_tax'] = $total_tax;
+                $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $total_tax, 2);
+                $subscription->next_invoice = $next_invoice;
+              }
+            }
+          }
+
+          // update 
+          if ($subscription->isDirty()) {
+            printf("Subscription %d updated:\n", $subscription->id);
+            printf("  %-20s: %f -> %f %s\n", 'tax_rate',  $origin['tax_rate'], $subscription->tax_rate, $origin['tax_rate'] == $subscription->tax_rate ? '' : '*');
+            printf("  %-20s: %f -> %f %s\n", 'total_tax', $origin['total_tax'], $subscription->total_tax, $origin['total_tax'] == $subscription->total_tax ? '' : '*');
+            printf("  %-20s: %f -> %f %s\n", 'total_amount', $origin['total_amount'], $subscription->total_amount, $origin['total_amount'] == $subscription->total_amount ? '' : '*');
+            printf("  %-20s: %f -> %f %s\n", 'next_tax_rate',  $originalNext['tax_rate'], $next_invoice['tax_rate'], $originalNext['tax_rate'] == $next_invoice['tax_rate'] ? '' : '*');
+            printf("  %-20s: %f -> %f %s\n", 'next_total_tax', $originalNext['total_tax'], $next_invoice['total_tax'], $originalNext['total_tax'] == $next_invoice['total_tax'] ? '' : '*');
+            printf("  %-20s: %f -> %f %s\n", 'next_total_amount', $originalNext['total_amount'], $next_invoice['total_amount'], $originalNext['total_amount'] == $next_invoice['total_amount'] ? '' : '*');
+            printf("\n");
+
+            $subscription->save();
+            $count++;
+          }
+        }
+      });
+
+    printf("Total %d subscriptions updated.\n", $count);
+  }
 }

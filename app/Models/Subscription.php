@@ -225,9 +225,9 @@ class Subscription extends BaseSubscription
   {
     // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
     $this->subtotal = $drObject->getSubtotal();
-    $this->tax_rate = $drObject->getItems()[0]->getTax()->getRate();
     $this->total_tax = $drObject->getTotalTax();
     $this->total_amount = $drObject->getTotalAmount();
+    $this->tax_rate = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ? 0 : $drObject->getItems()[0]->getTax()->getRate();
     return $this;
   }
 
@@ -290,7 +290,7 @@ class Subscription extends BaseSubscription
     $next_invoice['price'] = self::calcPlanPrice($next_invoice['plan_info'], $next_invoice['coupon_info']);
     $next_invoice['subtotal'] = $next_invoice['price'];
     $next_invoice['tax_rate'] = $this->tax_rate;
-    $next_invoice['total_tax'] = round($next_invoice['price'] * $next_invoice['tax_rate'], 2);
+    $next_invoice['total_tax'] = ($next_invoice['subtotal'] == $this->subtotal) ? $this->total_tax : round($next_invoice['price'] * $next_invoice['tax_rate'], 2);
     $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
 
     $this->next_invoice = [
@@ -313,9 +313,10 @@ class Subscription extends BaseSubscription
     // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
     $next_invoice = $this->next_invoice;
     $next_invoice['subtotal']       = $drObject->getSubtotal();
-    $next_invoice['tax_rate']       = $drObject->getItems()[0]->getTax()->getRate();
     $next_invoice['total_tax']      = $drObject->getTotalTax();
     $next_invoice['total_amount']   = $drObject->getTotalAmount();
+    $next_invoice['tax_rate']       = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ? 0 : $drObject->getItems()[0]->getTax()->getRate();
+
     $this->next_invoice = $next_invoice;
     return $this;
   }
