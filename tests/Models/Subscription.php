@@ -72,6 +72,9 @@ class Subscription {
     /** @var \DateTime $next_invoice_date */
     public $next_invoice_date;
 
+    /** @var \DateTime $next_reminder_date */
+    public $next_reminder_date;
+
     /** @var \Tests\Models\SubscriptionNextInvoice $next_invoice */
     public $next_invoice;
 
