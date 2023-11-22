@@ -135,11 +135,6 @@ class CouponController extends SimpleController
       }
     }
 
-    // validate interval_count
-    if ($inputs['interval'] == Coupon::INTERVAL_YEAR && $inputs['interval_count'] != 1) {
-      return response()->json(['message' => 'interval_count must be 1 when interval is year.'], 400);
-    }
-
     $coupon = new Coupon($inputs);
     $coupon->save();
 
