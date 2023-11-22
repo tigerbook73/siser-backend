@@ -12,7 +12,7 @@ class XRayStatisticRecord {
     /** @var \DateTime $date */
     public $date;
 
-    /** @var \Tests\Models\XRayStatisticRecordRecord $record */
-    public $record;
+    /** @var \Tests\Models\XRayStatisticRecordItem[] $record */
+    public $record = [];
 
 }

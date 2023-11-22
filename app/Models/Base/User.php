@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property string|null $country_code
  * @property string|null $language_code
  * @property int|null $subscription_level
+ * @property int $machine_count
  * @property int|null $license_count
  * @property array|null $roles
  * @property Carbon|null $created_at
@@ -64,6 +65,7 @@ class User extends \Illuminate\Foundation\Auth\User
   protected $casts = [
     'email_verified_at' => 'datetime',
     'subscription_level' => 'int',
+    'machine_count' => 'int',
     'license_count' => 'int',
     'roles' => 'json',
     'dr' => 'json'
@@ -81,6 +83,7 @@ class User extends \Illuminate\Foundation\Auth\User
     'country_code',
     'language_code',
     'subscription_level',
+    'machine_count',
     'license_count',
     'roles',
     'dr',

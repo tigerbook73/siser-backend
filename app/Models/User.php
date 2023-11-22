@@ -34,6 +34,7 @@ class User extends UserWithTrait
     'language_code'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'timezone'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'machine_count'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'license_count'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'type'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
@@ -224,9 +225,11 @@ class User extends UserWithTrait
     if ($subscription) {
       $this->subscription_level = $subscription->subscription_level;
       $this->license_count = ($machineCount ?: 1) * GeneralConfiguration::getMachineLicenseUnit();
+      $this->machine_count = $machineCount;
     } else {
       $this->subscription_level = 0;
       $this->license_count = 0;
+      $this->machine_count = 0;
     }
 
     $changes['new'] = ['subscription_level' => $this->subscription_level, 'license_count' => $this->license_count];

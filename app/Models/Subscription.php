@@ -79,13 +79,16 @@ class Subscription extends BaseSubscription
     /** @var Plan $plan */
     $plan = Plan::find(config('siser.plan.default_machine_plan'));
 
+    $billing_info = ($user->billing_info ?? BillingInfo::createDefault($user))->info();
+    $plan_info = $plan->info($billing_info['address']['country']);
+
     $subscription = new Subscription(
       [
         'user_id'                   => $user->id,
         'plan_id'                   => $plan->id,
-        'billing_info'              => ($user->billing_info ?? BillingInfo::createDefault($user))->info(),
-        'plan_info'                 => $plan->info('US'),
-        'currency'                  => 'USD',
+        'billing_info'              => $billing_info,
+        'plan_info'                 => $plan_info,
+        'currency'                  => $plan_info['price']['currency'],
         'price'                     => 0.0,
         'subtotal'                  => 0.0,
         'tax_rate'                  => 0.0,
@@ -329,6 +332,8 @@ class Subscription extends BaseSubscription
 
   public function stop(string $status, string $stopReason = '', string $subStatus = Subscription::SUB_STATUS_NORMAL)
   {
+    $prevStatus = $this->status;
+
     $this->end_date = $this->start_date ? now() : null;
     $this->next_invoice_date = null;
     $this->next_reminder_date = null;
@@ -341,6 +346,10 @@ class Subscription extends BaseSubscription
     $this->save();
 
     $this->cancelPendingOrActiveRenewal();
+
+    if ($prevStatus === Subscription::STATUS_ACTIVE && $this->subscription_level > 1) {
+      SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_STOPPED, $this);
+    }
   }
 
   public function getActiveInvoice(): Invoice|null

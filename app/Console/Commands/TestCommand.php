@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\BillingInfo;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
-use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\DigitalRiver\SubscriptionManagerDR;
 use Illuminate\Console\Command;
 
@@ -13,8 +14,6 @@ use DigitalRiver\ApiSdk\Model\CheckoutRequest as DrCheckoutRequest;
 use DigitalRiver\ApiSdk\Model\Address as DrAddress;
 use DigitalRiver\ApiSdk\Model\Billing as DrBilling;
 use DigitalRiver\ApiSdk\Model\SkuRequestItem as DrSkuRequestItem;
-use DigitalRiver\ApiSdk\Model\SkuUpdateRequestItem as DrSkuUpdateRequestItem;
-use DigitalRiver\ApiSdk\Model\CheckoutTaxIdentifierRequest as DrCheckoutTaxIdentifierRequest;
 use DigitalRiver\ApiSdk\Model\ProductDetails as DrProductDetails;
 
 class TestCommand extends Command
@@ -46,7 +45,7 @@ class TestCommand extends Command
   public function handle()
   {
     // $this->retrieveTaxRate();
-    $this->updateTax();
+    $this->fixSubscriptionData();
 
     return self::SUCCESS;
   }
@@ -133,9 +132,100 @@ class TestCommand extends Command
     }
   }
 
-
-  public function updateTax()
+  public function fixSubscriptionData()
   {
-    LaunchSteps::fixTaxRateAndTaxAmount();
+    /**
+     * update basic plan's interval
+     */
+    $count = 0;
+    printf("Updating basic plan's interval ...\n");
+    $count = Plan::where('id', config('siser.plan.default_machine_plan'))->where('interval', '<>', Plan::INTERVAL_LONGTERM)
+      ->update(['interval' => Plan::INTERVAL_LONGTERM]);
+    printf("Updating basic plan's interval ... %d\n", $count);
+
+
+    /**
+     * create default billing info if not exist
+     */
+    $count = 0;
+    printf("Creating default billing info ...\n");
+    User::has('billing_info', '<=', 0)
+      ->has('subscriptions')
+      ->chunkById(100, function ($users) use (&$count) {
+        foreach ($users as $user) {
+          BillingInfo::createDefault($user);
+          $count++;
+        }
+      });
+    printf("Creating default billing info ... %d\n", $count);
+
+    /**
+     * update subscription's billint_info
+     */
+    $count = 0;
+    printf("Updating subscription's billing info ...\n");
+    Subscription::whereNull('billing_info')
+      ->chunkById(100, function ($subscriptions) use (&$count) {
+        /** @var Subscription $subscription */
+        foreach ($subscriptions as $subscription) {
+          $subscription->billing_info = $subscription->user->billing_info->info();
+          $subscription->save();
+          $count++;
+        }
+      });
+    printf("Updating subscription's billing info ... %d\n", $count);
+
+    /**
+     * fix subscription->plan_info->interval, interval_count
+     */
+    $count = 0;
+    printf("Fixing monthly subscription's interval & count ...\n");
+    $count = Subscription::where('plan_info->name', 'Leonardo™ Design Studio Pro Monthly Plan')
+      ->whereNull('plan_info->interval')
+      ->update(
+        [
+          'plan_info->interval' => 'month',
+          'plan_info->interval_count' => 1
+        ]
+      );
+    printf("Fixing monthly subscription's interval & count ... %d\n", $count);
+
+    /**
+     * fix subscription->plan_info->interval, interval_count
+     */
+    $count = 0;
+    printf("Fixing annual subscription's plan info's interval & count ...\n");
+    $count = Subscription::where('plan_info->name', 'Leonardo™ Design Studio Pro Annual Plan')
+      ->whereNull('plan_info->interval')
+      ->update(
+        [
+          'plan_info->interval' => 'year',
+          'plan_info->interval_count' => 1
+        ]
+      );
+    printf("Fixing annual subscription's plan info's interval & count ... %d\n", $count);
+
+
+    /**
+     * fix subscription basic plans currency (shall not always be USD)
+     */
+    $count = 0;
+    printf("Fixing basic subscription's currency ...\n");
+    /** @var Plan $basicPlan */
+    $basicPlan = Plan::find(config('siser.plan.default_machine_plan'));
+    Subscription::where('plan_id', 1)
+      ->where('subscription_level', 1)
+      ->where('plan_info->name', 'Leonardo™ Design Studio Basic Plan (free)')
+      ->chunkById(100, function ($subscriptions) use ($basicPlan, &$count) {
+        /** @var Subscription $subscription */
+        foreach ($subscriptions as $subscription) {
+          $plan_info = $basicPlan->info($subscription->billing_info['address']['country']);
+          $subscription->plan_info = $plan_info;
+          $subscription->currency = $plan_info['price']['currency'];
+          $subscription->save();
+          $count++;
+        }
+      });
+    printf("Fixing basic subscription's currency ... %d\n", $count);
   }
 }

@@ -11,6 +11,7 @@ use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Models\SubscriptionLog;
 use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use App\Models\User;
@@ -329,6 +330,9 @@ class SubscriptionManagerDR implements SubscriptionManager
 
         $subscription->cancelPendingOrActiveRenewal();
       }
+
+      // log subscription event (stopped event is logged in stop())
+      SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_CANCELLED, $subscription);
 
       // send notification
       if ($subscription->renewal_info && $subscription->renewal_info['status'] == SubscriptionRenewal::STATUS_EXPIRED) {
@@ -777,6 +781,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     // create renewal if required
     $subscription->createRenewal();
 
+    // log event
+    SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_ACTIVATED, $subscription);
+
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
     return $subscription;
@@ -1154,6 +1161,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       throw $th;
     }
 
+    if (($subscription->coupon_info['discount_type'] ?? null) == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
+      // log subscription event
+      SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_CONVERTED, $subscription);
+    }
+
     // if there is an open renewal, expires it (before move to next period)
     $subscription->expireActiveRenewal();
 
@@ -1190,6 +1202,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->save();
     DrLog::info(__FUNCTION__, 'invoice updated => completed', $subscription);
 
+    // log subscription event
+    SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_EXTENDED, $subscription);
+
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED, $invoice);
     return $subscription;
@@ -1222,6 +1237,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->save();
       DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
     }
+
+    // log subscription event
+    SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_FAILED, $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED, $invoice);

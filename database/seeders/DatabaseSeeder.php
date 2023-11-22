@@ -107,6 +107,14 @@ class DatabaseSeeder extends Seeder
       'url'                 => '/favicon.ico',
     ]);
 
+    // update basic plan
+    /** @var Plan $basicPlan */
+    $basicPlan = Plan::find(config('siser.plan.default_machine_plan'));
+    $basicPlan->product_name = 'Leonardo™ Design Studio Basic';
+    $basicPlan->interval = Plan::INTERVAL_LONGTERM;
+    $basicPlan->interval_count = 1;
+    $basicPlan->save();
+
     // create annual plan
     /** @var Plan $monthPlan */
     $monthPlan = Plan::public()->where('interval', 'month')->where('interval_count', 1)->first();

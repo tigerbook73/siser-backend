@@ -50,6 +50,26 @@ class Plan extends BasePlan
 
   public function info(string $country): array|null
   {
+    // special consideration for machine plan
+    if ($this->id == config('siser.plan.default_machine_plan')) {
+      $country = Country::findByCode($country) ?? Country::findByCode('US');
+      return [
+        'id'                 => $this->id,
+        'name'               => $this->name,
+        'product_name'       => $this->product_name,
+        'description'        => $this->description,
+        'interval'           => $this->interval,
+        'interval_count'     => $this->interval_count,
+        'price'              => [
+          'country'  => $country->code,
+          'currency' => $country->currency,
+          'price'    => 0,
+        ],
+        'subscription_level' => $this->subscription_level,
+        'url'                => $this->url,
+      ];
+    }
+
     if ($priceInCountry = $this->getPrice($country)) {
       return [
         'id'                 => $this->id,
@@ -63,6 +83,7 @@ class Plan extends BasePlan
         'url'                => $this->url,
       ];
     }
+
     return null;
   }
 
