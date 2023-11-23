@@ -51,4 +51,7 @@ class Coupon {
     /** @var string $status */
     public $status = "";
 
+    /** @var \Tests\Models\CouponAllOfUsage $usage */
+    public $usage;
+
 }

@@ -185,13 +185,10 @@ class CouponController extends SimpleController
 
     /** @var Coupon $coupon */
     $coupon = $this->baseQuery()->findOrFail($id);
-    if ($coupon->status !== Coupon::STATUS_DRAFT) {
-      return response()->json(['message' => 'Only draft coupon can be deleted'], 400);
+    if ($coupon->subscriptions()->count() > 0) {
+      return response()->json(['message' => 'Coupon has been used, can not be deleted'], 400);
     }
-
-    return DB::transaction(
-      fn () => $coupon->delete()
-    );
+    $coupon->delete();
   }
 
   /**
