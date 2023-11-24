@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BillingInfoController;
 use App\Http\Controllers\CountryController;
 use App\Http\Controllers\CouponController;
+use App\Http\Controllers\CouponEventController;
 use App\Http\Controllers\GeneralConfigurationController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\LdsLicenseController;
@@ -177,6 +178,8 @@ Route::domain($domainAdmin)->group(function () {
     Route::get('/coupons/{id}', [CouponController::class, 'index'])->middleware('access:coupon.get');
     Route::patch('/coupons/{id}', [CouponController::class, 'update'])->middleware('access:coupon.update');
     Route::delete('/coupons/{id}', [CouponController::class, 'destroy'])->middleware('access:coupon.delete');
+
+    Route::get('/coupon-events', [CouponEventController::class, 'list'])->middleware('access:coupon.list');
   });
 
   // design plan
@@ -200,6 +203,7 @@ Route::domain($domainAdmin)->group(function () {
 
     Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel'])->middleware('access:invoice.cancel');
   });
+
 
   // refund
   Route::middleware('auth:admin')->group(function () {
@@ -252,6 +256,7 @@ Route::domain($domainAdmin)->group(function () {
   // webhook
   Route::post('/dr/webhooks', [WebhookController::class, 'handler']);
 });
+
 
 /**
  * public routes

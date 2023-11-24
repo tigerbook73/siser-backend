@@ -44,6 +44,11 @@ class Coupon extends BaseCoupon
   protected function beforeSave()
   {
     $this->code = strtoupper($this->code);
+
+    CouponEvent::upsert(
+      [['name' => $this->coupon_event]],
+      ['name']
+    );
   }
 
   public function scopePublic($query)

@@ -181,12 +181,17 @@ class DatabaseSeeder extends Seeder
       'status' => 'active',
     ]);
 
+    /**
+     * create coupons
+     */
+    $coupon_event = 'DB Seeders';
+
     // 33 off 1 month shared
     Coupon::create([
       'code' => '33OFF1MS',
       'name' => '33% off for 1 month',
       'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 33,
       'interval' => Coupon::INTERVAL_MONTH,
@@ -206,7 +211,7 @@ class DatabaseSeeder extends Seeder
       'code' => '23OFF3MS',
       'name' => '23% off for 3 months',
       'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 23,
       'interval' => Coupon::INTERVAL_MONTH,
@@ -226,7 +231,7 @@ class DatabaseSeeder extends Seeder
       'code' => '23OFF3MO',
       'name' => '23% off for 3 months',
       'type' => Coupon::TYPE_ONCE_OFF,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 23,
       'interval' => Coupon::INTERVAL_MONTH,
@@ -246,7 +251,7 @@ class DatabaseSeeder extends Seeder
       'code' => '9OFF1YS',
       'name' => '9% off for 1 year',
       'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 9,
       'interval' => Coupon::INTERVAL_YEAR,
@@ -266,7 +271,7 @@ class DatabaseSeeder extends Seeder
       'code' => 'FREE2DS',
       'name' => 'Leonardo™ Design Studio Pro 2-day Free Trial',
       'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
       'percentage_off' => 100,
       'interval' => Coupon::INTERVAL_DAY,
@@ -286,7 +291,7 @@ class DatabaseSeeder extends Seeder
       'code' => 'FREE2DO',
       'name' => 'Leonardo™ Design Studio Pro 2-day Free Trial',
       'type' => Coupon::TYPE_ONCE_OFF,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
       'percentage_off' => 100,
       'interval' => Coupon::INTERVAL_DAY,
@@ -306,7 +311,7 @@ class DatabaseSeeder extends Seeder
       'code' => 'FREE3DS',
       'name' => 'Leonardo™ Design Studio Pro 3-day Free Trial',
       'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
       'percentage_off' => 100,
       'interval' => Coupon::INTERVAL_DAY,
@@ -326,7 +331,7 @@ class DatabaseSeeder extends Seeder
       'code' => 'FREE3MS',
       'name' => 'Leonardo™ Design Studio Pro 3-month Free Trial',
       'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => null,
+      'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
       'percentage_off' => 100,
       'interval' => Coupon::INTERVAL_MONTH,

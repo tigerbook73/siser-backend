@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Coupon;
+use App\Models\CouponEvent;
 use App\Models\Plan;
-use App\Services\CouponRule;
 use App\Services\CouponRules;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class CouponController extends SimpleController
@@ -34,9 +33,9 @@ class CouponController extends SimpleController
       'code'                            => ['required', 'string', 'max:255', 'unique:coupons'],
       'name'                            => ['required', 'string', 'max:255'],
       'product_name'                    => ['required', 'exists:products,name'],
-      'type'                            => ['string', Rule::in([Coupon::TYPE_ONCE_OFF, Coupon::TYPE_SHARED])],
-      'coupon_event'                    => ['string', 'max:255'],
-      'discount_type'                   => ['string', Rule::in([Coupon::DISCOUNT_TYPE_FREE_TRIAL, Coupon::DISCOUNT_TYPE_PERCENTAGE])],
+      'type'                            => ['required', 'string', Rule::in([Coupon::TYPE_ONCE_OFF, Coupon::TYPE_SHARED])],
+      'coupon_event'                    => ['required', 'string', 'max:255'],
+      'discount_type'                   => ['required', 'string', Rule::in([Coupon::DISCOUNT_TYPE_FREE_TRIAL, Coupon::DISCOUNT_TYPE_PERCENTAGE])],
       'percentage_off'                  => ['required_if:discount_type,' . Coupon::DISCOUNT_TYPE_PERCENTAGE, 'decimal:0,2', 'between:0,100'],
       'interval'                        => ['required', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR])],
       'interval_count'                  => ['required', 'integer', 'between:0,12'],
@@ -72,19 +71,40 @@ class CouponController extends SimpleController
     ];
   }
 
-  protected function getUpdateRulesForDraft(array $inputs = [])
+  /**
+   * besides standard validate, we also need to validate more
+   */
+  public function validateMore(array $inputs): void
   {
-    return $this->getUpdateRules($inputs);
-  }
+    // validate percentage type
+    if ($inputs['discount_type'] == Coupon::DISCOUNT_TYPE_PERCENTAGE) {
+      // validate percentage off
+      if (empty($inputs['percentage_off'])) {
+        abort(response()->json(['message' => 'percentage_off is required.'], 400));
+      }
+      if ($inputs['percentage_off'] >= 100) {
+        abort(response()->json(['message' => 'percentage_off can not be 100.'], 400));
+      }
 
-  protected function getUpdateRulesForActive(array $inputs = [])
-  {
-    return [
-      'name'                            => ['string', 'max:255'],
-      'coupon_event'                    => ['nullable', 'string', 'max:255'],
-      'end_date'                        => ['filled', 'date', 'after:start_date'],
-      'status'                          => ['filled', Rule::in([Coupon::STATUS_INACTIVE, Coupon::STATUS_ACTIVE])],
-    ];
+      // validate interval
+      if (
+        $inputs['interval'] != Coupon::INTERVAL_MONTH &&
+        $inputs['interval'] != Coupon::INTERVAL_YEAR
+      ) {
+        abort(response()->json(['message' => 'interval must be month or year.'], 400));
+      }
+    }
+
+    // validate free-trial type
+    if ($inputs['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
+      if ($inputs['percentage_off'] != 100) {
+        abort(response()->json(['message' => 'percentage_off must be 100.'], 400));
+      }
+
+      if ($inputs['interval_count'] == 0) {
+        abort(response()->json(['message' => 'interval_count can not be 0.'], 400));
+      }
+    }
   }
 
   /**
@@ -104,36 +124,7 @@ class CouponController extends SimpleController
   {
     $this->validateUser();
     $inputs = $this->validateCreate($request);
-
-    // validate percentage type
-    if ($inputs['discount_type'] == Coupon::DISCOUNT_TYPE_PERCENTAGE) {
-      // validate percentage off
-      if (empty($inputs['percentage_off'])) {
-        return response()->json(['message' => 'percentage_off is required.'], 400);
-      }
-      if ($inputs['percentage_off'] >= 100) {
-        return response()->json(['message' => 'percentage_off can not be 100.'], 400);
-      }
-
-      // validate interval
-      if (
-        $inputs['interval'] != Coupon::INTERVAL_MONTH &&
-        $inputs['interval'] != Coupon::INTERVAL_YEAR
-      ) {
-        return response()->json(['message' => 'interval must be month or year.'], 400);
-      }
-    }
-
-    // validate free-trial type
-    if ($inputs['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
-      if ($inputs['percentage_off'] != 100) {
-        return response()->json(['message' => 'percentage_off must be 100.'], 400);
-      }
-
-      if ($inputs['interval_count'] == 0) {
-        return response()->json(['message' => 'interval_count can not be 0.'], 400);
-      }
-    }
+    $this->validateMore($inputs);
 
     $coupon = new Coupon($inputs);
     $coupon->save();
@@ -150,28 +141,10 @@ class CouponController extends SimpleController
 
     /** @var Coupon $coupon */
     $coupon = $this->baseQuery()->findOrFail($id);
+    $inputs = $this->validateUpdate($request, $id);
+    $coupon->forceFill($inputs);
+    $this->validateMore($coupon->toArray());
 
-    $inputs = $request->all();
-    if ($coupon->status === Coupon::STATUS_DRAFT) {
-      $rules = $this->getUpdateRulesForDraft($inputs);
-    } else if ($coupon->status === Coupon::STATUS_ACTIVE) {
-      $rules = $this->getUpdateRulesForActive($inputs);
-    } else {
-      return response()->json(['message' => "Coupon in {$coupon->status} status can not be updated"], 400);
-    }
-    $inputs = $this->validateRules($inputs, $rules);
-    if (empty($inputs)) {
-      abort(400, 'input data can not be empty.');
-    }
-
-    // validate and update attributers
-    $updatable = $this->modelClass::getUpdatable($this->userType);
-    foreach ($inputs as $attr => $value) {
-      if (!in_array($attr, $updatable)) {
-        abort(400, 'attribute: [' . $attr . '] is not updatable.');
-      }
-      $coupon->$attr = $value;
-    }
     $coupon->save();
     return $this->transformSingleResource($coupon->unsetRelations());
   }
@@ -189,6 +162,8 @@ class CouponController extends SimpleController
       return response()->json(['message' => 'Coupon has been used, can not be deleted'], 400);
     }
     $coupon->delete();
+
+    CouponEvent::deleteNotUsed();
   }
 
   /**

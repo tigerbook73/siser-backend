@@ -6,6 +6,7 @@
 
 namespace App\Models\Base;
 
+use App\Models\CouponEvent;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\TraitModel;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property string $product_name
  * @property string $type
- * @property string|null $coupon_event
+ * @property string $coupon_event
  * @property string $discount_type
  * @property float $percentage_off
  * @property string $interval
@@ -71,6 +72,11 @@ class Coupon extends Model
     'status',
     'usage'
   ];
+
+  public function coupon_event()
+  {
+    return $this->belongsTo(CouponEvent::class, 'coupon_event', 'name');
+  }
 
   public function product()
   {
