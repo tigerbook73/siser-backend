@@ -150,7 +150,7 @@ class SimpleController extends Controller
       // pattern like 'field_a,field_b,..' are always wild match
       if (strpos($param, ',') > 0) {
         $pattern = '%' . preg_replace('/[, ]+/', '%', $opValue) . '%';
-        return $query->whereRaw("concat_ws(' ', ${param}) like '${pattern}'");
+        return $query->whereRaw("concat_ws(' ', $param) like '$pattern'");
       } else {
         $opValue = ($opValue == NULL_STRING) ? null : $opValue;
         return $op['fn']($query, $param, $opValue);

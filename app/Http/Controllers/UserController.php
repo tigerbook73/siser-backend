@@ -22,6 +22,11 @@ class UserController extends SimpleController
       'country_code'        => ['filled'],
       'subscription_level'  => ['filled'],
       'license_count'       => ['filled'],
+      'type'                => ['filled'],
+      'subscription_id'     => ['filled'],
+      'invoice_id'          => ['filled'],
+      'dr_order_id'         => ['filled'],
+      'dr_subscription_id'  => ['filled'],
     ];
   }
 
@@ -72,5 +77,39 @@ class UserController extends SimpleController
     $user->type = $inputs['type'];
     $user->save();
     return response()->json($user->toResource('admin'));
+  }
+
+  public function list(Request $request)
+  {
+    $this->validateUser();
+    $inputs = $this->validateList($request);
+
+    /* additional filter */
+    $invoice_id = $inputs['invoice_id'] ?? null;
+    $dr_order_id = $inputs['dr_order_id'] ?? null;
+    $dr_subscription_id = $inputs['dr_subscription_id'] ?? null;
+    $subscription_id = $inputs['subscription_id'] ?? null;
+
+    unset($inputs['subscription_id']);
+    unset($inputs['invoice_id']);
+    unset($inputs['dr_subscription_id']);
+    unset($inputs['dr_order_id']);
+
+    $query = $this->standardQuery($inputs);
+
+    if ($subscription_id) {
+      $query->whereHas('subscriptions', fn ($query) => $query->where('id', $subscription_id));
+    }
+    if ($invoice_id) {
+      $query->whereHas('invoices', fn ($query) => $query->where('id', $invoice_id));
+    }
+    if ($dr_subscription_id) {
+      $query->whereHas('subscriptions', fn ($query) => $query->where('dr_subscription_id', $dr_subscription_id));
+    }
+    if ($dr_order_id) {
+      $query->whereHas('invoices', fn ($query) => $query->where('dr_order_id', $dr_order_id));
+    }
+    $users = $query->get();
+    return ['data' => $this->transformMultipleResources($users)];
   }
 }
