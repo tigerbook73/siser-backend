@@ -44,7 +44,7 @@ class SubscriptionWarnPending extends Command
 
     /** @var int[] $pendings */
     $pendings = Subscription::select('id')
-      ->whereIn('status', [Subscription::STATUS_PENDING])
+      ->where('status', Subscription::STATUS_PENDING)
       ->where('updated_at', '<', now()->subMinutes(30))
       ->get()
       ->map(fn ($model) => $model->id)
@@ -52,13 +52,21 @@ class SubscriptionWarnPending extends Command
 
     /** @var int[] $processings */
     $processings = Invoice::select('subscription_id')
-      ->whereIn('status', [Invoice::STATUS_PROCESSING])
+      ->where('status', Invoice::STATUS_PROCESSING)
       ->where('updated_at', '<', now()->subDays(2))
       ->get()
       ->map(fn ($model) => $model->subscription_id)
       ->all();
 
-    $subscriptionIds = array_merge($pendings, $processings);
+    /** @var int[] $refundings */
+    $refundings = Invoice::select('subscription_id')
+      ->where('status', Invoice::STATUS_REFUNDING)
+      ->where('updated_at', '<', now()->subDays(3))
+      ->get()
+      ->map(fn ($model) => $model->subscription_id)
+      ->all();
+
+    $subscriptionIds = array_merge($pendings, $processings, $refundings);
     Log::info('There are ' . count($subscriptionIds) . ' pending or processing subscriptions: [' . implode(', ', $subscriptionIds) . '] !');
 
     if (!$dryRun && count($subscriptionIds) > 0) {
