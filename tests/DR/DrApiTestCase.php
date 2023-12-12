@@ -1568,4 +1568,89 @@ class DrApiTestCase extends ApiTestCase
 
     return $invoice;
   }
+
+  public function adminCancelSubscription(Subscription|int $subscription)
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $activeInvoice = $subscription->getActiveInvoice();
+    $currentPeriodInvoice = $subscription->getCurrentPeriodInvoice();
+
+    $error = $subscription->sub_status === Subscription::SUB_STATUS_CANCELLING ? 'invalid substatus' : null;
+
+    // mock up
+    if (!$error) {
+      $this->mockCancelSubscription();
+      Notification::fake();
+    }
+
+    // call api
+    $response = $this->postJson("/api/v1/subscriptions/{$subscription->id}/cancel");
+
+    // refresh authenticated user data
+    $subscription->refresh();
+    $activeInvoice?->refresh();
+    $currentPeriodInvoice->refresh();
+
+    if ($error) {
+      $this->assertFailed($response);
+      return $response;
+    }
+
+    // assert
+    $response->assertSuccessful();
+    if ($activeInvoice && $activeInvoice->id != $currentPeriodInvoice->id) {
+      $this->assertEquals($activeInvoice->status, Invoice::STATUS_CANCELLED);
+    }
+
+    if ($subscription->renewal_info && $subscription->renewal_info['status'] == SubscriptionRenewal::STATUS_EXPIRED) {
+      $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_CANCELLING);
+
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_EXPIRED
+      );
+    } else {
+      $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_CANCELLING);
+
+      Notification::assertSentTo(
+        $subscription,
+        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+      );
+    }
+
+    return $response;
+  }
+
+  public function adminStopSubscription(Subscription|int $subscription)
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
+    $error = ($subscription->sub_status !== Subscription::SUB_STATUS_CANCELLING) ? "invalid sub_status" : null;
+
+    // mock up
+    Notification::fake();
+
+    // call api
+    $response = $this->postJson("/api/v1/subscriptions/{$subscription->id}/stop");
+
+    // refresh authenticated user data
+    $subscription->refresh();
+
+    if ($error) {
+      $this->assertFailed($response);
+      return $response;
+    }
+
+    // assert
+    $this->assertEquals($subscription->status, Subscription::STATUS_STOPPED);
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_TERMINATED
+    );
+
+    return $response;
+  }
 }

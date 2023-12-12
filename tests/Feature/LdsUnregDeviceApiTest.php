@@ -48,7 +48,7 @@ class LdsUnregDeviceApiTest extends LdsTestCase
     $unregRequest = $this->unregRequest;
     $unregRequest['user_code'] = '111222333444555';
     $response = $this->postJson($this->baseUrl . '/unreg-device', $unregRequest);
-    $this->assertTrue($response->getStatusCode() >= 400 && $response->getStatusCode() < 500);
+    $this->assertFailed($response);
   }
 
   public function testLdsReregRepeatUnReg()
@@ -60,7 +60,7 @@ class LdsUnregDeviceApiTest extends LdsTestCase
     $unregRequest = $this->unregRequest;
     $unregRequest['user_code'] = $response->json('user_code');
     $response = $this->postJson($this->baseUrl . '/unreg-device', $unregRequest);
-    $this->assertTrue($response->getStatusCode() >= 400 && $response->getStatusCode() < 500);
+    $this->assertFailed($response);
   }
 
   public function testToDo()

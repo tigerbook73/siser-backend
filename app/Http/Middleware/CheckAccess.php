@@ -46,6 +46,8 @@ const resourceRoleMapping = [
 
   'subscription.list' => [],
   'subscription.get' => [],
+  'subscription.cancel' => [],
+  'subscription.stop' => [],
 
   'user.list' => ['siser-backend' => 1],
   'user.get' => ['siser-backend' => 1],

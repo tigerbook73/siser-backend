@@ -72,7 +72,7 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
     Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'accountIndex']);
     Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
     Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
-    Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel']);
+    Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
     Route::post('/account/subscriptions/{id}/renewal', [SubscriptionController::class, 'confirmRenewal']);
 
     Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'refundable']);
@@ -217,6 +217,8 @@ Route::domain($domainAdmin)->group(function () {
   Route::middleware('auth:admin')->group(function () {
     Route::get('/subscriptions', [SubscriptionController::class, 'list'])->middleware('access:subscription.list');
     Route::get('/subscriptions/{id}', [SubscriptionController::class, 'index'])->middleware('access:subscription.get');
+    Route::post('/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel'])->middleware('access:subscription.cancel');
+    Route::post('/subscriptions/{id}/stop', [SubscriptionController::class, 'stop'])->middleware('access:subscription.stop');
   });
 
   // user

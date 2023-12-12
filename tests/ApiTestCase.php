@@ -8,11 +8,13 @@ use Faker\Generator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Testing\TestResponse;
+use Tests\Trait\CognitoProviderMockup;
 
 abstract class ApiTestCase extends TestCase
 {
   use RefreshDatabase;
   use WithFaker;
+  use CognitoProviderMockup;
 
   /**
    * Indicates whether the default seeder should run before each test.
@@ -178,5 +180,23 @@ abstract class ApiTestCase extends TestCase
   public function createRandomString(int $strLength): string
   {
     return $this->faker->regexify('[A-Za-z0-9$&+,:;=?@#|<>.^*()%!-]{' . $strLength . '}');
+  }
+
+  /**
+   * assert response successfully
+   * @param \Illuminate\Testing\TestResponse $response
+   */
+  public function assertSuccess($response)
+  {
+    $this->assertTrue($response->getStatusCode() >= 200 && $response->getStatusCode() < 300, 'response is not successful');
+  }
+
+  /**
+   * assert response successfully
+   * @param \Illuminate\Testing\TestResponse $response
+   */
+  public function assertFailed($response)
+  {
+    $this->assertTrue($response->getStatusCode() >= 400 && $response->getStatusCode() < 500, 'response is not failed');
   }
 }

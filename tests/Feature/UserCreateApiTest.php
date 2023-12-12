@@ -3,12 +3,9 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\DB;
-use Tests\Trait\CognitoProviderMockup;
 
 class UserCreateApiTest extends UserTestCase
 {
-  use CognitoProviderMockup;
-
   public ?string $role = 'admin';
 
   public function testUserCreateOk()

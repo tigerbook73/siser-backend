@@ -4,12 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\GeneralConfiguration;
-use Tests\Trait\CognitoProviderMockup;
 
 class MachineCreateApiTest extends MachineTestCase
 {
-  use CognitoProviderMockup;
-
   public ?string $role = 'admin';
 
   public function testMachineCreateOk()

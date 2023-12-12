@@ -2,12 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\Trait\CognitoProviderMockup;
-
 class UserUpdateApiTest extends UserTestCase
 {
-  use CognitoProviderMockup;
-
   public ?string $role = 'admin';
 
   public function testUserUpdateOk()

@@ -43,6 +43,6 @@ class UserUpdateDetailsApiTest extends UserTestCase
 
     $data = ['type' => 'abc'];
     $response = $this->postJson("$this->baseUrl/{$user->id}/details", $data);
-    $this->assertTrue($response->getStatusCode() >= 400 && $response->getStatusCode() < 500);
+    $this->assertFailed($response);
   }
 }

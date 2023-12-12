@@ -53,4 +53,20 @@ class DrSubscriptionActiveCancellingTest extends DrApiTestCase
     $invoice = $subscription->getInvoiceByOrderId($subscription->getDrOrderId());
     $this->onOrderInvoiceCreated($invoice);
   }
+
+  public function test_actived_cancelling_cancel_failed()
+  {
+    $subscription = $this->init_active_cancelling();
+    $this->actingAsAdmin();
+    $this->adminCancelSubscription($subscription);
+    $this->actingAsDefault();
+  }
+
+  public function test_actived_cancelling_to_stop()
+  {
+    $subscription = $this->init_active_cancelling();
+    $this->actingAsAdmin();
+    $this->adminStopSubscription($subscription);
+    $this->actingAsDefault();
+  }
 }

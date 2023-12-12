@@ -138,7 +138,7 @@ return [
   'subscription_renew_expired.notification'       => 'We are writing to inform you that your subscription to <b>:plan_name</b> was canceled because you did not renew it before the expiration date. You can still access your benefits until your subscription is terminated on <b>:end_date</b>.<br /><br />Thank you for your past support, and please feel free to contact us if you have any questions or require further assistance.',
   'subscription_renew_expired.summary'            => 'Below is a summary of your Subscription:',
 
-  'subscription_terminated.notification'          => 'We are writing to inform you that your subscription to <b>:plan_name</b> was terminated on <b>:end_date</b> as per your cancellation request.',
+  'subscription_terminated.notification'          => 'We are writing to inform you that your subscription to <b>:plan_name</b> was terminated on <b>:end_date</b> as per your request.',
   'subscription_terminated.summary'               => 'Below is a summary of your Subscription:',
 
   'subscription_terms_changed.notification'       => 'We are writing to inform you that the <b>:terms</b> of your subscription to <b>:plan_name</b> have changed.<br /><br />Here is the summury of changes:<br /> :terms_items',

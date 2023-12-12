@@ -11,6 +11,7 @@ use App\Models\Subscription;
 use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use App\Models\User;
+use App\Notifications\SubscriptionNotification;
 use App\Services\CouponRules;
 use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\RefundRules;
@@ -238,7 +239,7 @@ class SubscriptionController extends SimpleController
     }
   }
 
-  public function cancel(Request $request, int $id)
+  public function accountCancel(Request $request, int $id)
   {
     $this->validateUser();
 
@@ -312,6 +313,61 @@ class SubscriptionController extends SimpleController
 
     try {
       $subscription = $this->manager->renewSubscription($activeSubscription);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
+  }
+
+  /**
+   * Cancel subscription by admin. No refund will be issued automatically. If required, admin shall issue refund manually.
+   */
+  public function cancel(Request $request, int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription|null $subscription */
+    $subscription = Subscription::find($id);
+    if (!$subscription || $subscription->id != $id) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    if ($subscription->getStatus() !== Subscription::STATUS_ACTIVE) {
+      return response()->json(['message' => "Subscription in '{$subscription->getStatus()}' status can not be cancelled"], 400);
+    }
+
+    if ($subscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
+      return response()->json(['message' => 'Subscription is already on cancelling'], 400);
+    }
+
+    // cancel subscription
+    try {
+      $subscription = $this->manager->cancelSubscription($subscription);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
+  }
+
+  public function stop(Request $request, int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription|null $subscription */
+    $subscription = Subscription::find($id);
+    if (!$subscription || $subscription->id != $id) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    // only active subscription and level > 1 can be stopped
+    if ($subscription->sub_status !== Subscription::SUB_STATUS_CANCELLING) {
+      return response()->json(['message' => 'Subscription not in cancelling status can not be stopped'], 400);
+    }
+
+    // stop subscription
+    try {
+      $subscription->stop(Subscription::STATUS_STOPPED, 'stopped by admin');
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);
       return  response()->json($this->transformSingleResource($subscription));
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));

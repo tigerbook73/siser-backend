@@ -6,12 +6,9 @@ use App\Models\User;
 use App\Models\GeneralConfiguration;
 use App\Models\LdsLicense;
 use App\Models\Machine;
-use Tests\Trait\CognitoProviderMockup;
 
 class MachineTransferApiTest extends MachineTestCase
 {
-  use CognitoProviderMockup;
-
   public ?string $role = 'admin';
 
   private function getUserLicenseCount(int $userId)

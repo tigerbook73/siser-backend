@@ -193,4 +193,39 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $this->onRefundPending($invoice, true);
     $this->onRefundComplete($invoice);
   }
+
+  public function test_active_admin_cancel_and_stop()
+  {
+    $subscription = $this->init_active();
+
+    $this->actingAsAdmin();
+    $this->adminCancelSubscription($subscription);
+    $this->actingAsDefault();
+
+    $this->actingAsAdmin();
+    $this->adminStopSubscription($subscription);
+    $this->actingAsDefault();
+  }
+
+  public function test_active_admin_cancel_duplicated()
+  {
+    $subscription = $this->init_active();
+
+    $this->actingAsAdmin();
+    $this->adminCancelSubscription($subscription);
+    $this->actingAsDefault();
+
+    $this->actingAsAdmin();
+    $this->adminCancelSubscription($subscription);
+    $this->actingAsDefault();
+  }
+
+  public function test_active_admin_stop_error()
+  {
+    $subscription = $this->init_active();
+
+    $this->actingAsAdmin();
+    $this->adminStopSubscription($subscription);
+    $this->actingAsDefault();
+  }
 }
