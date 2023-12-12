@@ -20,7 +20,7 @@ class Invoice extends BaseInvoice
   public const STATUS_OPEN            = 'open';   // TODO: remove this status
   public const STATUS_PENDING         = 'pending';
   public const STATUS_CANCELLED       = 'cancelled';
-  public const STATUS_PROCESSING      = 'processing';   // first invoice only
+  public const STATUS_PROCESSING      = 'processing';   // order.accepted or subscription.extended
   public const STATUS_FAILED          = 'failed';
   public const STATUS_COMPLETED       = 'completed';
   public const STATUS_REFUNDING       = 'refunding';

@@ -925,7 +925,7 @@ class SubscriptionManagerDR implements SubscriptionManager
   protected function onOrderComplete(DrOrder $drOrder): Invoice|null
   {
     $invoice = Invoice::findByDrOrderId($drOrder->getId());
-    if (!$invoice || $invoice->getDrInvoiceId()) {
+    if (!$invoice) {
       return null;
     }
 
@@ -936,7 +936,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // wait for onOrderAccept to complete
     $this->wait(
-      check: fn () => $invoice->period == 1,
+      check: fn () => $invoice->period > 0,
       postCheck: fn () => $invoice->refresh(),
       location: __FUNCTION__,
       message: 'onOrderAccept() to complete'
@@ -1198,7 +1198,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // update invoice
     $invoice->fillFromDrObject($drInvoice);
     $invoice->setDrOrderId($drInvoice->getOrderId());
-    $invoice->setStatus(Invoice::STATUS_COMPLETED);
+    $invoice->setStatus(Invoice::STATUS_PROCESSING);
     $invoice->save();
     DrLog::info(__FUNCTION__, 'invoice updated => completed', $subscription);
 

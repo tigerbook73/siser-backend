@@ -180,7 +180,8 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $subscription = $this->init_active();
 
     $this->onSubscriptionReminder($subscription);
-    return $this->onSubscriptionExtended($subscription);
+    $this->onSubscriptionExtended($subscription);
+    return $this->onOrderComplete($subscription);
   }
 
   public function test_active_chargeback()

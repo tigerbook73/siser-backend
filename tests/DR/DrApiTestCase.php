@@ -1019,7 +1019,7 @@ class DrApiTestCase extends ApiTestCase
 
     // call api
     $response = $this->sendOrderComplete(
-      $this->drHelper->getDrOrder($subscription->getDrOrderId())->setState(DrOrder::STATE_COMPLETE)
+      $this->drHelper->getDrOrder($invoice->getDrOrderId())->setState(DrOrder::STATE_COMPLETE)
     );
 
     // refresh data
@@ -1470,7 +1470,7 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
     $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_NORMAL);
     $this->assertNull($subscription->getActiveInvoice());
-    $this->assertEquals($invoice->status, Invoice::STATUS_COMPLETED);
+    $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
 
     Notification::assertSentTo(
       $subscription,
