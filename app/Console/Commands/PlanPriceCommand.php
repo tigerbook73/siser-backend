@@ -28,7 +28,7 @@ class PlanPriceCommand extends Command
    *
    * @var string
    */
-  protected $description = 'Generate Monthly Plan Price';
+  protected $description = 'update plan\'s total-amounts in EU area';
 
   /**
    * EU countries
@@ -125,7 +125,7 @@ class PlanPriceCommand extends Command
     foreach ($priceList as &$price) {
       $country = $price['country'];
       if (isset($this->countriesEU[$country])) {
-        $price['price'] = number_format($monthAmount / (1 + $this->countriesEU[$country]), 2);
+        $price['price'] = number_format($annualAmount / (1 + $this->countriesEU[$country]), 2);
       }
     }
     $this->info('annual plan price list (old): ' . json_encode($annualPlan->price_list, JSON_PRETTY_PRINT));
