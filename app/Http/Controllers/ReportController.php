@@ -14,6 +14,7 @@ class ReportController extends Controller
 {
   const LIST_MODE_SINGLE        = 'single';
   const LIST_MODE_MONTH         = 'month';
+  const LIST_MODE_DAY           = 'day';
 
   public function subscriptions(Request $request, $id)
   {
@@ -71,6 +72,10 @@ class ReportController extends Controller
       return $this->listStaticsRecordMonth($request);
     }
 
+    if ($mode == self::LIST_MODE_DAY) {
+      return $this->listStaticsRecordDay($request);
+    }
+
     return [];
   }
 
@@ -102,7 +107,37 @@ class ReportController extends Controller
     }
 
     return empty($dates) ?
-      [] : StatisticRecord::whereIn('date', $dates)->orderBy('date', 'desc')->limit(24)->get();
+      [] : StatisticRecord::whereIn('date', $dates)->orderBy('date', 'desc')->limit($limit)->get();
+  }
+
+  public function listStaticsRecordDay(Request $request)
+  {
+    $limit = $request->limit ?? 60;
+    $limit = $limit > 180 ? 180 : $limit;
+
+    $interval = $request->interval ?? 1;
+    $interval = $interval > 180 ? 180 : $interval;
+
+    /** @var Carbon $first_date $last_date */
+    $first_date = StatisticRecord::orderBy('date')->first()->date;
+    /** @var Carbon $last_date */
+    $last_date = StatisticRecord::orderBy('date', 'desc')->first()->date;
+
+    $start_date = Carbon::parse($request->start_date ?? '2022-10-17');
+    $start_date = $start_date->greaterThan($first_date) ? $start_date : Carbon::parse($first_date);
+
+    $end_date = Carbon::parse($request->end_date ?? now());
+    $end_date = $end_date->lessThan($last_date) ? $end_date : Carbon::parse($last_date);
+
+
+    $dates = [];
+    for ($date = $start_date->clone(); $date->lt($end_date); $date->addDays($interval)) {
+      $dateTemp = $date->clone();
+      $dates[] = ($dateTemp->gt($last_date) ? $last_date : $dateTemp)->toDateString();
+    }
+    $dates[] = $end_date->toDateString();
+
+    return StatisticRecord::whereIn('date', $dates)->orderBy('date', 'desc')->limit($limit)->get();
   }
 
   public function listStaticsRecordSingle(Request $request)
