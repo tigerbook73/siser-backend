@@ -79,9 +79,10 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
   public function test_processing_expired()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
-    $response = $this->init_processing();
+    $this->init_processing();
 
     Notification::fake();
+    $this->mockGetOrder(); // processing status
 
     Carbon::setTestNow('2023-01-03 00:31:00');
     $this->artisan('subscription:warn-pending')->assertSuccessful();
@@ -94,10 +95,26 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     );
   }
 
+  public function test_processing_expired_try_complete()
+  {
+    Carbon::setTestNow('2023-01-01 00:00:00');
+    $subscription = $this->init_processing();
+
+    $this->drHelper->getOrder($subscription->getDrOrderId())->setState(DrOrder::STATE_COMPLETE);
+
+    Notification::fake();
+    $this->mockGetOrder(); // processing status
+
+    Carbon::setTestNow('2023-01-03 00:31:00');
+    $this->artisan('subscription:warn-pending')->assertSuccessful();
+
+    $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() == 0);
+  }
+
   public function test_processing_not_expired()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
-    $response = $this->init_processing();
+    $this->init_processing();
 
     Notification::fake();
 

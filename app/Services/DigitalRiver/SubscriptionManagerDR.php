@@ -1428,4 +1428,34 @@ class SubscriptionManagerDR implements SubscriptionManager
   */
 
   // TODO: refactor validateOrder()
+
+  /**
+   * try function
+   */
+
+  public function tryCompleteInvoice(Invoice $invoice): bool
+  {
+    if ($invoice->getStatus() !== Invoice::STATUS_PROCESSING) {
+      return false;
+    }
+
+    try {
+      $drOrder = $this->drService->getOrder($invoice->getDrOrderId());
+      if ($drOrder->getState() !== DrOrder::STATE_COMPLETE) {
+        return false;
+      }
+
+      // complete order
+      DrLog::info(__FUNCTION__, 'try to complete invoice by dr order\'s state.', $invoice);
+      $this->onOrderComplete($drOrder);
+      $invoice->refresh();
+      DrLog::info(__FUNCTION__, 'complete invoice by dr order\'s state.', $invoice);
+
+      return true;
+    } catch (\Throwable $th) {
+      // silient
+    }
+
+    return false;
+  }
 }

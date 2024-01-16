@@ -67,4 +67,9 @@ interface SubscriptionManager
    * Manully renew subscription
    */
   public function renewSubscription(Subscription $subscription): Subscription;
+
+  /**
+   * try fix subscription/invoice state because missing events
+   */
+  public function tryCompleteInvoice(Invoice $invoice): bool;
 }

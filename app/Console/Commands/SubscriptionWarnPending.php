@@ -50,13 +50,19 @@ class SubscriptionWarnPending extends Command
       ->map(fn ($model) => $model->id)
       ->all();
 
-    /** @var int[] $processings */
-    $processings = Invoice::select('subscription_id')
-      ->where('status', Invoice::STATUS_PROCESSING)
+    /** @var Invoice[] $invoices */
+    $invoices = Invoice::where('status', Invoice::STATUS_PROCESSING)
       ->where('updated_at', '<', now()->subDays(2))
-      ->get()
-      ->map(fn ($model) => $model->subscription_id)
-      ->all();
+      ->get();
+
+    /** @var int[] $processings */
+    $processings = [];
+    foreach ($invoices as $invoice) {
+      // try to complete the invoice
+      if ($dryRun || !$this->manager->tryCompleteInvoice($invoice)) {
+        $processings[] = $invoice->subscription_id;
+      }
+    }
 
     /** @var int[] $refundings */
     $refundings = Invoice::select('subscription_id')
