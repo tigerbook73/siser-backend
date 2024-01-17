@@ -175,7 +175,7 @@ class Invoice extends BaseInvoice
     return $this->refunds()->where('status', Refund::STATUS_PENDING)->first();
   }
 
-  public function fillBasic(Subscription $subscription): self
+  public function fillBasic(Subscription $subscription, bool $next = false): self
   {
     // static part
     $this->user_id             = $subscription->user_id;
@@ -184,8 +184,16 @@ class Invoice extends BaseInvoice
 
     $this->billing_info        = $subscription->billing_info;
     $this->tax_id_info         = $subscription->tax_id_info;
-    $this->plan_info           = $subscription->plan_info;
-    $this->coupon_info         = $subscription->coupon_info;
+
+    if (!$next) {
+      // first invoice
+      $this->plan_info         = $subscription->plan_info;
+      $this->coupon_info       = $subscription->coupon_info;
+    } else {
+      // renew invoice
+      $this->plan_info         = $subscription->next_invoice['plan_info'];
+      $this->coupon_info       = $subscription->next_invoice['coupon_info'];
+    }
 
     // dynamic part
     $this->payment_method_info = $subscription->payment_method_info;

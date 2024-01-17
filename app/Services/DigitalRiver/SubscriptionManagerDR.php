@@ -1098,7 +1098,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $invoice = new Invoice();
-    $invoice->fillBasic($subscription)
+    $invoice->fillBasic($subscription, true)
       ->fillPeriod($subscription, true)
       ->fillFromDrObject($drInvoice)
       ->setDrInvoiceId($drInvoice->getId())

@@ -27,8 +27,13 @@ class DrFreeTrialSubscriptionTest extends DrApiTestCase
     return $subscription;
   }
 
-  public function test_active()
+  public function test_normal_procedure()
   {
-    $this->init_free_trial();
+    $subscription = $this->init_free_trial();
+
+    $this->onOrderComplete($subscription);
+    $this->onSubscriptionReminder($subscription);
+    $this->onSubscriptionPaymentFailed($subscription);
+    $this->onSubscriptionExtended($subscription);
   }
 }
