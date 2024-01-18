@@ -107,6 +107,28 @@ return new class extends Migration
         'status'                    => 'active',
       ],
       [
+        // free-trial-1-year
+        'type'                      => SubscriptionPlan::TYPE_FREE_TRIAL,
+        'interval'                  => SubscriptionPlan::INTERVAL_YEAR,
+        'interval_count'            => 1,
+        'contract_binding_days'     => 365,
+        'billing_offset_days'       => 1,
+        'reminder_offset_days'      => 30,
+        'collection_period_days'    => 10,
+        'status'                    => 'active',
+      ],
+      [
+        // free-trial-12-year (long-term)
+        'type'                      => SubscriptionPlan::TYPE_FREE_TRIAL,
+        'interval'                  => SubscriptionPlan::INTERVAL_YEAR,
+        'interval_count'            => 12,
+        'contract_binding_days'     => 365,
+        'billing_offset_days'       => 1,
+        'reminder_offset_days'      => 30,
+        'collection_period_days'    => 10,
+        'status'                    => 'active',
+      ],
+      [
         // free-trial-2-day
         'type'                      => SubscriptionPlan::TYPE_FREE_TRIAL,
         'interval'                  => SubscriptionPlan::INTERVAL_DAY,
@@ -127,7 +149,7 @@ return new class extends Migration
         'reminder_offset_days'      => 1,
         'collection_period_days'    => 2,
         'status'                    => 'active',
-      ]
+      ],
     ];
     for ($i = 0; $i < count($subscriptionPlans); $i++) {
       $subscriptionPlans[$i]['name'] = SubscriptionPlan::buildPlanName($subscriptionPlans[$i]['type'], $subscriptionPlans[$i]['interval'], $subscriptionPlans[$i]['interval_count']);
