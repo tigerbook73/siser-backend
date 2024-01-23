@@ -114,6 +114,11 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
     Route::get('/account/refunds/{id}', [RefundController::class, 'accountIndex']);
   });
 
+  // coupon validate
+  Route::middleware('auth:api')->group(function () {
+    Route::post('/coupon-validate', [CouponController::class, 'check']);
+  });
+
   // LDS
   Route::middleware('auth:api')->group(function () {
     Route::get('/lds/lds-license', [LdsLicenseController::class, 'accountGet']);
@@ -271,9 +276,6 @@ Route::get('/countries/{code}', [CountryController::class, 'indexWithCode']);
 // public plans
 Route::get('/plans', [PlanController::class, 'listPlan']);
 Route::get('/plans/{id}', [PlanController::class, 'indexPlan']);
-
-// public coupon
-Route::post('/coupon-validate', [CouponController::class, 'check']);
 
 // software packages
 Route::get('/software-packages', [SoftwarePackageController::class, 'list']);

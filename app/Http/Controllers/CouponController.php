@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\CouponEvent;
 use App\Models\Plan;
@@ -43,6 +44,7 @@ class CouponController extends SimpleController
       'condition.new_customer_only'     => ['required', 'boolean'],
       'condition.new_subscription_only' => ['required', 'boolean'],
       'condition.upgrade_only'          => ['required', 'boolean'],
+      'condition.countries'             => ['nullable', 'array'],
       'start_date'                      => ['required', 'date'],
       'end_date'                        => ['required', 'after:start_date', 'after:today'],
       'status'                          => ['required', Rule::in([Coupon::STATUS_DRAFT, Coupon::STATUS_ACTIVE])],
@@ -65,6 +67,7 @@ class CouponController extends SimpleController
       'condition.new_customer_only'     => ['required_with:condition', 'boolean'],
       'condition.new_subscription_only' => ['required_with:condition', 'boolean'],
       'condition.upgrade_only'          => ['required_with:condition', 'boolean'],
+      'condition.countries'             => ['nullable', 'array'],
       'start_date'                      => ['filled', 'date'],
       'end_date'                        => ['filled', 'date', 'after:start_date', 'after:today'],
       'status'                          => ['filled', Rule::in([Coupon::STATUS_DRAFT, Coupon::STATUS_ACTIVE, Coupon::STATUS_INACTIVE])],
@@ -103,6 +106,17 @@ class CouponController extends SimpleController
 
       if ($inputs['interval_count'] == 0) {
         abort(response()->json(['message' => 'interval_count can not be 0.'], 400));
+      }
+    }
+
+    // validate condition
+    $countryCodes = $inputs['condition']['countries'] ?? [];
+    if (count($countryCodes) > 0) {
+      // find invalid country code
+      $countryCodesFromDB = Country::select('code')->get()->pluck('code')->toArray();
+      $invalidCountryCodes = array_diff($countryCodes, $countryCodesFromDB);
+      if (count($invalidCountryCodes) > 0) {
+        abort(response()->json(['message' => 'Invalid country code: ' . implode(', ', $invalidCountryCodes)], 400));
       }
     }
   }

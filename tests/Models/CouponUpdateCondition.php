@@ -18,4 +18,7 @@ class CouponUpdateCondition {
     /** @var bool $upgrade_only whether coupon is only valid for purchase a upgrade subscription, but not a new subscription*/
     public $upgrade_only = false;
 
+    /** @var string[] $countries Coupone is valid for these countries. If empty or null, the coupon is valid for all countries.*/
+    public $countries = [];
+
 }

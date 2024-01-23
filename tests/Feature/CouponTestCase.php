@@ -46,7 +46,8 @@ class CouponTestCase extends ApiTestCase
       'condition' => [
         'new_customer_only'     => false,
         'new_subscription_only' => false,
-        'upgrade_only'          => false
+        'upgrade_only'          => false,
+        'countries'             => [],
       ],
       'status'                  => 'active',
       'start_date'              => Carbon::tomorrow(),
@@ -66,7 +67,8 @@ class CouponTestCase extends ApiTestCase
       'condition' => [
         'new_customer_only'     => false,
         'new_subscription_only' => false,
-        'upgrade_only'          => false
+        'upgrade_only'          => false,
+        'countries'             => [],
       ],
       'status'                  => 'inactive',
       'start_date'              => Carbon::today(),

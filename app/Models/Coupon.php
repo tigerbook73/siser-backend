@@ -45,6 +45,13 @@ class Coupon extends BaseCoupon
   {
     $this->code = strtoupper($this->code);
 
+    // sort & unique countries if required
+    if ($this->isDirty('condition')) {
+      $condition = $this->condition;
+      $condition['countries'] = collect($condition['countries'] ?? [])->sort()->unique()->values()->toArray();
+      $this->condition = $condition;
+    }
+
     CouponEvent::upsert(
       [['name' => $this->coupon_event]],
       ['name']
@@ -58,6 +65,7 @@ class Coupon extends BaseCoupon
 
   public function info()
   {
+    // note: condition is not required. Update coupon does not affect the applied coupon
     return [
       'id'              => $this->id,
       'code'            => $this->code,
@@ -106,6 +114,22 @@ class Coupon extends BaseCoupon
     $usage['count'] = ($usage['count'] ?? 1) - 1;
     $usage['updated_at'] = now()->toString();
     $this->usage = $usage;
+    return $this;
+  }
+
+  public function getCondition(): array
+  {
+    $condition = [];
+    $condition['countries'] = $this->condition['countries'] ?? [];
+
+    return $condition;
+  }
+
+  public function setCondition(array $countries)
+  {
+    $condition = $this->condition;
+    $condition['countries'] = $countries;
+    $this->condition = $condition;
     return $this;
   }
 }
