@@ -128,7 +128,7 @@ class SubscriptionNotificationTest
       'upgrade_only' => false
     ];
     $this->coupon->start_date = now();
-    $this->coupon->start_date = Carbon::parse('2099-12-31');
+    $this->coupon->end_date = Carbon::parse('2099-12-31');
     $this->coupon->status = Coupon::STATUS_ACTIVE;
     $this->coupon->save();
 
