@@ -21,7 +21,7 @@ class AuthController extends Controller
   {
     return  redirect(
       config('siser.sign_in_uri') . '?' . http_build_query([
-        'redirect' => url(config('siser.login_uri'), [], app()->environment('production') ?: null)
+        'redirect' => url(config('siser.login_uri'), [], app()->environment('production', 'staging') ?: null)
       ]),
       302,
       ['Cache-Control' => 'no-store']
@@ -32,7 +32,7 @@ class AuthController extends Controller
   {
     return redirect(
       config('siser.sign_out_uri') . '?' . http_build_query([
-        'redirect' => url(config('siser.login_uri'), [], app()->environment('production') ?: null)
+        'redirect' => url(config('siser.login_uri'), [], app()->environment('production', 'staging') ?: null)
       ]),
       302,
       ['Cache-Control' => 'no-store']

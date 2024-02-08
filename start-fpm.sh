@@ -6,7 +6,7 @@ role=${CONTAINER_ROLE:-main}
 env=${APP_ENV:-production}
 
 # cache configuration
-if [ "$env" == "production" ]; then
+if [ "$env" == "production" ] || [ "$env" == "staging" ]; then
   echo "Caching configuration..."
   php artisan config:cache &&
   php artisan route:cache &&

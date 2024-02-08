@@ -2,6 +2,7 @@
 
 namespace App\Services\DigitalRiver;
 
+use App\Events\SubscriptionOrderEvent;
 use App\Models\BillingInfo;
 use App\Models\Country;
 use App\Models\Coupon;
@@ -428,6 +429,11 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   public function createRefundFromDrObject(DrOrderRefund $drRefund): Refund|null
   {
+    // if created from createRefund() or already created, skip
+    if ($drRefund->getMetadata()) {
+      return null;
+    }
+
     if ($refund = Refund::findByDrRefundId($drRefund->getId())) {
       return $refund;
     }
@@ -784,6 +790,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     // log event
     SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_ACTIVATED, $subscription);
 
+    // disptch event 
+    SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_CONFIRMED, $invoice);
+
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CONFIRMED, $invoice);
     return $subscription;
@@ -1052,6 +1061,9 @@ class SubscriptionManagerDR implements SubscriptionManager
     $user->save();
     DrLog::warning(__FUNCTION__, 'user blacklisted', $subscription);
 
+    // invoice is chargebacked
+    SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_REFUNDED, $invoice, null);
+
     return $subscription;
   }
 
@@ -1204,6 +1216,9 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // log subscription event
     SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_EXTENDED, $subscription);
+
+    // disptch event
+    SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_CONFIRMED, $invoice);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_EXTENDED, $invoice);
@@ -1398,6 +1413,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       $refund->status = Refund::STATUS_COMPLETED;
       $refund->save();
       DrLog::info(__FUNCTION__, 'refund status updated => complete', ['refund_id' => $refund->id]);
+
+      // send refunded event
+      SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_REFUNDED, $refund->invoice, $refund);
 
       // invoice is not updated here, but in onOrderRefunded()
     }

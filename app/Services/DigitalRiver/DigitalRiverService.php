@@ -893,6 +893,7 @@ class DigitalRiverService
     $refundRequest->setCurrency($refund->currency);
     $refundRequest->setAmount($refund->amount);
     $refundRequest->setReason($refund->reason ?? "");
+    $refundRequest->setMetadata(['created_from' => 'siser-system']); // create from siser-system
 
     try {
       return $this->refundApi->createRefunds($refundRequest);
