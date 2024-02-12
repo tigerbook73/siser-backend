@@ -266,6 +266,26 @@ class DatabaseSeeder extends Seeder
       'status' => 'active',
     ]);
 
+    // 13 off longterm shared
+    Coupon::create([
+      'code' => '13OFF',
+      'name' => '13% off',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => $coupon_event,
+      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      'percentage_off' => 13,
+      'interval' => Coupon::INTERVAL_LONGTERM,
+      'interval_count' => 0,
+      'condition' => [
+        "new_customer_only" => false,
+        "new_subscription_only" => false,
+        "upgrade_only" => false,
+      ],
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
     // free 2 day shared
     Coupon::create([
       'code' => 'FREE2DS',

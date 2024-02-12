@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Coupon;
 use App\Models\Plan;
+use App\Models\Subscription;
 
 class CouponCustomerValidateApiTest extends CouponTestCase
 {
@@ -76,5 +77,28 @@ class CouponCustomerValidateApiTest extends CouponTestCase
     unset($this->modelSchema[array_search('status', $this->modelSchema)]);
     $response->assertStatus(200)
       ->assertJsonStructure($this->couponInfoSchema);
+  }
+
+  public function testCouponValidateFreeTrialTwice()
+  {
+    $plan = Plan::public()->first();
+    $coupon = Coupon::where('discount_type', Coupon::DISCOUNT_TYPE_FREE_TRIAL)->first();
+
+    // fake a subscription with the longterm coupon
+    $subscription = (new Subscription())
+      ->initFill()
+      ->fillBillingInfo($this->user->billing_info)
+      ->fillPlanAndCoupon($plan, $coupon)
+      ->setStatus(Subscription::STATUS_ACTIVE);
+    $subscription->start_date = now();
+    $subscription->save();
+
+    $response = $this->postJson('api/v1/coupon-validate', [
+      'code' => $coupon->code,
+      'plan_id' => $plan->id,
+    ]);
+
+    // free coupon can not be redeemed twice by the same user twice
+    $response->assertStatus(400);
   }
 }

@@ -3,16 +3,12 @@
 namespace App\Services;
 
 use App\Models\Coupon;
-use App\Models\Invoice;
 use App\Models\Plan;
-use App\Models\Refund;
-use App\Models\Subscription;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 
 class CouponRules
 {
-  static public function couponApplicable(Coupon $coupon, Plan $plan, User $user = null): array
+  static public function couponApplicable(Coupon $coupon, Plan $plan, User $user): array
   {
     // status
     if ($coupon->status != Coupon::STATUS_ACTIVE) {
@@ -49,9 +45,20 @@ class CouponRules
 
     // countries
     if ($condition['countries'] && count($condition['countries']) > 0) {
-      $country = $user?->billing_info->address['country'];
+      $country = $user->billing_info->address['country'];
       if (!in_array($country, $condition['countries'])) {
         return ['applicable' => false, 'reason' => 'coupon is not applicable for this country'];
+      }
+    }
+
+    // free-trial coupon can not be redeemed twice by the same user
+    if ($coupon->discount_type == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
+      if ($user->subscriptions()
+        ->where('coupon_id', $coupon->id)
+        ->whereNotNull('start_date')
+        ->exists()
+      ) {
+        return ['applicable' => false, 'reason' => 'free-trial coupon can not be redeemed twice by the same user'];
       }
     }
 
