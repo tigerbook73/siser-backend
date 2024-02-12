@@ -36,10 +36,10 @@ class Coupon {
     /** @var float $percentage_off must be 100 for free-trial coupon*/
     public $percentage_off = 0;
 
-    /** @var string $interval must be same as plan&#39;s interval if not free-trial coupon*/
+    /** @var string $interval Interval of the coupon. For free-trial coupon, interval must not be longterm; for percentage coupon, interval must be same as the plan&#39;s interval or longterm.*/
     public $interval = "";
 
-    /** @var int $interval_count */
+    /** @var int $interval_count For longterm interval, interval_count must be 0*/
     public $interval_count = 0;
 
     /** @var \DateTime $start_date when start_date &lt;&#x3D; today(), coupon will be activated immediately.*/

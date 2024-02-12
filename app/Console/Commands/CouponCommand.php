@@ -34,7 +34,7 @@ class CouponCommand extends Command
       $this->info('');
       $this->info('subcmd:');
       $this->info('  help:            display this information');
-      $this->info('  generate:        generate coupon codes');
+      $this->info('  generate:        generate coupon codes in batch');
       $this->info('');
 
       return self::SUCCESS;
@@ -107,9 +107,13 @@ class CouponCommand extends Command
       if ($discount_type == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
         $interval = $this->choice('Interval', [Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR], $interval);
       } else {
-        $interval = $this->choice('Interval', [Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR], $interval);
+        $interval = $this->choice('Interval', [Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM], $interval);
       }
-      while (true) {
+
+      if ($interval == Coupon::INTERVAL_LONGTERM) {
+        $interval_count = 0;
+      }
+      while ($interval != Coupon::INTERVAL_LONGTERM) {
         $interval_count = (int)$this->ask('Interval Count (0 ~ 30)', (string)$interval_count);
         if ($interval_count >= 0 && $interval_count <= 30) {
           break;

@@ -13,6 +13,7 @@ class Coupon extends BaseCoupon
   const INTERVAL_WEEK             = 'week';
   const INTERVAL_MONTH            = 'month';
   const INTERVAL_YEAR             = 'year';
+  const INTERVAL_LONGTERM         = 'longterm';
 
   const DISCOUNT_TYPE_FREE_TRIAL  = 'free-trial';
   const DISCOUNT_TYPE_PERCENTAGE  = 'percentage';
@@ -50,6 +51,16 @@ class Coupon extends BaseCoupon
       $condition = $this->condition;
       $condition['countries'] = collect($condition['countries'] ?? [])->sort()->unique()->values()->toArray();
       $this->condition = $condition;
+    }
+
+    // update interval_count to 0 if interval is longterm
+    if ($this->interval == self::INTERVAL_LONGTERM) {
+      $this->interval_count = 0;
+    }
+
+    // update interveral to longterm if interval_count is 0
+    if ($this->interval_count == 0) {
+      $this->interval = self::INTERVAL_LONGTERM;
     }
 
     CouponEvent::upsert(

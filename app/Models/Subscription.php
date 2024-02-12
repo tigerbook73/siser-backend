@@ -395,7 +395,9 @@ class Subscription extends BaseSubscription
 
   public function isFixedTermPercentage(): bool
   {
-    return ($this->coupon_info['discount_type'] ?? null) === Coupon::DISCOUNT_TYPE_PERCENTAGE && $this->coupon_info['interval_count'] != 0;
+    return ($this->coupon_info['discount_type'] ?? null) === Coupon::DISCOUNT_TYPE_PERCENTAGE &&
+      $this->coupon_info['interval_count'] != 0 &&
+      $this->coupon_info['interval'] != Coupon::INTERVAL_LONGTERM;
   }
 
   static public function buildPlanName(array $plan_info, array|null $coupon_info)

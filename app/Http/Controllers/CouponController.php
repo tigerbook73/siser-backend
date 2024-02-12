@@ -38,7 +38,7 @@ class CouponController extends SimpleController
       'coupon_event'                    => ['required', 'string', 'max:255'],
       'discount_type'                   => ['required', 'string', Rule::in([Coupon::DISCOUNT_TYPE_FREE_TRIAL, Coupon::DISCOUNT_TYPE_PERCENTAGE])],
       'percentage_off'                  => ['required_if:discount_type,' . Coupon::DISCOUNT_TYPE_PERCENTAGE, 'decimal:0,2', 'between:0,100'],
-      'interval'                        => ['required', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR])],
+      'interval'                        => ['required', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
       'interval_count'                  => ['required', 'integer', 'between:0,12'],
       'condition'                       => ['required', 'array'],
       'condition.new_customer_only'     => ['required', 'boolean'],
@@ -61,7 +61,7 @@ class CouponController extends SimpleController
       'coupon_event'                    => ['filled', 'string', 'max:255'],
       'discount_type'                   => ['filled', 'string', Rule::in([Coupon::DISCOUNT_TYPE_FREE_TRIAL, Coupon::DISCOUNT_TYPE_PERCENTAGE])],
       'percentage_off'                  => ['filled', 'decimal:0,2', 'between:0,100'],
-      'interval'                        => ['filled', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR])],
+      'interval'                        => ['filled', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
       'interval_count'                  => ['filled', 'integer', 'between:0,12'],
       'condition'                       => ['filled', 'array'],
       'condition.new_customer_only'     => ['required_with:condition', 'boolean'],
@@ -92,20 +92,28 @@ class CouponController extends SimpleController
       // validate interval
       if (
         $inputs['interval'] != Coupon::INTERVAL_MONTH &&
-        $inputs['interval'] != Coupon::INTERVAL_YEAR
+        $inputs['interval'] != Coupon::INTERVAL_YEAR &&
+        $inputs['interval'] != Coupon::INTERVAL_LONGTERM
       ) {
-        abort(response()->json(['message' => 'interval must be month or year.'], 400));
+        abort(response()->json(['message' => 'interval must be month, year or longterm.'], 400));
+      }
+
+      // validate interval count
+      if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM && $inputs['interval_count'] != 0) {
+        abort(response()->json(['message' => 'interval_count must be 0 for longterm coupon.'], 400));
       }
     }
 
     // validate free-trial type
     if ($inputs['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
+      // validate percentage off
       if ($inputs['percentage_off'] != 100) {
         abort(response()->json(['message' => 'percentage_off must be 100.'], 400));
       }
 
-      if ($inputs['interval_count'] == 0) {
-        abort(response()->json(['message' => 'interval_count can not be 0.'], 400));
+      // validate interval and interval_count
+      if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM || $inputs['interval_count'] == 0) {
+        abort(response()->json(['message' => 'free_trial can not be longterm.'], 400));
       }
     }
 

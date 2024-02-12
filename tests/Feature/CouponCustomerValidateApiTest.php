@@ -2,26 +2,79 @@
 
 namespace Tests\Feature;
 
+use App\Models\Coupon;
 use App\Models\Plan;
 
 class CouponCustomerValidateApiTest extends CouponTestCase
 {
   public ?string $role = 'customer';
 
-  public function testCouponCustomerValidateSuccess()
+  public function testCouponValidateOk()
   {
     $response = $this->postJson('api/v1/coupon-validate', [
       'code' => $this->object->code,
       'plan_id' => Plan::public()->first()->id,
     ]);
 
+    // response does not contain status
     unset($this->modelSchema[array_search('status', $this->modelSchema)]);
     $response->assertStatus(200)
       ->assertJsonStructure($this->couponInfoSchema);
   }
 
-  public function testMore()
+  public function testCouponValidateCountryOk()
   {
-    $this->markTestIncomplete('more test cases to come');
+    // update coupon with countries
+    $this->modelUpdate['condition']['countries'] = [$this->user->billing_info->address['country']];
+    $this->noAssert = true;
+    $this->updateAssert(200, $this->object->id);
+
+    $response = $this->postJson('api/v1/coupon-validate', [
+      'code' => $this->object->code,
+      'plan_id' => Plan::public()->first()->id,
+    ]);
+
+    // response does not contain status
+    unset($this->modelSchema[array_search('status', $this->modelSchema)]);
+    $response->assertStatus(200)
+      ->assertJsonStructure($this->couponInfoSchema);
+  }
+
+  public function testCouponValidateCountryNok()
+  {
+    // update coupon with countries
+    $this->modelUpdate['condition']['countries'] = ['ZA'];
+    $this->modelUpdate['status'] = 'active';
+    $this->noAssert = true;
+    $this->actingAsAdmin();
+    $this->updateAssert(200, $this->object->id);
+    $this->object->refresh();
+    $this->actingAsDefault();
+
+    $response = $this->postJson('api/v1/coupon-validate', [
+      'code' => $this->object->code,
+      'plan_id' => Plan::public()->first()->id,
+    ]);
+
+    $response->assertStatus(400);
+  }
+
+  public function testCouponValidateLongtermOk()
+  {
+    // update coupon with longterm period
+    $this->modelUpdate['interval'] = Coupon::INTERVAL_LONGTERM;
+    $this->modelUpdate['interval_count'] = 0;
+    $this->noAssert = true;
+    $this->updateAssert(200, $this->object->id);
+
+    $response = $this->postJson('api/v1/coupon-validate', [
+      'code' => $this->object->code,
+      'plan_id' => Plan::public()->first()->id,
+    ]);
+
+    // response does not contain status
+    unset($this->modelSchema[array_search('status', $this->modelSchema)]);
+    $response->assertStatus(200)
+      ->assertJsonStructure($this->couponInfoSchema);
   }
 }
