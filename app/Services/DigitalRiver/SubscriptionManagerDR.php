@@ -878,21 +878,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  protected function onOrderChargeCaptureComplete(DrCharge $charge): Subscription|null
-  {
-    // validate the order
-    $order = $this->drService->getOrder($charge->getOrderId());
-    $subscription = $this->validateOrder($order, __FUNCTION__: __FUNCTION__);
-    if (!$subscription) {
-      return null;
-    }
-
-    DrLog::info(__FUNCTION__, 'order charge capture completed', $subscription);
-
-    return $subscription;
-  }
-
-  protected function onOrderChargeCaptureFailed(DrCharge $charge): Subscription|null
+  protected function onOrderChargeCaptureComplete(DrCharge $charge): Invoice|null
   {
     // validate the order
     $drOrder = $this->drService->getOrder($charge->getOrderId());
@@ -901,6 +887,25 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
     $invoice = Invoice::findByDrOrderId($drOrder->getId());
+
+    DrLog::info(__FUNCTION__, 'order charge capture completed', $invoice);
+    return $invoice;
+  }
+
+  protected function onOrderChargeCaptureFailed(DrCharge $charge): Invoice|null
+  {
+    // validate the order
+    $drOrder = $this->drService->getOrder($charge->getOrderId());
+    $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
+    if (!$subscription) {
+      return null;
+    }
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
+
+    DrLog::info(__FUNCTION__, 'order charge capture failed', $invoice);
+    return $invoice;
+
+    /*
 
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
@@ -929,6 +934,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
     return $subscription;
+
+    */
   }
 
   protected function onOrderComplete(DrOrder $drOrder): Invoice|null

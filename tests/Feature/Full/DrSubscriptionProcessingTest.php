@@ -35,13 +35,6 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     return $this->onOrderComplete($subscription);
   }
 
-  public function test_processing_to_failed()
-  {
-    $subscription = $this->init_processing();
-
-    return $this->onOrderChargeCaptureFailed($subscription);
-  }
-
   public function test_processing_to_cancell()
   {
     $subscription = $this->init_processing();
@@ -57,16 +50,6 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
 
     $subscription->refresh();
     $this->onOrderComplete($subscription);
-  }
-
-  public function test_processing_to_cancell_refund_to_failed()
-  {
-    $subscription = $this->init_processing();
-
-    $this->cancelSubscription($subscription, true);
-
-    $subscription->refresh();
-    $this->onOrderChargeCaptureFailed($subscription);
   }
 
   public function test_processing_order_invoice()

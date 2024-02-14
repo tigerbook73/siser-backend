@@ -1101,44 +1101,6 @@ class DrApiTestCase extends ApiTestCase
     return $this->onOrderFailed($subscription, 'order.charge.failed');
   }
 
-  public function onOrderChargeCaptureFailed(Subscription|int $subscription): Subscription
-  {
-    /** @var Subscription $subscription */
-    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
-    $invoice = Invoice::findByDrOrderId($subscription->getDrOrderId());
-
-    // prepare
-    $this->assertContains($invoice->status, [Invoice::STATUS_PROCESSING]);
-
-    // mock up
-    $this->mockGetOrder();
-    if ($subscription->status == Subscription::STATUS_ACTIVE) {
-      $this->mockCancelSubscription();
-    }
-
-    Notification::fake();
-
-    // call api
-    $order = $this->drHelper->createCharge($subscription->getDrOrderId(), DrCharge::STATE_FAILED);
-    $response = $this->sendOrderChargeCaptureFailed($order);
-
-    // refresh data
-    $subscription->refresh();
-    $invoice->refresh();
-
-    // assert
-    $response->assertSuccessful();
-    $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
-    $this->assertEquals($invoice->status, Invoice::STATUS_FAILED);
-
-    Notification::assertSentTo(
-      $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
-    );
-
-    return $subscription;
-  }
-
   public function onOrderInvoiceCreated(Invoice|int $invoice): Invoice
   {
     /** @var Invoice $invoice */
