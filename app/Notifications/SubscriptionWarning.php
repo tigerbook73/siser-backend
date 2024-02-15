@@ -22,8 +22,7 @@ class SubscriptionWarning extends Notification implements ShouldQueue
    */
   public function __construct(
     public string $type,
-    public array $subscriptionIds
-
+    public array $data
   ) {
   }
 
@@ -46,10 +45,16 @@ class SubscriptionWarning extends Notification implements ShouldQueue
    */
   public function toMail($notifiable)
   {
-    return (new MailMessage)
+    $message = (new MailMessage)
       ->subject("Subscription warning: $this->type")
       ->greeting('Hello!')
-      ->line('There are warning on "' . $this->type .  '" : [' . implode(', ', $this->subscriptionIds) . '] !');
+      ->line('There are warning on "' . $this->type . '"!');
+
+    foreach ($this->data as $objType => $objIds) {
+      $message->line("$objType : " . implode(', ', $objIds));
+    }
+
+    return $message;
   }
 
   /**
@@ -60,11 +65,11 @@ class SubscriptionWarning extends Notification implements ShouldQueue
    */
   public function toArray($notifiable)
   {
-    return $this->subscriptionIds;
+    return $this->data;
   }
 
-  static public function notify(string $type, array $subscriptionIds)
+  static public function notify(string $type, array $data)
   {
-    (new Developer)->notify(new SubscriptionWarning($type, $subscriptionIds));
+    (new Developer)->notify(new SubscriptionWarning($type, $data));
   }
 }

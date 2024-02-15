@@ -3,7 +3,6 @@
 namespace App\Console\Commands;
 
 use App\Models\Invoice;
-use App\Models\Subscription;
 use App\Notifications\SubscriptionWarning;
 use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
@@ -25,6 +24,13 @@ class SubscriptionWarnPending extends Command
    */
   protected $description = 'Warn pending subscriptions';
 
+  /**
+   * cooling periods
+   */
+  const INVOICE_PENDING_PERIOD = '30 minutes';
+  const INVOICE_PROCESSING_PERIOD = '2 days';
+  const REFUND_PROCESSING_PERIOD = '3 days';
+
   public function __construct(public SubscriptionManager $manager)
   {
     parent::__construct();
@@ -41,42 +47,53 @@ class SubscriptionWarnPending extends Command
 
     $maxCount = 100;
     $dryRun = $this->option('dry-run');
+    $data = [];
 
-    /** @var int[] $pendings */
-    $pendings = Subscription::select('id')
-      ->where('status', Subscription::STATUS_PENDING)
-      ->where('updated_at', '<', now()->subMinutes(30))
+    /** @var int[] $pendings - invoice ids in pending state */
+    $pendings = Invoice::select('id')
+      ->where('status', Invoice::STATUS_PENDING)
+      ->where('updated_at', '<', now()->sub(self::INVOICE_PENDING_PERIOD))
+      ->limit($maxCount)
+      ->get()
+      ->map(fn ($invoice) => $invoice->id)
+      ->all();
+    if (count($pendings) > 0) {
+      Log::info('There are ' . count($pendings) . ' pending invoices: ' . implode(', ', $pendings) . ' !');
+      $data['pending_invoice'] = $pendings;
+    }
+
+    /** @var Invoice[] $processingInvoices - invoice in processing state  */
+    $processingInvoices = Invoice::where('status', Invoice::STATUS_PROCESSING)
+      ->where('updated_at', '<', now()->sub(self::INVOICE_PROCESSING_PERIOD))
+      ->limit($maxCount)
+      ->get();
+    /** @var int[] $processings */
+    $processings = [];
+    foreach ($processingInvoices as $invoice) {
+      // try to complete the invoice
+      if ($dryRun || !$this->manager->tryCompleteInvoice($invoice)) {
+        $processings[] = $invoice->id;
+      }
+    }
+    if (count($processings) > 0) {
+      Log::info('There are ' . count($processings) . ' processing invoices: ' . implode(', ', $processings) . ' !');
+      $data['processing_invoice'] = $processings;
+    }
+
+    /** @var int[] $refundings - invoice ids in refunding state */
+    $refundings = Invoice::select('id')
+      ->where('status', Invoice::STATUS_REFUNDING)
+      ->where('updated_at', '<', now()->sub(self::REFUND_PROCESSING_PERIOD))
       ->get()
       ->map(fn ($model) => $model->id)
       ->all();
-
-    /** @var Invoice[] $invoices */
-    $invoices = Invoice::where('status', Invoice::STATUS_PROCESSING)
-      ->where('updated_at', '<', now()->subDays(2))
-      ->get();
-
-    /** @var int[] $processings */
-    $processings = [];
-    foreach ($invoices as $invoice) {
-      // try to complete the invoice
-      if ($dryRun || !$this->manager->tryCompleteInvoice($invoice)) {
-        $processings[] = $invoice->subscription_id;
-      }
+    if (count($refundings) > 0) {
+      Log::info('There are ' . count($refundings) . ' refunding invoices: ' . implode(', ', $refundings) . ' !');
+      $data['refunding_invoice'] = $refundings;
     }
 
-    /** @var int[] $refundings */
-    $refundings = Invoice::select('subscription_id')
-      ->where('status', Invoice::STATUS_REFUNDING)
-      ->where('updated_at', '<', now()->subDays(3))
-      ->get()
-      ->map(fn ($model) => $model->subscription_id)
-      ->all();
-
-    $subscriptionIds = array_merge($pendings, $processings, $refundings);
-    Log::info('There are ' . count($subscriptionIds) . ' pending or processing subscriptions: [' . implode(', ', $subscriptionIds) . '] !');
-
-    if (!$dryRun && count($subscriptionIds) > 0) {
-      SubscriptionWarning::notify(SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION, $subscriptionIds);
+    if (!$dryRun && count($data) > 0) {
+      SubscriptionWarning::notify(SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION, $data);
     }
 
     return Command::SUCCESS;
