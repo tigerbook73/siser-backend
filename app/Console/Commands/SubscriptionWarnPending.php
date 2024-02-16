@@ -24,13 +24,6 @@ class SubscriptionWarnPending extends Command
    */
   protected $description = 'Warn pending subscriptions';
 
-  /**
-   * cooling periods
-   */
-  const INVOICE_PENDING_PERIOD = '30 minutes';
-  const INVOICE_PROCESSING_PERIOD = '2 days';
-  const REFUND_PROCESSING_PERIOD = '3 days';
-
   public function __construct(public SubscriptionManager $manager)
   {
     parent::__construct();
@@ -52,7 +45,8 @@ class SubscriptionWarnPending extends Command
     /** @var int[] $pendings - invoice ids in pending state */
     $pendings = Invoice::select('id')
       ->where('status', Invoice::STATUS_PENDING)
-      ->where('updated_at', '<', now()->sub(self::INVOICE_PENDING_PERIOD))
+      ->where('period', 0)
+      ->where('updated_at', '<', now()->sub(SubscriptionWarning::INVOICE_PENDING_PERIOD))
       ->limit($maxCount)
       ->get()
       ->map(fn ($invoice) => $invoice->id)
@@ -62,9 +56,23 @@ class SubscriptionWarnPending extends Command
       $data['pending_invoice'] = $pendings;
     }
 
+    /** @var int[] $renews - invoice ids in renew state */
+    $renews = Invoice::select('id')
+      ->where('status', Invoice::STATUS_PENDING)
+      ->where('period', '>', 1)
+      ->where('updated_at', '<', now()->sub(SubscriptionWarning::INVOICE_RENEW_PERIOD))
+      ->limit($maxCount)
+      ->get()
+      ->map(fn ($invoice) => $invoice->id)
+      ->all();
+    if (count($renews) > 0) {
+      Log::info('There are ' . count($renews) . ' renew invoices: ' . implode(', ', $renews) . ' !');
+      $data['renew_invoice'] = $renews;
+    }
+
     /** @var Invoice[] $processingInvoices - invoice in processing state  */
     $processingInvoices = Invoice::where('status', Invoice::STATUS_PROCESSING)
-      ->where('updated_at', '<', now()->sub(self::INVOICE_PROCESSING_PERIOD))
+      ->where('updated_at', '<', now()->sub(SubscriptionWarning::INVOICE_PROCESSING_PERIOD))
       ->limit($maxCount)
       ->get();
     /** @var int[] $processings */
@@ -83,7 +91,7 @@ class SubscriptionWarnPending extends Command
     /** @var int[] $refundings - invoice ids in refunding state */
     $refundings = Invoice::select('id')
       ->where('status', Invoice::STATUS_REFUNDING)
-      ->where('updated_at', '<', now()->sub(self::REFUND_PROCESSING_PERIOD))
+      ->where('updated_at', '<', now()->sub(SubscriptionWarning::REFUND_PROCESSING_PERIOD))
       ->get()
       ->map(fn ($model) => $model->id)
       ->all();

@@ -103,14 +103,14 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     return $this->onOrderChargeFailed(Subscription::find($response->json('id')));
   }
 
-  public function test_pending_expired()
+  public function test_pending_notification()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
     $response = $this->init_pending();
 
     Notification::fake();
 
-    Carbon::setTestNow('2023-01-01 00:31:00');
+    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PENDING_PERIOD)->addSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PENDING)->count() > 0);
@@ -121,14 +121,14 @@ class DrSubscriptionPendingTest extends DrApiTestCase
     );
   }
 
-  public function test_pending_not_expired()
+  public function test_pending_no_notification()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
     $response = $this->init_pending();
 
     Notification::fake();
 
-    Carbon::setTestNow('2023-01-01 00:29:00');
+    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PENDING_PERIOD)->subSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->subscriptions()->where('status', Subscription::STATUS_PENDING)->count() > 0);

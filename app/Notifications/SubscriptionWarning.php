@@ -16,6 +16,14 @@ class SubscriptionWarning extends Notification implements ShouldQueue
   public const NOTIF_LONG_PENDING_SUBSCRIPTION    = 'long-pending-subscription';
 
   /**
+   * long period warning cooling periods
+   */
+  const INVOICE_PENDING_PERIOD = '30 minutes';
+  const INVOICE_RENEW_PERIOD = '4 days';
+  const INVOICE_PROCESSING_PERIOD = '2 days';
+  const REFUND_PROCESSING_PERIOD = '3 days';
+
+  /**
    * Create a new notification instance.
    *
    * @return void

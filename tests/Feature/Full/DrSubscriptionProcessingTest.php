@@ -59,7 +59,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     $this->onOrderInvoiceCreated($invoice);
   }
 
-  public function test_processing_expired()
+  public function test_processing_notification()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
     $this->init_processing();
@@ -67,7 +67,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     Notification::fake();
     $this->mockGetOrder(); // processing status
 
-    Carbon::setTestNow('2023-01-03 00:31:00');
+    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PROCESSING_PERIOD)->addSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() > 0);
@@ -88,20 +88,22 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     Notification::fake();
     $this->mockGetOrder(); // processing status
 
-    Carbon::setTestNow('2023-01-03 00:31:00');
+    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PROCESSING_PERIOD)->addSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() == 0);
+
+    Notification::assertNothingSent();
   }
 
-  public function test_processing_not_expired()
+  public function test_processing_no_notification()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');
     $this->init_processing();
 
     Notification::fake();
 
-    Carbon::setTestNow('2023-01-01 23:59:59'); // less than two days
+    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PROCESSING_PERIOD)->subSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() > 0);
