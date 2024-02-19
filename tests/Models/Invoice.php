@@ -75,4 +75,7 @@ class Invoice {
     /** @var string $sub_status */
     public $sub_status = "";
 
+    /** @var string $dispute_status */
+    public $dispute_status = "";
+
 }

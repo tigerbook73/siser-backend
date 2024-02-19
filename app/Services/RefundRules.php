@@ -12,6 +12,13 @@ class RefundRules
 {
   static public function invoiceRefundable(Invoice $invoice): array
   {
+    if (
+      $invoice->dispute_status == Invoice::DISPUTE_STATUS_DISPUTING ||
+      $invoice->dispute_status == Invoice::DISPUTE_STATUS_DISPUTED
+    ) {
+      return ['refundable' => false, 'reason' => 'invoice is in disputing or disputed'];
+    }
+
     if ($invoice->status == Invoice::STATUS_REFUNDED) {
       return ['refundable' => false, 'reason' => 'invoice is already refunded'];
     }

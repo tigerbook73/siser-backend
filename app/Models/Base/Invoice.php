@@ -40,10 +40,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $dr_invoice_id
  * @property string|null $dr_order_id
  * @property string $status
+ * @property string $dispute_status
  * @property string $sub_status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array|null $status_transitions
+ * @property array|null $dispute_status_transitions
  * @property array|null $payment_method_info
  * 
  * @property Subscription $subscription
@@ -76,6 +78,7 @@ class Invoice extends Model
     'credit_memos' => 'json',
     'dr' => 'json',
     'status_transitions' => 'json',
+    'dispute_status_transitions' => 'json',
     'payment_method_info' => 'json'
   ];
 
@@ -101,8 +104,10 @@ class Invoice extends Model
     'dr_invoice_id',
     'dr_order_id',
     'status',
+    'dispute_status',
     'sub_status',
     'status_transitions',
+    'dispute_status_transitions',
     'payment_method_info'
   ];
 

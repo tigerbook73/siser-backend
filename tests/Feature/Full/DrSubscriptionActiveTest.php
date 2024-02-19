@@ -229,4 +229,86 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $this->adminStopSubscription($subscription);
     $this->actingAsDefault();
   }
+
+  public function test_active_dispute_cancel()
+  {
+    $subscription = $this->init_active();
+
+    // dispute order
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $invoice = $this->onOrderDispute($invoice);
+
+    // try to cancel subscription
+    $response = $this->postJson("/api/v1/account/subscriptions/{$subscription->id}/cancel", [
+      'refund' => true,
+    ]);
+
+    $response->assertStatus(400);
+  }
+
+  public function test_active_dispute_resolved_cancel()
+  {
+    $subscription = $this->init_active();
+
+    // dispute order
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $invoice = $this->onOrderDispute($invoice);
+    $invoice = $this->onOrderDisputeResolved($invoice);
+    $subscription->refresh();
+
+    $this->cancelSubscription($subscription, true);
+  }
+
+  public function test_active_dispute_refund()
+  {
+    $subscription = $this->init_active();
+
+    // dispute order
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $invoice = $this->onOrderDispute($invoice);
+
+    // try to cancel subscription
+    $this->actingAsAdmin();
+    $response = $this->postJson("/api/v1/refunds", [
+      'invoice_id' => $invoice->id,
+      'amount' => $invoice->total_amount,
+      'reason' => 'test',
+    ]);
+
+    $response->assertStatus(400);
+  }
+
+  public function test_active_dispute_resolved_refund()
+  {
+    $subscription = $this->init_active();
+
+    // dispute order
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $invoice = $this->onOrderDispute($invoice);
+    $invoice = $this->onOrderDisputeResolved($invoice);
+
+    // try to cancel subscription
+    $this->actingAsAdmin();
+    $this->createRefund($invoice, 0, "test reason");
+  }
+
+  public function test_active_chargeback_refund()
+  {
+    $subscription = $this->init_active();
+
+    // dispute order
+    $invoice = $subscription->getCurrentPeriodInvoice();
+    $invoice = $this->onOrderDispute($invoice);
+    $invoice = $this->onOrderChargeback($invoice);
+
+    // try to cancel subscription
+    $this->actingAsAdmin();
+    $response = $this->postJson("/api/v1/refunds", [
+      'invoice_id' => $invoice->id,
+      'amount' => $invoice->total_amount,
+      'reason' => 'test',
+    ]);
+
+    $response->assertStatus(400);
+  }
 }

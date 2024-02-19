@@ -110,6 +110,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.complete'                => ['class' => DrOrder::class,        'handler' => 'onOrderComplete'],
       'order.chargeback'              => ['class' => 'array',               'handler' => 'onOrderChargeback'],
       'order.refunded'                => ['class' => DrOrder::class,        'handler' => 'onOrderRefunded'],
+      'order.dispute'                 => ['class' => DrOrder::class,        'handler' => 'onOrderDispute'],
+      'order.dispute.resolved'        => ['class' => DrOrder::class,        'handler' => 'onOrderDisputeResolved'],
 
       // subscription events
       'subscription.extended'         => ['class' => 'array',               'handler' => 'onSubscriptionExtended'],
@@ -1041,7 +1043,44 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
-  protected function onOrderChargeback(array $chargeback): Subscription|null
+  protected function onOrderDispute(DrOrder $drOrder): Invoice|null
+  {
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
+    if (!$invoice) {
+      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $drOrder->getId()]);
+      return null;
+    }
+
+    if (
+      $invoice->getDisputeStatus() != Invoice::DISPUTE_STATUS_DISPUTING &&
+      $invoice->getDisputeStatus() != Invoice::DISPUTE_STATUS_DISPUTED
+    ) {
+      $invoice->setDisputeStatus(Invoice::DISPUTE_STATUS_DISPUTING);
+      $invoice->save();
+      DrLog::info(__FUNCTION__, 'invoice disputing', $invoice);
+    }
+
+    return $invoice;
+  }
+
+  protected function onOrderDisputeResolved(DrOrder $drOrder): Invoice|null
+  {
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
+    if (!$invoice) {
+      DrLog::warning(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $drOrder->getId()]);
+      return null;
+    }
+
+    if ($invoice->getDisputeStatus() == Invoice::DISPUTE_STATUS_DISPUTING) {
+      $invoice->setDisputeStatus(Invoice::DISPUTE_STATUS_NONE);
+      $invoice->save();
+      DrLog::info(__FUNCTION__, 'invoice dispute resolved', $invoice);
+    }
+
+    return $invoice;
+  }
+
+  protected function onOrderChargeback(array $chargeback): Invoice|null
   {
     if ($chargeback['amount'] == 0) {
       // skip chargeback fee event
@@ -1063,6 +1102,10 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::warning(__FUNCTION__, 'subscription cancelled', $subscription);
     }
 
+    $invoice->setDisputeStatus(Invoice::DISPUTE_STATUS_DISPUTED);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice disputed', $invoice);
+
     $user = $subscription->user;
     $user->type = User::TYPE_BLACKLISTED;
     $user->save();
@@ -1071,7 +1114,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // invoice is chargebacked
     SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_REFUNDED, $invoice, null);
 
-    return $subscription;
+    return $invoice;
   }
 
   protected function onOrderRefunded(DrOrder $order): Invoice|null

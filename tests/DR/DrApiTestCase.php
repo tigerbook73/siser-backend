@@ -473,6 +473,22 @@ class DrApiTestCase extends ApiTestCase
     );
   }
 
+  public function sendOrderDispute(DrOrder $drOrder, string $eventId = null)
+  {
+    return $this->postJson(
+      '/api/v1/dr/webhooks',
+      $this->drHelper->createEvent('order.dispute', $drOrder, $eventId)
+    );
+  }
+
+  public function sendOrderDisputeResolved(DrOrder $drOrder, string $eventId = null)
+  {
+    return $this->postJson(
+      '/api/v1/dr/webhooks',
+      $this->drHelper->createEvent('order.dispute.resolved', $drOrder, $eventId)
+    );
+  }
+
   public function sendOrderChargeback(array $drChargeback, string $eventId = null)
   {
     return $this->postJson(
@@ -1096,6 +1112,46 @@ class DrApiTestCase extends ApiTestCase
     return $this->onOrderFailed($subscription, 'order.cancelled');
   }
 
+  public function onOrderDispute(Invoice|int $invoice): Invoice
+  {
+    /** @var Invoice $invoice */
+    $invoice = ($invoice instanceof Invoice) ? $invoice : Invoice::find($invoice);
+
+    // call api
+    $response = $this->sendOrderDispute(
+      $this->drHelper->getDrOrder($invoice->getDrOrderId())->setState(DrOrder::STATE_DISPUTE)
+    );
+
+    // refresh data
+    $invoice->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertEquals($invoice->dispute_status, Invoice::DISPUTE_STATUS_DISPUTING);
+
+    return $invoice;
+  }
+
+  public function onOrderDisputeResolved(Invoice|int $invoice): Invoice
+  {
+    /** @var Invoice $invoice */
+    $invoice = ($invoice instanceof Invoice) ? $invoice : Invoice::find($invoice);
+
+    // call api
+    $response = $this->sendOrderDisputeResolved(
+      $this->drHelper->getDrOrder($invoice->getDrOrderId())->setState(DrOrder::STATE_COMPLETE)
+    );
+
+    // refresh data
+    $invoice->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertEquals($invoice->getDisputeStatus(), Invoice::DISPUTE_STATUS_NONE);
+
+    return $invoice;
+  }
+
   public function onOrderChargeFailed(Subscription|int $subscription): Subscription
   {
     return $this->onOrderFailed($subscription, 'order.charge.failed');
@@ -1114,7 +1170,7 @@ class DrApiTestCase extends ApiTestCase
       Invoice::STATUS_REFUNDED,
       Invoice::STATUS_REFUND_FAILED,
       Invoice::STATUS_REFUNDING,
-      Invoice::STATUS_PARTLY_REFUNDED
+      Invoice::STATUS_PARTLY_REFUNDED,
     ]);
 
     // mock up
