@@ -253,7 +253,15 @@ class Invoice extends BaseInvoice
 
   public function setDisputeStatus(string $dispute_status, Carbon $time = null)
   {
-    $this->dispute_status = $dispute_status;
+    //
+    // DISPUTE_STATUS_DISPUTED is a final state. However we still record the transition time of other status.
+    //
+    if (
+      $this->dispute_status !== self::DISPUTE_STATUS_DISPUTED ||
+      $dispute_status === self::DISPUTE_STATUS_DISPUTED
+    ) {
+      $this->dispute_status = $dispute_status;
+    }
 
     $dispute_status_transitions = $this->dispute_status_transitions ?? [];
     $dispute_status_transitions[$dispute_status] = $time ?? now();
