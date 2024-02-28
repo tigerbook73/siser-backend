@@ -11,6 +11,7 @@ return [
    */
   'host' => env('DR_HOST', 'https://api.digitalriver.com'),
   'token' => env('DR_TOKEN'),
+  'financial_token' => env('DR_FINANCIAL_TOKEN') ?? env('DR_TOKEN'), // financial token
 
   /**
    * DR webhook

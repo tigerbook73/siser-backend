@@ -4,9 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Machine;
 use App\Models\StatisticRecord;
-use App\Models\Subscription;
 use App\Models\User;
-use App\Services\StatisticRecordService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 

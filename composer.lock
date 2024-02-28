@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "01a87c1a8ce6dac27a9cc9db14c4ff97",
+    "content-hash": "0f95d58461055cf9522de4aed63f85a3",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -700,12 +700,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/futurecorporation/digital-river-php.git",
-                "reference": "b7cfc3a4ad947c2b5b0dcef64c59c732bc04c479"
+                "reference": "107593cdfe876737d1956d7c26591534a5115e2b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/futurecorporation/digital-river-php/zipball/b7cfc3a4ad947c2b5b0dcef64c59c732bc04c479",
-                "reference": "b7cfc3a4ad947c2b5b0dcef64c59c732bc04c479",
+                "url": "https://api.github.com/repos/futurecorporation/digital-river-php/zipball/107593cdfe876737d1956d7c26591534a5115e2b",
+                "reference": "107593cdfe876737d1956d7c26591534a5115e2b",
                 "shasum": ""
             },
             "require": {
@@ -756,7 +756,7 @@
                 "source": "https://github.com/futurecorporation/digital-river-php/tree/develop",
                 "issues": "https://github.com/futurecorporation/digital-river-php/issues"
             },
-            "time": "2023-09-01T00:22:32+00:00"
+            "time": "2024-02-22T03:07:51+00:00"
         },
         {
             "name": "doctrine/cache",

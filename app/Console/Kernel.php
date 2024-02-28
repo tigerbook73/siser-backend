@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
     $schedule->call(fn () => Artisan::queue('subscription:renew-annual'))->hourly()->name('queue subscription:renew-annual');
     $schedule->call(fn () => Artisan::queue('subscription:warn-pending'))->daily()->name('queue subscription:warn-pending');
     $schedule->call(fn () => Artisan::queue('subscription:log', ['subcmd' => 'statistic']))->dailyAt('00:33')->name('queue subscription:log statistic');
+    $schedule->call(fn () => Artisan::queue('financial:cmd', ['subcmd' => 'sync']))->dailyAt('00:10')->name('queue financial:cmd sync');
   }
 
   /**

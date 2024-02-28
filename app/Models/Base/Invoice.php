@@ -40,8 +40,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $dr_invoice_id
  * @property string|null $dr_order_id
  * @property string $status
- * @property string $dispute_status
  * @property string $sub_status
+ * @property string $dispute_status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array|null $status_transitions
@@ -104,8 +104,8 @@ class Invoice extends Model
     'dr_invoice_id',
     'dr_order_id',
     'status',
-    'dispute_status',
     'sub_status',
+    'dispute_status',
     'status_transitions',
     'dispute_status_transitions',
     'payment_method_info'
