@@ -29,6 +29,11 @@ class FinancialCommand extends Command
    */
   public function handle()
   {
+    if (app()->environment('staging')) {
+      $this->error('This command is not allowed in staging environment');
+      return self::FAILURE;
+    }
+
     $subcmd = $this->argument('subcmd');
     if (!$subcmd || $subcmd == 'help') {
       $this->info('Usage: php artisan financial:cmd {subcmd}');
