@@ -140,7 +140,6 @@ return new class extends Migration
             ['country' => 'TW', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'UA', 'currency' => 'EUR', 'price' => 7.99],
             ['country' => 'US', 'currency' => 'USD', 'price' => 8.99],
-            ['country' => 'VE', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'VI', 'currency' => 'USD', 'price' => 8.99],
             ['country' => 'ZA', 'currency' => 'ZAR', 'price' => 169.99],
           ]),

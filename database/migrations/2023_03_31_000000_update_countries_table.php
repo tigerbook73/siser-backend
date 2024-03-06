@@ -103,7 +103,6 @@ return new class extends Migration
         ['code' => 'TW', 'name' => 'Taiwan',                    'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'UA', 'name' => 'Ukraine',                   'currency' => 'EUR', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'US', 'name' => 'United States of America',  'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
-        ['code' => 'VE', 'name' => 'Venezuela',                 'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'VI', 'name' => 'Virgin Islands',            'currency' => 'USD', 'created_at' => $now, 'updated_at' => $now],
         ['code' => 'ZA', 'name' => 'South Africa',              'currency' => 'ZAR', 'created_at' => $now, 'updated_at' => $now],
       ],
