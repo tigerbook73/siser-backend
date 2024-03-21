@@ -259,8 +259,8 @@ Route::domain($domainAdmin)->group(function () {
     Route::get('/x-ray/statistic-records', [ReportController::class, 'listStaticsRecord'])->middleware('access:x-ray.summary');
   });
 
-  // TODO: ip whitelist
   // webhook
+  Route::get('/dr/webhooks', [WebhookController::class, 'check']);
   Route::post('/dr/webhooks', [WebhookController::class, 'handler']);
 });
 

@@ -16,4 +16,9 @@ class WebhookController extends Controller
     $inputs = $request->all();
     return $this->manager->webhookHandler($inputs);
   }
+
+  public function check()
+  {
+    return response()->json(['message' => 'ok']);
+  }
 }
