@@ -996,7 +996,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // create invoice pdf download link
-    $fileLink = $this->drService->createFileLink($orderInvoice['fileId'], now()->addYear());
+    $fileLink = $this->drService->createFileLink($orderInvoice['fileId'], now()->addYears(10));
     DrLog::info(__FUNCTION__, 'pdf file link created', $invoice);
 
     // update invoice
