@@ -1,5 +1,7 @@
 <?php
 
+use Carbon\Carbon;
+
 return [
 
   /*
@@ -29,7 +31,7 @@ return [
   */
 
   'alias' => [
-    //
+    'Carbon' => Carbon::class,
   ],
 
   /*
