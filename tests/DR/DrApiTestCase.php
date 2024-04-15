@@ -25,6 +25,7 @@ use DigitalRiver\ApiSdk\Model\Fulfillment as DrFulfillment;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
+use DigitalRiver\ApiSdk\Model\SalesTransaction as DrSalesTransaction;
 use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\Model\SubscriptionItems;
@@ -489,7 +490,7 @@ class DrApiTestCase extends ApiTestCase
     );
   }
 
-  public function sendOrderChargeback(array $drChargeback, string $eventId = null)
+  public function sendOrderChargeback(DrSalesTransaction $drChargeback, string $eventId = null)
   {
     return $this->postJson(
       '/api/v1/dr/webhooks',
@@ -1547,10 +1548,10 @@ class DrApiTestCase extends ApiTestCase
 
     // prepare
     $this->assertEquals(Invoice::STATUS_COMPLETED, $invoice->status);
-    $drChargeback = [
-      'amount' => -$invoice->total_amount,
-      'orderId' => $invoice->getDrOrderId(),
-    ];
+    $drChargeback = (new DrSalesTransaction())
+      ->setType(DrSalesTransaction::TYPE_FRAUD_CHARGEBACK)
+      ->setAmount(-$invoice->total_amount)
+      ->setOrderId($invoice->getDrOrderId());
 
     // mock up
     if (

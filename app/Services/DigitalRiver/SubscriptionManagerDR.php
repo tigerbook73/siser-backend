@@ -26,6 +26,7 @@ use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
+use DigitalRiver\ApiSdk\Model\SalesTransaction as DrSalesTransaction;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxId;
 use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
@@ -101,36 +102,36 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     $this->eventHandlers = [
       // order events
-      'order.accepted'                => ['class' => DrOrder::class,        'handler' => 'onOrderAccepted'],
-      'order.blocked'                 => ['class' => DrOrder::class,        'handler' => 'onOrderBlocked'],
-      'order.cancelled'               => ['class' => DrOrder::class,        'handler' => 'onOrderCancelled'],
-      'order.charge.failed'           => ['class' => DrOrder::class,        'handler' => 'onOrderChargeFailed'],
-      'order.charge.capture.complete' => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureComplete'],
-      'order.charge.capture.failed'   => ['class' => DrCharge::class,       'handler' => 'onOrderChargeCaptureFailed'],
-      'order.complete'                => ['class' => DrOrder::class,        'handler' => 'onOrderComplete'],
-      'order.chargeback'              => ['class' => 'array',               'handler' => 'onOrderChargeback'],
-      'order.refunded'                => ['class' => DrOrder::class,        'handler' => 'onOrderRefunded'],
-      'order.dispute'                 => ['class' => DrOrder::class,        'handler' => 'onOrderDispute'],
-      'order.dispute.resolved'        => ['class' => DrOrder::class,        'handler' => 'onOrderDisputeResolved'],
+      'order.accepted'                => ['class' => DrOrder::class,              'handler' => 'onOrderAccepted'],
+      'order.blocked'                 => ['class' => DrOrder::class,              'handler' => 'onOrderBlocked'],
+      'order.cancelled'               => ['class' => DrOrder::class,              'handler' => 'onOrderCancelled'],
+      'order.charge.failed'           => ['class' => DrOrder::class,              'handler' => 'onOrderChargeFailed'],
+      'order.charge.capture.complete' => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureComplete'],
+      'order.charge.capture.failed'   => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureFailed'],
+      'order.complete'                => ['class' => DrOrder::class,              'handler' => 'onOrderComplete'],
+      'order.chargeback'              => ['class' => DrSalesTransaction::class,   'handler' => 'onOrderChargeback'],
+      'order.refunded'                => ['class' => DrOrder::class,              'handler' => 'onOrderRefunded'],
+      'order.dispute'                 => ['class' => DrOrder::class,              'handler' => 'onOrderDispute'],
+      'order.dispute.resolved'        => ['class' => DrOrder::class,              'handler' => 'onOrderDisputeResolved'],
 
       // subscription events
-      'subscription.extended'         => ['class' => 'array',               'handler' => 'onSubscriptionExtended'],
-      'subscription.failed'           => ['class' => DrSubscription::class, 'handler' => 'onSubscriptionFailed'],
-      'subscription.payment_failed'   => ['class' => 'array',               'handler' => 'onSubscriptionPaymentFailed'],
-      'subscription.reminder'         => ['class' => 'array',               'handler' => 'onSubscriptionReminder'],
+      'subscription.extended'         => ['class' => 'array',                     'handler' => 'onSubscriptionExtended'],
+      'subscription.failed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionFailed'],
+      'subscription.payment_failed'   => ['class' => 'array',                     'handler' => 'onSubscriptionPaymentFailed'],
+      'subscription.reminder'         => ['class' => 'array',                     'handler' => 'onSubscriptionReminder'],
 
       // invoice events: see Invoice.md for state machine
-      'order.invoice.created'         => ['class' => 'array',               'handler' => 'onOrderInvoiceCreated'],
-      'order.credit_memo.created'     => ['class' => 'array',               'handler' => 'onOrderCreditMemoCreated'],
+      'order.invoice.created'         => ['class' => 'array',                     'handler' => 'onOrderInvoiceCreated'],
+      'order.credit_memo.created'     => ['class' => 'array',                     'handler' => 'onOrderCreditMemoCreated'],
 
       // refund events
-      'refund.pending'                => ['class' => DrOrderRefund::class,  'handler' => 'onRefundPending'],
-      'refund.failed'                 => ['class' => DrOrderRefund::class,  'handler' => 'onRefundFailed'],
-      'refund.complete'               => ['class' => DrOrderRefund::class,  'handler' => 'onRefundComplete'],
+      'refund.pending'                => ['class' => DrOrderRefund::class,        'handler' => 'onRefundPending'],
+      'refund.failed'                 => ['class' => DrOrderRefund::class,        'handler' => 'onRefundFailed'],
+      'refund.complete'               => ['class' => DrOrderRefund::class,        'handler' => 'onRefundComplete'],
 
       // tax id
-      'tax_identifier.verified'       => ['class' => DrTaxId::class,        'handler' => 'onTaxIdStateChange'],
-      'tax_identifier.not_valid'      => ['class' => DrTaxId::class,        'handler' => 'onTaxIdStateChange'],
+      'tax_identifier.verified'       => ['class' => DrTaxId::class,              'handler' => 'onTaxIdStateChange'],
+      'tax_identifier.not_valid'      => ['class' => DrTaxId::class,              'handler' => 'onTaxIdStateChange'],
     ];
   }
 
@@ -1080,16 +1081,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
-  protected function onOrderChargeback(array $chargeback): Invoice|null
+  protected function onOrderChargeback(DrSalesTransaction $salesTransaction): Invoice|null
   {
-    if ($chargeback['amount'] == 0) {
+    if ($salesTransaction->getAmount() == 0) {
       // skip chargeback fee event
       return null;
     }
 
-    $invoice = Invoice::findByDrOrderId($chargeback['orderId']);
+    $invoice = Invoice::findByDrOrderId($salesTransaction->getOrderId());
     if (!$invoice) {
-      DrLog::error(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $chargeback['orderId']]);
+      DrLog::error(__FUNCTION__, 'invoice skipped: no valid invoice', ['dr_order_id' => $salesTransaction->getOrderId()]);
       return null;
     }
 
