@@ -149,4 +149,10 @@ return [
 
   'subscription_plan_updated_other.notification'  => 'We are writing to inform you that the renewal policy of your subscription to <b>:plan_name</b> was updated.<br /><br />Rather than being converted to monthly plan on expiry, your annual subscription will be automatically renewed.<br /><br />Thank you for your understanding. If you have any questions, please feel free to contact us.',
   'subscription_plan_updated_other.summary'       => 'Below is a summary of your updated Subscription:',
+
+  'subscription_source_invalid.notification'      => 'We are writing to inform you that the payment method for your subscription to <b>:plan_name</b> is invalid. Please update your payment method to ensure uninterrupted access to all of your subscription benefits.',
+  'subscription_source_invalid.summary'           => 'Below is a summary of your Subscription:',
+
+  'subscription_lapsed.notification'              => 'We are writing to inform you that the renewal charge for your <b>:plan_name</b> subscription has failed and your subscription has been terminated.<br /><br />We apologise for the inconvenience caused and request that you kindly repurchase the software if you wish to continue using the product. Alternatively, you may contact our support team for assistance.',
+  'subscription_lapsed.summary'                   => 'Below is a summary of your Failed Subscription:',
 ];

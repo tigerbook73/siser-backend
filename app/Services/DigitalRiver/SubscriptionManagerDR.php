@@ -117,8 +117,10 @@ class SubscriptionManagerDR implements SubscriptionManager
       // subscription events
       'subscription.extended'         => ['class' => 'array',                     'handler' => 'onSubscriptionExtended'],
       'subscription.failed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionFailed'],
+      'subscription.lapsed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionLapsed'],
       'subscription.payment_failed'   => ['class' => 'array',                     'handler' => 'onSubscriptionPaymentFailed'],
       'subscription.reminder'         => ['class' => 'array',                     'handler' => 'onSubscriptionReminder'],
+      'subscription.source_invalid'   => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionSourceInvalid'],
 
       // invoice events: see Invoice.md for state machine
       'order.invoice.created'         => ['class' => 'array',                     'handler' => 'onOrderInvoiceCreated'],
@@ -586,7 +588,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   public function deleteTaxId(TaxId $taxId)
   {
-    // TODO: need check whether tax id is in use?   
+    // TODO: need check whether tax id is in use?
 
     // delete old taxId
     $this->drService->deleteTaxId($taxId->dr_tax_id);
@@ -793,7 +795,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // log event
     SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_ACTIVATED, $subscription);
 
-    // disptch event 
+    // disptch event
     SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_CONFIRMED, $invoice);
 
     // send notification
@@ -1175,6 +1177,26 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
+  protected function createFailedRenewInvoice(Subscription $subscription): Invoice
+  {
+    if ($subscription->active_invoice_id) {
+      throw new Exception('Try to create duplicated invoice', 500);
+    }
+
+    $invoice = new Invoice();
+    $invoice->fillBasic($subscription, true)
+      ->fillPeriod($subscription, true)
+      ->fillFromSubscriptionNext($subscription)
+      ->setDrOrderId(null)
+      ->setStatus(Invoice::STATUS_FAILED)
+      ->save();
+
+    $subscription->active_invoice_id = $invoice->id;
+    $subscription->save();
+
+    return $invoice;
+  }
+
 
   /**
    * subscription event handlers
@@ -1282,11 +1304,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
-    $invoice = $subscription->getActiveInvoice();
 
     if ($subscription->status != Subscription::STATUS_ACTIVE) {
       DrLog::warning(__FUNCTION__, 'subscription skipped: not in active', ['subscription_id' => $drSubscription->getId()]);
       return null;
+    }
+
+    $invoice = $subscription->getActiveInvoice();
+    if (!$invoice) {
+      $invoice = $this->createFailedRenewInvoice($subscription);
+      DrLog::info(__FUNCTION__, 'failed invoice created', $subscription);
     }
 
     // stop subscription data
@@ -1298,17 +1325,74 @@ class SubscriptionManagerDR implements SubscriptionManager
     DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
 
     // stop invoice
-    if ($invoice) {
-      $invoice->setStatus(Invoice::STATUS_FAILED);
-      $invoice->save();
-      DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
-    }
+    $invoice->setStatus(Invoice::STATUS_FAILED);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
 
     // log subscription event
     SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_FAILED, $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_FAILED, $invoice);
+    return $subscription;
+  }
+
+  protected function onSubscriptionSourceInvalid(DrSubscription $drSubscription): Subscription|null
+  {
+    $subscription = $this->validateSubscription($drSubscription, __FUNCTION__: __FUNCTION__);
+    if (!$subscription) {
+      return null;
+    }
+
+    if (
+      $subscription->status != Subscription::STATUS_ACTIVE
+      || $subscription->sub_status == Subscription::SUB_STATUS_CANCELLING
+    ) {
+      DrLog::warning(__FUNCTION__, 'subscription skipped: not in active or in cancelling status', $subscription);
+      return null;
+    }
+
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_SOURCE_INVALID);
+    return $subscription;
+  }
+
+  protected function onSubscriptionLapsed(DrSubscription $drSubscription): Subscription|null
+  {
+    $subscription = $this->validateSubscription($drSubscription, __FUNCTION__: __FUNCTION__);
+    if (!$subscription) {
+      return null;
+    }
+
+    if ($subscription->status != Subscription::STATUS_ACTIVE) {
+      DrLog::warning(__FUNCTION__, 'subscription skipped: not in active', ['subscription_id' => $drSubscription->getId()]);
+      return null;
+    }
+
+    $invoice = $subscription->getActiveInvoice();
+    if (!$invoice) {
+      $invoice = $this->createFailedRenewInvoice($subscription);
+      DrLog::info(__FUNCTION__, 'lapsed invoice created', $subscription);
+    }
+
+    // stop subscription data
+    $subscription->stop(Subscription::STATUS_FAILED, 'subscription lapse');
+    DrLog::info(__FUNCTION__, 'subscription stoped => failed', $subscription);
+
+    // update user subscription level
+    $subscription->user->updateSubscriptionLevel();
+    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+
+    // stop invoice
+    $invoice->setStatus(Invoice::STATUS_FAILED);
+    $invoice->save();
+    DrLog::info(__FUNCTION__, 'invoice updated => failed', $subscription);
+
+    // log subscription event
+    SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_FAILED, $subscription);
+
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_LAPSED, $invoice);
     return $subscription;
   }
 
@@ -1333,11 +1417,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $invoice = $subscription->getActiveInvoice();
-    if ($invoice && $invoice->status == Invoice::STATUS_PENDING) {
-      DrLog::info(__FUNCTION__, 'subscription skipped: invoice in pending already', $subscription);
-      return $subscription;
-    }
-
     if (!$invoice) {
       $invoice = $this->createRenewInvoice($subscription, $drInvoice);
       DrLog::info(__FUNCTION__, 'renew invoice created', $subscription);

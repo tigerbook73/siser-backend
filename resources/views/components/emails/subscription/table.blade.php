@@ -65,7 +65,7 @@
     </tr>
   </table>
   @endif
-  
+
   @if (in_array('items', $fields))
   <table>
     <tr>
@@ -152,7 +152,7 @@
       </td>
     </tr>
     @endif
-    
+
     @if ($helper->showPeriod($type))
     <tr>
       <td>{{ $helper->trans('subscription.period_start_date') }}</td>
@@ -163,7 +163,7 @@
       <td>{{ $helper->formatDate($subscription->current_period_end_date) }}</td>
     </tr>
     @endif
-    
+
     @if ($helper->showNextInvoice($type))
     <tr>
       <td colspan="5" class="highlight"></td>

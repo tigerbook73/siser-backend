@@ -31,6 +31,7 @@ class TestController extends Controller
         SubscriptionNotification::NOTIF_CANCELLED_REFUND,
         SubscriptionNotification::NOTIF_FAILED,
         SubscriptionNotification::NOTIF_INVOICE_PENDING,
+        SubscriptionNotification::NOTIF_LAPSED,
         SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
         SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
         SubscriptionNotification::NOTIF_ORDER_INVOICE,
@@ -40,6 +41,7 @@ class TestController extends Controller
         SubscriptionNotification::NOTIF_RENEW_REQUIRED,
         SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
         SubscriptionNotification::NOTIF_RENEW_EXPIRED,
+        SubscriptionNotification::NOTIF_SOURCE_INVALID,
       ])
       && $coupon == 'free-trial'
     ) {
@@ -213,7 +215,34 @@ class TestController extends Controller
         );
         break;
 
+      case SubscriptionNotification::NOTIF_LAPSED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_FAILED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->end_date = now();
+        $mockup->subscription->save();
+        $mockup->updateInvoice(
+          status: Invoice::STATUS_FAILED,
+          next: true
+        );
+        break;
+
       case SubscriptionNotification::NOTIF_EXTENDED:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1
+        );
+        $mockup->subscription->moveToNext();
+        $mockup->subscription->fillNextInvoice();
+        $mockup->subscription->save();
+        $mockup->subscription->createRenewal();
+        $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
+        break;
+
+      case SubscriptionNotification::NOTIF_SOURCE_INVALID:
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,

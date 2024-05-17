@@ -68,6 +68,12 @@ class DrSubscriptionActiveInvoicePendingTest extends DrApiTestCase
     return $this->onSubscriptionFailed($subscription);
   }
 
+  public function test_active_invoice_pending_to_lapsed_failed()
+  {
+    $subscription = $this->init_active_invoice_pending();
+    $this->onSubscriptionLapsed($subscription);
+  }
+
   public function test_active_invoice_pending_notification()
   {
     Carbon::setTestNow('2023-01-01 00:00:00');

@@ -167,6 +167,20 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     return $this->onSubscriptionFailed($subscription);
   }
 
+  public function test_active_to_lapsed_failed()
+  {
+    $subscription = $this->init_active();
+
+    return $this->onSubscriptionLapsed($subscription);
+  }
+
+  public function test_active_source_invalid()
+  {
+    $subscription = $this->init_active();
+
+    return $this->onSubscriptionSourceInvalid($subscription);
+  }
+
   public function test_active_to_reminder_failed()
   {
     $subscription = $this->init_active();

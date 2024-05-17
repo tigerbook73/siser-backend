@@ -251,6 +251,16 @@ class Invoice extends BaseInvoice
     return $this;
   }
 
+  public function fillFromSubscriptionNext(Subscription $subscription)
+  {
+    $this->subtotal = $subscription->next_invoice['subtotal'];
+    $this->total_tax = $subscription->next_invoice['total_tax'];
+    $this->total_amount = $subscription->next_invoice['total_amount'];
+    $this->payment_method_info = $subscription->payment_method_info;
+
+    return $this;
+  }
+
   public function setDisputeStatus(string $dispute_status, Carbon $time = null)
   {
     //

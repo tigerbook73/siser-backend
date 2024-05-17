@@ -29,10 +29,12 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   public const NOTIF_EXTENDED                   = 'subscription.extended';
   public const NOTIF_FAILED                     = 'subscription.failed';
   public const NOTIF_INVOICE_PENDING            = 'subscription.invoice-pending';
+  public const NOTIF_LAPSED                     = 'subscription.lapsed';
   public const NOTIF_REMINDER                   = 'subscription.reminder';
   public const NOTIF_RENEW_REQUIRED             = 'subscription.renew-required';
   public const NOTIF_RENEW_REQ_CONFIRMED        = 'subscription.renew-req-confirmed';
   public const NOTIF_RENEW_EXPIRED              = 'subscription.renew-expired';
+  public const NOTIF_SOURCE_INVALID             = 'subscription.source-invalid';
   public const NOTIF_TERMINATED                 = 'subscription.terminated';
   public const NOTIF_TERMS_CHANGED              = 'subscription.terms-changed';
 
@@ -54,10 +56,12 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     self::NOTIF_EXTENDED              => ['subject' => "Subscription ##S Extended",               'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_FAILED                => ['subject' => "Subscription ##S Failed",                 'validate' => null],
     self::NOTIF_INVOICE_PENDING       => ['subject' => "Subscription ##S Payment Failed",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_LAPSED                => ['subject' => "Subscription ##S Failed",                 'validate' => null],
     self::NOTIF_REMINDER              => ['subject' => "Subscription ##S Renew Reminder",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_RENEW_REQUIRED        => ['subject' => "Subscription ##S Renew Required",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_RENEW_REQ_CONFIRMED   => ['subject' => "Subscription ##S Renew Request Confirmed", 'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_RENEW_EXPIRED         => ['subject' => "Subscription ##S Renew Expired",          'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
+    self::NOTIF_SOURCE_INVALID        => ['subject' => "Subscription ##S Payment Method Invalid", 'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_TERMINATED            => ['subject' => "Subscription ##S Terminated",             'validate' => null],
     self::NOTIF_TERMS_CHANGED         => ['subject' => "Subscription ##S Terms Changed",          'validate' => null],
 

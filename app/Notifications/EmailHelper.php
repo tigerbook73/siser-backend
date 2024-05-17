@@ -159,6 +159,7 @@ class EmailHelper
       SubscriptionNotification::NOTIF_CANCELLED,
       SubscriptionNotification::NOTIF_CANCELLED_REFUND,
       SubscriptionNotification::NOTIF_FAILED,
+      SubscriptionNotification::NOTIF_LAPSED,
       SubscriptionNotification::NOTIF_RENEW_EXPIRED,
       SubscriptionNotification::NOTIF_TERMINATED,
     ]));
@@ -187,6 +188,7 @@ class EmailHelper
       SubscriptionNotification::NOTIF_REMINDER,
       SubscriptionNotification::NOTIF_RENEW_REQUIRED,
       SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+      SubscriptionNotification::NOTIF_SOURCE_INVALID,
 
       SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN,
       SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER,

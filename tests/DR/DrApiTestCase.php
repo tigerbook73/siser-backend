@@ -13,10 +13,8 @@ use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use App\Services\DigitalRiver\DigitalRiverService;
-use Carbon\Carbon;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
-use DigitalRiver\ApiSdk\Model\CreditCard as DrCreditCard;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
 use DigitalRiver\ApiSdk\Model\Event as DrEvent;
@@ -514,11 +512,27 @@ class DrApiTestCase extends ApiTestCase
     );
   }
 
+  public function sendSubscriptionLapsed(DrSubscription $drSubscription, string $eventId = null)
+  {
+    return $this->postJson(
+      '/api/v1/dr/webhooks',
+      $this->drHelper->createEvent('subscription.lapsed', $drSubscription, $eventId)
+    );
+  }
+
   public function sendSubscriptionPaymentFailed(DrSubscription $drSubscription, DrInvoice $drInvoice, string $eventId = null)
   {
     return $this->postJson(
       '/api/v1/dr/webhooks',
       $this->drHelper->createEvent('subscription.payment_failed', ['subscription' => $drSubscription, 'invoice' => $drInvoice], $eventId)
+    );
+  }
+
+  public function sendSubscriptionSourceInvalid(DrSubscription $drSubscription, string $eventId = null)
+  {
+    return $this->postJson(
+      '/api/v1/dr/webhooks',
+      $this->drHelper->createEvent('subscription.source_invalid', $drSubscription, $eventId)
     );
   }
 
@@ -653,7 +667,7 @@ class DrApiTestCase extends ApiTestCase
     // refresh authenticated user data
     $this->user->refresh();
 
-    // assert 
+    // assert
     $response->assertSuccessful();
     $this->assertEquals($this->user->payment_method->getDrSourceId(), $data['dr']['source_id']);
     $this->assertEquals($this->user->payment_method->type, $data['type']);
@@ -678,7 +692,7 @@ class DrApiTestCase extends ApiTestCase
     // refresh authenticated user data
     $taxId = $this->user->tax_ids()->where('type', $type)->where('value', $value)->first();
 
-    // assert 
+    // assert
     $response->assertSuccessful();
     $this->assertNotNull($taxId);
 
@@ -695,7 +709,7 @@ class DrApiTestCase extends ApiTestCase
 
     $response = $this->postJson('/api/v1/account/tax-rate', $data);
 
-    // assert 
+    // assert
     $response->assertSuccessful();
     $response->assertJson($taxId ? ['tax_rate' => 0] : ['tax_rate' => $this->drHelper->getTaxRate()]);
     return $response;
@@ -720,7 +734,7 @@ class DrApiTestCase extends ApiTestCase
         ->first();
     }
 
-    // prepare 
+    // prepare
     $data = ['plan_id' => $plan->id];
     if ($coupon) {
       $data['coupon_id'] = $coupon->id;
@@ -1418,7 +1432,6 @@ class DrApiTestCase extends ApiTestCase
     /** @var Subscription $subscription */
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
     $invoice = $subscription->getActiveInvoice();
-    $invoiceStatus = $invoice?->status;
 
     // prepare
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
@@ -1446,12 +1459,41 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
     $this->assertEquals($subscription->getActiveInvoice()->status, Invoice::STATUS_PENDING);
 
-    if ($invoiceStatus == Invoice::STATUS_INIT) {
-      Notification::assertSentTo(
-        $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_INVOICE_PENDING
-      );
-    }
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_INVOICE_PENDING
+    );
+    return $subscription;
+  }
+
+  public function onSubscriptionSourceInvalid(Subscription|int $subscription): Subscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+
+    // prepare
+    $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
+
+    // create next dr invoice
+    $drSubscription = $this->drHelper->getDrSubscription($subscription->getDrSubscriptionId());
+
+    // mockup
+    Notification::fake();
+
+    // call api
+    $response = $this->sendSubscriptionSourceInvalid($drSubscription);
+
+    // refresh data
+    $subscription->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_SOURCE_INVALID
+    );
     return $subscription;
   }
 
@@ -1529,10 +1571,45 @@ class DrApiTestCase extends ApiTestCase
       $this->assertTrue($invoice->status == Invoice::STATUS_FAILED || $invoice->status == Invoice::STATUS_COMPLETED);
     }
 
-
     Notification::assertSentTo(
       $subscription,
       fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_FAILED
+    );
+
+    return $subscription;
+  }
+
+  public function onSubscriptionLapsed(Subscription|int $subscription): Subscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getActiveInvoice();
+
+    // prepare
+    $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
+    $drSubscription = $this->drHelper->getDrSubscription($subscription->getDrSubscriptionId());
+
+    // mock up
+    Notification::fake();
+
+    // call api
+    $response = $this->sendSubscriptionLapsed($drSubscription);
+
+    // refresh data
+    $subscription->refresh();
+    $invoice?->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
+    $this->assertEquals($subscription->user->getActiveSubscription()->subscription_level, 1);
+    if ($invoice) {
+      $this->assertTrue($invoice->status == Invoice::STATUS_FAILED);
+    }
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_LAPSED
     );
 
     return $subscription;

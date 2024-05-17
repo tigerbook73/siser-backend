@@ -93,9 +93,18 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
     $this->viewNotificationType(SubscriptionNotification::NOTIF_FAILED);
   }
 
+  public function testNotificationLapsed()
+  {
+    $this->viewNotificationType(SubscriptionNotification::NOTIF_LAPSED);
+  }
+
   public function testNotificationInvoicePending()
   {
     $this->viewNotificationType(SubscriptionNotification::NOTIF_INVOICE_PENDING);
+  }
+  public function testNotificationSourceInvalid()
+  {
+    $this->viewNotificationType(SubscriptionNotification::NOTIF_SOURCE_INVALID);
   }
 
   public function testNotificationReminder()
