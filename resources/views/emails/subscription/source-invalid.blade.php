@@ -8,7 +8,8 @@
     $helper->trans(
       'subscription_source_invalid.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription)
+        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
+        'collection_end_date' => $helper->formatDate($subscription->getNextInvoiceCollectionEndDate())
       ]
     )
   !!}

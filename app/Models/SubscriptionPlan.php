@@ -41,14 +41,19 @@ class SubscriptionPlan extends BaseSubscriptionPlan
     return $type . '-' . $interval_count . '-' . $interval . ($suffix ? '-' . $suffix : '');
   }
 
-  static protected function findDrPlanId(string|array $type, string $interval, int $interval_count, string $suffix = null): string|null
+  static public function findByTypeAndIterval(string|array $type, string $interval, int $interval_count, string $suffix = null): self|null
   {
     $types = (gettype($type) === 'string') ? [$type] : $type;
     $names = [];
     foreach ($types as $type) {
       $names[] = self::buildPlanName($type, $interval, $interval_count, $suffix);
     }
-    $plan = self::whereIn('name', $names)->where('status', self::STATUS_ACTIVE)->first();
+    return self::whereIn('name', $names)->where('status', self::STATUS_ACTIVE)->first();
+  }
+
+  static protected function findDrPlanId(string|array $type, string $interval, int $interval_count, string $suffix = null): string|null
+  {
+    $plan = self::findByTypeAndIterval($type, $interval, $interval_count, $suffix);
     return $plan?->name;
   }
 

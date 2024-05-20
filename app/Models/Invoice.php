@@ -41,6 +41,7 @@ class Invoice extends BaseInvoice
   public const DR_FILE_ID           = 'file_id';
   public const DR_INVOICE_ID        = 'invoice_id';
   public const DR_ORDER_ID          = 'order_id';
+  public const DR_INVOICE_ID_LIST   = 'invoice_id_list';
 
   static protected $attributesOption = [
     'id'                          => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -105,6 +106,11 @@ class Invoice extends BaseInvoice
     return $this->getDrAttr(self::DR_INVOICE_ID);
   }
 
+  public function getDrInvoiceIdList(): array
+  {
+    return $this->getDrAttr(self::DR_INVOICE_ID_LIST) ?? [];
+  }
+
   public function getDrOrderId(): string|null
   {
     return $this->getDrAttr(self::DR_ORDER_ID);
@@ -117,9 +123,19 @@ class Invoice extends BaseInvoice
 
   public function setDrInvoiceId(string $drInvoiceId): self
   {
+    if ($this->dr_invoice_id == $drInvoiceId) {
+      return $this;
+    }
+
     $this->dr_invoice_id = $drInvoiceId;
-    return $this->setDrAttr(self::DR_INVOICE_ID, $drInvoiceId);
+    $this->setDrAttr(self::DR_INVOICE_ID, $drInvoiceId);
+
+    $drInvoiceIdList = $this->getDrAttr(self::DR_INVOICE_ID_LIST) ?? [];
+    $drInvoiceIdList[] = $drInvoiceId;
+    $this->setDrAttr(self::DR_INVOICE_ID_LIST, $drInvoiceIdList);
+    return $this;
   }
+
 
   public function setDrOrderId(string|null $drOrderId): self
   {
@@ -226,8 +242,13 @@ class Invoice extends BaseInvoice
 
   public function fillFromDrObject(DrCheckout|DrOrder|DrInvoice $drObject): self
   {
-    // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
+    if ($drObject instanceof DrOrder) {
+      $this->setDrOrderId($drObject->getId());
+    } else if ($drObject instanceof DrInvoice) {
+      $this->setDrInvoiceId($drObject->getId());
+    }
 
+    // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
     $this->subtotal = $drObject->getSubtotal();
     $this->total_tax = $drObject->getTotalTax();
     $this->total_amount = $drObject->getTotalAmount();

@@ -434,6 +434,18 @@ class Subscription extends BaseSubscription
     return self::buildPlanName($this->plan_info, $this->coupon_info);
   }
 
+  public function getNextInvoiceCollectionEndDate(): Carbon|null
+  {
+    /** @var SubscriptionPlan $subscriptionPlan */
+    $subscriptionPlan = SubscriptionPlan::findByTypeAndIterval(
+      SubscriptionPlan::TYPE_STANDARD,
+      $this->plan_info['interval'],
+      $this->plan_info['interval_count']
+    );
+
+    return $this->next_invoice_date?->addDays($subscriptionPlan->collection_period_days);
+  }
+
   public function isRenewalRequired(): bool
   {
     // must be active and not cancelling
@@ -482,12 +494,12 @@ class Subscription extends BaseSubscription
 
     /**
      *  renew date offsets (see config/dr.php for real offsets)
-     *          |--------------------------------------------| next_invoice_date 
+     *          |--------------------------------------------| next_invoice_date
      *          |                 |            |<-- 2 day -->|
      *          |                 |<-- 4 days             -->|
      *          |<-- 30 days                              -->|
      *         start_at                       expire_at
-     *         first_reminder_date 
+     *         first_reminder_date
      *                          final_reminder_date
      */
     $renewal->start_at = min($this->next_invoice_date->subDays(config('dr.renewal.start_offset')), $this->next_reminder_date);
