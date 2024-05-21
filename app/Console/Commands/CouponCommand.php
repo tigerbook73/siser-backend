@@ -114,8 +114,8 @@ class CouponCommand extends Command
         $interval_count = 0;
       }
       while ($interval != Coupon::INTERVAL_LONGTERM) {
-        $interval_count = (int)$this->ask('Interval Count (0 ~ 30)', (string)$interval_count);
-        if ($interval_count >= 0 && $interval_count <= 30) {
+        $interval_count = (int)$this->ask('Interval Count (1 ~ 30)', (string)$interval_count);
+        if ($interval_count >= 1 && $interval_count <= 30) {
           break;
         }
       }
