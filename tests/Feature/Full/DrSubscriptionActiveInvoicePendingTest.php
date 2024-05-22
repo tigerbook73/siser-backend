@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Full;
 
+use App\Console\Commands\SubscriptionWarnPending;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\Developer;
@@ -81,7 +82,7 @@ class DrSubscriptionActiveInvoicePendingTest extends DrApiTestCase
 
     Notification::fake();
 
-    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_RENEW_PERIOD)->addSecond());
+    Carbon::setTestNow(now()->add(SubscriptionWarnPending::INVOICE_RENEW_PERIOD)->addSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PENDING)->count() > 0);
@@ -99,7 +100,7 @@ class DrSubscriptionActiveInvoicePendingTest extends DrApiTestCase
 
     Notification::fake();
 
-    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_RENEW_PERIOD)->subSecond());
+    Carbon::setTestNow(now()->add(SubscriptionWarnPending::INVOICE_RENEW_PERIOD)->subSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PENDING)->count() > 0);

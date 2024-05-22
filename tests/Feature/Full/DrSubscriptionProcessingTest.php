@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Full;
 
+use App\Console\Commands\SubscriptionWarnPending;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\Developer;
@@ -81,7 +82,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     Notification::fake();
     $this->mockGetOrder(); // processing status
 
-    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PROCESSING_PERIOD)->addSecond());
+    Carbon::setTestNow(now()->add(SubscriptionWarnPending::INVOICE_PROCESSING_PERIOD)->addSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() > 0);
@@ -102,7 +103,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     Notification::fake();
     $this->mockGetOrder(); // processing status
 
-    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PROCESSING_PERIOD)->addSecond());
+    Carbon::setTestNow(now()->add(SubscriptionWarnPending::INVOICE_PROCESSING_PERIOD)->addSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() == 0);
@@ -117,7 +118,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
 
     Notification::fake();
 
-    Carbon::setTestNow(now()->add(SubscriptionWarning::INVOICE_PROCESSING_PERIOD)->subSecond());
+    Carbon::setTestNow(now()->add(SubscriptionWarnPending::INVOICE_PROCESSING_PERIOD)->subSecond());
     $this->artisan('subscription:warn-pending')->assertSuccessful();
 
     $this->assertTrue($this->user->invoices()->where('status', Invoice::STATUS_PROCESSING)->count() > 0);

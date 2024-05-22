@@ -2,11 +2,15 @@
 
 namespace Tests\Feature\Full;
 
+use App\Console\Commands\SubscriptionWarnPending;
 use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\Subscription;
+use App\Notifications\Developer;
+use App\Notifications\SubscriptionWarning;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Tests\DR\DrApiTestCase;
 
 class DrSubscriptionActiveTest extends DrApiTestCase
@@ -324,5 +328,34 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     ]);
 
     $response->assertStatus(400);
+  }
+
+  public function test_active_subscription_hanging_notification()
+  {
+    Carbon::setTestNow('2023-01-01 00:00:00');
+    $subscription = $this->init_active();
+
+    Notification::fake();
+
+    Carbon::setTestNow($subscription->next_invoice_date->add(SubscriptionWarnPending::SUBSCRIPTION_HANGING_PERIOD)->addSecond());
+    $this->artisan('subscription:warn-pending')->assertSuccessful();
+
+    Notification::assertSentTo(
+      new Developer,
+      fn (SubscriptionWarning $notification) => $notification->type == SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION
+    );
+  }
+
+  public function test_active_subscription_hanging_no_notification()
+  {
+    Carbon::setTestNow('2023-01-01 00:00:00');
+    $subscription = $this->init_active();
+
+    Notification::fake();
+
+    Carbon::setTestNow($subscription->next_invoice_date->add(SubscriptionWarnPending::SUBSCRIPTION_HANGING_PERIOD)->subSecond());
+    $this->artisan('subscription:warn-pending')->assertSuccessful();
+
+    Notification::assertNothingSent();
   }
 }
