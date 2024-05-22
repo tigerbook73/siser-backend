@@ -18,6 +18,7 @@ use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use App\Services\RefundRules;
+use Bugsnag\BugsnagLaravel\Facades\Bugsnag;
 use Carbon\Carbon;
 use Closure;
 use DigitalRiver\ApiSdk\Model\Charge as DrCharge;
@@ -940,6 +941,9 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
+
+    // this is an unsure case, send bugsnag to notify
+    Bugsnag::notifyError('onOrderChargeCaptureFailed()', "You need double check invoice: {$invoice->id} status");
 
     return $invoice;
   }
