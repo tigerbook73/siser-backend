@@ -35,6 +35,20 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     return $this->onOrderComplete($subscription);
   }
 
+  public function test_processing_to_charge_capture_failed()
+  {
+    $subscription = $this->init_processing();
+
+    return $this->onOrderChargeCaptureFailed($subscription);
+  }
+
+  public function test_processing_to_charge_capture_completed()
+  {
+    $subscription = $this->init_processing();
+
+    return $this->onOrderChargeCaptureCompleted($subscription);
+  }
+
   public function test_processing_to_cancell()
   {
     $subscription = $this->init_processing();

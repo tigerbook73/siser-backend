@@ -440,11 +440,11 @@ class DrApiTestCase extends ApiTestCase
     );
   }
 
-  public function sendOrderChargeFailed(DrOrder $drOrder, string $eventId = null)
+  public function sendOrderChargeFailed(DrCharge $drCharge, string $eventId = null)
   {
     return $this->postJson(
       '/api/v1/dr/webhooks',
-      $this->drHelper->createEvent('order.charge.failed', $drOrder, $eventId)
+      $this->drHelper->createEvent('order.charge.failed', $drCharge, $eventId)
     );
   }
 
@@ -1033,6 +1033,71 @@ class DrApiTestCase extends ApiTestCase
     return $subscription;
   }
 
+  public function onOrderChargeCaptureCompleted($subscription): Subscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+
+    // prepare
+    $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
+    $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
+
+    $charge = $this->drHelper->createCharge($subscription->getDrOrderId(), DrCharge::STATE_COMPLETE);
+
+    // mock up
+    $this->mockGetOrder();
+
+    $response = $this->sendOrderChargeCaptureComplete($charge);
+
+    // refresh data
+    $subscription->refresh();
+    $invoice->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
+    $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
+
+    return $subscription;
+  }
+
+  public function onOrderChargeCaptureFailed($subscription): Subscription
+  {
+    /** @var Subscription $subscription */
+    $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
+    $invoice = $subscription->getCurrentPeriodInvoice();
+
+    // prepare
+    $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
+    $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
+
+    $charge = $this->drHelper->createCharge($subscription->getDrOrderId(), DrCharge::STATE_FAILED);
+
+    // mock up
+    Notification::fake();
+    $this->mockGetOrder();
+    $this->mockCancelSubscription();
+
+    $response = $this->sendOrderChargeCaptureFailed($charge);
+
+    // refresh data
+    $subscription->refresh();
+    $invoice->refresh();
+
+    // assert
+    $response->assertSuccessful();
+    $this->assertEquals($subscription->status, Subscription::STATUS_FAILED);
+    $this->assertEquals($invoice->status, Invoice::STATUS_FAILED);
+
+    Notification::assertSentTo(
+      $subscription,
+      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
+    );
+
+    return $subscription;
+  }
+
   public function onOrderComplete(Subscription|int $subscription): Subscription
   {
     /** @var Subscription $subscription */
@@ -1093,11 +1158,10 @@ class DrApiTestCase extends ApiTestCase
       $order = $this->drHelper->getDrOrder($subscription->getDrOrderId())->setState(DrOrder::STATE_CANCELLED);
       $response = $this->sendOrderCancelled($order);
     } else if ($type == 'order.charge.failed') {
-      $order = $this->drHelper->getDrOrder($subscription->getDrOrderId())->setState(DrOrder::STATE_CANCELLED);
-      $response = $this->sendOrderChargeFailed($order);
-    } else if ($type == 'order.charge.capture.failed') {
+      $this->mockGetOrder();
+
       $charge = $this->drHelper->createCharge($subscription->getDrOrderId(), DrCharge::STATE_FAILED);
-      $response = $this->sendOrderChargeCaptureFailed($charge);
+      $response = $this->sendOrderChargeFailed($charge);
     }
 
     // refresh data

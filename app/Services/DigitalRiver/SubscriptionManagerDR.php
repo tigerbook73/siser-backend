@@ -105,7 +105,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.accepted'                => ['class' => DrOrder::class,              'handler' => 'onOrderAccepted'],
       'order.blocked'                 => ['class' => DrOrder::class,              'handler' => 'onOrderBlocked'],
       'order.cancelled'               => ['class' => DrOrder::class,              'handler' => 'onOrderCancelled'],
-      'order.charge.failed'           => ['class' => DrOrder::class,              'handler' => 'onOrderChargeFailed'],
+      'order.charge.failed'           => ['class' => DrCharge::class,             'handler' => 'onOrderChargeFailed'],
       'order.charge.capture.complete' => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureComplete'],
       'order.charge.capture.failed'   => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureFailed'],
       'order.complete'                => ['class' => DrOrder::class,              'handler' => 'onOrderComplete'],
@@ -857,9 +857,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  protected function onOrderChargeFailed(DrOrder $drOrder): Subscription|null
+  protected function onOrderChargeFailed(DrCharge $charge): Subscription|null
   {
+    // skip charge that is not related to order (for renew subscription)
+    if (!$charge->getOrderId()) {
+      DrLog::warning(__FUNCTION__, 'charge skipped: no valid dr-order', ['charge_id' => $charge->getId()]);
+      return null;
+    }
+
     // validate the order
+    $drOrder = $this->drService->getOrder($charge->getOrderId());
     $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
@@ -907,11 +914,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
     $invoice = Invoice::findByDrOrderId($drOrder->getId());
 
-    DrLog::info(__FUNCTION__, 'order charge capture failed', $invoice);
-    return $invoice;
-
-    /*
-
     // skip failed
     if ($subscription->status == Subscription::STATUS_FAILED) {
       DrLog::warning(__FUNCTION__, 'subscription skipped: already in failed', $subscription);
@@ -938,9 +940,8 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
-    return $subscription;
 
-    */
+    return $invoice;
   }
 
   protected function onOrderComplete(DrOrder $drOrder): Invoice|null
