@@ -63,7 +63,7 @@ class RefundRules
       $subscription->invoices()
       ->where('period', $invoice->period - 1)
       ->where('total_amount', '>', 0)
-      ->count() > 1
+      ->count() > 0
     ) {
       return ['refundable' => false, 'reason' => 'the invoice is not the first paid invoice of the subscription'];
     }
