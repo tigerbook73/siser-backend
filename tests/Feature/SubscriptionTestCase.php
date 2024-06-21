@@ -24,6 +24,8 @@ class SubscriptionTestCase extends ApiTestCase
     $this->modelSchema['billing_info'] = array_keys((array)new BillingInfo);
     $this->modelSchema['plan_info'] = array_keys((array)new PlanInfo);
     // $this->modelSchema['coupon_info'] = array_keys((array)new Coupon);
+    unset($this->modelSchema[array_search('license_package_info', $this->modelSchema)]);
+    unset($this->modelSchema[array_search('items', $this->modelSchema)]);
 
     $this->modelUpdate = [];
   }

@@ -8,6 +8,7 @@ namespace App\Models\Base;
 
 use App\Models\Coupon;
 use App\Models\Invoice;
+use App\Models\LicenseSharing;
 use App\Models\Plan;
 use App\Models\Refund;
 use App\Models\SubscriptionRenewal;
@@ -36,6 +37,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $tax_id_info
  * @property array|null $plan_info
  * @property array|null $coupon_info
+ * @property array|null $license_package_info
+ * @property array|null $items
  * @property array|null $payment_method_info
  * @property float $subtotal
  * @property float $tax_rate
@@ -60,6 +63,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Plan $plan
  * @property User $user
  * @property Collection|Invoice[] $invoices
+ * @property LicenseSharing $license_sharing
  * @property Collection|Refund[] $refunds
  * @property Collection|SubscriptionRenewal[] $subscription_renewals
  *
@@ -82,6 +86,8 @@ class Subscription extends Model
     'tax_id_info' => 'json',
     'plan_info' => 'json',
     'coupon_info' => 'json',
+    'license_package_info' => 'json',
+    'items' => 'json',
     'payment_method_info' => 'json',
     'subtotal' => 'float',
     'tax_rate' => 'float',
@@ -113,6 +119,8 @@ class Subscription extends Model
     'tax_id_info',
     'plan_info',
     'coupon_info',
+    'license_package_info',
+    'items',
     'payment_method_info',
     'subtotal',
     'tax_rate',
@@ -152,6 +160,11 @@ class Subscription extends Model
   public function invoices()
   {
     return $this->hasMany(Invoice::class);
+  }
+
+  public function license_sharing()
+  {
+    return $this->hasOne(LicenseSharing::class);
   }
 
   public function refunds()

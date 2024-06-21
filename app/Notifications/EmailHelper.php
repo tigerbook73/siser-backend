@@ -40,9 +40,21 @@ class EmailHelper
       ->isoFormat('lll z') : '';
   }
 
-  public function formatOrderType(int $period)
+  public function formatOrderType(Invoice $invoice)
   {
-    return ($period > 1) ? 'Renewal' : 'New Subscription';
+    if ($invoice->period <= 1) {
+      if ($invoice->license_package_info) {
+        return 'New Subscription + License Package';
+      } else {
+        return 'New Subscription';
+      }
+    }
+
+    if ($invoice->license_package_info) {
+      return 'Renew Subscription + License Package';
+    } else {
+      return 'Renew Subscription';
+    }
   }
 
   public function formatOrderStatus(string $status)
@@ -228,16 +240,48 @@ class EmailHelper
 
   public function formatSubscriptionPlanName(Subscription $subscription, bool $next = false)
   {
-    $planInfo = $subscription->plan_info;
-    $couponInfo = $next ?  $subscription->next_invoice['coupon_info'] : $subscription->coupon_info;
-    return $this->formatPlanName($planInfo, $couponInfo);
+    if ($next) {
+      return $subscription->next_invoice['items'][0]['name'];
+    } else {
+      return $subscription->items[0]['name'];
+    }
   }
 
-  public function formatOrderPlanName(Invoice $invoice)
+  public function formatSubscriptionLicenseName(Subscription $subscription, bool $next = false)
   {
-    $planInfo = $invoice->plan_info;
-    $couponInfo = $invoice->coupon_info;
-    return $this->formatPlanName($planInfo, $couponInfo);
+    if ($next) {
+      if ($subscription->next_invoice['license_package_info']) {
+        return $subscription->next_invoice['items'][1]['name'];
+      }
+    } else {
+      if ($subscription->license_package_info) {
+        return $subscription->items[1]['name'];
+      }
+    }
+    return '';
+  }
+
+  public function formatSubscriptionFullName(Subscription $subscription, bool $next = false)
+  {
+    $planName = $this->formatSubscriptionPlanName($subscription, $next);
+    $licenseName = $this->formatSubscriptionLicenseName($subscription, $next);
+    if ($licenseName) {
+      return $planName . ' + License Package';
+    } else {
+      return $planName;
+    }
+  }
+
+  public function formatOrderPlanName(Invoice $invoice): string
+  {
+    $items = $invoice->items ?? [];
+    if (count($items) == 1) {
+      return $items[0]['name'];
+    } else if (count($items) > 1) {
+      return $items[0]['name'] . ' + License Package';
+    }
+
+    return '';
   }
 
   public function formatOrderPrice(Invoice $invoice)

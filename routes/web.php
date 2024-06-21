@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LdsLicenseController;
-use App\Http\Controllers\TestController;
+use App\Http\Controllers\LicenseSharingNotifcationTestController;
+use App\Http\Controllers\SubscriptionNotifcationTestController;
+use App\Http\Middleware\CleanNotificationTest;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -58,7 +60,7 @@ Route::domain($domainLds)->group(function () {
   });
 });
 
-/** 
+/**
  * admin routes
  */
 Route::domain($domainAdmin)->group(function () use ($role) {
@@ -72,9 +74,14 @@ Route::domain($domainAdmin)->group(function () use ($role) {
  * Backend Test
  */
 if ($testCode) {
-  Route::get('/be-test/mail/{type}', [TestController::class, 'sendMail']);
-  Route::get('/be-test/notification/{type}', [TestController::class, 'viewNotification']);
-  Route::get('/be-test/clean', [TestController::class, 'clean']);
+
+  Route::middleware(CleanNotificationTest::class)->group(function () {
+    Route::get('/be-test/notification/subscription/{type}/mail', [SubscriptionNotifcationTestController::class, 'sendMail']);
+    Route::get('/be-test/notification/subscription/{type}/view', [SubscriptionNotifcationTestController::class, 'viewNotification']);
+
+    Route::get('/be-test/notification/license-sharing/{type}/mail', [LicenseSharingNotifcationTestController::class, 'sendMail']);
+    Route::get('/be-test/notification/license-sharing/{type}/view', [LicenseSharingNotifcationTestController::class, 'viewNotification']);
+  });
 }
 
 //

@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $tax_id_info
  * @property array $plan_info
  * @property array|null $coupon_info
+ * @property array|null $license_package_info
+ * @property array|null $items
  * @property float $subtotal
  * @property float $total_tax
  * @property float $total_amount
@@ -70,6 +72,8 @@ class Invoice extends Model
     'tax_id_info' => 'json',
     'plan_info' => 'json',
     'coupon_info' => 'json',
+    'license_package_info' => 'json',
+    'items' => 'json',
     'subtotal' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
@@ -93,6 +97,8 @@ class Invoice extends Model
     'tax_id_info',
     'plan_info',
     'coupon_info',
+    'license_package_info',
+    'items',
     'subtotal',
     'total_tax',
     'total_amount',

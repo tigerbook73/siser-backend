@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Events\UserSubscriptionLevelChanged;
 use App\Services\Cognito\CognitoUser;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 
@@ -35,7 +36,7 @@ class User extends UserWithTrait
     'timezone'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subscription_level'  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'machine_count'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'license_count'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'seat_count'          => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'type'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'dr'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
@@ -76,7 +77,7 @@ class User extends UserWithTrait
   protected function beforeCreate()
   {
     $this->subscription_level = 0;
-    $this->license_count = 0;
+    $this->seat_count = 0;
     $this->roles = null;
 
     if (!$this->type) {
@@ -94,8 +95,8 @@ class User extends UserWithTrait
     if ($this->wasChanged('subscription_level')) {
       UserSubscriptionLevelChanged::dispatch($this);
     }
-    if ($this->wasChanged(['subscription_level', 'license_count'])) {
-      $this->lds_license->updateSubscriptionLevel($this->subscription_level, $this->license_count);
+    if ($this->wasChanged(['subscription_level', 'seat_count'])) {
+      $this->lds_license->updateSubscriptionLevel($this->subscription_level, $this->seat_count);
     };
   }
 
@@ -206,11 +207,13 @@ class User extends UserWithTrait
     // test code
     $changes = [
       'user_id'       => $this->id,
-      'origin'        => ['subscription_level' => $this->subscription_level, 'license_count' => $this->license_count],
+      'origin'        => ['subscription_level' => $this->subscription_level, 'seat_count' => $this->seat_count],
     ];
 
     $subscription = $this->getActiveSubscription();
     $machineCount = $this->machines()->count();
+    $invitation  = $this->getActiveLicenseSharingInvitation();
+    $licenseSharing = $subscription?->license_sharing;
 
     // create basic subscription if required
     if (!$subscription && $machineCount > 0) {
@@ -222,21 +225,47 @@ class User extends UserWithTrait
       $subscription->stop(Subscription::STATUS_STOPPED, 'all machine detached');
       $subscription = null;
     }
+    $this->machine_count = $machineCount;
 
-    if ($subscription) {
+    if ($invitation) {
+      $this->subscription_level = $invitation->subscription_level;
+      $this->seat_count = GeneralConfiguration::getMachineLicenseUnit();
+    } else if ($subscription) {
       $this->subscription_level = $subscription->subscription_level;
-      $this->license_count = ($machineCount ?: 1) * GeneralConfiguration::getMachineLicenseUnit();
-      $this->machine_count = $machineCount;
+      $this->seat_count = (($machineCount ?: 1) + ($licenseSharing?->free_count) ?: 0) * GeneralConfiguration::getMachineLicenseUnit();
     } else {
       $this->subscription_level = 0;
-      $this->license_count = 0;
-      $this->machine_count = 0;
+      $this->seat_count = 0;
     }
 
-    $changes['new'] = ['subscription_level' => $this->subscription_level, 'license_count' => $this->license_count];
+    $changes['new'] = ['subscription_level' => $this->subscription_level, 'seat_count' => $this->seat_count];
     Log::info('USER_LOG: updateSubscriptionLevel: ', $changes);
 
     $this->save();
     return $this;
+  }
+
+  public function getActiveLicenseSharing(): LicenseSharing|null
+  {
+    return $this->license_sharings()
+      ->where('status', LicenseSharing::STATUS_ACTIVE)
+      ->first();
+  }
+
+  public function getActiveLicenseSharingInvitation(): LicenseSharingInvitation|null
+  {
+    return $this->license_sharing_invitations_where_guest()
+      ->where('status', LicenseSharingInvitation::STATUS_ACCEPTED)
+      ->first();
+  }
+
+  /**
+   * @return Collection|LicenseSharingInvitation[]
+   */
+  public function getOpenLicenseSharingInvitation()
+  {
+    return $this->license_sharing_invitations_where_guest()
+      ->where('status', LicenseSharingInvitation::STATUS_OPEN)
+      ->get();
   }
 }

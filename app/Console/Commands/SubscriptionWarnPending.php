@@ -142,7 +142,6 @@ class SubscriptionWarnPending extends Command
       $data['hanging_subscription'] = $subscriptions;
     }
 
-
     if (!$dryRun && count($data) > 0) {
       SubscriptionWarning::notify(SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION, $data);
     }

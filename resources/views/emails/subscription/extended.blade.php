@@ -8,7 +8,7 @@
     $helper->trans(
       'subscription_extended.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription)
+        'plan_name' => $helper->formatSubscriptionFullName($subscription)
       ]
     )
   !!}
@@ -31,7 +31,7 @@
       'subscription_order_confirm.percentage_claim',
       [
         'coupon_end_date' => $helper->formatDate($subscription->start_date->addUnit($subscription->coupon_info['interval'], $subscription->coupon_info['interval_count'])),
-        'standard_plan' => $helper->formatPlanName($subscription->next_invoice['plan_info'], $subscription->next_invoice['coupon_info']),
+        'standard_plan' => $helper->formatPlanName($subscription->next_invoice['plan_info'], null),
       ]
     )
   !!}

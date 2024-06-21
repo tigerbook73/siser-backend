@@ -25,7 +25,7 @@ class MachineCreateApiTest extends MachineTestCase
   private function getUserCurrentLicenseCount()
   {
     $user = User::find($this->modelCreate['user_id']);
-    return $user->license_count;
+    return $user->seat_count;
   }
 
   public function testMachineCreateSerialNoSuccess()

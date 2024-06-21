@@ -8,7 +8,7 @@
     $helper->trans(
       'subscription_lapsed.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription)
+        'plan_name' => $helper->formatSubscriptionFullName($subscription)
       ]
     )
   !!}

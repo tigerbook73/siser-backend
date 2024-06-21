@@ -9,6 +9,8 @@ namespace App\Models\Base;
 use App\Models\BillingInfo;
 use App\Models\Invoice;
 use App\Models\LdsLicense;
+use App\Models\LicenseSharing;
+use App\Models\LicenseSharingInvitation;
 use App\Models\Machine;
 use App\Models\PaymentMethod;
 use App\Models\Refund;
@@ -38,6 +40,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property int|null $subscription_level
  * @property int $machine_count
  * @property int|null $license_count
+ * @property int|null $seat_count
  * @property array|null $roles
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -48,6 +51,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  * @property BillingInfo $billing_info
  * @property Collection|Invoice[] $invoices
  * @property LdsLicense $lds_license
+ * @property Collection|LicenseSharingInvitation[] $license_sharing_invitations_where_guest
+ * @property Collection|LicenseSharingInvitation[] $license_sharing_invitations_where_owner
+ * @property Collection|LicenseSharing[] $license_sharings
  * @property Collection|Machine[] $machines
  * @property PaymentMethod $payment_method
  * @property Collection|Refund[] $refunds
@@ -67,6 +73,7 @@ class User extends \Illuminate\Foundation\Auth\User
     'subscription_level' => 'int',
     'machine_count' => 'int',
     'license_count' => 'int',
+    'seat_count' => 'int',
     'roles' => 'json',
     'dr' => 'json'
   ];
@@ -85,6 +92,7 @@ class User extends \Illuminate\Foundation\Auth\User
     'subscription_level',
     'machine_count',
     'license_count',
+    'seat_count',
     'roles',
     'dr',
     'type',
@@ -104,6 +112,21 @@ class User extends \Illuminate\Foundation\Auth\User
   public function lds_license()
   {
     return $this->hasOne(LdsLicense::class);
+  }
+
+  public function license_sharing_invitations_where_guest()
+  {
+    return $this->hasMany(LicenseSharingInvitation::class, 'guest_id');
+  }
+
+  public function license_sharing_invitations_where_owner()
+  {
+    return $this->hasMany(LicenseSharingInvitation::class, 'owner_id');
+  }
+
+  public function license_sharings()
+  {
+    return $this->hasMany(LicenseSharing::class);
   }
 
   public function machines()

@@ -13,7 +13,7 @@ class MachineDeleteApiTest extends MachineTestCase
 
     $user = $this->object->user;
     $this->assertTrue($user->subscription_level == 0);
-    $this->assertTrue($user->license_count == 0);
+    $this->assertTrue($user->seat_count == 0);
   }
 
   public function testMachineDeleteNok()

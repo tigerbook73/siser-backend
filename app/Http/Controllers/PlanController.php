@@ -268,19 +268,4 @@ class PlanController extends SimpleController
 
     return $this->transformSingleResource($plan);
   }
-
-  /**
-   * TODO: mockup
-   */
-  public function history(Request $request, int $id)
-  {
-    $this->validateUser();
-
-    /** @var Plan $plan */
-    $plan = $this->baseQuery()->findOrFail($id);
-
-    return response()->json([
-      'data' => []
-    ]);
-  }
 }

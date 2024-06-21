@@ -10,6 +10,6 @@ namespace Tests\Models;
 class TaxRate {
 
     /** @var float $tax_rate */
-    public $tax_rate;
+    public $tax_rate = 0;
 
 }

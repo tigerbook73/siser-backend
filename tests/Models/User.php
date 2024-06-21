@@ -48,8 +48,8 @@ class User {
     /** @var int $machine_count */
     public $machine_count = 0;
 
-    /** @var int $license_count */
-    public $license_count = 0;
+    /** @var int $seat_count */
+    public $seat_count = 0;
 
     /** @var string $type */
     public $type = "";

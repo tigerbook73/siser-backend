@@ -39,23 +39,9 @@ class GeneralConfiguration extends BaseGeneralConfiguration
         $configure->save();
       }
 
-      // TODO: move this to queue tasks
-      $newConfiguration = static::getConfiguration();
-
-      // update license count 
-      if ($oldConfiguration->machine_license_unit != $newConfiguration->machine_license_unit) {
-        /** @var User[] $users */
-        $users = User::has('machines')->withCount('machines')->get(); // @phpstan-ignore-line
-        foreach ($users as $user) {
-          $user->license_count = $user->machines_count * $newConfiguration->machine_license_unit; // @phpstan-ignore-line
-          $user->save();
-        }
-      }
-
-      // TODO: update siser share rate
-      if ($oldConfiguration->siser_share_rate != $newConfiguration->siser_share_rate) {
-        // do something?
-      }
+      // TODO: more update tasks
+      // 1. update user->seat_count
+      // 2. update siser share rate
     });
   }
 

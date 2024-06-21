@@ -35,6 +35,18 @@ const resourceRoleMapping = [
 
   'config.update' => [],
 
+  'license-package.list' => [],
+  'license-package.get' => [],
+  'license-package.create' => [],
+  'license-package.update' => [],
+  'license-package.delete' => [],
+
+  'license-sharing.list' => [],
+  'license-sharing.get' => [],
+
+  'license-sharing-invitation.list' => [],
+  'license-sharing-invitation.get' => [],
+
   'machine.create' => ['siser-backend' => 1],
   'machine.update' => ['siser-backend' => 1],
   'machine.delete' => ['siser-backend' => 1],

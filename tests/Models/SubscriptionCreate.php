@@ -18,4 +18,10 @@ class SubscriptionCreate {
     /** @var int $tax_id */
     public $tax_id = 0;
 
+    /** @var int $license_package_id */
+    public $license_package_id = 0;
+
+    /** @var int $license_count */
+    public $license_count = 0;
+
 }

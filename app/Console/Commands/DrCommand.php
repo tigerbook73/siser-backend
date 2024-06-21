@@ -3,11 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\SubscriptionPlan;
-use App\Models\GeneralConfiguration;
 use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
-use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
@@ -91,15 +89,27 @@ class DrCommand extends Command
 
   public function initPlan()
   {
+    // create dr plans mapping [name => plan]
+    $drPlans = [];
+    foreach ($this->drService->listPlan() as $drPlan) {
+      $drPlans[$drPlan->getName()] = $drPlan;
+    };
+
     // create / update default plan
     $this->info("Create or update plans ...");
     foreach (SubscriptionPlan::where('status', SubscriptionPlan::STATUS_ACTIVE)->get() as $subscriptionPlan) {
       try {
+        // restore dr_plan_id from name, there must be only one active plan with the same name
+        $subscriptionPlan->dr_plan_id = ($drPlans[$subscriptionPlan->name] ?? null)?->getId();
+        $subscriptionPlan->save();
+
         $drPlan = $this->drService->updatePlan($subscriptionPlan);
-        $this->info("Plan updated: {$drPlan->getId()}");
+        $this->info("Plan updated: {$subscriptionPlan->name} -> {$drPlan->getId()}");
       } catch (\Throwable $th) {
         $drPlan = $this->drService->createPlan($subscriptionPlan);
-        $this->info("Plan created: {$drPlan->getId()}");
+        $subscriptionPlan->dr_plan_id = $drPlan->getId();
+        $subscriptionPlan->save();
+        $this->info("Plan created: {$subscriptionPlan->name} -> {$drPlan->getId()}");
       }
     }
     $this->info("Create or update plan ... done!");
@@ -122,7 +132,7 @@ class DrCommand extends Command
 
   public function clear()
   {
-    if (config('dr.dr_mode') == 'prod') {
+    if (config('dr.dr_mode') !== 'test' && config('dr.dr_mode') !== 'staging') {
       $this->warn('This command can not be executed under "prod" mode');
       return self::FAILURE;
     }

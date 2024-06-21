@@ -21,7 +21,7 @@ class UserController extends SimpleController
       'phone_number'        => ['filled'],
       'country_code'        => ['filled'],
       'subscription_level'  => ['filled'],
-      'license_count'       => ['filled'],
+      'seat_count'          => ['filled'],
       'type'                => ['filled'],
       'subscription_id'     => ['filled'],
       'invoice_id'          => ['filled'],

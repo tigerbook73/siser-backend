@@ -8,6 +8,8 @@ use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\DrEventRecord;
 use App\Models\Invoice;
+use App\Models\LicensePackage;
+use App\Models\LicenseSharing;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Refund;
@@ -17,6 +19,7 @@ use App\Models\SubscriptionRenewal;
 use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
+use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\RefundRules;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag;
 use Carbon\Carbon;
@@ -99,7 +102,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 {
   public $eventHandlers = [];
 
-  public function __construct(public DigitalRiverService $drService)
+  public function __construct(public DigitalRiverService $drService, public LicenseSharingService $licenseService)
   {
     $this->eventHandlers = [
       // order events
@@ -164,13 +167,13 @@ class SubscriptionManagerDR implements SubscriptionManager
     throw new WebhookException("wait for '$message' failed", 500);
   }
 
-  public function createSubscription(User $user, Plan $plan, Coupon|null $coupon = null, TaxId|null $taxId = null): Subscription
+  public function createSubscription(User $user, Plan $plan, Coupon $coupon = null, TaxId $taxId = null, LicensePackage $licensePackage = null, int $licenseQuantity = 0): Subscription
   {
     // create subscription
     $subscription = (new Subscription())
       ->initFill()
       ->fillBillingInfo($user->billing_info)
-      ->fillPlanAndCoupon($plan, $coupon)
+      ->fillPlanAndCoupon($plan, $coupon, $licensePackage, $licenseQuantity)
       ->fillTaxId($taxId);
     $subscription->save();
     DrLog::info(__FUNCTION__, 'subscription (init) created => draft', $subscription);
@@ -323,6 +326,12 @@ class SubscriptionManagerDR implements SubscriptionManager
         $subscription->stop(Subscription::STATUS_STOPPED, $invoiceToRefund ? 'cancelled with refund' : 'cancell during free trial');
         DrLog::info(__FUNCTION__, 'subscription active => stopped', $subscription);
 
+        // refresh license sharing
+        $licenseSharing = $subscription->user->getActiveLicenseSharing();
+        if ($licenseSharing) {
+          $this->licenseService->refreshLicenseSharing($licenseSharing);
+        }
+
         $subscription->user->updateSubscriptionLevel();
         DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
       } else {
@@ -379,7 +388,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   public function cancelOrder(Invoice $invoice): Invoice
   {
-    if ($invoice->period != 0 || $invoice->status != Invoice::STATUS_PENDING) {
+    if (!$invoice->isCancellable()) {
       throw new Exception('Only the first order in pending status can be cancelled', 500);
     }
 
@@ -766,6 +775,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->fillNextInvoice();
     $subscription->active_invoice_id = null;
     $subscription->save();
+
+    // active license sharing if there is license package
+    if ($subscription->license_package_info && $subscription->license_package_info['quantity'] > 0) {
+      $this->licenseService->createLicenseSharing($subscription);
+    }
+
     DrLog::info(__FUNCTION__, 'subscription updated => active', $subscription);
 
     // update dr subscription
@@ -1327,6 +1342,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     // stop subscription data
     $subscription->stop(Subscription::STATUS_FAILED, 'renew failed');
     DrLog::info(__FUNCTION__, 'subscription stoped => failed', $subscription);
+
+    // refresh license sharing
+    $licenseService = $subscription->user->getActiveLicenseSharing();
+    if ($licenseService) {
+      $this->licenseService->refreshLicenseSharing($licenseService);
+    }
 
     // update user subscription level
     $subscription->user->updateSubscriptionLevel();

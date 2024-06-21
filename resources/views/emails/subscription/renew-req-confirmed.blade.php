@@ -1,16 +1,16 @@
 <x-emails.subscription.layout
   :$type
   :$subscription
-  :$helper  
+  :$helper
 >
   {!!
     $helper->trans(
-      'subscription_renew_req_confirmed.notification', 
+      'subscription_renew_req_confirmed.notification',
       [
-        'plan_name'         => $helper->formatSubscriptionPlanName($subscription, true),
+        'plan_name'         => $helper->formatSubscriptionFullName($subscription, true),
         'next_invoice_date' => $helper->formatDate($subscription->next_invoice_date),
       ]
-    ) 
+    )
   !!}
   <br />
   <br />

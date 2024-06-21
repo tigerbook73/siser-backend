@@ -46,7 +46,8 @@ return [
   'refund_status'                                 => 'Refund Status',
 
   'subscription.#'                                => 'Subscription # :subscription_id',
-  'subscription.plan_name'                        => 'Plan Name',
+  'subscription.plan_name'                        => 'Plan',
+  'subscription.license_package'                  => 'License Package',
   'subscription.billing_period'                   => 'Billing Period',
   'subscription.billing_period.count_day'         => ':interval_count Days',
   'subscription.billing_period.count_month'       => ':interval_count Month(s)',
@@ -64,8 +65,9 @@ return [
   'subscription.period_start_date'                => 'Current Period Start Date',
   'subscription.period_end_date'                  => 'Current Period End Date',
   'subscription.period_free_trial'                => 'Free Trial Period',
-  'subscription.next_invoice_date'                => 'Next Period Invoice Date',
-  'subscription.next_invoice_plan'                => 'Next Period Plan',
+  'subscription.next_invoice_date'                => 'Next Invoice Date',
+  'subscription.next_invoice_plan'                => 'Next Plan',
+  'subscription.next_license_package'             => 'Next License Package',
   'subscription.next_invoice_price'               => 'Next Period Price (Excl. :tax)',
   'subscription.next_invoice_subtotal'            => 'Next Period Subtotal (Excl. :tax)',
   'subscription.next_invoice_total_amount'        => 'Next Period Grand Total (Incl. :tax)',
@@ -155,4 +157,11 @@ return [
 
   'subscription_lapsed.notification'              => 'We are writing to inform you that the renewal charge for your <b>:plan_name</b> subscription has failed and your subscription has been terminated.<br /><br />We apologise for the inconvenience caused and request that you kindly repurchase the software if you wish to continue using the product. Alternatively, you may contact our support team for assistance.',
   'subscription_lapsed.summary'                   => 'Below is a summary of your Failed Subscription:',
+
+  // license sharing
+  'license_sharing_new_invitation.notification'       => 'We are writing to inform you that you have received a license sharing invitation for <b>:product_name</b> from <b>:owner_name (:owner_email)</b>.<br /><br />You can view and/or accept the invitation from our :customer_portal_link.',
+  'license_sharing_invitation_expired.notification'   => 'We are writing to inform you that your license sharing for <b>:product_name</b> from <b>:owner_name (:owner_email)</b> is expired.<br /><br />You can view your current subscription status from our :customer_portal_link.',
+  'license_sharing_invitation_cancelled.notification' => 'We are writing to inform you that your license sharing for <b>:product_name</b> from <b>:owner_name (:owner_email)</b> is cancelled.<br /><br />You can view your current subscription status from our :customer_portal_link.',
+  'license_sharing_invitation_revoked.notification'   => 'We are writing to inform you that your license sharing for <b>:product_name</b> from <b>:owner_name (:owner_email)</b> is cancelled by the owner.<br /><br />You can view your current subscription status from our :customer_portal_link.',
+
 ];

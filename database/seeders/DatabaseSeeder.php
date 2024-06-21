@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\LicensePackage;
 use App\Models\BillingInfo;
 use App\Models\Coupon;
 use App\Models\Machine;
@@ -60,15 +61,47 @@ class DatabaseSeeder extends Seeder
     ]);
     $billingInfo->save();
 
-    // additional customer
+    // additional customer2
     User::create([
       'id'            =>  28,
       'name'          =>  "user2.test",
-      'cognito_id'    =>  "2ace5639-feb3-49b8-a718-ca7f5644d171",
+      'cognito_id'    =>  "22222222-2222-2222-2222-222222222222",
       'email'         =>  "user2.test@iifuture.com",
       'given_name'    =>  "User2",
       'family_name'   =>  "Test",
       'full_name'     =>  "User2 Test",
+      'phone_number'  =>  "+61000000000",
+      'country_code'  =>  "AU",
+      'language_code' =>  "en",
+      'password'      => 'not allowed',
+      'timezone'      => 'Australia/Sydney',
+    ]);
+
+    // additional customer3
+    User::create([
+      'id'            =>  29,
+      'name'          =>  "user3.test",
+      'cognito_id'    =>  "33333333-3333-3333-3333-333333333333",
+      'email'         =>  "user3.test@iifuture.com",
+      'given_name'    =>  "User3",
+      'family_name'   =>  "Test",
+      'full_name'     =>  "User3 Test",
+      'phone_number'  =>  "+61000000000",
+      'country_code'  =>  "AU",
+      'language_code' =>  "en",
+      'password'      => 'not allowed',
+      'timezone'      => 'Australia/Sydney',
+    ]);
+
+    // additional customer4
+    User::create([
+      'id'            =>  30,
+      'name'          =>  "user4.test",
+      'cognito_id'    =>  "44444444-4444-4444-4444-444444444444",
+      'email'         =>  "user4.test@iifuture.com",
+      'given_name'    =>  "User4",
+      'family_name'   =>  "Test",
+      'full_name'     =>  "User4 Test",
       'phone_number'  =>  "+61000000000",
       'country_code'  =>  "AU",
       'language_code' =>  "en",
@@ -371,6 +404,18 @@ class DatabaseSeeder extends Seeder
       'model'         => 'Siser Cutter XY',
       'nickname'      => '__test__',
       'user_id'       => $customer->id,
+    ]);
+
+    LicensePackage::create([
+      'id' => 1,
+      'type' => LicensePackage::TYPE_STANDARD,
+      'name' => 'Standard License',
+      'price_table' => [
+        ['quantity' => 10, 'discount' => 10],
+        ['quantity' => 20, 'discount' => 20],
+        ['quantity' => 50, 'discount' => 30],
+      ],
+      'status' => LicensePackage::STATUS_ACTIVE,
     ]);
   }
 }

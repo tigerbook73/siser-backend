@@ -13,7 +13,7 @@ class MachineTransferApiTest extends MachineTestCase
 
   private function getUserLicenseCount(int $userId)
   {
-    return User::find($userId)->license_count;
+    return User::find($userId)->seat_count;
   }
 
   private function getLdsLicense(int $userId)

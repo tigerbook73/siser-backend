@@ -194,7 +194,7 @@ class SimpleController extends Controller
             // in any attributes
             if (is_string($attr)) {
               if (strpos($attr, ',') > 0) {
-                $query->orWhereHas($filter, fn ($q) => $q->whereRaw("concat_ws(' ', ${attr}) like '${pattern}'"));
+                $query->orWhereHas($filter, fn ($q) => $q->whereRaw("concat_ws(' ', {$attr}) like '{$pattern}'"));
               } else {
                 $query->orWhereHas($filter, fn ($q) => $q->where($attr, 'like', $pattern));
               }

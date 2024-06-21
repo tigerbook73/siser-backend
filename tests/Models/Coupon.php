@@ -36,7 +36,7 @@ class Coupon {
     /** @var float $percentage_off must be 100 for free-trial coupon*/
     public $percentage_off = 0;
 
-    /** @var string $interval Interval of the coupon. For free-trial coupon, interval must not be longterm; for percentage coupon, interval must be same as the plan&#39;s interval or longterm.*/
+    /** @var string $interval */
     public $interval = "";
 
     /** @var int $interval_count For longterm interval, interval_count must be 0*/

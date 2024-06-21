@@ -56,6 +56,8 @@ class Invoice extends BaseInvoice
     'plan_info'                   => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'payment_method_info'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'coupon_info'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'license_package_info'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'items'                       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subtotal'                    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_tax'                   => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_amount'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -201,25 +203,29 @@ class Invoice extends BaseInvoice
   public function fillBasic(Subscription $subscription, bool $next = false): self
   {
     // static part
-    $this->user_id             = $subscription->user_id;
-    $this->subscription_id     = $subscription->id;
-    $this->currency            = $subscription->currency;
+    $this->user_id                = $subscription->user_id;
+    $this->subscription_id        = $subscription->id;
+    $this->currency               = $subscription->currency;
 
-    $this->billing_info        = $subscription->billing_info;
-    $this->tax_id_info         = $subscription->tax_id_info;
+    $this->billing_info           = $subscription->billing_info;
+    $this->tax_id_info            = $subscription->tax_id_info;
 
     if (!$next) {
       // first invoice
-      $this->plan_info         = $subscription->plan_info;
-      $this->coupon_info       = $subscription->coupon_info;
+      $this->plan_info            = $subscription->plan_info;
+      $this->coupon_info          = $subscription->coupon_info;
+      $this->license_package_info = $subscription->license_package_info;
+      $this->items                = $subscription->items;
     } else {
       // renew invoice
-      $this->plan_info         = $subscription->next_invoice['plan_info'];
-      $this->coupon_info       = $subscription->next_invoice['coupon_info'];
+      $this->plan_info            = $subscription->next_invoice['plan_info'];
+      $this->coupon_info          = $subscription->next_invoice['coupon_info'];
+      $this->license_package_info = $subscription->next_invoice['license_package_info'];
+      $this->items                = $subscription->next_invoice['items'];
     }
 
     // dynamic part
-    $this->payment_method_info = $subscription->payment_method_info;
+    $this->payment_method_info    = $subscription->payment_method_info;
 
     return $this;
   }
@@ -249,6 +255,18 @@ class Invoice extends BaseInvoice
     }
 
     // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
+
+    // fill items
+    $items = $this->items;
+    $drItems = $drObject->getItems();
+    for ($i = 0; $i < count($drItems); $i++) {
+      $items[$i]['price']   = $drItems[$i]->getAmount();
+      $items[$i]['tax']     = $drItems[$i]->getTax()->getAmount();
+      $items[$i]['amount']  = $drItems[$i]->getAmount();
+    }
+    $this->items = $items;
+
+    // fill price
     $this->subtotal = $drObject->getSubtotal();
     $this->total_tax = $drObject->getTotalTax();
     $this->total_amount = $drObject->getTotalAmount();
@@ -312,5 +330,15 @@ class Invoice extends BaseInvoice
       return Carbon::parse($this->dispute_status_transitions[$dispute_status]);
     }
     return null;
+  }
+
+  public function isCancellable(): bool
+  {
+    return ($this->period === 0 && $this->status === self::STATUS_PENDING);
+  }
+
+  public function isPending(): bool
+  {
+    return $this->status === self::STATUS_PENDING;
   }
 }

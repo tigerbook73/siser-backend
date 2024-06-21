@@ -3,13 +3,13 @@
   :$subscription
   :$helper
 >
-  {!! 
+  {!!
     $helper->trans(
       'subscription_plan_updated_other.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name' => $helper->formatSubscriptionFullName($subscription),
       ]
-    ) 
+    )
   !!}
   <br />
   <br />

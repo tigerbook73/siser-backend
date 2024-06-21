@@ -1,17 +1,17 @@
 <x-emails.subscription.layout
   :$type
   :$subscription
-  :$helper  
+  :$helper
 >
   {!!
     $helper->trans(
-      'subscription_renew_required.notification', 
+      'subscription_renew_required.notification',
       [
-        'plan_name'     => $helper->formatSubscriptionPlanName($subscription, true),
+        'plan_name'     => $helper->formatSubscriptionFullName($subscription, true),
         'expire_date'   => $helper->formatDate($subscription->renewal_info['expire_at']),
         'renew_link'    => $helper->getRenewLink(),
       ]
-    ) 
+    )
   !!}
   <br />
   <br />

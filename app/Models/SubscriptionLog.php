@@ -33,7 +33,7 @@ class SubscriptionLog extends BaseSubscriptionLog
         'name'                  => $subscription->user->name,
         'subscription_level'    => $subscription->user->subscription_level,
         'machine_count'         => $subscription->user->machine_count,
-        'license_count'         => $subscription->user->license_count,
+        'seat_count'            => $subscription->user->seat_count,
         'type'                  => $subscription->user->type,
         'billing_email'         => $subscription->billing_info['email'],
         'billing_country'       => $subscription->billing_info['address']['country'],

@@ -6,6 +6,7 @@ use App\Models\BillingInfo;
 use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\Invoice;
+use App\Models\LicensePackage;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Refund;
@@ -21,6 +22,7 @@ class SubscriptionNotificationTest
     public Country|null $country = null,
     public Plan|null $plan = null,
     public Coupon|null $coupon = null,
+    public LicensePackage|null $licensePackage = null,
     public array|null $planInfo = null,
     public User|null $user = null,
     public BillingInfo|null $billingInfo = null,
@@ -39,6 +41,7 @@ class SubscriptionNotificationTest
     $inst->updateUser();
     $inst->updateBillingInfo();
     $inst->updatePaymentMethod();
+    $inst->updateLicensePackage();
 
     $orderDate = now()->subHour();
     $inst->updateSubscription(startDate: $orderDate);
@@ -63,7 +66,7 @@ class SubscriptionNotificationTest
     $user->lds_license()->delete();
     $user->delete();
 
-    Coupon::where('code', 'like', '%SNT%')->delete();
+    Coupon::where('coupon_event', 'php-unit')->delete();
   }
 
   public function updateCountry(string $country = null)
@@ -134,6 +137,26 @@ class SubscriptionNotificationTest
     return $this;
   }
 
+  public function updateLicensePackage()
+  {
+    $name = 'Test License';
+
+    $this->licensePackage = $this->licensePackage ??
+      LicensePackage::where('name', $name)->first() ??
+      LicensePackage::create([
+        'type' => LicensePackage::TYPE_STANDARD,
+        'name' => $name,
+        'price_table' => [
+          ['quantity' => 1, 'discount' => 10],
+          ['quantity' => 2, 'discount' => 20],
+          ['quantity' => 5, 'discount' => 30],
+        ],
+        'status' => LicensePackage::STATUS_ACTIVE,
+      ]);
+
+    return $this;
+  }
+
   public function updateUser()
   {
     /** @var User|null $user */
@@ -199,12 +222,18 @@ class SubscriptionNotificationTest
     return $this;
   }
 
-  public function updateSubscription(Carbon $startDate = null, $currentPeriod = null, $taxRate = null, $status = null, $subStatus = null)
-  {
+  public function updateSubscription(
+    Carbon $startDate = null,
+    int|null $currentPeriod = null,
+    float|null $taxRate = null,
+    string|null $status = null,
+    string|null $subStatus = null,
+    int $licenseCount = 0
+  ) {
     $this->subscription = $this->subscription ?? new Subscription();
     $this->subscription->fillBillingInfo($this->billingInfo);
     $this->subscription->fillPaymentMethod($this->paymentMethod);
-    $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon);
+    $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon, $licenseCount ? $this->licensePackage : null, $licenseCount);
     $this->subscription->subtotal                     = $this->subscription->price;
     $this->subscription->tax_rate                     = $taxRate && $this->subscription->tax_rate ?: 0.1;
     $this->subscription->total_tax                    = $this->subscription->subtotal * $this->subscription->tax_rate;
@@ -254,14 +283,6 @@ class SubscriptionNotificationTest
     $this->subscription->fillNextInvoice();
     $this->subscription->status                       = $status ?? $this->subscription->status ?? Subscription::STATUS_DRAFT;
     $this->subscription->sub_status                   = $subStatus ?? $this->subscription->sub_status ?? Subscription::SUB_STATUS_NORMAL;
-    $this->subscription->save();
-    return $this;
-  }
-
-  public function updateSubscriptionCoupon()
-  {
-    $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon);
-    $this->subscription->fillNextInvoice();
     $this->subscription->save();
     return $this;
   }

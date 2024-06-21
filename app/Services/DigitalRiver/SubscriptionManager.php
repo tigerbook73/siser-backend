@@ -5,6 +5,7 @@ namespace App\Services\DigitalRiver;
 use App\Models\BillingInfo;
 use App\Models\Coupon;
 use App\Models\Invoice;
+use App\Models\LicensePackage;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Refund;
@@ -17,7 +18,7 @@ interface SubscriptionManager
   /**
    * Subscription
    */
-  public function createSubscription(User $user, Plan $plan, Coupon|null $coupon = null, TaxId|null $taxId = null): Subscription;
+  public function createSubscription(User $user, Plan $plan, Coupon $coupon = null, TaxId $taxId = null, LicensePackage $licensePackage = null, int $licenseQuantity = 0): Subscription;
   public function deleteSubscription(Subscription $subscription): bool;
   public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription;
   public function cancelSubscription(Subscription $subscription, bool $refund = false, bool $immediate = false): Subscription;

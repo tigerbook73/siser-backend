@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $dr_plan_id
  *
  * @package App\Models\Base
  */
@@ -52,6 +53,7 @@ class SubscriptionPlan extends Model
     'billing_offset_days',
     'reminder_offset_days',
     'collection_period_days',
-    'status'
+    'status',
+    'dr_plan_id'
   ];
 }

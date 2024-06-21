@@ -1,9 +1,16 @@
 #!/bin/bash
 
 set -e
-set -x
+# set -x
 
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
+
+# only run in local environment
+APP_ENV=$(php $BASEDIR/../artisan env | sed -n 's/.*\[\(.*\)\].*/\1/p')
+if [ "$APP_ENV" != "local" ]; then
+  echo "Script stopped because APP_ENV is not local"
+  exit 1
+fi
 
 php $BASEDIR/../artisan migrate:fresh
 

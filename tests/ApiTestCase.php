@@ -4,10 +4,8 @@ namespace Tests;
 
 use App\Models\AdminUser;
 use App\Models\User;
-use Faker\Generator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Testing\TestResponse;
 use Tests\Trait\CognitoProviderMockup;
 
 abstract class ApiTestCase extends TestCase

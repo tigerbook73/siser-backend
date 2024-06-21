@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Coupon;
 use App\Models\Plan;
 use App\Models\User;
 

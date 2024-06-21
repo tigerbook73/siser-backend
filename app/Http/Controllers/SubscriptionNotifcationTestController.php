@@ -12,16 +12,9 @@ use App\Models\Country;
 use App\Models\SubscriptionRenewal;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class TestController extends Controller
+class SubscriptionNotifcationTestController extends Controller
 {
-  public function resetData()
-  {
-    Artisan::call('db:seed', ['--force' => true]);
-
-    return response()->json(['message' => 'test data reset successfully!']);
-  }
-
-  public function prepare(string $type, string $country, string $plan, string $coupon = null): SubscriptionNotificationTest|null
+  public function prepare(string $type, string $country, string $plan, string $coupon = null, int $licenseCount = 0): SubscriptionNotificationTest|null
   {
     $mockup = SubscriptionNotificationTest::init($country, $plan, $coupon);
 
@@ -69,7 +62,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_FAILED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 0
+          currentPeriod: 0,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_FAILED);
         break;
@@ -78,7 +72,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_FAILED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 0
+          currentPeriod: 0,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->end_date = now();
         $mockup->subscription->save();
@@ -89,7 +84,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_REFUNDED);
         $mockup->updateRefund(true);
@@ -99,7 +95,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_REFUND_FAILED);
         $mockup->updateRefund(false);
@@ -109,7 +106,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->createRenewal();
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
@@ -119,7 +117,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_CANCELLING,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         if ($mockup->subscription->isFreeTrial()) {
           $mockup->subscription->stop(Subscription::STATUS_STOPPED, 'cancelled');
@@ -135,7 +134,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_STOPPED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->stop(Subscription::STATUS_STOPPED, 'cancelled and refunded');
         $mockup->updateInvoice(status: Invoice::STATUS_REFUNDING);
@@ -145,7 +145,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_INIT, next: true);
         break;
@@ -154,7 +155,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->createRenewal();
         $mockup->subscription->activatePendingRenewal();
@@ -165,7 +167,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->createRenewal();
         $mockup->subscription->activatePendingRenewal();
@@ -176,7 +179,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->createRenewal();
         $mockup->subscription->activatePendingRenewal();
@@ -185,7 +189,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_CANCELLING,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->end_date = $mockup->subscription->current_period_end_date;
         $mockup->subscription->save();
@@ -196,7 +201,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_PENDING, next: true);
         break;
@@ -205,7 +211,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_STOPPED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->end_date = now();
         $mockup->subscription->save();
@@ -219,7 +226,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_FAILED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->end_date = now();
         $mockup->subscription->save();
@@ -233,7 +241,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->moveToNext();
         $mockup->subscription->fillNextInvoice();
@@ -246,7 +255,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->moveToNext();
         $mockup->subscription->fillNextInvoice();
@@ -259,7 +269,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
         break;
@@ -268,7 +279,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_REFUNDED);
         $mockup->updateRefund(true);
@@ -278,7 +290,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_STOPPED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->subscription->stop(Subscription::STATUS_STOPPED);
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
@@ -288,7 +301,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
         break;
@@ -297,7 +311,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         break;
 
@@ -305,7 +320,8 @@ class TestController extends Controller
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1
+          currentPeriod: 1,
+          licenseCount: $licenseCount
         );
         break;
     }
@@ -332,7 +348,8 @@ class TestController extends Controller
     if ($coupon && !in_array($coupon, ['free-trial', 'percentage', 'percentage-fixed-term'])) {
       throw new HttpException(400, 'Invalid coupon');
     }
-    return ['country' => $country, 'plan' => $plan, 'coupon' => $coupon];
+    $licenseCount = $request->license_count ?? 0;
+    return ['country' => $country, 'plan' => $plan, 'coupon' => $coupon, 'licenseCount' => $licenseCount];
   }
 
   public function sendMail(Request $request, string $type)
@@ -354,7 +371,7 @@ class TestController extends Controller
   public function viewNotification(Request $request, string $type)
   {
     $data = $this->validateNotificationRequest($request, $type);
-    $mockup = $this->prepare($type, $data['country'], $data['plan'], $data['coupon']);
+    $mockup = $this->prepare($type, $data['country'], $data['plan'], $data['coupon'], $data['licenseCount']);
     if (!$mockup) {
       return response("Team Siser ... Skipped!");
     }

@@ -33,6 +33,12 @@ class Subscription {
     /** @var \Tests\Models\PaymentMethodInfo $payment_method_info */
     public $payment_method_info;
 
+    /** @var \Tests\Models\LicensePackageInfo $license_package_info */
+    public $license_package_info;
+
+    /** @var \Tests\Models\ProductItem[] $items */
+    public $items = [];
+
     /** @var string $currency */
     public $currency = "";
 

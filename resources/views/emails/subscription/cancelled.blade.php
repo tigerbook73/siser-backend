@@ -7,7 +7,7 @@
     $helper->trans(
       $subscription->isFreeTrial() ? 'subscription_cancel.notification_free_trial' : 'subscription_cancel.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name' => $helper->formatSubscriptionFullName($subscription),
         'end_date' => $helper->formatDate($subscription->end_date),
       ]
     )

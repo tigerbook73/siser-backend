@@ -225,17 +225,17 @@ class DigitalRiverService
   }
 
   /**
-   * create and fill a DrProductDetails from a Subscription object
+   * list DrPlan
+   *
+   * @return DrPlan[]
    */
-  protected function fillSubscriptionItemProductDetails(Subscription $subscription): DrProductDetails
+  public function listPlan(): array
   {
-    $productDetails = new DrProductDetails();
-    $productDetails->setSkuGroupId(config('dr.sku_grp_subscription'));
-    $productDetails->setName($subscription->getPlanName());
-    $productDetails->setDescription("");
-    $productDetails->setCountryOfOrigin('AU');
-
-    return $productDetails;
+    try {
+      return $this->planApi->listPlans(state: 'active', limit: 100)->getData() ?? [];
+    } catch (\Throwable $th) {
+      throw $this->throwException($th);
+    }
   }
 
   /**
@@ -258,7 +258,6 @@ class DigitalRiverService
     try {
       $planRequest = new DrPlanRequest();
 
-      $planRequest->setId($myPlan->name);
       $planRequest->setTerms('These are the terms...');
       $planRequest->setContractBindingDays($myPlan->contract_binding_days);
       $planRequest->setName($myPlan->name);
@@ -278,16 +277,16 @@ class DigitalRiverService
   /**
    * update DrPlan
    */
-  public function updatePlan(SubscriptionPlan $myPlan): DrPlan
+  public function updatePlan(SubscriptionPlan $subscriptionPlan): DrPlan
   {
     try {
       $planRequest = new DrUpdatePlanRequest();
-      $planRequest->setBillingOffsetDays($myPlan->billing_offset_days);
-      $planRequest->setReminderOffsetDays($myPlan->reminder_offset_days);
-      $planRequest->setCollectionPeriodDays($myPlan->collection_period_days);
-      $planRequest->setState($myPlan->status);
+      $planRequest->setBillingOffsetDays($subscriptionPlan->billing_offset_days);
+      $planRequest->setReminderOffsetDays($subscriptionPlan->reminder_offset_days);
+      $planRequest->setCollectionPeriodDays($subscriptionPlan->collection_period_days);
+      $planRequest->setState($subscriptionPlan->status);
 
-      return $this->planApi->updatePlans($myPlan->name, $planRequest);
+      return $this->planApi->updatePlans($subscriptionPlan->dr_plan_id, $planRequest);
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }
@@ -400,9 +399,11 @@ class DigitalRiverService
   }
 
   /**
-   * create & fill a DrSkuRequestItem from a subscription
+   * create & fill a DrSkuRequestItem array from a subscription
+   *
+   * @return DrSkuRequestItem[]
    */
-  protected function fillCheckoutSubscriptionItem(Subscription $subscription): DrSkuRequestItem
+  protected function fillCheckoutItems(Subscription $subscription): array
   {
     // free trial
     if ($subscription->isFreeTrial()) {
@@ -417,9 +418,6 @@ class DigitalRiverService
       );
     }
 
-    // productDetails
-    $productDetails = $this->fillSubscriptionItemProductDetails($subscription);
-
     // subscriptionInfo
     $subscriptionInfo = new DrSubscriptionInfo();
     $subscriptionInfo->setPlanId($drPlanId);
@@ -427,23 +425,29 @@ class DigitalRiverService
     $subscriptionInfo->setAutoRenewal(true);
     $subscriptionInfo->setFreeTrial($subscription->isFreeTrial());
 
-    // item
-    $item = new DrSkuRequestItem();
-    $item->setProductDetails($productDetails);
-    $item->setSubscriptionInfo($subscriptionInfo);
-    $item->setPrice($subscription->price);
-    $item->setQuantity(1);
-    $item->setMetadata(['subscription_id' => $subscription->id]);
+    $items = [];
 
-    return $item;
-  }
+    foreach ($subscription->items as $productItem) {
 
-  /**
-   * create & fill a DrSkuRequestItem array from a subscription
-   */
-  protected function fillCheckoutItems(Subscription $subscription)
-  {
-    $items[] = $this->fillCheckoutSubscriptionItem($subscription);
+      $productDetails = new DrProductDetails();
+      $productDetails->setSkuGroupId(config('dr.sku_grp_subscription'));
+      $productDetails->setName($productItem['name']);
+      $productDetails->setDescription("");
+      $productDetails->setCountryOfOrigin('AU');
+
+      // item
+      $item = new DrSkuRequestItem();
+      $item->setProductDetails($productDetails);
+      $item->setSubscriptionInfo($subscriptionInfo);
+      $item->setPrice($productItem['price']);
+      $item->setQuantity(1);
+      $item->setMetadata([
+        'subscription_id' => $subscription->id,
+        'category' => $productItem['category']
+      ]);
+
+      $items[] = $item;
+    }
     return $items;
   }
 
@@ -590,7 +594,7 @@ class DigitalRiverService
   /**
    * attach a dr source to a dr checkout
    * @param string $id dr checkout id
-   * @param string $sourceId dr source id 
+   * @param string $sourceId dr source id
    */
   public function attachCheckoutSource(string $id, string $sourceId): DrSource
   {
@@ -715,7 +719,7 @@ class DigitalRiverService
     }
   }
 
-  /** 
+  /**
    * activate a DrSubscription
    * @param string $id dr subscription id
    */
@@ -781,7 +785,7 @@ class DigitalRiverService
     }
   }
 
-  /** 
+  /**
    * delete a DrSubscription
    * @param string $id dr subscription id
    */
@@ -865,10 +869,15 @@ class DigitalRiverService
     }
   }
 
-  public function listCustomerTaxIds(string $customerId): array|null
+  /**
+   * list customer tax ids
+   *
+   * @return DrCustomerTaxIdentifier[]
+   */
+  public function listCustomerTaxIds(string $customerId): array
   {
     try {
-      return $this->taxIdentifierApi->listTaxIdentifiers(customer_id: $customerId)->getData();
+      return $this->taxIdentifierApi->listTaxIdentifiers(customer_id: $customerId)->getData() ?? [];
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }
@@ -919,12 +928,13 @@ class DigitalRiverService
 
   /**
    * list dr events
+   *
+   * @return DrEvent[]
    */
   public function listEvents()
   {
     try {
-      $events = $this->eventApi->listEvents();
-      return $events->getData();
+      return $this->eventApi->listEvents()->getData() ?? [];
     } catch (\Throwable $th) {
       throw $this->throwException($th);
     }
@@ -943,7 +953,7 @@ class DigitalRiverService
   }
 
 
-  /** 
+  /**
    * create file link from file id
    * @param string $fileId dr file id
    * @param Carbon $expiresTime link expires time

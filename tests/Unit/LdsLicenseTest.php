@@ -158,7 +158,7 @@ class LdsLicenseTest extends TestCase
     $ldsLicense = LdsLicense::fromUserId($newUser->id);
     $this->assertNotNull($ldsLicense);
     $this->assertEquals($newUser->subscription_level, $ldsLicense->subscription_level);
-    $this->assertEquals($newUser->license_count, $ldsLicense->license_count);
+    $this->assertEquals($newUser->seat_count, $ldsLicense->license_count);
   }
 
   public function testCreateLdsLicenseFromQuery()

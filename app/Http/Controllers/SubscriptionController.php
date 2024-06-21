@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BillingInfo;
 use App\Models\Country;
 use App\Models\Coupon;
+use App\Models\LicensePackage;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
 use App\Models\Subscription;
@@ -52,6 +53,11 @@ class SubscriptionController extends SimpleController
         'filled',
         Rule::exists('tax_ids', 'id')->where(fn ($q) => $q->whereNot('status', TaxId::STATUS_INVALID))
       ],
+      'license_package_id' => [
+        'filled',
+        Rule::exists('license_packages', 'id')->where(fn ($q) => $q->where('status', LicensePackage::STATUS_ACTIVE))
+      ],
+      'license_count' => ['required_with:license_package_id', 'integer', 'min:1', 'max:' . LicensePackage::MAX_COUNT],
     ];
   }
 
@@ -141,6 +147,14 @@ class SubscriptionController extends SimpleController
       }
     }
 
+    /**
+     * @var LicensePackage|null $licensePackage
+     */
+    $licensePackage = isset($inputs['license_package_id']) ? LicensePackage::where('status', LicensePackage::STATUS_ACTIVE)->find($inputs['license_package_id']) : null;
+    if ((isset($inputs['license_package_id']) && !$licensePackage)) {
+      return response()->json(['message' => 'Invalid license package!'], 400);
+    }
+
     /** @var BillingInfo|null $billingInfo */
     $billingInfo = $this->user->billing_info()->first();
     if (!$billingInfo || !$billingInfo->address['postcode']) {
@@ -172,7 +186,7 @@ class SubscriptionController extends SimpleController
 
     // creat subscription
     try {
-      $subscription = $this->manager->createSubscription($this->user, $plan, $coupon, $taxId);
+      $subscription = $this->manager->createSubscription($this->user, $plan, $coupon, $taxId, $licensePackage, $inputs['license_count'] ?? 0);
       return  response()->json($this->transformSingleResource($subscription), 201);
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));

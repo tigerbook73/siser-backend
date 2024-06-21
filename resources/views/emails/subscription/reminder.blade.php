@@ -1,28 +1,28 @@
 <x-emails.subscription.layout
   :$type
   :$subscription
-  :$helper  
+  :$helper
 >
   @if ($subscription->isNextPlanDifferent())
   {!!
     $helper->trans(
-      'subscription_reminder.notification_convert', 
+      'subscription_reminder.notification_convert',
       [
-        'old_plan_name'       => $helper->formatSubscriptionPlanName($subscription),
-        'new_plan_name'       => $helper->formatPlanName($subscription->next_invoice['plan_info'], $subscription->next_invoice['coupon_info']),
+        'old_plan_name'       => $helper->formatSubscriptionFullName($subscription),
+        'new_plan_name'       => $helper->formatSubscriptionFullName($subscription, true),
         'next_invoice_date'   => $helper->formatDate($subscription->next_invoice_date),
       ]
-    ) 
+    )
   !!}
-  @else 
+  @else
   {!!
     $helper->trans(
-      'subscription_reminder.notification', 
+      'subscription_reminder.notification',
       [
-        'plan_name'           => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name'           => $helper->formatSubscriptionFullName($subscription),
         'next_invoice_date'   => $helper->formatDate($subscription->next_invoice_date),
       ]
-    ) 
+    )
   !!}
   @endif
   <br />

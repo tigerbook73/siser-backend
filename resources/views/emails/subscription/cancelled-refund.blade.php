@@ -7,11 +7,11 @@
     $helper->trans(
       'subscription_cancel_refund.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name' => $helper->formatSubscriptionFullName($subscription),
         'date' => $helper->formatDate(now()),
         'end_date' => $helper->formatDate(now()),
       ]
-    ) 
+    )
   !!}
   <br />
   <br />

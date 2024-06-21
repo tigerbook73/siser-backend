@@ -7,7 +7,7 @@ use Tests\ApiTestCase;
 
 class SubscriptionNotifitionBladeTest extends ApiTestCase
 {
-  public string $baseUrl = '/be-test/notification';
+  public string $baseUrl = '/be-test/notification/subscription';
   public ?string $role = 'customer';
 
   public $countries = ['US', 'AU', 'CA', 'DE', 'ES', 'FR', 'GB', 'IT', 'JP', 'NZ'];
@@ -16,12 +16,12 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
 
   public function viewNotification(string $type, string $country, string $plan, string $coupon = "")
   {
-    return $this->get("{$this->baseUrl}/{$type}?country={$country}&plan={$plan}&coupon={$coupon}");
+    return $this->get("{$this->baseUrl}/{$type}/view?country={$country}&plan={$plan}&coupon={$coupon}");
   }
 
   public function clean()
   {
-    return $this->get("/be-test/clean");
+    return $this->get("/be-test/notification/subscription-clean");
   }
 
   public function viewNotificationType(string $type)

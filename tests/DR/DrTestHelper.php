@@ -40,13 +40,13 @@ use Tests\DR\DrObject;
 
 
 /**
- * @property DrCheckout[]  $drCheckouts 
- * @property DrCustomer[]  $drCustomers 
- * @property DrInvoice[]  $drInvoices 
- * @property DrOrder[]  $drOrders 
- * @property DrOrderRefund[]  $drRefunds 
- * @property DrSource[]  $drSources 
- * @property DrSubscription[]  $drSubscriptions 
+ * @property DrCheckout[]  $drCheckouts
+ * @property DrCustomer[]  $drCustomers
+ * @property DrInvoice[]  $drInvoices
+ * @property DrOrder[]  $drOrders
+ * @property DrOrderRefund[]  $drRefunds
+ * @property DrSource[]  $drSources
+ * @property DrSubscription[]  $drSubscriptions
  */
 class DrTestHelper
 {
@@ -260,11 +260,21 @@ class DrTestHelper
     $checkout = $tester->createCheckout($subscription);
     $checkout->setId($this->uuid());
     $subscripitonId = $this->uuid();
-    $checkout->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscripitonId);
-    $checkout->getItems()[0]->setTax((new Tax())->setRate($this->getTaxRate($subscription->tax_id_info)));
-    $checkout->setSubtotal($subscription->price);
-    $checkout->setTotalTax($checkout->getSubtotal() * $this->getTaxRate($subscription->tax_id_info));
-    $checkout->setTotalAmount($checkout->getSubtotal() + $checkout->getTotalTax());
+
+    for ($index = 0; $index < count($checkout->getItems()); $index++) {
+      $item = $checkout->getItems()[$index];
+      $item->getSubscriptionInfo()->setSubscriptionId($subscripitonId);
+      $item->setTax(
+        (new Tax())
+          ->setRate($this->getTaxRate($subscription->tax_id_info))
+          ->setAmount(round($subscription->items[$index]['price'] * $this->getTaxRate($subscription->tax_id_info), 2))
+      );
+      $item->setAmount(round($subscription->items[$index]['price'], 2));
+    }
+
+    $checkout->setSubtotal(round($subscription->price, 2));
+    $checkout->setTotalTax(round($checkout->getSubtotal() * $this->getTaxRate($subscription->tax_id_info), 2));
+    $checkout->setTotalAmount(round($checkout->getSubtotal() + $checkout->getTotalTax(), 2));
     $checkout->setPayment((new Payments())->setSession((new Session())->setId($this->uuid())));
 
     $this->setDrCheckout($checkout);

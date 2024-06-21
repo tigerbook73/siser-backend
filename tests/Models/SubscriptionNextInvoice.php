@@ -24,6 +24,9 @@ class SubscriptionNextInvoice {
     /** @var \Tests\Models\CouponInfo $coupon_info */
     public $coupon_info;
 
+    /** @var \Tests\Models\LicensePackageInfo $license_package_info */
+    public $license_package_info;
+
     /** @var float $price beautified price (beautified price)*/
     public $price = 0;
 

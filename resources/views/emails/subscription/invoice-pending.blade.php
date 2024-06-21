@@ -8,7 +8,7 @@
     $helper->trans(
       'subscription_invoice_pending.notification',
       [
-        'plan_name' => $helper->formatSubscriptionPlanName($subscription),
+        'plan_name' => $helper->formatSubscriptionFullName($subscription),
         'collection_end_date' => $helper->formatDate($subscription->getNextInvoiceCollectionEndDate())
       ]
     )

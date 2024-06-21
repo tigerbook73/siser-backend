@@ -55,7 +55,7 @@ class InvoiceController extends SimpleController
 
   protected function commonCancel(Invoice $invoice)
   {
-    if ($invoice->period != 0 || $invoice->status != 'pending') {
+    if (!$invoice->isCancellable()) {
       return response()->json(['message' => 'only pending subscription order can be cancelled'], 409);
     }
 

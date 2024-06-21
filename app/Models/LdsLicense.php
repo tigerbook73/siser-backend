@@ -38,8 +38,8 @@ class LdsLicense extends BaseLdsLicense
     $ldsLicense = new LdsLicense();
     $ldsLicense->user_id            = $user->id;
     $ldsLicense->subscription_level = $user->subscription_level;
-    $ldsLicense->license_count      = $user->license_count;
-    $ldsLicense->license_free       = $user->license_count;
+    $ldsLicense->license_count      = $user->seat_count;
+    $ldsLicense->license_free       = $user->seat_count;
     $ldsLicense->license_used       = 0;
     $ldsLicense->latest_expires_at  = 0;
     $ldsLicense->lastest_expires_at = 0;

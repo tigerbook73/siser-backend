@@ -9,8 +9,8 @@ namespace Tests\Models;
  */
 class SubscriptionRenewalInfo {
 
-    /** @var \Tests\Models\ID $id */
-    public $id;
+    /** @var int $id */
+    public $id = 0;
 
     /** @var int $subscription_id */
     public $subscription_id = 0;

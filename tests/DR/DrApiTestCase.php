@@ -996,27 +996,32 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
     $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
 
+    $this->assertEquals($subscription->price, round(array_reduce($subscription->items, fn ($carry, $item) => $carry + $item['price'], 0), 2));
+    if ($subscription->next_invoice) {
+      $this->assertEquals($subscription->next_invoice['price'], array_reduce($subscription->next_invoice['items'], fn ($carry, $item) => $carry + $item['price'], 0));
+    }
+
     // free trial
     if ($subscription->isFreeTrial()) {
       $this->assertLessThan(0.004, abs($subscription->price - 0));
-      $this->assertLessThan(0.004, abs($subscription->next_invoice['price'] - $subscription->plan_info['price']['price']));
+      $this->assertLessThan(0.004, abs($subscription->next_invoice['items'][0]['price'] - $subscription->plan_info['price']['price']));
       $this->assertNull($subscription->next_invoice['coupon_info']);
     } else if (
       $subscription->isFixedTermPercentage() &&
       $subscription->current_period == $subscription->coupon_info['interval_count'] / $subscription->plan_info['interval_count']
     ) {
-      $this->assertLessThan(0.004, abs($subscription->price - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
-      $this->assertLessThan(0.004, abs($subscription->next_invoice['price'] - $subscription->plan_info['price']['price']));
+      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
+      $this->assertLessThan(0.004, abs($subscription->next_invoice['items'][0]['price'] - $subscription->plan_info['price']['price']));
       $this->assertNull($subscription->next_invoice['coupon_info']);
     } else if (
       $subscription->isPercentage()
     ) {
-      $this->assertLessThan(0.004, abs($subscription->price - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
+      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
       $this->assertLessThan(0.004, abs($subscription->price - $subscription->next_invoice['price']));
       $this->assertNotNull($subscription->next_invoice['coupon_info']);
     } else {
-      $this->assertLessThan(0.004, abs($subscription->price - $subscription->plan_info['price']['price']));
-      $this->assertLessThan(0.004, abs($subscription->price - $subscription->next_invoice['price']));
+      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->plan_info['price']['price']));
+      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->next_invoice['price']));
     }
 
     Notification::assertSentTo(

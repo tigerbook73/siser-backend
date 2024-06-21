@@ -18,4 +18,7 @@ class InvoiceDR {
     /** @var string $file_id */
     public $file_id = "";
 
+    /** @var string[] $invoice_id_list */
+    public $invoice_id_list = [];
+
 }
