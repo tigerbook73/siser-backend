@@ -1398,6 +1398,12 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    /**
+     * TODO: This is a TEMP solution to avoid subscription to stop abnormally
+     */
+    DrLog::warning(__FUNCTION__, 'subscription.lapsed skipped', ['subscription_id' => $drSubscription->getId()]);
+    return null;
+
     $invoice = $subscription->getActiveInvoice();
     if (!$invoice) {
       $invoice = $this->createFailedRenewInvoice($subscription);
