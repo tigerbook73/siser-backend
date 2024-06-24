@@ -186,13 +186,13 @@ class LicenseSharingInvitationController extends SimpleController
     /** @var User|null $guest */
     $guest = User::where('email', $inputs['guest_email'])->first();
     if (!$guest) {
-      return response()->json(['message' => 'Guest not found'], 400);
+      return response()->json(['message' => 'User not found.'], 400);
     }
     if ($guest->id === $this->user->id) {
-      return response()->json(['message' => 'You can not share license with yourself'], 400);
+      return response()->json(['message' => 'You can not share license with yourself.'], 400);
     }
     if ($guest->subscription_level > 1) {
-      return response()->json(['message' => 'Guest has already have pro licences'], 400);
+      return response()->json(['message' => 'You can only share license with users who do not have a pro license.'], 400);
     }
 
     $invitation = $this->service->createLicenseSharingInvitation($licenseSharing, $guest, $inputs['expires_at'] ?? null);
