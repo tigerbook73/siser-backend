@@ -398,7 +398,7 @@ class Subscription extends BaseSubscription
     return false;
   }
 
-  public function stop(string $status, string $stopReason = '', string $subStatus = Subscription::SUB_STATUS_NORMAL)
+  public function stop(string $status, string $stopReason = '')
   {
     $prevStatus = $this->status;
 
@@ -410,10 +410,8 @@ class Subscription extends BaseSubscription
 
     $this->setStatus($status);
     $this->stop_reason = $stopReason;
-    $this->sub_status = $subStatus;
+    $this->sub_status = Subscription::SUB_STATUS_NORMAL;
     $this->save();
-
-    $this->cancelPendingOrActiveRenewal();
 
     if ($prevStatus === Subscription::STATUS_ACTIVE && $this->subscription_level > 1) {
       SubscriptionLog::logEvent(SubscriptionLog::SUBSCRIPTION_STOPPED, $this);

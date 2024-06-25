@@ -6,14 +6,18 @@ use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\SubscriptionNotification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\Test\SubscriptionNotificationTest;
 use App\Models\Country;
 use App\Models\SubscriptionRenewal;
+use App\Services\DigitalRiver\SubscriptionManager;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SubscriptionNotifcationTestController extends Controller
 {
+  public function __construct(public SubscriptionManager $manager)
+  {
+  }
+
   public function prepare(string $type, string $country, string $plan, string $coupon = null, int $licenseCount = 0): SubscriptionNotificationTest|null
   {
     $mockup = SubscriptionNotificationTest::init($country, $plan, $coupon);
@@ -121,7 +125,7 @@ class SubscriptionNotifcationTestController extends Controller
           licenseCount: $licenseCount
         );
         if ($mockup->subscription->isFreeTrial()) {
-          $mockup->subscription->stop(Subscription::STATUS_STOPPED, 'cancelled');
+          $this->manager->stopSubscription($mockup->subscription, 'cancelled');
         } else {
           $mockup->subscription->end_date = $mockup->subscription->current_period_end_date;
         }
@@ -137,7 +141,7 @@ class SubscriptionNotifcationTestController extends Controller
           currentPeriod: 1,
           licenseCount: $licenseCount
         );
-        $mockup->subscription->stop(Subscription::STATUS_STOPPED, 'cancelled and refunded');
+        $this->manager->stopSubscription($mockup->subscription, 'cancelled and refunded');
         $mockup->updateInvoice(status: Invoice::STATUS_REFUNDING);
         break;
 
@@ -293,7 +297,7 @@ class SubscriptionNotifcationTestController extends Controller
           currentPeriod: 1,
           licenseCount: $licenseCount
         );
-        $mockup->subscription->stop(Subscription::STATUS_STOPPED);
+        $this->manager->stopSubscription($mockup->subscription, 'cancelled');
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
         break;
 

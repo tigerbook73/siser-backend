@@ -65,11 +65,8 @@ class SubscriptionStopCancelled extends Command
     foreach ($subscriptions as $subscription) {
       Log::info("  stopping subscription: id=$subscription->id");
       if (!$dryRun) {
-        // stop subscription data
-        $subscription->stop(Subscription::STATUS_STOPPED, 'cancelled');
-
-        // activate default subscription
-        $subscription->user->updateSubscriptionLevel();
+        // stop subscription
+        $this->manager->stopSubscription($subscription, 'cancelled');
 
         // send notification
         $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);

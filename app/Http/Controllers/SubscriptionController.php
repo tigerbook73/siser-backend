@@ -380,8 +380,7 @@ class SubscriptionController extends SimpleController
 
     // stop subscription
     try {
-      $subscription->stop(Subscription::STATUS_STOPPED, 'stopped by admin');
-      $subscription->user->updateSubscriptionLevel();
+      $this->manager->stopSubscription($subscription, 'stopped by admin');
 
       $subscription->sendNotification(SubscriptionNotification::NOTIF_TERMINATED);
       return  response()->json($this->transformSingleResource($subscription));

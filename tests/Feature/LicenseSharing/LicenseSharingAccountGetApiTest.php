@@ -4,6 +4,7 @@ namespace Tests\Feature\LicenseSharing;
 
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\DigitalRiver\SubscriptionManager;
 use Tests\Feature\LicenseSharing\LicenseSharingTestCase;
 use Tests\Helper\LicenseSharingTestHelper;
 
@@ -32,8 +33,8 @@ class LicenseSharingAccountGetApiTest extends LicenseSharingTestCase
   public function test_get_void_nok()
   {
     $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
-    $licenseSharing->subscription->stop(Subscription::STATUS_STOPPED);
-    $this->service->refreshLicenseSharing($licenseSharing);
+
+    $this->manager->stopSubscription($licenseSharing->subscription, 'test');
 
     $this->getAssert(status: 404, id: $licenseSharing->id);
   }

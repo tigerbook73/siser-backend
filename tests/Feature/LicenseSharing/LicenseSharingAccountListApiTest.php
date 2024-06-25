@@ -4,6 +4,7 @@ namespace Tests\Feature\LicenseSharing;
 
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\DigitalRiver\SubscriptionManager;
 use Tests\Feature\LicenseSharing\LicenseSharingTestCase;
 use Tests\Helper\LicenseSharingTestHelper;
 
@@ -28,8 +29,7 @@ class LicenseSharingAccountListApiTest extends LicenseSharingTestCase
     $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
     $this->listAssert(count: 1);
 
-    $licenseSharing->subscription->stop(Subscription::STATUS_STOPPED);
-    $this->service->refreshLicenseSharing($licenseSharing);
+    $this->manager->stopSubscription($licenseSharing->subscription, 'test');
 
     $this->listAssert(count: 0);
   }

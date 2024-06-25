@@ -289,6 +289,45 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
   }
 
+  public function stopSubscription(Subscription $subscription, string $reason): Subscription
+  {
+    return $this->stopOrFailSubscription($subscription, Subscription::STATUS_STOPPED, $reason);
+  }
+
+  public function failSubscription(Subscription $subscription, string $reason): Subscription
+  {
+    return $this->stopOrFailSubscription($subscription, Subscription::STATUS_FAILED, $reason);
+  }
+
+  protected function stopOrFailSubscription(Subscription $subscription, string $status,  string $reason): Subscription
+  {
+    $currentStatus = $subscription->status;
+    if ($currentStatus == Subscription::STATUS_STOPPED || $currentStatus == Subscription::STATUS_FAILED) {
+      return $subscription;
+    }
+
+    $subscription->stop($status, $reason);
+
+    // pro subscription stopped
+    if ($currentStatus == Subscription::STATUS_ACTIVE && $subscription->subscription_level > 1) {
+      // cancel renewal if any
+      $subscription->cancelPendingOrActiveRenewal();
+
+      // update license sharing
+      $licenseSharing = $subscription->user->getActiveLicenseSharing();
+      if ($licenseSharing) {
+        // refreshLicenseSharing will update user's subscription level
+        $this->licenseService->refreshLicenseSharing($licenseSharing);
+      }
+    }
+
+    if ($currentStatus == Subscription::STATUS_ACTIVE && empty($licenseSharing)) {
+      $subscription->user->updateSubscriptionLevel();
+    }
+
+    return $subscription;
+  }
+
   public function cancelSubscription(Subscription $subscription, bool $needRefund = false, bool $immediate = false): Subscription
   {
     try {
@@ -323,17 +362,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       }
 
       if ($invoiceToRefund || $subscription->isFreeTrial()) {
-        $subscription->stop(Subscription::STATUS_STOPPED, $invoiceToRefund ? 'cancelled with refund' : 'cancell during free trial');
-        DrLog::info(__FUNCTION__, 'subscription active => stopped', $subscription);
-
-        // refresh license sharing
-        $licenseSharing = $subscription->user->getActiveLicenseSharing();
-        if ($licenseSharing) {
-          $this->licenseService->refreshLicenseSharing($licenseSharing);
-        }
-
-        $subscription->user->updateSubscriptionLevel();
-        DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+        $this->stopSubscription($subscription, $invoiceToRefund ? 'cancelled with refund' : 'cancell during free trial');
+        DrLog::info(__FUNCTION__, 'subscription stopped: refunded or is free-trial', $subscription);
       } else {
         $subscription->end_date =
           $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
@@ -402,9 +432,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->save();
       DrLog::info(__FUNCTION__, 'dr-order pending => cancelled', $invoice);
 
-      $subscription->stop(Subscription::STATUS_FAILED, 'manually cancelled');
-      $subscription->save();
-      DrLog::info(__FUNCTION__, 'subscription pending => failed', $subscription);
+      $this->failSubscription($subscription, 'manually cancelled');
+      DrLog::info(__FUNCTION__, 'subscription failed: manually cancelled', $subscription);
 
       // send notification
       $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_CANCELLED, $invoice);
@@ -746,8 +775,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       $invoice->setStatus(Invoice::STATUS_FAILED);
       $invoice->save();
 
-      $subscription->stop(Subscription::STATUS_FAILED, 'fulfill dr-order fails');
-      DrLog::warning(__FUNCTION__, 'subscription stopped => failed: fulfillment failed', $subscription);
+      $this->failSubscription($subscription, 'fulfill dr-order fails');
+      DrLog::warning(__FUNCTION__, 'subscription failed: fulfillment failed', $subscription);
 
       $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
       return null;
@@ -764,7 +793,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // stop previous subscription
     if ($previousSubscription = $subscription->user->getActiveSubscription()) {
-      $previousSubscription->stop(Subscription::STATUS_STOPPED, 'new subscrption activated');
+      $this->stopSubscription($previousSubscription, 'new subscription activated');
     }
 
     // active current subscription
@@ -776,11 +805,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->active_invoice_id = null;
     $subscription->save();
 
-    // active license sharing if there is license package
-    if ($subscription->license_package_info && $subscription->license_package_info['quantity'] > 0) {
-      $this->licenseService->createLicenseSharing($subscription);
-    }
-
     DrLog::info(__FUNCTION__, 'subscription updated => active', $subscription);
 
     // update dr subscription
@@ -789,9 +813,14 @@ class SubscriptionManagerDR implements SubscriptionManager
       DrLog::info(__FUNCTION__, 'dr-subscription converted to next', $subscription);
     }
 
-    // update user subscription level
-    $subscription->user->updateSubscriptionLevel();
-    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+    // active license sharing if there is license package
+    if ($subscription->license_package_info && $subscription->license_package_info['quantity'] > 0) {
+      $this->licenseService->createLicenseSharing($subscription);
+    } else {
+      // update user subscription level
+      $subscription->user->updateSubscriptionLevel();
+      DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+    }
 
     // update invoice status
     $invoice->fillPeriod($subscription);
@@ -838,8 +867,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->save();
 
     // update subscription status
-    $subscription->stop(Subscription::STATUS_FAILED, 'first order being blocked');
-    DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
+    $this->failSubscription($subscription, 'first order being blocked');
+    DrLog::info(__FUNCTION__, 'subscription failed: first order being blocked', $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
@@ -864,8 +893,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->setStatus(Invoice::STATUS_FAILED);
     $invoice->save();
 
-    $subscription->stop(Subscription::STATUS_FAILED, 'first order being cancelled');
-    DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
+    $this->failSubscription($subscription, 'first order being cancelled');
+    DrLog::info(__FUNCTION__, 'subscription failed: first order being cancelled', $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
@@ -898,8 +927,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->setStatus(Invoice::STATUS_FAILED);
     $invoice->save();
 
-    $subscription->stop(Subscription::STATUS_FAILED, 'first order failed');
-    DrLog::info(__FUNCTION__, 'subscription stopped', $subscription);
+    $this->failSubscription($subscription, 'first order charge failed');
+    DrLog::info(__FUNCTION__, 'subscription stopped: first order charge failed', $subscription);
 
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_ABORTED, $invoice);
@@ -945,8 +974,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $invoice->save();
     DrLog::info(__FUNCTION__, 'invoice updated => failed', $invoice);
 
-    $subscription->stop(Subscription::STATUS_FAILED, 'first order charge capture failed');
-    $subscription->user->updateSubscriptionLevel();
+    $this->failSubscription($subscription, 'first order charge capture failed');
     DrLog::info(__FUNCTION__, 'subscription stopped => failed', $subscription);
 
     if ($subscription->coupon_info) {
@@ -1340,18 +1368,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // stop subscription data
-    $subscription->stop(Subscription::STATUS_FAILED, 'renew failed');
-    DrLog::info(__FUNCTION__, 'subscription stoped => failed', $subscription);
-
-    // refresh license sharing
-    $licenseService = $subscription->user->getActiveLicenseSharing();
-    if ($licenseService) {
-      $this->licenseService->refreshLicenseSharing($licenseService);
-    }
-
-    // update user subscription level
-    $subscription->user->updateSubscriptionLevel();
-    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+    $this->failSubscription($subscription, 'renew failed');
+    DrLog::info(__FUNCTION__, 'subscription stoped: renewal failed', $subscription);
 
     // stop invoice
     $invoice->setStatus(Invoice::STATUS_FAILED);
@@ -1404,6 +1422,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     DrLog::warning(__FUNCTION__, 'subscription.lapsed skipped', ['subscription_id' => $drSubscription->getId()]);
     return null;
 
+    /* TODO: This is a TEMP solution to avoid subscription to stop abnormally
+
     $invoice = $subscription->getActiveInvoice();
     if (!$invoice) {
       $invoice = $this->createFailedRenewInvoice($subscription);
@@ -1429,6 +1449,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_LAPSED, $invoice);
     return $subscription;
+
+    TODO: */
   }
 
   protected function onSubscriptionPaymentFailed(array $event): Subscription|null

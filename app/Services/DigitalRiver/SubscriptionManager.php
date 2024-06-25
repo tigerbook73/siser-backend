@@ -22,6 +22,8 @@ interface SubscriptionManager
   public function deleteSubscription(Subscription $subscription): bool;
   public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription;
   public function cancelSubscription(Subscription $subscription, bool $refund = false, bool $immediate = false): Subscription;
+  public function stopSubscription(Subscription $subscription, string $reason): Subscription;
+  public function failSubscription(Subscription $subscription, string $reason): Subscription;
 
   /**
    * Invoice
