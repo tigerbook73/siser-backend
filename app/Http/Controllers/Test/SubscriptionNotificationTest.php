@@ -322,7 +322,7 @@ class SubscriptionNotificationTest
     //   return $this;
     // }
 
-    $this->invoice->$this->invoice->coupon_info      = $this->coupon->info();
+    $this->invoice->coupon_info      = $this->coupon->info();
     $this->invoice->subtotal         = $this->subscription->subtotal;
     $this->invoice->total_tax        = $this->subscription->total_tax;
     $this->invoice->total_amount     = $this->subscription->total_amount;
