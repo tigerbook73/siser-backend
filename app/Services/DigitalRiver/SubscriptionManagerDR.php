@@ -1416,14 +1416,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    /**
-     * TODO: This is a TEMP solution to avoid subscription to stop abnormally
-     */
-    DrLog::warning(__FUNCTION__, 'subscription.lapsed skipped', ['subscription_id' => $drSubscription->getId()]);
-    return null;
-
-    /* TODO: This is a TEMP solution to avoid subscription to stop abnormally
-
     $invoice = $subscription->getActiveInvoice();
     if (!$invoice) {
       $invoice = $this->createFailedRenewInvoice($subscription);
@@ -1431,12 +1423,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // stop subscription data
-    $subscription->stop(Subscription::STATUS_FAILED, 'subscription lapse');
-    DrLog::info(__FUNCTION__, 'subscription stoped => failed', $subscription);
-
-    // update user subscription level
-    $subscription->user->updateSubscriptionLevel();
-    DrLog::info(__FUNCTION__, 'user subscription level updated', $subscription);
+    $this->failSubscription($subscription, 'subscription lapsed');
 
     // stop invoice
     $invoice->setStatus(Invoice::STATUS_FAILED);
@@ -1449,8 +1436,6 @@ class SubscriptionManagerDR implements SubscriptionManager
     // send notification
     $subscription->sendNotification(SubscriptionNotification::NOTIF_LAPSED, $invoice);
     return $subscription;
-
-    TODO: */
   }
 
   protected function onSubscriptionPaymentFailed(array $event): Subscription|null
