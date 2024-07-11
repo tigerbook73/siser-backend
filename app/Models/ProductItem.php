@@ -68,7 +68,7 @@ class ProductItem
         'name'      => $license_package_info['name'] . ' x ' . $license_package_info['quantity'],
         'quantity'  => 1,
         'price'     => $licensePrice,
-        'tax'       => 0,
+        'tax'       => 0, // tax is calculated later
         'amount'    => $licensePrice,
       ];
       $items[] = $itemLicense;
@@ -83,8 +83,11 @@ class ProductItem
   {
     $items = [];
     foreach ($drObject->getItems() as $drItem) {
+      $category = $drItem->getProductDetails()->getDescription() ?: (str_contains($drItem->getProductDetails()->getName(), 'Plan') ?
+        self::ITEM_CATEGORY_PLAN :
+        self::ITEM_CATEGORY_LICENSE);
       $item = [
-        'category'  => $drItem->getProductDetails()->getDescription() ?: self::ITEM_CATEGORY_PLAN,
+        'category'  => $category,
         'name'      => $drItem->getProductDetails()->getName(),
         'quantity'  => $drItem->getQuantity(),
         'price'     => $drItem->getAmount(),
