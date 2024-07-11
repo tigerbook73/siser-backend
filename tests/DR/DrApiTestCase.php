@@ -5,7 +5,9 @@ namespace Tests\DR;
 use App\Models\Base\BillingInfo;
 use App\Models\Coupon;
 use App\Models\Invoice;
+use App\Models\LicensePackage;
 use App\Models\Plan;
+use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\SubscriptionRenewal;
@@ -338,7 +340,7 @@ class DrApiTestCase extends ApiTestCase
       ->once()
       ->andReturnUsing(
         function (DrSubscription $drSubscription, Subscription $subscription): DrSubscription {
-          return $drSubscription;
+          return $this->drHelper->convertSubscriptionToNext($drSubscription, $subscription);
         }
       );
     return $this;
@@ -411,6 +413,52 @@ class DrApiTestCase extends ApiTestCase
         }
       );
     return $this;
+  }
+
+  public function assertDrSubscription(DrSubscription $drSubscription)
+  {
+    /**
+     * @var Subscription $subscription
+     */
+    $subscription = Subscription::where('dr_subscription_id', $drSubscription->getId())->first();
+    $this->assertNotNull($subscription);
+
+    $items = ($subscription->next_invoice && $subscription->isNextPlanDifferent()) ?
+      $subscription->next_invoice['items'] :
+      $subscription->items;
+    foreach ($items as $index => $item) {
+      $drItem = $drSubscription->getItems()[$index];
+      $this->assertEquals($item['category'], $drItem->getProductDetails()->getDescription());
+      $this->assertEquals($item['name'], $drItem->getProductDetails()->getName());
+      $this->assertEquals($item['price'], $drItem->getPrice());
+      $this->assertEquals($item['quantity'], $drItem->getQuantity());
+    }
+  }
+
+  public function assertDrInvoiceOrOrder(DrOrder|DrInvoice $drObject)
+  {
+    /**
+     * @var Invoice $invoice
+     */
+    $invoice = $drObject instanceof DrOrder ?
+      Invoice::where('dr_order_id', $drObject->getId())->first() :
+      Invoice::where('dr_invoice_id', $drObject->getId())->first();
+
+    $this->assertNotNull($invoice);
+    $this->assertEquals($invoice->subtotal, $drObject->getSubtotal());
+    $this->assertEquals($invoice->total_tax, $drObject->getTotalTax());
+    $this->assertEquals($invoice->total_amount, $drObject->getTotalAmount());
+    $this->assertEquals($invoice->currency, $drObject->getCurrency());
+
+    foreach ($invoice->items as $index => $item) {
+      $drItem = $drObject->getItems()[$index];
+      $this->assertEquals($item['category'], $drItem->getProductDetails()->getDescription());
+      $this->assertEquals($item['name'], $drItem->getProductDetails()->getName());
+      $this->assertEquals($item['price'], $drItem->getAmount());
+      $this->assertEquals($item['tax'], $drItem->getTax()->getAmount());
+      $this->assertEquals($item['amount'], $drItem->getAmount());
+      $this->assertEquals($item['quantity'], $drItem->getQuantity());
+    }
   }
 
   /**
@@ -715,8 +763,12 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function createSubscription($planInterval = Plan::INTERVAL_MONTH, string|null $couponType = null, string $taxId = null)
-  {
+  public function createSubscription(
+    $planInterval = Plan::INTERVAL_MONTH,
+    string|null $couponType = null,
+    string $taxId = null,
+    bool $withLicensePackage = false
+  ) {
     /** @var Plan $plan */
     $plan = Plan::public()->where('interval', $planInterval)->first();
 
@@ -734,6 +786,9 @@ class DrApiTestCase extends ApiTestCase
         ->first();
     }
 
+    /** @var LicensePackage|null $licensePackage */
+    $licensePackage = ($withLicensePackage) ? LicensePackage::where('status', LicensePackage::STATUS_ACTIVE)->first() : null;
+
     // prepare
     $data = ['plan_id' => $plan->id];
     if ($coupon) {
@@ -742,7 +797,10 @@ class DrApiTestCase extends ApiTestCase
     if ($taxId) {
       $data['tax_id'] = $taxId;
     }
-
+    if ($licensePackage) {
+      $data['license_package_id'] = $licensePackage->id;
+      $data['license_count']      = 11;
+    }
 
     // mock up
     $this->mockCreateCheckout();
@@ -758,9 +816,14 @@ class DrApiTestCase extends ApiTestCase
     $subscription = $this->user->getDraftSubscriptionById($response->json('id'));
     $this->assertNotNull($subscription);
     $this->assertEquals($subscription->status, Subscription::STATUS_DRAFT);
+    $this->assertEquals($withLicensePackage ? 2 : 1, count($subscription->items));
 
     $invoice = $subscription->getActiveInvoice();
     $this->assertEquals($invoice->status, Invoice::STATUS_INIT);
+
+    // check dr subscription items
+    $drSubscription = $this->drHelper->getDrSubscription($subscription->getDrSubscriptionId());
+    $this->assertDrSubscription($drSubscription);
 
     return $response;
   }
@@ -957,7 +1020,7 @@ class DrApiTestCase extends ApiTestCase
     return $response;
   }
 
-  public function onOrderAccept(Subscription|int $subscription): Subscription
+  public function onOrderAccepted(Subscription|int $subscription): Subscription
   {
     /** @var Subscription $subscription */
     $subscription = ($subscription instanceof Subscription) ? $subscription : Subscription::find($subscription);
@@ -996,9 +1059,9 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->status, Subscription::STATUS_ACTIVE);
     $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
 
-    $this->assertEquals($subscription->price, round(array_reduce($subscription->items, fn ($carry, $item) => $carry + $item['price'], 0), 2));
+    $this->assertEquals($subscription->price, ProductItem::calcTotal($subscription->items, 'price'));
     if ($subscription->next_invoice) {
-      $this->assertEquals($subscription->next_invoice['price'], array_reduce($subscription->next_invoice['items'], fn ($carry, $item) => $carry + $item['price'], 0));
+      $this->assertEquals($subscription->next_invoice['price'], ProductItem::calcTotal($subscription->next_invoice['items'], 'price'));
     }
 
     // free trial
@@ -1010,19 +1073,22 @@ class DrApiTestCase extends ApiTestCase
       $subscription->isFixedTermPercentage() &&
       $subscription->current_period == $subscription->coupon_info['interval_count'] / $subscription->plan_info['interval_count']
     ) {
-      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
+      $this->assertLessThan(0.004, abs($subscription->findPlanItem()['price'] - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
       $this->assertLessThan(0.004, abs($subscription->next_invoice['items'][0]['price'] - $subscription->plan_info['price']['price']));
       $this->assertNull($subscription->next_invoice['coupon_info']);
     } else if (
       $subscription->isPercentage()
     ) {
-      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
+      $this->assertLessThan(0.004, abs($subscription->findPlanItem()['price'] - $subscription->plan_info['price']['price'] * $subscription->coupon_info['discount'] / 100));
       $this->assertLessThan(0.004, abs($subscription->price - $subscription->next_invoice['price']));
       $this->assertNotNull($subscription->next_invoice['coupon_info']);
     } else {
-      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->plan_info['price']['price']));
-      $this->assertLessThan(0.004, abs($subscription->items[0]['price'] - $subscription->next_invoice['price']));
+      $this->assertLessThan(0.004, abs($subscription->findPlanItem()['price'] - $subscription->plan_info['price']['price']));
+      $this->assertLessThan(0.004, abs($subscription->findPlanItem()['price'] - $subscription->next_invoice['price']));
     }
+
+    // assert dr subscription
+    $this->assertDrSubscription($this->drHelper->getDrSubscription($subscription->getDrSubscriptionId()));
 
     Notification::assertSentTo(
       $subscription,
@@ -1601,6 +1667,9 @@ class DrApiTestCase extends ApiTestCase
     $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_NORMAL);
     $this->assertNull($subscription->getActiveInvoice());
     $this->assertEquals($invoice->status, Invoice::STATUS_PROCESSING);
+
+    // assert dr subscription
+    $this->assertDrSubscription($this->drHelper->getDrSubscription($subscription->getDrSubscriptionId()));
 
     Notification::assertSentTo(
       $subscription,

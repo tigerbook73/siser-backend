@@ -257,14 +257,7 @@ class Invoice extends BaseInvoice
     // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
 
     // fill items
-    $items = $this->items;
-    $drItems = $drObject->getItems();
-    for ($i = 0; $i < count($drItems); $i++) {
-      $items[$i]['price']   = $drItems[$i]->getAmount();
-      $items[$i]['tax']     = $drItems[$i]->getTax()->getAmount();
-      $items[$i]['amount']  = $drItems[$i]->getAmount();
-    }
-    $this->items = $items;
+    $this->items = ProductItem::buildItemsFromDrObject($drObject);
 
     // fill price
     $this->subtotal = $drObject->getSubtotal();
@@ -288,6 +281,22 @@ class Invoice extends BaseInvoice
     }
 
     return $this;
+  }
+
+  public function findItem(string $category, bool $next = false): array|null
+  {
+    $items = $next ? ($this->next_invoice['items'] ?? []) : $this->items;
+    return ProductItem::findItem($items, $category);
+  }
+
+  public function findPlanItem(bool $next = false): array|null
+  {
+    return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
+  }
+
+  public function findLicenseItem(bool $next = false): array|null
+  {
+    return $this->findItem(ProductItem::ITEM_CATEGORY_LICENSE, $next);
   }
 
   public function fillFromSubscriptionNext(Subscription $subscription)

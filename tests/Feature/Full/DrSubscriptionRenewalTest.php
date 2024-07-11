@@ -26,7 +26,7 @@ class DrSubscriptionRenewalTest extends DrApiTestCase
     $this->createOrUpdatePaymentMethod();
     $response = $this->createSubscription(Plan::INTERVAL_YEAR);
     $response = $this->paySubscription($response->json('id'));
-    $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
+    $subscription = $this->onOrderAccepted(Subscription::find($response->json('id')));
 
     return $subscription;
   }
@@ -57,7 +57,7 @@ class DrSubscriptionRenewalTest extends DrApiTestCase
     $this->createOrUpdatePaymentMethod();
     $response = $this->createSubscription(Plan::INTERVAL_YEAR);
     $response = $this->paySubscription($response->json('id'));
-    $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
+    $subscription = $this->onOrderAccepted(Subscription::find($response->json('id')));
 
     $this->assertEquals(SubscriptionPlan::INTERVAL_YEAR, $subscription->plan_info['interval']);
 

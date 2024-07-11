@@ -21,7 +21,7 @@ class DrSubscriptionStoppedTest extends DrApiTestCase
     $this->createOrUpdatePaymentMethod();
     $response = $this->createSubscription();
     $response = $this->paySubscription($response->json('id'));
-    $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
+    $subscription = $this->onOrderAccepted(Subscription::find($response->json('id')));
     $subscription = $this->onOrderComplete($subscription);
     $this->cancelSubscription($subscription->id);
 

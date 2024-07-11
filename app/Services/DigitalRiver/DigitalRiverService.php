@@ -7,6 +7,7 @@ use App\Models\Configuration;
 use App\Models\Coupon;
 use App\Models\SubscriptionPlan;
 use App\Models\Invoice;
+use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\TaxId;
@@ -426,14 +427,8 @@ class DigitalRiverService
     $subscriptionInfo->setFreeTrial($subscription->isFreeTrial());
 
     $items = [];
-
     foreach ($subscription->items as $productItem) {
-
-      $productDetails = new DrProductDetails();
-      $productDetails->setSkuGroupId(config('dr.sku_grp_subscription'));
-      $productDetails->setName($productItem['name']);
-      $productDetails->setDescription("");
-      $productDetails->setCountryOfOrigin('AU');
+      $productDetails = ProductItem::buildDrProductDetails($productItem);
 
       // item
       $item = new DrSkuRequestItem();
@@ -445,7 +440,6 @@ class DigitalRiverService
         'subscription_id' => $subscription->id,
         'category' => $productItem['category']
       ]);
-
       $items[] = $item;
     }
     return $items;
@@ -511,9 +505,11 @@ class DigitalRiverService
           ->setCountry($billing_info['address']['country'])));
       $checkoutRequest->setItems([
         (new DrSkuRequestItem())
-          ->setProductDetails((new DrProductDetails())
-            ->setSkuGroupId(config('dr.sku_grp_subscription'))
-            ->setName('Tax Rate Precalculation'))
+          ->setProductDetails(
+            (new DrProductDetails())
+              ->setSkuGroupId(config('dr.sku_grp_subscription'))
+              ->setName('Tax Rate Precalculation')
+          )
           ->setPrice(10.00)
       ]);
       $checkoutRequest->setTaxInclusive(false);
@@ -735,34 +731,12 @@ class DigitalRiverService
     }
   }
 
-  public function convertSubscriptionToStandard(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
-  {
-    try {
-      $items = $drSubscription->getItems();
-      $items[0]->setPrice($subscription->plan_info['price']['price']);
-      $items[0]->getProductDetails()->setName($subscription->plan_info['name']);
-
-      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
-      $updateSubscriptionRequest->setPlanId(
-        SubscriptionPlan::findNormalPlanDrId(
-          $subscription->plan_info['interval'],
-          $subscription->plan_info['interval_count']
-        )
-      );
-      $updateSubscriptionRequest->setItems($items);
-
-      return $this->subscriptionApi->updateSubscriptions($drSubscription->getId(), $updateSubscriptionRequest);
-    } catch (\Throwable $th) {
-      throw $this->throwException($th);
-    }
-  }
-
   public function convertSubscriptionToNext(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
   {
     try {
       $nextInvoice = $subscription->next_invoice;
 
-      $updateSubscriptionRequest = new  DrUpdateSubscriptionRequest();
+      $updateSubscriptionRequest = new DrUpdateSubscriptionRequest();
 
       // update dr plan if requied
       $newDrPlanId = SubscriptionPlan::findNormalPlanDrId(
@@ -774,9 +748,24 @@ class DigitalRiverService
       }
 
       // update items
-      $items = $drSubscription->getItems();
-      $items[0]->setPrice($nextInvoice['price']);
-      $items[0]->getProductDetails()->setName(Subscription::buildPlanName($nextInvoice['plan_info'], $nextInvoice['coupon_info']));
+
+      /** @var DrSubscriptionItems[] $items */
+      $items = [];
+      foreach ($nextInvoice['items'] as $productItem) {
+        $productDetails = ProductItem::BuildDrProductDetails($productItem);
+
+        // item
+        $item = new DrSubscriptionItems();
+        $item->setProductDetails($productDetails);
+        $item->setPrice($productItem['price']);
+        $item->setQuantity(1);
+        $item->setMetadata([
+          'subscription_id' => $subscription->id,
+          'category' => $productItem['category']
+        ]);
+
+        $items[] = $item;
+      }
       $updateSubscriptionRequest->setItems($items);
 
       return $this->subscriptionApi->updateSubscriptions($drSubscription->getId(), $updateSubscriptionRequest);

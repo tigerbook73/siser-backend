@@ -26,7 +26,7 @@ class DrSubscriptionProcessingTest extends DrApiTestCase
     $this->createOrUpdatePaymentMethod();
     $response = $this->createSubscription();
     $response = $this->paySubscription($response->json('id'));
-    return $this->onOrderAccept(Subscription::find($response->json('id')));
+    return $this->onOrderAccepted(Subscription::find($response->json('id')));
   }
 
   public function test_processing_to_completed()

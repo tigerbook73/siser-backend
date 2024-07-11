@@ -1006,12 +1006,12 @@ class SubscriptionManagerDR implements SubscriptionManager
       }
     }
 
-    // wait for onOrderAccept to complete
+    // wait for onOrderAccepted to complete
     $this->wait(
       check: fn () => $invoice->period > 0,
       postCheck: fn () => $invoice->refresh(),
       location: __FUNCTION__,
-      message: 'onOrderAccept() to complete'
+      message: 'onOrderAccepted() to complete'
     );
 
     if ($invoice->status == Invoice::STATUS_COMPLETED) {

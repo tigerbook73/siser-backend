@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Invoice;
+use App\Models\ProductItem;
 use App\Models\Subscription;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -27,7 +28,7 @@ return new class extends Migration
     Invoice::chunkById(200, function ($invoices) {
       /** @var \App\Models\Invoice[] $invoices */
       foreach ($invoices as $invoice) {
-        $items = Subscription::buildItems($invoice->plan_info, $invoice->coupon_info);
+        $items = ProductItem::buildItems($invoice->plan_info, $invoice->coupon_info);
         $items[0]['price']  = $invoice->subtotal;
         $items[0]['tax']    = $invoice->total_tax;
         $items[0]['amount'] = $invoice->subtotal;

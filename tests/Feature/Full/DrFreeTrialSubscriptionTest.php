@@ -21,9 +21,9 @@ class DrFreeTrialSubscriptionTest extends DrApiTestCase
   {
     $this->createOrUpdateBillingInfo();
     $this->createOrUpdatePaymentMethod();
-    $response = $this->createSubscription(Plan::INTERVAL_MONTH, Coupon::DISCOUNT_TYPE_FREE_TRIAL);
+    $response = $this->createSubscription(Plan::INTERVAL_MONTH, Coupon::DISCOUNT_TYPE_FREE_TRIAL, withLicensePackage: true);
     $response = $this->paySubscription($response->json('id'));
-    $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
+    $subscription = $this->onOrderAccepted(Subscription::find($response->json('id')));
     return $subscription;
   }
 

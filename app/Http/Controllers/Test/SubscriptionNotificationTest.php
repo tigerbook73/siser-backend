@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Models\LicensePackage;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\User;
@@ -234,13 +235,18 @@ class SubscriptionNotificationTest
     $this->subscription->fillBillingInfo($this->billingInfo);
     $this->subscription->fillPaymentMethod($this->paymentMethod);
     $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon, $licenseCount ? $this->licensePackage : null, $licenseCount);
-    $this->subscription->subtotal                     = $this->subscription->price;
-    $this->subscription->tax_rate                     = $taxRate && $this->subscription->tax_rate ?: 0.1;
-    $this->subscription->total_tax                    = $this->subscription->subtotal * $this->subscription->tax_rate;
-    $this->subscription->total_amount                 = $this->subscription->subtotal * (1 + $this->subscription->tax_rate);
+    $this->subscription->subtotal = $this->subscription->price;
+    $this->subscription->tax_rate = $taxRate && $this->subscription->tax_rate ?: 0.1;
 
-    $this->subscription->current_period               = $currentPeriod ?? $this->subscription->current_period ?? 0;
-    $this->subscription->start_date                   = $startDate ?? $this->subscription->start_date ?? now();
+    /** update item tax */
+    $this->subscription->items = ProductItem::rebuildItemsForTax($this->subscription->items, $this->subscription->tax_rate);
+    $this->subscription->total_tax = ProductItem::calcTotal($this->subscription->items, 'tax');
+    /** update item tax */
+
+    $this->subscription->total_amount = $this->subscription->subtotal + $this->subscription->total_tax;
+
+    $this->subscription->current_period = $currentPeriod ?? $this->subscription->current_period ?? 0;
+    $this->subscription->start_date = $startDate ?? $this->subscription->start_date ?? now();
 
     // period start & end date
     if ($this->subscription->isFreeTrial()) {

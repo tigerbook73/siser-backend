@@ -33,7 +33,7 @@ class DrSubscriptionPendingTest extends DrApiTestCase
   {
     $response = $this->init_pending();
 
-    return $this->onOrderAccept(Subscription::find($response->json('id')));
+    return $this->onOrderAccepted(Subscription::find($response->json('id')));
   }
 
   public function test_pending_to_failed_error_fulfill()

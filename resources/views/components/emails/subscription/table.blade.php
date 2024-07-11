@@ -75,16 +75,12 @@
       <th colspan="2" width="40%" class="text-left">{{ $helper->trans('order_item') }}</th>
       <th>{{ $helper->trans('order_price_excl') }}</th>
     </tr>
+    @foreach ($invoice->items as $item)
     <tr>
-      <td colspan="2">{{ $invoice->items[0]['name'] }}</td>
-      <td class="text-right">{{ $helper->formatPrice($invoice->items[0]['price']) }}</td>
+      <td colspan="2">{{ $item['name'] }}</td>
+      <td class="text-right">{{ $helper->formatPrice($item['price']) }}</td>
     </tr>
-    @if ($invoice->license_package_info)
-    <tr>
-      <td colspan="2">{{ $invoice->items[1]['name'] }}</td>
-      <td class="text-right">{{ $helper->formatPrice($invoice->items[1]['price']) }}</td>
-    </tr>
-    @endif
+    @endforeach
     <tr>
       <td colspan="5" class="highlight"></td>
     </tr>

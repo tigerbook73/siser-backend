@@ -87,7 +87,7 @@ class PlanPriceCommand extends Command
 
     /**
      * update monthly plan
-     * 
+     *
      * @var Plan $monthPlan
      */
     $monthPlan = Plan::public()
@@ -111,7 +111,7 @@ class PlanPriceCommand extends Command
 
     /**
      * update annual plan
-     * 
+     *
      * @var Plan $annualPlan
      */
     $annualPlan = Plan::public()
@@ -175,9 +175,11 @@ class PlanPriceCommand extends Command
           ->setCountry($country)));
       $checkoutRequest->setItems([
         (new DrSkuRequestItem())
-          ->setProductDetails((new DrProductDetails())
-            ->setSkuGroupId(config('dr.sku_grp_subscription'))
-            ->setName('Tax Rate Precalculation'))
+          ->setProductDetails(
+            (new DrProductDetails())
+              ->setSkuGroupId(config('dr.sku_grp_subscription'))
+              ->setName('Tax Rate Precalculation')
+          )
           ->setPrice(100)
       ]);
       $checkoutRequest->setTaxInclusive(false);

@@ -4,6 +4,7 @@ namespace Tests\DR;
 
 use App\Models\BillingInfo;
 use App\Models\Invoice;
+use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
@@ -28,11 +29,15 @@ use DigitalRiver\ApiSdk\Model\OrderRefund as DrOrderRefund;
 use DigitalRiver\ApiSdk\Model\Source as DrSource;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\Model\CustomerTaxIdentifier as DrCustomerTaxIdentifier;
+use DigitalRiver\ApiSdk\Model\InvoiceItem;
+use DigitalRiver\ApiSdk\Model\OrderItem;
 use DigitalRiver\ApiSdk\Model\Payments;
 use DigitalRiver\ApiSdk\Model\ProductDetails;
 use DigitalRiver\ApiSdk\Model\Session;
 use DigitalRiver\ApiSdk\Model\Shipping;
 use DigitalRiver\ApiSdk\Model\SkuItem;
+use DigitalRiver\ApiSdk\Model\SubscriptionInfo;
+use DigitalRiver\ApiSdk\Model\SubscriptionItems;
 use DigitalRiver\ApiSdk\Model\Tax;
 use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxIdentifier;
 use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
@@ -239,10 +244,77 @@ class DrTestHelper
     return $this;
   }
 
-
   public function uuid()
   {
     return 'dr_' . uuid_create();
+  }
+
+  public function copyItemsFrom(
+    DrOrder|DrInvoice|DrSubscription $to,
+    DrCheckout|DrInvoice|Subscription $from,
+    bool $subscriptionNext = false
+  ) {
+    if ($from instanceof Subscription) {
+      $items = $subscriptionNext ? $from->next_invoice['items'] : $from->items;
+      $drItems = [];
+      foreach ($items as $item) {
+        $productDetails = ProductItem::BuildDrProductDetails($item);
+
+        // items
+        if ($to instanceof DrSubscription) {
+          $drItem = new SubscriptionItems();
+          $drItem->setPrice($item['price']);
+          $drItem->setQuantity(1);
+          $drItem->setProductDetails($productDetails);
+        } else {
+          $drItem = ($to instanceof DrOrder) ? new OrderItem() : new InvoiceItem();
+          $drItem->setAmount($item['price']);
+          $drItem->setTax(
+            (new Tax())
+              ->setRate($this->getTaxRate($from->tax_id_info))
+              ->setAmount($item['tax'])
+          );
+          $drItem->setQuantity(1);
+          $drItem->setProductDetails($productDetails);
+        }
+        $drItems[] = $drItem;
+      }
+      $to->setItems($drItems);
+      return $to;
+    }
+
+    if ($from instanceof DrCheckout || $from instanceof DrInvoice) {
+      $drItems = [];
+      foreach ($from->getItems() as $item) {
+        $productDetails = (new ProductDetails())
+          ->setDescription($item->getProductDetails()->getDescription())
+          ->setName($item->getProductDetails()->getName())
+          ->setCountryOfOrigin($item->getProductDetails()->getCountryOfOrigin())
+          ->setSkuGroupId($item->getProductDetails()->getSkuGroupId());
+
+        // item
+        if ($to instanceof DrSubscription) {
+          $drItem = new SubscriptionItems();
+          $drItem->setPrice($item->getAmount());
+          $drItem->setQuantity(1);
+          $drItem->setProductDetails($productDetails);
+        } else {
+          $drItem = ($to instanceof DrOrder) ?  new OrderItem() : new InvoiceItem();;
+          $drItem->setAmount($item->getAmount());
+          $drItem->setTax(
+            (new Tax())
+              ->setRate($item->getTax()->getRate())
+              ->setAmount($item->getTax()->getAmount())
+          );
+          $drItem->setQuantity(1);
+          $drItem->setProductDetails($productDetails);
+        }
+        $drItems[] = $drItem;
+      }
+      $to->setItems($drItems);
+      return $to;
+    }
+    return $to;
   }
 
   public function createCharge(string $order_id = null, string $state = null): DrCharge
@@ -261,16 +333,26 @@ class DrTestHelper
     $checkout->setId($this->uuid());
     $subscripitonId = $this->uuid();
 
-    for ($index = 0; $index < count($checkout->getItems()); $index++) {
-      $item = $checkout->getItems()[$index];
-      $item->getSubscriptionInfo()->setSubscriptionId($subscripitonId);
-      $item->setTax(
+    $drItems = [];
+    foreach ($subscription->items as $item) {
+      $productDetails = ProductItem::BuildDrProductDetails($item);
+
+      $subscriptionInfo = new SubscriptionInfo();
+      $subscriptionInfo->setSubscriptionId($subscripitonId);
+
+      $drItem = new SkuItem();
+      $drItem->setAmount($item['price']);
+      $drItem->setTax(
         (new Tax())
           ->setRate($this->getTaxRate($subscription->tax_id_info))
-          ->setAmount(round($subscription->items[$index]['price'] * $this->getTaxRate($subscription->tax_id_info), 2))
+          ->setAmount(round($item['price'] * $this->getTaxRate($subscription->tax_id_info), 2))
       );
-      $item->setAmount(round($subscription->items[$index]['price'], 2));
+      $drItem->setQuantity(1);
+      $drItem->setProductDetails($productDetails);
+      $drItem->setSubscriptionInfo($subscriptionInfo);
+      $drItems[] = $drItem;
     }
+    $checkout->setItems($drItems);
 
     $checkout->setSubtotal(round($subscription->price, 2));
     $checkout->setTotalTax(round($checkout->getSubtotal() * $this->getTaxRate($subscription->tax_id_info), 2));
@@ -369,11 +451,12 @@ class DrTestHelper
     $invoice = $this->convertModel($drCheckout, DrInvoice::class);
     $invoice->setId($this->uuid());
 
+    $this->copyItemsFrom($invoice, $subscription, subscriptionNext: true);
+
     $invoice->setSubtotal($subscription->next_invoice['subtotal']);
     $invoice->setTotalTax($subscription->next_invoice['total_tax']);
     $invoice->setTotalAmount($subscription->next_invoice['total_amount']);
-    $invoice->getItems()[0]->getSubscriptionInfo()->setSubscriptionId($subscription->id);
-    $invoice->getItems()[0]->getTax()->setRate($this->getTaxRate($subscription->tax_id_info));
+
     $invoice->setState(DrInvoice::STATE_DRAFT);
     if ($order_id) {
       $invoice->setOrderId($order_id);
@@ -404,6 +487,9 @@ class DrTestHelper
     $order->setId($this->uuid());
     $order->setUpstreamId($invoice->id);
     $order->setState(DrOrder::STATE_ACCEPTED);
+
+    $this->copyItemsFrom($order, $drInvoice);
+
     $this->setDrOrder($order);
     return $order;
   }
@@ -429,11 +515,14 @@ class DrTestHelper
     $order->setId($this->uuid());
     $order->setCheckoutId($checkout->getId());
 
+    $this->copyItemsFrom($order, $checkout);
+
     $order->setSubtotal($checkout->getSubtotal());
     $order->setItems($checkout->getItems());
     $order->setTotalTax($checkout->getTotalTax());
     $order->setTotalAmount($checkout->getTotalAmount());
     $order->setState($state);
+
     $this->setDrOrder($order);
     return $order;
   }
@@ -478,6 +567,9 @@ class DrTestHelper
     $drSubscription = DrObject::subscription();
     $drSubscription->setId($id ?? $subscription->getDrSubscriptionId() ?? $this->uuid());
     $this->setDrSubscription($drSubscription);
+
+    $this->copyItemsFrom($drSubscription, $subscription);
+
     return $drSubscription;
   }
 
@@ -506,21 +598,6 @@ class DrTestHelper
     return $updatedSubscription;
   }
 
-  public function convertSubscriptionToStandard(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
-  {
-    $items = $drSubscription->getItems();
-    $items[0]->setPrice($subscription->plan_info['price']['price']);
-    $items[0]->getProductDetails()->setName($subscription->plan_info['name']);
-
-    $drSubscription->setPlanId(
-      SubscriptionPlan::findNormalPlanDrId(
-        $subscription->plan_info['interval'],
-        $subscription->plan_info['interval_count']
-      )
-    );
-    return $drSubscription;
-  }
-
   public function convertSubscriptionToNext(DrSubscription $drSubscription, Subscription $subscription): DrSubscription
   {
     $nextInvoice = $subscription->next_invoice;
@@ -530,12 +607,11 @@ class DrTestHelper
       $nextInvoice['plan_info']['interval'],
       $nextInvoice['plan_info']['interval_count']
     );
-
-    $items = $drSubscription->getItems();
-    $items[0]->setPrice($nextInvoice['price']);
-    $items[0]->getProductDetails()->setName(Subscription::buildPlanName($nextInvoice['plan_info'], $nextInvoice['coupon_info']));
-
     $drSubscription->setPlanId($newDrPlanId);
+
+    // update items
+    $this->copyItemsFrom($drSubscription, $subscription, subscriptionNext: true);
+
     return $drSubscription;
   }
 

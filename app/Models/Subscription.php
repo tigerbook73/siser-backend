@@ -37,10 +37,6 @@ class Subscription extends BaseSubscription
   public const DR_SOURCE_ID         = 'source_id';
   public const DR_SUBSCRIPTION_ID   = 'subscription_id';
 
-  // subscription item category
-  public const ITEM_CATEGORY_PLAN             = 'plan';
-  public const ITEM_CATEGORY_LICENSE          = 'license';
-
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'user_id'                   => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -94,7 +90,7 @@ class Subscription extends BaseSubscription
         'plan_id'                   => $plan->id,
         'billing_info'              => $billing_info,
         'plan_info'                 => $plan_info,
-        'items'                     => self::buildItems($plan_info),
+        'items'                     => ProductItem::buildItems($plan_info),
         'currency'                  => $plan_info['price']['currency'],
         'price'                     => 0.0,
         'subtotal'                  => 0.0,
@@ -202,31 +198,20 @@ class Subscription extends BaseSubscription
     return $this;
   }
 
-  static public function buildItems(array $plan_info, array $coupon_info = null, array $license_package_info = null): array
+  public function findItem(string $category, bool $next = false): array|null
   {
-    $items = [];
-    $itemPlan = [
-      'category'    => self::ITEM_CATEGORY_PLAN,
-      'name'        => self::buildPlanName($plan_info, $coupon_info),
-      'quantity'    => 1,
-      'price'       => self::calcPlanPrice($plan_info, $coupon_info),
-      'tax'         => null,
-      'amount'      => null,
-    ];
-    $items[] = $itemPlan;
+    $items = $next ? ($this->next_invoice['items'] ?? []) : $this->items;
+    return ProductItem::findItem($items, $category);
+  }
 
-    if ($license_package_info) {
-      $itemLicense = [
-        'category'  => self::ITEM_CATEGORY_LICENSE,
-        'name'      => $license_package_info['name'] . ' x ' . $license_package_info['quantity'],
-        'quantity'  => 1,
-        'price'     => round($itemPlan['price'] * $license_package_info['price_rate'] / 100, 2),
-        'tax'       => null,
-        'amount'    => null,
-      ];
-      $items[] = $itemLicense;
-    }
-    return $items;
+  public function findPlanItem(bool $next = false): array|null
+  {
+    return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
+  }
+
+  public function findLicenseItem(bool $next = false): array|null
+  {
+    return $this->findItem(ProductItem::ITEM_CATEGORY_LICENSE, $next);
   }
 
   public function fillPlanAndCoupon(Plan $plan, Coupon $coupon = null, LicensePackage $licensePackage = null, int $licenseQuantity = 0): self
@@ -241,10 +226,10 @@ class Subscription extends BaseSubscription
     $this->coupon_id            = $coupon_info['id'] ?? null;
     $this->coupon_info          = $coupon_info;
     $this->license_package_info = $license_package_info;
-    $this->items                = self::buildItems($plan_info, $coupon_info, $license_package_info);
+    $this->items                = ProductItem::buildItems($plan_info, $coupon_info, $license_package_info);
 
     // total price
-    $this->price = round(array_reduce($this->items, fn (float $carry, array $item) => $carry + $item['price'], 0), 2);
+    $this->price = ProductItem::calcTotal($this->items, 'price');
     return $this;
   }
 
@@ -268,21 +253,16 @@ class Subscription extends BaseSubscription
     // Note: DrCheckout, DrOrder and DrInvoice has same memeber functions
 
     // fill items
-    $items = $this->items;
-    $drItems = $drObject->getItems();
-    for ($i = 0; $i < count($drItems); $i++) {
-      $items[$i]['price']   = $drItems[$i]->getAmount();
-      $items[$i]['tax']     = $drItems[$i]->getTax()->getAmount();
-      $items[$i]['amount']  = $drItems[$i]->getAmount();
-    }
-    $this->items = $items;
+    $this->items = ProductItem::buildItemsFromDrObject($drObject);
 
     // fill price
     $this->price        = $drObject->getSubtotal();
     $this->subtotal     = $drObject->getSubtotal();
     $this->total_tax    = $drObject->getTotalTax();
     $this->total_amount = $drObject->getTotalAmount();
-    $this->tax_rate     = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ? 0 : $drObject->getItems()[0]->getTax()->getRate();
+    $this->tax_rate     = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ?
+      0 :
+      $drObject->getItems()[0]->getTax()->getRate();
     return $this;
   }
 
@@ -338,19 +318,21 @@ class Subscription extends BaseSubscription
         $next_invoice['coupon_info'] = null;
       }
     }
-    $next_invoice['items'] = self::buildItems($next_invoice['plan_info'], $next_invoice['coupon_info'], $next_invoice['license_package_info']);
+
+    // items
+    $items = ProductItem::buildItems($next_invoice['plan_info'], $next_invoice['coupon_info'], $next_invoice['license_package_info']);
+    $next_invoice['items']        = ProductItem::rebuildItemsForTax($items, $this->tax_rate, $this->items);
+    $next_invoice['price']        = ProductItem::calcTotal($next_invoice['items'], 'price');
+    $next_invoice['subtotal']     = $next_invoice['price'];
+    $next_invoice['tax_rate']     = $this->tax_rate;
+    $next_invoice['total_tax']    = ProductItem::calcTotal($next_invoice['items'], 'tax');
+    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
 
     $next_invoice['current_period_start_date'] = $this->current_period_end_date->addSecond()->toDateTimeString();
     $next_invoice['current_period_end_date'] = $this->current_period_end_date->add(
       $next_invoice['plan_info']['interval'],
       $next_invoice['plan_info']['interval_count']
     )->toDateTimeString();
-
-    $next_invoice['price'] = array_reduce($next_invoice['items'], fn (float $carry, array $item) => $carry + $item['price'], 0);
-    $next_invoice['subtotal'] = $next_invoice['price'];
-    $next_invoice['tax_rate'] = $this->tax_rate;
-    $next_invoice['total_tax'] = ($next_invoice['subtotal'] == $this->subtotal) ? $this->total_tax : round($next_invoice['price'] * $next_invoice['tax_rate'], 2);
-    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
 
     $this->next_invoice = [
       'current_period'            => $next_invoice['current_period'],
@@ -376,7 +358,12 @@ class Subscription extends BaseSubscription
     $next_invoice['subtotal']       = $drObject->getSubtotal();
     $next_invoice['total_tax']      = $drObject->getTotalTax();
     $next_invoice['total_amount']   = $drObject->getTotalAmount();
-    $next_invoice['tax_rate']       = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ? 0 : $drObject->getItems()[0]->getTax()->getRate();
+    $next_invoice['tax_rate']       = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ?
+      0 :
+      $drObject->getItems()[0]->getTax()->getRate();
+
+    // fill items
+    $next_invoice['items'] = ProductItem::buildItemsFromDrObject($drObject);
 
     $this->next_invoice = $next_invoice;
     return $this;

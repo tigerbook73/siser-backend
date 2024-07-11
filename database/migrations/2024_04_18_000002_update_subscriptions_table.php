@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ProductItem;
 use App\Models\Subscription;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -29,7 +30,7 @@ return new class extends Migration
         // current
         $subscription->price = $subscription->subtotal;
         $subscription->license_package_info = null;
-        $items = Subscription::buildItems($subscription->plan_info, $subscription->coupon_info);
+        $items = ProductItem::buildItems($subscription->plan_info, $subscription->coupon_info);
         $items[0]['price']  = $subscription->subtotal;
         $items[0]['tax']    = $subscription->total_tax;
         $items[0]['amount'] = $subscription->subtotal;
@@ -39,7 +40,7 @@ return new class extends Migration
         if ($subscription->next_invoice != null) {
           $next_invoice = $subscription->next_invoice;
           $next_invoice['license_package_info'] = null;
-          $items = Subscription::buildItems($next_invoice['plan_info'], $next_invoice['coupon_info']);
+          $items = ProductItem::buildItems($next_invoice['plan_info'], $next_invoice['coupon_info']);
           $items[0]['price']  = $next_invoice['subtotal'];
           $items[0]['tax']    = $next_invoice['total_tax'];
           $items[0]['amount'] = $next_invoice['subtotal'];

@@ -26,7 +26,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
     $this->createOrUpdatePaymentMethod();
     $response = $this->createSubscription(Plan::INTERVAL_MONTH);
     $response = $this->paySubscription($response->json('id'));
-    $subscription = $this->onOrderAccept(Subscription::find($response->json('id')));
+    $subscription = $this->onOrderAccepted(Subscription::find($response->json('id')));
     $subscription = $this->onOrderComplete($subscription);
     return $subscription;
   }

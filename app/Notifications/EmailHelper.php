@@ -240,48 +240,37 @@ class EmailHelper
 
   public function formatSubscriptionPlanName(Subscription $subscription, bool $next = false)
   {
-    if ($next) {
-      return $subscription->next_invoice['items'][0]['name'];
-    } else {
-      return $subscription->items[0]['name'];
-    }
+    $item = $subscription->findPlanItem(next: $next);
+    return $item['name'];
   }
 
   public function formatSubscriptionLicenseName(Subscription $subscription, bool $next = false)
   {
-    if ($next) {
-      if ($subscription->next_invoice['license_package_info']) {
-        return $subscription->next_invoice['items'][1]['name'];
-      }
-    } else {
-      if ($subscription->license_package_info) {
-        return $subscription->items[1]['name'];
-      }
-    }
-    return '';
+    $item = $subscription->findLicenseItem(next: $next);
+    return $item['name'];
   }
 
   public function formatSubscriptionFullName(Subscription $subscription, bool $next = false)
   {
-    $planName = $this->formatSubscriptionPlanName($subscription, $next);
-    $licenseName = $this->formatSubscriptionLicenseName($subscription, $next);
-    if ($licenseName) {
-      return $planName . ' + License Package';
+    $planItem = $subscription->findPlanItem();
+    $licenseItem = $subscription->findLicenseItem();
+    if ($licenseItem) {
+      return $planItem['name'] . '+ License Package';
     } else {
-      return $planName;
+      return $planItem['name'];
     }
   }
 
   public function formatOrderPlanName(Invoice $invoice): string
   {
-    $items = $invoice->items ?? [];
-    if (count($items) == 1) {
-      return $items[0]['name'];
-    } else if (count($items) > 1) {
-      return $items[0]['name'] . ' + License Package';
-    }
+    $planItem = $invoice->findPlanItem();
+    $licenseItem = $invoice->findLicenseItem();
 
-    return '';
+    if ($licenseItem) {
+      return $planItem['name'] . ' + License Package';
+    } else {
+      return $planItem['name'];
+    }
   }
 
   public function formatOrderPrice(Invoice $invoice)
