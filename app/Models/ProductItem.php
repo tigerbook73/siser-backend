@@ -117,8 +117,9 @@ class ProductItem
   {
     $updatedItems = [];
     foreach ($items as $index => $item) {
-      if (isset($prevItems[$index]['price']) && $item['price'] === $prevItems[$index]['price']) {
-        $item['tax'] = $prevItems[$index]['tax'];
+      $peerItem = $prevItems ? self::findItem($prevItems, $item['category']) : null;
+      if ($peerItem && $item['price'] === $peerItem['price']) {
+        $item['tax'] = $peerItem['tax'];
       } else {
         $item['tax'] = round($item['price'] * $taxRate, 2);
       }
