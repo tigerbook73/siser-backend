@@ -793,7 +793,8 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // stop previous subscription
     if ($previousSubscription = $subscription->user->getActiveSubscription()) {
-      $this->stopSubscription($previousSubscription, 'new subscription activated');
+      // stop subscription and do not update user subscription level to avoid create new basic subscription
+      $previousSubscription->stop(Subscription::STATUS_STOPPED, 'new subscription activated');
     }
 
     // active current subscription
