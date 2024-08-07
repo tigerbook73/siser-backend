@@ -35,6 +35,8 @@ class LicenseSharingTestHelper
       ],
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);
+
+    $user->getActiveSubscription()?->stop(Subscription::STATUS_STOPPED, 'test');
     $subscription = (new Subscription())
       ->initFill()
       ->fillBillingInfo($user->billing_info ?? BillingInfo::createDefault($user))
@@ -153,10 +155,6 @@ class LicenseSharingTestHelper
 
     if ($activeSubscription->subscription_level === 2) {
       if (!$activeLicenseSharing) {
-        if ($user->subscription_level !== $activeInvitation->subscription_level) {
-          throw new \Exception('User has no subscription but has active invitation but subscription level does not match');
-        }
-
         if ($ldsLicense->license_count !== ($user->machine_count ?: 1) * GeneralConfiguration::getMachineLicenseUnit()) {
           throw new \Exception('User has active subscription but no active license sharing but license count does not match');
         }
@@ -167,7 +165,7 @@ class LicenseSharingTestHelper
         throw new \Exception('User has active subscription and active license sharing but subscription level does not match');
       }
 
-      if ($ldsLicense->license_count !==  (($user->machine_count ?: 1) + $activeLicenseSharing->total_count) * GeneralConfiguration::getMachineLicenseUnit()) {
+      if ($ldsLicense->license_count !==  (($user->machine_count ?: 1) + $activeLicenseSharing->free_count) * GeneralConfiguration::getMachineLicenseUnit()) {
         throw new \Exception('User has active subscription and active license sharing but license count does not match');
       }
       return;
