@@ -17,7 +17,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $event_id
  * @property string $type
+ * @property int|null $user_id
  * @property int|null $subscription_id
+ * @property array|null $data
+ * @property array|null $messages
  * @property string $status
  * @property array|null $status_transitions
  * @property Carbon|null $created_at
@@ -32,14 +35,20 @@ class DrEventRecord extends Model
   protected $table = 'dr_event_records';
 
   protected $casts = [
+    'user_id' => 'int',
     'subscription_id' => 'int',
+    'data' => 'json',
+    'messages' => 'json',
     'status_transitions' => 'json'
   ];
 
   protected $fillable = [
     'event_id',
     'type',
+    'user_id',
     'subscription_id',
+    'data',
+    'messages',
     'status',
     'status_transitions'
   ];

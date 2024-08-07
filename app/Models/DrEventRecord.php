@@ -3,72 +3,88 @@
 namespace App\Models;
 
 use App\Models\Base\DrEventRecord as BaseDrEventRecord;
+use App\Services\DigitalRiver\SubscriptionManagerResult;
+
 
 class DrEventRecord extends BaseDrEventRecord
 {
   use TraitStatusTransition;
 
+  const STATUS_INIT         = 'init';
+  const STATUS_PROCESSING   = 'processing';
   const STATUS_COMPLETED    = 'completed';
   const STATUS_FAILED       = 'failed';
-  const STATUS_PROCESSING   = 'processing';
 
-  const ACTION_DO           = 'do';
-  const ACTION_IGNORE       = 'ignore';
-  const ACTION_ERROR        = 'error';
-
-  public string $action = self::ACTION_DO;
-  public string|null $error = null;
 
   static public function fromDrEventId(string $event_id): ?self
   {
     return self::where('event_id', $event_id)->first();
   }
 
-  /**
-   * start processing dr event
-   */
-  static public function startProcessing(string $event_id, string $type): DrEventRecord
+  static public function fromDrEventIdOrNew(string $event_id, string $type): self
   {
-    $event = self::fromDrEventId($event_id);
-    if ($event) {
-      switch ($event->status) {
-        case self::STATUS_COMPLETED:
-          $event->action  = self::ACTION_IGNORE;
-          $event->error   = 'duplicated';
-          return $event;
+    $event = self::fromDrEventId($event_id) ?? new self([
+      'event_id'    => $event_id,
+      'type'        => $type,
+      'status'      => self::STATUS_INIT,
+    ]);
 
-        case self::STATUS_PROCESSING:
-          $event->action = self::ACTION_ERROR;
-          $event->error = 'in-processing';
-          return $event;
-
-        case self::STATUS_FAILED:
-          $event->setStatus(self::STATUS_PROCESSING);
-          $event->save();
-          return $event;
-      }
-      throw new \Exception('event status is in unknown', 500);
+    if ($event->type !== $type) {
+      throw new \Exception('event type is not matched', 500);
     }
 
-    $event = new self([
-      'event_id'  => $event_id,
-      'type'      => $type,
-      'status'    => self::STATUS_PROCESSING,
-    ]);
-    $event->setStatus(self::STATUS_PROCESSING);
-    $event->save();
     return $event;
   }
 
-  public function complete(int|null $subscriptionId): void
+  public function isInit(): bool
   {
-    $this->subscription_id = $subscriptionId;
+    return $this->status === self::STATUS_INIT;
+  }
+
+  public function isCompleted(): bool
+  {
+    return $this->status === self::STATUS_COMPLETED;
+  }
+
+  public function isFailed(): bool
+  {
+    return $this->status === self::STATUS_FAILED;
+  }
+
+  public function isProcessing(): bool
+  {
+    return $this->status === self::STATUS_PROCESSING;
+  }
+
+  public function startProcessing(): self
+  {
+    if (!$this->isInit() && !$this->isFailed()) {
+      throw new \Exception('event is not init or failed', 500);
+    }
+
+    $this->setStatus(self::STATUS_PROCESSING);
+    $this->save();
+    return $this;
+  }
+
+  public function complete(SubscriptionManagerResult $result): void
+  {
+    $this->user_id          = $result->getUserId();
+    $this->subscription_id  = $result->getSubscriptionId();
+    $this->data             = $result->getData();
+    $this->messages         = $result->getMessages();
+
     $this->setStatus(self::STATUS_COMPLETED);
     $this->save();
   }
 
-  public function fail(): void
+  public function fail(SubscriptionManagerResult $result): void
   {
+    $this->user_id          = $result->getUserId();
+    $this->subscription_id  = $result->getSubscriptionId();
+    $this->data             = $result->getData();
+    $this->messages         = $result->getMessages();
+
     $this->setStatus(self::STATUS_FAILED);
     $this->save();
   }

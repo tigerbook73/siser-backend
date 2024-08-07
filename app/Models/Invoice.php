@@ -150,6 +150,11 @@ class Invoice extends BaseInvoice
     return self::where('dr_order_id', $drOrderId)->first();
   }
 
+  static public function findByDrInvoiceId(string $drInvoiceId): Invoice|null
+  {
+    return self::where('dr_invoice_id', $drInvoiceId)->first();
+  }
+
   public function isCompleted(): bool
   {
     return $this->status == self::STATUS_COMPLETED ||
