@@ -1376,6 +1376,11 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // update DrOrder
     try {
+      // TODO: temp fix for invoice not in paid state
+      if ($drInvoice->getState() !== DrInvoice::STATE_PAID || !$drInvoice->getOrderId()) {
+        $drInvoice = $this->drService->getInvoice($drInvoice->getId());
+      }
+
       $this->drService->updateOrderUpstreamId($drInvoice->getOrderId(), $invoice->id);
       $this->result->appendMessage('dr-order updated: upstream id', location: __FUNCTION__);
     } catch (\Throwable $th) {
