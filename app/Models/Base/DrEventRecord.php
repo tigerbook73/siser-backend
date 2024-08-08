@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $messages
  * @property string $status
  * @property array|null $status_transitions
+ * @property string $resolve_status
+ * @property string $resolve_comments
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -50,6 +52,8 @@ class DrEventRecord extends Model
     'data',
     'messages',
     'status',
-    'status_transitions'
+    'status_transitions',
+    'resolve_status',
+    'resolve_comments'
   ];
 }

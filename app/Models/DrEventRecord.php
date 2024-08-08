@@ -15,6 +15,8 @@ class DrEventRecord extends BaseDrEventRecord
   const STATUS_COMPLETED    = 'completed';
   const STATUS_FAILED       = 'failed';
 
+  const RESOLVE_STATUS_RESOLVED   = 'resolved';
+  const RESOLVE_STATUS_UNRESOLVED = 'unresolved';
 
   static public function fromDrEventId(string $event_id): ?self
   {
@@ -24,9 +26,10 @@ class DrEventRecord extends BaseDrEventRecord
   static public function fromDrEventIdOrNew(string $event_id, string $type): self
   {
     $event = self::fromDrEventId($event_id) ?? new self([
-      'event_id'    => $event_id,
-      'type'        => $type,
-      'status'      => self::STATUS_INIT,
+      'event_id'        => $event_id,
+      'type'            => $type,
+      'status'          => self::STATUS_INIT,
+      'resolve_status'  => self::RESOLVE_STATUS_UNRESOLVED,
     ]);
 
     if ($event->type !== $type) {
@@ -56,6 +59,29 @@ class DrEventRecord extends BaseDrEventRecord
     return $this->status === self::STATUS_PROCESSING;
   }
 
+  public function setResolvedStatus(string $status): self
+  {
+    $this->resolve_status = $status;
+    return $this;
+  }
+
+  public function setResolveComments(string $comments = ''): self
+  {
+    $this->resolve_comments = $comments;
+    return $this;
+  }
+
+  public function resolve(string $comments): self
+  {
+    if (!$this->isFailed()) {
+      throw new \Exception('event is not failed', 500);
+    }
+    $this->setResolvedStatus(self::RESOLVE_STATUS_RESOLVED)
+      ->setResolveComments($comments)
+      ->save();
+    return $this;
+  }
+
   public function startProcessing(): self
   {
     if (!$this->isInit() && !$this->isFailed()) {
@@ -75,6 +101,8 @@ class DrEventRecord extends BaseDrEventRecord
     $this->messages         = $result->getMessages();
 
     $this->setStatus(self::STATUS_COMPLETED);
+    $this->setResolvedStatus(self::RESOLVE_STATUS_RESOLVED);
+    $this->setResolveComments();
     $this->save();
   }
 
@@ -86,6 +114,8 @@ class DrEventRecord extends BaseDrEventRecord
     $this->messages         = $result->getMessages();
 
     $this->setStatus(self::STATUS_FAILED);
+    $this->setResolvedStatus(self::RESOLVE_STATUS_UNRESOLVED);
+    $this->setResolveComments();
     $this->save();
   }
 }
