@@ -948,7 +948,14 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   protected function onOrderChargeCaptureComplete(DrCharge $charge): Invoice|null
   {
-    // validate the order
+    // validate the charger
+    if (!$charge->getOrderId()) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage('charge skipped: no valid dr-order-id', location: __FUNCTION__, level: 'warning');
+      return null;
+    }
+
     $drOrder = $this->drService->getOrder($charge->getOrderId());
     $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
