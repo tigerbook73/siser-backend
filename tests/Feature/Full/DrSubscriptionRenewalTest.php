@@ -114,7 +114,7 @@ class DrSubscriptionRenewalTest extends DrApiTestCase
       $this->assertEquals(SubscriptionRenewal::SUB_STATUS_FIRST_REMINDERED, $subscription->renewal_info['sub_status']);
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_REQUIRED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_REQUIRED
       );
     } else {
       // first reminder already sent, no reminder and renewal needed
@@ -153,7 +153,7 @@ class DrSubscriptionRenewalTest extends DrApiTestCase
       $this->assertEquals(SubscriptionRenewal::SUB_STATUS_FINAL_REMINDERED, $subscription->renewal_info['sub_status']);
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_REQUIRED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_REQUIRED
       );
     } else {
       // final reminder already sent, no reminder and renewal needed
@@ -181,11 +181,11 @@ class DrSubscriptionRenewalTest extends DrApiTestCase
     if ($subscription->getActiveInvoice()) {
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED
       );
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
       );
     }
 

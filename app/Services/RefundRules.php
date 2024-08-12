@@ -81,7 +81,7 @@ class RefundRules
     // check 7: customer has not refunded the same product before
     $refundCount = Refund::where('user_id', $invoice->user_id)  // @phpstan-ignore-line
       ->whereIn('status', [Refund::STATUS_COMPLETED, Refund::STATUS_PENDING])
-      ->whereHas('invoice', fn (Builder $query) => $query->where('plan_info->id', $invoice->plan_info['id']))
+      ->whereHas('invoice', fn(Builder $query) => $query->where('plan_info->id', $invoice->plan_info['id']))
       ->count();
     if ($refundCount > 0) {
       return ['refundable' => false, 'reason' => 'customer has already refunded the same product before'];

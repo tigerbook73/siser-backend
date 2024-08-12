@@ -196,8 +196,8 @@ class CouponController extends SimpleController
     $this->validateUser();
 
     $inputs = $request->validate([
-      'code'    => ['required', 'string', Rule::exists('coupons', 'code')->where(fn ($q) => $q->where('status', Coupon::STATUS_ACTIVE))],
-      'plan_id' => ['filled', 'numeric', Rule::exists('plans', 'id')->where(fn ($q) => $q->where('status', Coupon::STATUS_ACTIVE)->where('subscription_level', '>', 1))],
+      'code'    => ['required', 'string', Rule::exists('coupons', 'code')->where(fn($q) => $q->where('status', Coupon::STATUS_ACTIVE))],
+      'plan_id' => ['filled', 'numeric', Rule::exists('plans', 'id')->where(fn($q) => $q->where('status', Coupon::STATUS_ACTIVE)->where('subscription_level', '>', 1))],
       'user_id' => ['filled', 'exists:users,id'],
     ]);
 

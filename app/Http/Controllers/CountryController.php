@@ -57,7 +57,7 @@ class CountryController extends SimpleController
     $inputs = $this->validateUpdate($request, $country->id);
     $country->forceFill($inputs);
     DB::transaction(
-      fn () => $country->save()
+      fn() => $country->save()
     );
     return $this->transformSingleResource($country->unsetRelations());
   }
@@ -73,7 +73,7 @@ class CountryController extends SimpleController
     };
 
     return DB::transaction(
-      fn () => $country->delete()
+      fn() => $country->delete()
     );
   }
 }

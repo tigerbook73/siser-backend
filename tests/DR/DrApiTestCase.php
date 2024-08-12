@@ -928,7 +928,7 @@ class DrApiTestCase extends ApiTestCase
 
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_EXPIRED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_EXPIRED
       );
     } else if ($needRefund) {
       $this->assertEquals($subscription->status, Subscription::STATUS_STOPPED);
@@ -941,14 +941,14 @@ class DrApiTestCase extends ApiTestCase
 
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED_REFUND
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED_REFUND
       );
     } else {
       $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_CANCELLING);
 
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
       );
     }
 
@@ -983,7 +983,7 @@ class DrApiTestCase extends ApiTestCase
 
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_CANCELLED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_CANCELLED
       );
     } else {
       $response->assertStatus(409);
@@ -1092,12 +1092,12 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_CONFIRMED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_CONFIRMED
     );
     if ($previousSubscription) {
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
       );
     }
 
@@ -1163,7 +1163,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
     );
 
     return $subscription;
@@ -1246,7 +1246,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_ABORTED
     );
 
     return $subscription;
@@ -1342,7 +1342,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_INVOICE
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_INVOICE
     );
 
     return $invoice;
@@ -1383,7 +1383,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO
     );
 
     return $invoice;
@@ -1428,7 +1428,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_REFUNDED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_REFUNDED
     );
 
     return $invoice;
@@ -1486,7 +1486,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED
     );
 
     return $invoice;
@@ -1555,7 +1555,7 @@ class DrApiTestCase extends ApiTestCase
     ) {
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_REMINDER
       );
     }
 
@@ -1596,7 +1596,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_INVOICE_PENDING
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_INVOICE_PENDING
     );
     return $subscription;
   }
@@ -1627,7 +1627,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_SOURCE_INVALID
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_SOURCE_INVALID
     );
     return $subscription;
   }
@@ -1673,7 +1673,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_EXTENDED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_EXTENDED
     );
 
     return $subscription;
@@ -1711,7 +1711,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_FAILED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_FAILED
     );
 
     return $subscription;
@@ -1747,7 +1747,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_LAPSED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_LAPSED
     );
 
     return $subscription;
@@ -1796,7 +1796,7 @@ class DrApiTestCase extends ApiTestCase
     if ($previousStatus == Subscription::STATUS_ACTIVE && $previousSubStatus != Subscription::SUB_STATUS_CANCELLING) {
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
       );
     }
 
@@ -1842,14 +1842,14 @@ class DrApiTestCase extends ApiTestCase
 
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_EXPIRED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_RENEW_EXPIRED
       );
     } else {
       $this->assertEquals($subscription->sub_status, Subscription::SUB_STATUS_CANCELLING);
 
       Notification::assertSentTo(
         $subscription,
-        fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
+        fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_CANCELLED
       );
     }
 
@@ -1882,7 +1882,7 @@ class DrApiTestCase extends ApiTestCase
 
     Notification::assertSentTo(
       $subscription,
-      fn (SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_TERMINATED
+      fn(SubscriptionNotification $notification) => $notification->type == SubscriptionNotification::NOTIF_TERMINATED
     );
 
     return $response;

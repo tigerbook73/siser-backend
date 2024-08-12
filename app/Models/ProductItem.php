@@ -130,7 +130,7 @@ class ProductItem
 
   static public function calcTotal(array $items, string $field): float
   {
-    return round(array_reduce($items, fn ($carry, $item) => $carry + $item[$field], 0), 2);
+    return round(array_reduce($items, fn($carry, $item) => $carry + $item[$field], 0), 2);
   }
 
   /**

@@ -43,19 +43,19 @@ class SubscriptionController extends SimpleController
     return [
       'plan_id'     => [
         'required',
-        Rule::exists('plans', 'id')->where(fn ($q) => $q->where('subscription_level', '>', 1)->where('status', 'active'))
+        Rule::exists('plans', 'id')->where(fn($q) => $q->where('subscription_level', '>', 1)->where('status', 'active'))
       ],
       'coupon_id'   => [
         'filled',
-        Rule::exists('coupons', 'id')->where(fn ($q) => $q->where('end_date', '>=', today())->where('status', 'active'))
+        Rule::exists('coupons', 'id')->where(fn($q) => $q->where('end_date', '>=', today())->where('status', 'active'))
       ],
       'tax_id'   => [
         'filled',
-        Rule::exists('tax_ids', 'id')->where(fn ($q) => $q->whereNot('status', TaxId::STATUS_INVALID))
+        Rule::exists('tax_ids', 'id')->where(fn($q) => $q->whereNot('status', TaxId::STATUS_INVALID))
       ],
       'license_package_id' => [
         'filled',
-        Rule::exists('license_packages', 'id')->where(fn ($q) => $q->where('status', LicensePackage::STATUS_ACTIVE))
+        Rule::exists('license_packages', 'id')->where(fn($q) => $q->where('status', LicensePackage::STATUS_ACTIVE))
       ],
       'license_count' => ['required_with:license_package_id', 'integer', 'min:1', 'max:' . LicensePackage::MAX_COUNT],
     ];
@@ -100,7 +100,7 @@ class SubscriptionController extends SimpleController
     $this->validateUser();
 
     $inputs = $request->validate([
-      'tax_id'   => ['filled', Rule::exists('tax_ids', 'id')->where(fn ($q) => $q->whereNot('status', TaxId::STATUS_INVALID))],
+      'tax_id'   => ['filled', Rule::exists('tax_ids', 'id')->where(fn($q) => $q->whereNot('status', TaxId::STATUS_INVALID))],
     ]);
 
     /** @var TaxId|null @taxId */

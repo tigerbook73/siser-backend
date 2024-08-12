@@ -40,18 +40,18 @@ class SimpleController extends Controller
   public function __construct()
   {
     $this->opMap = [
-      null    => ['op_len' => 0, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, $v1)],
-      '='     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, $v1)],
-      '>'     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, '>', $v1)],
-      '>='    => ['op_len' => 2, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, '>=', $v1)],
-      '<'     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, '<', $v1)],
-      '<='    => ['op_len' => 2, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, '<=', $v1)],
-      '<>'    => ['op_len' => 2, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, '<>', $v1)],
-      '~'     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn ($q, $param, $v1) => $q->where($param, 'like', '%' . preg_replace('/[, ]+/', '%', $v1) . '%')],
-      '()'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn ($q, $param, $v1, $v2) => $q->where($param, '>', $v1)->where($param, '<', $v2)],
-      '(]'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn ($q, $param, $v1, $v2) => $q->where($param, '>', $v1)->where($param, '<=', $v2)],
-      '[)'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn ($q, $param, $v1, $v2) => $q->where($param, '>=', $v1)->where($param, '<', $v2)],
-      '[]'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn ($q, $param, $v1, $v2) => $q->where($param, '>=', $v1)->where($param, '<=', $v2)],
+      null    => ['op_len' => 0, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, $v1)],
+      '='     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, $v1)],
+      '>'     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, '>', $v1)],
+      '>='    => ['op_len' => 2, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, '>=', $v1)],
+      '<'     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, '<', $v1)],
+      '<='    => ['op_len' => 2, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, '<=', $v1)],
+      '<>'    => ['op_len' => 2, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, '<>', $v1)],
+      '~'     => ['op_len' => 1, 'param_count' => 1, 'fn' =>  fn($q, $param, $v1) => $q->where($param, 'like', '%' . preg_replace('/[, ]+/', '%', $v1) . '%')],
+      '()'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn($q, $param, $v1, $v2) => $q->where($param, '>', $v1)->where($param, '<', $v2)],
+      '(]'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn($q, $param, $v1, $v2) => $q->where($param, '>', $v1)->where($param, '<=', $v2)],
+      '[)'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn($q, $param, $v1, $v2) => $q->where($param, '>=', $v1)->where($param, '<', $v2)],
+      '[]'    => ['op_len' => 2, 'param_count' => 2, 'fn' =>  fn($q, $param, $v1, $v2) => $q->where($param, '>=', $v1)->where($param, '<=', $v2)],
     ];
 
     $model = new $this->modelClass();
@@ -98,7 +98,7 @@ class SimpleController extends Controller
 
     $model = new $this->modelClass($inputs);
     DB::transaction(
-      fn () => $model->save()
+      fn() => $model->save()
     );
     return  response()->json($this->transformSingleResource($model), 201);
   }
@@ -112,7 +112,7 @@ class SimpleController extends Controller
     $object = $this->baseQuery()->findOrFail($id);
     $object->forceFill($inputs);
     DB::transaction(
-      fn () => $object->save()
+      fn() => $object->save()
     );
     return $this->transformSingleResource($object->unsetRelations());
   }
@@ -123,7 +123,7 @@ class SimpleController extends Controller
     $this->validateDelete($id);
 
     return DB::transaction(
-      fn () => $this->baseQuery()->findOrFail($id)->delete()
+      fn() => $this->baseQuery()->findOrFail($id)->delete()
     );
   }
 
@@ -175,7 +175,7 @@ class SimpleController extends Controller
         $paramValue = $inputs[$filter];
         $filter = substr($filter, 0, strpos($filter, '-') ?: 100);
         if (is_string($attr)) {
-          $query->whereHas($filter, fn ($q) => $this->filterQuery($q, $attr, $paramValue));
+          $query->whereHas($filter, fn($q) => $this->filterQuery($q, $attr, $paramValue));
         } else {
           $this->filterQuery($query, $filter, $paramValue);
         }
@@ -194,9 +194,9 @@ class SimpleController extends Controller
             // in any attributes
             if (is_string($attr)) {
               if (strpos($attr, ',') > 0) {
-                $query->orWhereHas($filter, fn ($q) => $q->whereRaw("concat_ws(' ', {$attr}) like '{$pattern}'"));
+                $query->orWhereHas($filter, fn($q) => $q->whereRaw("concat_ws(' ', {$attr}) like '{$pattern}'"));
               } else {
-                $query->orWhereHas($filter, fn ($q) => $q->where($attr, 'like', $pattern));
+                $query->orWhereHas($filter, fn($q) => $q->where($attr, 'like', $pattern));
               }
             } else {
               $query->orWhere($filter, 'like', $pattern);

@@ -75,7 +75,7 @@ class SoftwarePackageController extends SimpleController
     }
 
     // latests
-    $latestIds = SoftwarePackageLatest::all()->map(fn ($item) => $item->software_package_id)->all();
+    $latestIds = SoftwarePackageLatest::all()->map(fn($item) => $item->software_package_id)->all();
 
     if (isset($inputs['version']) && $inputs['version'] == 'latest') {
       unset($inputs['version']);

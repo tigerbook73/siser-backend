@@ -45,7 +45,7 @@ class MachineController extends SimpleController
 
     $inputs = $request->validate([
       "serial_no" => ['required', 'max:255'],
-      "user_id"   => ['required', Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))],
+      "user_id"   => ['required', Rule::exists('users', 'id')->where(fn($q) => $q->whereNotNull('cognito_id'))],
       "model"     => ['required', 'max:255'],
       "nickname"  => ['max:255'],
     ]);
@@ -70,7 +70,7 @@ class MachineController extends SimpleController
       // create
       $machine = new Machine($inputs);
       DB::transaction(
-        fn () => $machine->save()
+        fn() => $machine->save()
       );
       return  response()->json($this->transformSingleResource($machine), 201);
     }
@@ -83,7 +83,7 @@ class MachineController extends SimpleController
       "new_user_id"   => [
         'required',
         // user exist
-        Rule::exists('users', 'id')->where(fn ($q) => $q->whereNotNull('cognito_id'))
+        Rule::exists('users', 'id')->where(fn($q) => $q->whereNotNull('cognito_id'))
       ],
     ]);
 

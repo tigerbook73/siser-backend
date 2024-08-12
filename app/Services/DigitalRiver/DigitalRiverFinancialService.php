@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 
 /**
  * @template T
- * 
+ *
  * @param callable(): T $listApi
  * @return T
  */
@@ -76,7 +76,7 @@ class DigitalRiverFinancialService
   public function listPayout(...$args)
   {
     $args['limit'] = 100;
-    return busyRetry(fn () => $this->payoutApi->listPayouts(...$args));
+    return busyRetry(fn() => $this->payoutApi->listPayouts(...$args));
   }
 
   /**
@@ -95,7 +95,7 @@ class DigitalRiverFinancialService
   public function listSalesSummary(...$args)
   {
     $args['limit'] = 100;
-    return busyRetry(fn () => $this->salesSummaryApi->listSalesSummaries(...$args));
+    return busyRetry(fn() => $this->salesSummaryApi->listSalesSummaries(...$args));
   }
 
   /**
@@ -115,7 +115,7 @@ class DigitalRiverFinancialService
   public function listSalesTransaction(...$args)
   {
     $args['limit'] = 100;
-    return busyRetry(fn () => $this->salesTransactionApi->listSalesTransactions(...$args));
+    return busyRetry(fn() => $this->salesTransactionApi->listSalesTransactions(...$args));
   }
 
 
@@ -126,15 +126,15 @@ class DigitalRiverFinancialService
   public function listSalesTransactionSince(string $since = null)
   {
     if ($since) {
-      return busyRetry(fn () => $this->listSalesTransaction(ending_before: $since));
+      return busyRetry(fn() => $this->listSalesTransaction(ending_before: $since));
     } else {
-      return busyRetry(fn () => $this->listSalesTransaction(ids: $this->firstSalesTransactionId))
+      return busyRetry(fn() => $this->listSalesTransaction(ids: $this->firstSalesTransactionId))
         ->setHasMore(true);
     }
   }
 
 
-  /** 
+  /**
    * the following function are mainly for test or debug
    */
 
@@ -161,16 +161,16 @@ class DigitalRiverFinancialService
 
   public function getPayoutCount()
   {
-    return $this->getTotalCount(fn ($startingAfter) => $this->listPayout(starting_after: $startingAfter));
+    return $this->getTotalCount(fn($startingAfter) => $this->listPayout(starting_after: $startingAfter));
   }
 
   public function getSalesSummaryCount()
   {
-    return $this->getTotalCount(fn ($startingAfter) => $this->listSalesSummary(starting_after: $startingAfter));
+    return $this->getTotalCount(fn($startingAfter) => $this->listSalesSummary(starting_after: $startingAfter));
   }
 
   public function getSalesTransactionCount()
   {
-    return $this->getTotalCount(fn ($startingAfter) => $this->listSalesTransaction(starting_after: $startingAfter));
+    return $this->getTotalCount(fn($startingAfter) => $this->listSalesTransaction(starting_after: $startingAfter));
   }
 }

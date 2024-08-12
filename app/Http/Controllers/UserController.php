@@ -98,16 +98,16 @@ class UserController extends SimpleController
     $query = $this->standardQuery($inputs);
 
     if ($subscription_id) {
-      $query->whereHas('subscriptions', fn ($query) => $query->where('id', $subscription_id));
+      $query->whereHas('subscriptions', fn($query) => $query->where('id', $subscription_id));
     }
     if ($invoice_id) {
-      $query->whereHas('invoices', fn ($query) => $query->where('id', $invoice_id));
+      $query->whereHas('invoices', fn($query) => $query->where('id', $invoice_id));
     }
     if ($dr_subscription_id) {
-      $query->whereHas('subscriptions', fn ($query) => $query->where('dr_subscription_id', $dr_subscription_id));
+      $query->whereHas('subscriptions', fn($query) => $query->where('dr_subscription_id', $dr_subscription_id));
     }
     if ($dr_order_id) {
-      $query->whereHas('invoices', fn ($query) => $query->where('dr_order_id', $dr_order_id));
+      $query->whereHas('invoices', fn($query) => $query->where('dr_order_id', $dr_order_id));
     }
     $users = $query->get();
     return ['data' => $this->transformMultipleResources($users)];

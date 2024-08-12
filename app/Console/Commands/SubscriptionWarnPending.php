@@ -63,7 +63,7 @@ class SubscriptionWarnPending extends Command
       ->where('updated_at', '<', now()->sub(self::INVOICE_PENDING_PERIOD))
       ->limit($maxCount)
       ->get()
-      ->map(fn ($invoice) => $invoice->id)
+      ->map(fn($invoice) => $invoice->id)
       ->all();
     if (count($pendings) > 0) {
       Log::info('There are ' . count($pendings) . ' pending invoices: ' . implode(', ', $pendings) . ' !');
@@ -81,7 +81,7 @@ class SubscriptionWarnPending extends Command
       ->where('updated_at', '<', now()->sub(self::INVOICE_RENEW_PERIOD))
       ->limit($maxCount)
       ->get()
-      ->map(fn ($invoice) => $invoice->id)
+      ->map(fn($invoice) => $invoice->id)
       ->all();
     if (count($renews) > 0) {
       Log::info('There are ' . count($renews) . ' renew invoices: ' . implode(', ', $renews) . ' !');
@@ -119,7 +119,7 @@ class SubscriptionWarnPending extends Command
       ->where('status', Invoice::STATUS_REFUNDING)
       ->where('updated_at', '<', now()->sub(self::REFUND_PROCESSING_PERIOD))
       ->get()
-      ->map(fn ($model) => $model->id)
+      ->map(fn($model) => $model->id)
       ->all();
     if (count($refundings) > 0) {
       Log::info('There are ' . count($refundings) . ' refunding invoices: ' . implode(', ', $refundings) . ' !');
@@ -135,7 +135,7 @@ class SubscriptionWarnPending extends Command
       ->where('status', Subscription::STATUS_ACTIVE)
       ->where('next_invoice_date', '<', now()->sub(self::SUBSCRIPTION_HANGING_PERIOD))
       ->get()
-      ->map(fn ($model) => $model->id)
+      ->map(fn($model) => $model->id)
       ->all();
     if (count($subscriptions) > 0) {
       Log::info('There are ' . count($subscriptions) . ' hanging subscriptions: ' . implode(', ', $subscriptions) . ' !');

@@ -55,7 +55,7 @@ class FinancialService
 
   /**
    * incremental sync sales transaction from DR to DB
-   * 
+   *
    * @param bool $byForce force to sync all data from DR
    * @return void
    */
@@ -72,7 +72,7 @@ class FinancialService
       $result = $this->drService->listSalesTransactionSince(since: $latest->value);
       if (count($result->getData()) > 0) {
         // sync data
-        $data = array_map(fn ($record) => SdrSalesTransaction::dataFromDrObject($record), $result->getData());
+        $data = array_map(fn($record) => SdrSalesTransaction::dataFromDrObject($record), $result->getData());
         SdrSalesTransaction::upsert($data, 'id');
         Log::info('FIN_LOG: ' . count($data) . ' sales transactions synced');
 
@@ -88,7 +88,7 @@ class FinancialService
 
   /**
    * update sales transaction by sales summary ids (called by summary is created)
-   * 
+   *
    * @param string[] $salesSummaryIds
    * @return void
    */
@@ -100,7 +100,7 @@ class FinancialService
         $result = $this->drService->listSalesTransaction(sales_summary_id: $salesSummaryId, starting_after: $startingAfter);
         if (count($result->getData()) > 0) {
           // sync data
-          $data = array_map(fn ($record) => SdrSalesTransaction::dataFromDrObject($record), $result->getData());
+          $data = array_map(fn($record) => SdrSalesTransaction::dataFromDrObject($record), $result->getData());
           SdrSalesTransaction::upsert($data, 'id');
           Log::info('FIN_LOG: ' . count($data) . ' sales transactions updated (or synced)');
 
@@ -116,9 +116,9 @@ class FinancialService
 
   /**
    * incremental sync sales summary from DR to DB
-   * 
+   *
    * @param bool $byForce force to sync all data from DR
-   * @return string[] synchronized sales summary ids 
+   * @return string[] synchronized sales summary ids
    */
   public function syncSalesSummary(bool $byForce = false): array
   {
@@ -134,7 +134,7 @@ class FinancialService
       $result = $this->drService->listSalesSummarySince(since: $latest->value);
       if (count($result->getData()) > 0) {
         // sync data
-        $data = array_map(fn ($record) => SdrSalesSummary::dataFromDrObject($record), $result->getData());
+        $data = array_map(fn($record) => SdrSalesSummary::dataFromDrObject($record), $result->getData());
         SdrSalesSummary::upsert($data, 'id');
         Log::info('FIN_LOG: ' . count($data) . ' sales summaries synced');
 
@@ -143,7 +143,7 @@ class FinancialService
         $latest->save();
 
         // collect sales summary ids
-        $salesSummaryIds = array_merge($salesSummaryIds, array_map(fn ($record) => $record['id'], $data));
+        $salesSummaryIds = array_merge($salesSummaryIds, array_map(fn($record) => $record['id'], $data));
       }
       if (!$result->getHasMore()) {
         break;
@@ -154,7 +154,7 @@ class FinancialService
 
   /**
    * update sales summary by payout ids (called by payout is created)
-   * 
+   *
    * @param string[] $payoutIds
    * @return void
    */
@@ -166,7 +166,7 @@ class FinancialService
         $result = $this->drService->listSalesSummary(payout_id: $payoutId, starting_after: $startingAfter);
         if (count($result->getData()) > 0) {
           // sync data
-          $data = array_map(fn ($record) => SdrSalesSummary::dataFromDrObject($record), $result->getData());
+          $data = array_map(fn($record) => SdrSalesSummary::dataFromDrObject($record), $result->getData());
           SdrSalesSummary::upsert($data, 'id');
           Log::info('FIN_LOG: ' . count($data) . ' sales summaries updated (or synced)');
 
@@ -182,9 +182,9 @@ class FinancialService
 
   /**
    * incremental sync payouts from DR to DB
-   * 
+   *
    * @param bool $byForce force to sync all data from DR
-   * @return string[] synchronized payout ids 
+   * @return string[] synchronized payout ids
    */
   public function syncPayout(bool $byForce = false): array
   {
@@ -200,7 +200,7 @@ class FinancialService
       $result = $this->drService->listPayoutSince(since: $latest->value);
       if (count($result->getData()) > 0) {
         // sync data
-        $data = array_map(fn ($record) => SdrPayout::dataFromDrObject($record), $result->getData());
+        $data = array_map(fn($record) => SdrPayout::dataFromDrObject($record), $result->getData());
         SdrPayout::upsert($data, 'id');
         Log::info('FIN_LOG: ' . count($data) . ' sales payouts synced');
 
@@ -209,7 +209,7 @@ class FinancialService
         $latest->save();
 
         // collect payout ids
-        $payoutIds = array_merge($payoutIds, array_map(fn ($record) => $record['id'], $data));
+        $payoutIds = array_merge($payoutIds, array_map(fn($record) => $record['id'], $data));
       }
       if (!$result->getHasMore()) {
         break;

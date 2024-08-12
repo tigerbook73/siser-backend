@@ -147,7 +147,7 @@ class SubscriptionManagerResult
 
   public function getData(): array
   {
-    return array_filter($this->data, fn ($value) => $value !== null);
+    return array_filter($this->data, fn($value) => $value !== null);
   }
 
   public function appendMessage(string $message, array $extra = [], string $location = '', string $level = 'info'): self

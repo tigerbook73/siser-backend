@@ -710,8 +710,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       }
 
       $this->wait(
-        check: fn () => $subscription->getDrOrderId() == $order->getId(),
-        postCheck: fn () => $subscription->refresh(),
+        check: fn() => $subscription->getDrOrderId() == $order->getId(),
+        postCheck: fn() => $subscription->refresh(),
         location: $__FUNCTION__,
         message: 'paymentSubscrition() to complete'
       );
@@ -1036,8 +1036,8 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // wait for onOrderAccepted to complete
     $this->wait(
-      check: fn () => $invoice->period > 0,
-      postCheck: fn () => $invoice->refresh(),
+      check: fn() => $invoice->period > 0,
+      postCheck: fn() => $invoice->refresh(),
       location: __FUNCTION__,
       message: 'onOrderAccepted() to complete'
     );

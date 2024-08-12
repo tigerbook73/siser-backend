@@ -199,7 +199,7 @@ class PlanController extends SimpleController
     }
 
     DB::transaction(
-      fn () => $plan->save()
+      fn() => $plan->save()
       // TODO: update all active subscriptions
     );
     return $this->transformSingleResource($plan->unsetRelations());
@@ -223,7 +223,7 @@ class PlanController extends SimpleController
     }
 
     return DB::transaction(
-      fn () => $plan->delete()
+      fn() => $plan->delete()
     );
   }
 

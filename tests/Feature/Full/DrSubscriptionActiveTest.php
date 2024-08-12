@@ -342,7 +342,7 @@ class DrSubscriptionActiveTest extends DrApiTestCase
 
     Notification::assertSentTo(
       new Developer,
-      fn (SubscriptionWarning $notification) => $notification->type == SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION
+      fn(SubscriptionWarning $notification) => $notification->type == SubscriptionWarning::NOTIF_LONG_PENDING_SUBSCRIPTION
     );
   }
 

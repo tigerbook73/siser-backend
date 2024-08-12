@@ -56,7 +56,7 @@ class AdminUserController extends SimpleController
     $adminUser = new AdminUser($inputs);
     $adminUser->password = Hash::make($inputs['password']);
     DB::transaction(
-      fn () => $adminUser->save()
+      fn() => $adminUser->save()
     );
     return  response()->json($this->transformSingleResource($adminUser), 201);
   }
@@ -73,7 +73,7 @@ class AdminUserController extends SimpleController
     }
 
     DB::transaction(
-      fn () => $adminUser->save()
+      fn() => $adminUser->save()
     );
     return response()->json($this->transformSingleResource($adminUser->unsetRelations()));
   }
