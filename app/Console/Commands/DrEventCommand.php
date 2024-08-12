@@ -10,7 +10,7 @@ use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 
-class SubscriptionWarnPending extends Command
+class DrEventCommand extends Command
 {
   /**
    * The name and signature of the console command.
