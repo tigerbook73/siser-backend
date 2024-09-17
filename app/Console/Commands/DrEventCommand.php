@@ -160,7 +160,7 @@ class DrEventCommand extends Command
     $eventId = $this->argument('event-type');
 
     /**
-     * @var DrEventRecord $event
+     * @var DrEventRecord|null $event
      */
     $event = DrEventRecord::where('event_id', $eventId)->first();
     if (!$event) {
