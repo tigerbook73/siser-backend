@@ -23,7 +23,7 @@ class CognitoProvider
     $this->keySecret  = config('siser.cognito.key_secret');
   }
 
-  protected function getCognitoClient(): CognitoIdentityProviderClient
+  public function getCognitoClient(): CognitoIdentityProviderClient
   {
     if (is_null($this->cognitoClient)) {
       $this->cognitoClient = new CognitoIdentityProviderClient([
@@ -38,9 +38,9 @@ class CognitoProvider
   }
 
   /**
-   * 
+   *
    */
-  protected function getCognitoUserFromApiResult($result)
+  public function getCognitoUserFromApiResult($result)
   {
     $username = $result['Username'];
     $user = [];
@@ -65,7 +65,7 @@ class CognitoProvider
   }
 
   /**
-   * 
+   *
    */
   public function getCognitoUser(string $accessToken): ?CognitoUser
   {
@@ -148,6 +148,38 @@ class CognitoProvider
         ) {
           $cognitoUsers[] = $cognitoUser;
         }
+      }
+
+      return $cognitoUsers;
+    } catch (AwsException $e) {
+      // output error message if fails
+      echo $e->getMessage() . "\n";
+      error_log($e->getMessage());
+      return [];
+    }
+  }
+
+  /**
+   * @return CognitoUser[]
+   */
+  public function listCognitoUserByEmail(string $email, $limit = 10): array
+  {
+    try {
+      $params = [
+        'UserPoolId' => $this->userPoolId,
+        'Limit' => min($limit, 100),
+      ];
+
+      if (!empty($email)) {
+        $params['Filter'] = "email = \"$email\"";
+      }
+
+      $result = $this->getCognitoClient()->listUsers($params);
+
+      $cognitoUsers = [];
+      foreach ($result['Users'] as $user) {
+        $cognitoUser = $this->getCognitoUserFromApiResult($user);
+        $cognitoUsers[] = $cognitoUser;
       }
 
       return $cognitoUsers;
