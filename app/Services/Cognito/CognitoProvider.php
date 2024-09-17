@@ -55,6 +55,7 @@ class CognitoProvider
       family_name: $user['family_name'] ?? '',
       full_name: trim(($user['given_name'] ?? '') . ' ' . ($user['family_name'] ?? '')),
       email: $user['email'],
+      email_verified: ($user['email_verified'] ?? null) == 'true',
       phone_number: $user['phone_number'] ?? null,
       language_code: $user['custom:language_code'] ?? null,
       country_code: $user['custom:country_code'] ?? null,

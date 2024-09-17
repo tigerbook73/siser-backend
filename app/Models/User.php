@@ -112,8 +112,21 @@ class User extends UserWithTrait
 
   static public function createOrUpdateFromCognitoUser(CognitoUser $cognitoUser): User
   {
+
+    /**
+     * - first try to find user by email if email is verified
+     * - then try to find user by cognito_id
+     * - if not found, create new user
+     */
+    $user = null;
+    if ($cognitoUser->email_verified) {
+      $user = User::where('email', $cognitoUser->email)->first();
+    }
+    if (!$user) {
+      $user = User::where('cognito_id', $cognitoUser->id)->first();
+    }
+
     /** @var User|null $user */
-    $user = User::where('cognito_id', $cognitoUser->id)->first();
     if ($user) {
       $user->updateFromCognitoUser($cognitoUser);
     } else {

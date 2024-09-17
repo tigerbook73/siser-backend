@@ -20,6 +20,7 @@ class CognitoProvider extends CognitoProviderBase
       family_name: "family_name",
       full_name: "full_name",
       email: "email@email.com",
+      email_verified: true,
       phone_number: "+999999999",
       language_code: "en",
       country_code: "AU",
@@ -40,6 +41,7 @@ class CognitoProvider extends CognitoProviderBase
         family_name: $user->family_name,
         full_name: $user->full_name,
         email: $user->email,
+        email_verified: true,
         phone_number: $user->phone_number,
         language_code: $user->language_code,
         country_code: $user->country_code,
@@ -52,9 +54,7 @@ class CognitoProvider extends CognitoProviderBase
     return null;
   }
 
-  public function updateUserSubscriptionLevel(string $username, int $subscription_level): void
-  {
-  }
+  public function updateUserSubscriptionLevel(string $username, int $subscription_level): void {}
 }
 
 trait CognitoProviderMockup
