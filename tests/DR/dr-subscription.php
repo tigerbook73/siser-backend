@@ -21,7 +21,7 @@ return <<<EOD
           "price": 14.0,
           "productDetails": {
               "skuGroupId": "software-subscription-01",
-              "name": "Leonardo™ Design Studio Pro Monthly Plan",
+              "name": "Leonardo® Design Studio Pro Monthly Plan",
               "countryOfOrigin": "AU"
           },
           "quantity": 1

@@ -143,7 +143,7 @@ class DatabaseSeeder extends Seeder
     // update basic plan
     /** @var Plan $basicPlan */
     $basicPlan = Plan::find(config('siser.plan.default_machine_plan'));
-    $basicPlan->product_name = 'Leonardo™ Design Studio Basic';
+    $basicPlan->product_name = 'Leonardo® Design Studio Basic';
     $basicPlan->interval = Plan::INTERVAL_LONGTERM;
     $basicPlan->interval_count = 1;
     $basicPlan->save();
@@ -156,7 +156,7 @@ class DatabaseSeeder extends Seeder
       $annualPlanPriceList[$index]['price'] = floor($annualPlanPriceList[$index]['price'] * 12 * 0.9);
     }
     $annualPlanData = [
-      'name' => 'Leonardo™ Design Studio Pro Anual Plan',
+      'name' => 'Leonardo® Design Studio Pro Anual Plan',
       'product_name' => $monthPlan->product_name,
       'interval' => Plan::INTERVAL_YEAR,
       'interval_count' => 1,
@@ -170,7 +170,7 @@ class DatabaseSeeder extends Seeder
 
     Plan::create([
       'name' => 'LDS Test 2-day Plan',
-      'product_name' => 'Leonardo™ Design Studio Pro',
+      'product_name' => 'Leonardo® Design Studio Pro',
       'interval' => Plan::INTERVAL_DAY,
       'interval_count' => 2,
       'description' => '2-day plan',
@@ -193,7 +193,7 @@ class DatabaseSeeder extends Seeder
 
     Plan::create([
       'name' => 'LDS Test 3-day Plan',
-      'product_name' => 'Leonardo™ Design Studio Pro',
+      'product_name' => 'Leonardo® Design Studio Pro',
       'interval' => Plan::INTERVAL_DAY,
       'interval_count' => 3,
       'description' => '3-day plan',
@@ -322,7 +322,7 @@ class DatabaseSeeder extends Seeder
     // free 2 day shared
     Coupon::create([
       'code' => 'FREE2DS',
-      'name' => 'Leonardo™ Design Studio Pro 2-day Free Trial',
+      'name' => 'Leonardo® Design Studio Pro 2-day Free Trial',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
@@ -342,7 +342,7 @@ class DatabaseSeeder extends Seeder
     // free 2 day once off
     Coupon::create([
       'code' => 'FREE2DO',
-      'name' => 'Leonardo™ Design Studio Pro 2-day Free Trial',
+      'name' => 'Leonardo® Design Studio Pro 2-day Free Trial',
       'type' => Coupon::TYPE_ONCE_OFF,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
@@ -362,7 +362,7 @@ class DatabaseSeeder extends Seeder
     // free 3 day shared
     Coupon::create([
       'code' => 'FREE3DS',
-      'name' => 'Leonardo™ Design Studio Pro 3-day Free Trial',
+      'name' => 'Leonardo® Design Studio Pro 3-day Free Trial',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
@@ -382,7 +382,7 @@ class DatabaseSeeder extends Seeder
     // free 3 day shared
     Coupon::create([
       'code' => 'FREE3MS',
-      'name' => 'Leonardo™ Design Studio Pro 3-month Free Trial',
+      'name' => 'Leonardo® Design Studio Pro 3-month Free Trial',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,

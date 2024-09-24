@@ -91,7 +91,7 @@ class PlanPriceCommand extends Command
      * @var Plan $monthPlan
      */
     $monthPlan = Plan::public()
-      ->where('product_name', 'Leonardo™ Design Studio Pro')
+      ->where('product_name', 'Leonardo® Design Studio Pro')
       ->where('interval', Plan::INTERVAL_MONTH)
       ->where('interval_count', 1)
       ->where('subscription_level', 2)
@@ -115,7 +115,7 @@ class PlanPriceCommand extends Command
      * @var Plan $annualPlan
      */
     $annualPlan = Plan::public()
-      ->where('product_name', 'Leonardo™ Design Studio Pro')
+      ->where('product_name', 'Leonardo® Design Studio Pro')
       ->where('interval', Plan::INTERVAL_YEAR)
       ->where('interval_count', 1)
       ->where('subscription_level', 2)

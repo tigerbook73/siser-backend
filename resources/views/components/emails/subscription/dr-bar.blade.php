@@ -1,7 +1,7 @@
 @props([ 'country' => 'JP'])
 
 @php
-  $helper = new class 
+  $helper = new class
   {
     public $country = 'default';
 
@@ -68,7 +68,7 @@
 
 <div>{{ $helper->setCountry($country) }}</div>
 <div>
-  <a href="{{ $helper->getEntityUrl() }}" target="_blank">{{ $helper->getEntityName() }}</a> is the authorized reseller of <b>Leonardo™ Software</b> in this online store. <br/>
+  <a href="{{ $helper->getEntityUrl() }}" target="_blank">{{ $helper->getEntityName() }}</a> is the authorized reseller of <b>Leonardo® Software</b> in this online store. <br/>
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRPrivacyPolicyPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Privacy Policy</a> |
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRTermsAndConditionsPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Terms of Sale</a> |
   <a href="https://store.digitalriver.com/store/defaults/{{ $helper->getLocale() }}/DisplayDRCookiesPolicyPage/eCommerceProvider.{{ $helper->getEntityName() }}." target="_blank">Cookies</a> |
@@ -77,7 +77,7 @@
   @if ($country == 'US')
   <a href="https://store.digitalriver.com/store/defaults/en_US/DisplayCCPAPage/eCommerceProvider.Digital River Inc." target="_blank">Your California Privacy Rights</a> |
   @endif
-  @if ($country == 'JP') 
+  @if ($country == 'JP')
   <a href="https://software.siser.com/legislation/legislation-japan" target="_blank">特定商取引に関する法律に基づく表示</a> |
   @endif
   @if ($country == 'IT')

@@ -23,7 +23,7 @@ class DesignPlanTestCase extends ApiTestCase
 
     $this->modelCreate = [
       'name' => 'LDS New-Test Plan',
-      'product_name' => 'Leonardo™ Design Studio Pro',
+      'product_name' => 'Leonardo® Design Studio Pro',
       'description' => 'test plan',
       'interval' => Plan::INTERVAL_MONTH,
       'subscription_level' => 2,
@@ -57,7 +57,7 @@ class DesignPlanTestCase extends ApiTestCase
     ];
 
     $this->object = Plan::public()
-      ->where('product_name', 'Leonardo™ Design Studio Pro')
+      ->where('product_name', 'Leonardo® Design Studio Pro')
       ->where('interval', Plan::INTERVAL_MONTH)
       ->where('interval_count', 1)
       ->where('subscription_level', 2)

@@ -29,7 +29,7 @@ return <<<EOD
           "id": "193650060336",
           "productDetails": {
               "skuGroupId": "software-subscription-01",
-              "name": "Leonardo™ Design Studio Pro Monthly Plan",
+              "name": "Leonardo® Design Studio Pro Monthly Plan",
               "countryOfOrigin": "AU"
           },
           "amount": 14.0,

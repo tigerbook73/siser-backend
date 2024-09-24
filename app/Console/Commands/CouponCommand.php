@@ -62,7 +62,7 @@ class CouponCommand extends Command
     $code_pattern     = "ENT-######";
 
     $coupon_event     = "";
-    $product_name     = "Leonardo™ Design Studio Pro";
+    $product_name     = "Leonardo® Design Studio Pro";
     $type             = Coupon::TYPE_ONCE_OFF;
     $discount_type    = Coupon::DISCOUNT_TYPE_FREE_TRIAL;
     $percentage_off   = 100;
@@ -91,7 +91,7 @@ class CouponCommand extends Command
         }
       }
       $coupon_event = trim($this->ask('Coupon Event (e.g. HSN)', $coupon_event));
-      $product_name = $this->choice('Product Name', ['Leonardo™ Design Studio Pro'], $product_name);
+      $product_name = $this->choice('Product Name', ['Leonardo® Design Studio Pro'], $product_name);
       $type = $this->choice('Type', [Coupon::TYPE_SHARED, Coupon::TYPE_ONCE_OFF], $type);
       $discount_type = $this->choice('Discount Type', [Coupon::DISCOUNT_TYPE_PERCENTAGE, Coupon::DISCOUNT_TYPE_FREE_TRIAL], $discount_type);
       while (true) {

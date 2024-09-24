@@ -32,11 +32,11 @@ class PlanListApiTest extends PlanTestCase
   {
     $this->listAssert(200, ['country' => 'US']);
 
-    $this->listAssert(200, ['country' => 'US', 'name' => 'Leonardo™ Design Studio Pro Monthly Plan']);
+    $this->listAssert(200, ['country' => 'US', 'name' => 'Leonardo® Design Studio Pro Monthly Plan']);
 
-    $this->listAssert(200, ['country' => 'US', 'product_name' => 'Leonardo™ Design Studio Basic'], 0);
+    $this->listAssert(200, ['country' => 'US', 'product_name' => 'Leonardo® Design Studio Basic'], 0);
 
-    $this->listAssert(200, ['country' => 'US', 'product_name' => 'Leonardo™ Design Studio Pro']);
+    $this->listAssert(200, ['country' => 'US', 'product_name' => 'Leonardo® Design Studio Pro']);
 
     $this->listAssert(200, ['country' => $this->object->price_list[0]['country'], 'product_name' => $this->object->product_name]);
 
