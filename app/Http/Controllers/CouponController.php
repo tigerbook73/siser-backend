@@ -14,6 +14,8 @@ class CouponController extends SimpleController
 {
   protected string $modelClass = Coupon::class;
 
+  protected string $orderDirection = 'desc';
+
   protected function getListRules(array $inputs = []): array
   {
     return [
