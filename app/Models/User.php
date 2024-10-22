@@ -150,10 +150,7 @@ class User extends UserWithTrait
 
   public function updateFromCognitoUser(CognitoUser $cognitoUser): User
   {
-    if ($this->cognito_id !== $cognitoUser->id) {
-      abort(500, 'Something wrong when updating from cognito user');
-    }
-
+    $this->cognito_id     = $cognitoUser->id;
     $this->name           = $cognitoUser->username;
     $this->email          = $cognitoUser->email;
     $this->given_name     = $cognitoUser->given_name;
