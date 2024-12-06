@@ -1476,8 +1476,15 @@ class SubscriptionManagerDR implements SubscriptionManager
     $this->result->setInvoice($invoice);
 
     // stop subscription data
-    $this->failSubscription($subscription, 'renew failed');
-    $this->result->appendMessage('subscription stoped: renewal failed', location: __FUNCTION__);
+    if (
+      $subscription->payment_method_info['type'] === 'payPalBilling' ||
+      $subscription->payment_method_info['type'] === 'googlePay'
+    ) {
+      // skip stop subscription for paypal billing and google pay
+    } else {
+      $this->failSubscription($subscription, 'renew failed');
+      $this->result->appendMessage('subscription stoped: renewal failed', location: __FUNCTION__);
+    }
 
     // stop invoice
     $invoice->setStatus(Invoice::STATUS_FAILED);
