@@ -138,7 +138,11 @@ class PaddleCommand extends Command
   {
     BillingInfo::whereNotNull('address->postcode')
       ->where('address->postcode', '!=', '')
-      ->chunkById(100, function ($billingInfos) use ($force) {
+      ->chunkById(200, function ($billingInfos) use ($force) {
+
+        // API rate limit: 200 request per minutes
+        $time = now();
+
         /** @var BillingInfo $billingInfo */
         foreach ($billingInfos as $billingInfo) {
           try {
@@ -167,6 +171,12 @@ class PaddleCommand extends Command
               " : " .
               ($e->fieldErrors[0]->error ?? ''));
           }
+        }
+
+        $diff = $time->diffInSeconds(now());
+        if ($diff < 60) {
+          $this->info("Sleeping for " . (60 - $diff) . " seconds.");
+          sleep(60 - $diff);
         }
       });
   }
@@ -418,7 +428,11 @@ class PaddleCommand extends Command
 
   public function syncDiscounts(bool $force)
   {
-    Coupon::chunkById(100, function ($coupons) use ($force) {
+    Coupon::chunkById(200, function ($coupons) use ($force) {
+
+      // API rate limit: 200 request per minutes
+      $time = now();
+
       /** @var Coupon $coupon */
       foreach ($coupons as $coupon) {
         try {
@@ -452,6 +466,12 @@ class PaddleCommand extends Command
             " : " .
             ($e->fieldErrors[0]->error ?? ''));
         }
+      }
+
+      $diff = $time->diffInSeconds(now());
+      if ($diff < 60) {
+        $this->info("Sleeping for " . (60 - $diff) . " seconds.");
+        sleep(60 - $diff);
       }
     });
   }
