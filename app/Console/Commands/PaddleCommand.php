@@ -138,10 +138,11 @@ class PaddleCommand extends Command
   {
     BillingInfo::whereNotNull('address->postcode')
       ->where('address->postcode', '!=', '')
-      ->chunkById(100, function ($billingInfos) use ($force) {
+      ->chunkById(60, function ($billingInfos) use ($force) {
 
         // API rate limit: 100 request per minutes
         $time = now();
+        $apiCall = 0;
 
         /** @var BillingInfo $billingInfo */
         foreach ($billingInfos as $billingInfo) {
@@ -152,10 +153,12 @@ class PaddleCommand extends Command
             }
             $paddleCustomer = $this->customerService->createOrUpdatePaddleCustomer($billingInfo);
             $this->info("Paddle customer \"{$paddleCustomer->email}\" created or updated.");
+            $apiCall++;
 
 
             $paddleAddress = $this->addressService->createOrUpdatePaddleAddress($billingInfo);
             $this->info("Paddle address \"{$paddleAddress->countryCode->getValue()} {$paddleAddress->postalCode}\" for customer \"{$paddleCustomer->email}\" created or updated.");
+            $apiCall++;
 
             if (
               $billingInfo->organization &&
@@ -163,6 +166,7 @@ class PaddleCommand extends Command
             ) {
               $paddleBusiness = $this->businessService->createOrUpdatePaddleBusiness($billingInfo);
               $this->info("Paddle business \"{$paddleBusiness->name}\" for customer \"{$paddleCustomer->email}\" created or updated.");
+              $apiCall++;
             }
           } catch (ApiError $e) {
             $this->warn("Failed to create/update paddle address/business for customer \"{$billingInfo->email}\".");
@@ -174,9 +178,11 @@ class PaddleCommand extends Command
         }
 
         $diff = $time->diffInSeconds(now());
+        $allowance = $apiCall % 100 * 60;
+        $sleep = ($allowance - $diff) > 0 ? $allowance - $diff : 0;
         if ($diff < 60) {
-          $this->info("Sleeping for " . (60 - $diff) . " seconds.");
-          sleep(60 - $diff);
+          $this->info("Sleeping for " . ($sleep + 2) . " seconds.");
+          sleep($sleep + 2);
         }
       });
   }
@@ -428,10 +434,11 @@ class PaddleCommand extends Command
 
   public function syncDiscounts(bool $force)
   {
-    Coupon::chunkById(100, function ($coupons) use ($force) {
+    Coupon::chunkById(60, function ($coupons) use ($force) {
 
       // API rate limit: 100 request per minutes
       $time = now();
+      $apiCall = 0;
 
       /** @var Coupon $coupon */
       foreach ($coupons as $coupon) {
@@ -443,6 +450,7 @@ class PaddleCommand extends Command
             ) {
               $paddleDiscount = $this->discountService->updatePaddleDiscount($coupon);
               $this->info("Paddle coupon \"{$coupon->name}\" for event \"{$coupon->coupon_event}\" updated");
+              $apiCall++;
             } else {
               $this->info("Paddle coupon \"{$coupon->name}\" for event \"{$coupon->coupon_event}\" is up-to-date.");
             }
@@ -453,6 +461,7 @@ class PaddleCommand extends Command
             ) {
               $paddleDiscount = $this->discountService->createPaddleDiscount($coupon);
               $this->info("Paddle coupon \"{$coupon->name}\" for event \"{$coupon->coupon_event}\" created");
+              $apiCall++;
               continue;
             } else {
               // skip inactive coupon
@@ -469,9 +478,11 @@ class PaddleCommand extends Command
       }
 
       $diff = $time->diffInSeconds(now());
-      if ($diff < 60) {
-        $this->info("Sleeping for " . (60 - $diff) . " seconds.");
-        sleep(60 - $diff);
+      $allowance = $apiCall % 100 * 60;
+      $sleep = ($allowance - $diff) > 0 ? $allowance - $diff : 0;
+      if ($sleep > 0) {
+        $this->info("Sleeping for " . ($sleep + 1) . " seconds.");
+        sleep($sleep);
       }
     });
   }
