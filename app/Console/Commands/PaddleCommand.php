@@ -138,9 +138,9 @@ class PaddleCommand extends Command
   {
     BillingInfo::whereNotNull('address->postcode')
       ->where('address->postcode', '!=', '')
-      ->chunkById(200, function ($billingInfos) use ($force) {
+      ->chunkById(100, function ($billingInfos) use ($force) {
 
-        // API rate limit: 200 request per minutes
+        // API rate limit: 100 request per minutes
         $time = now();
 
         /** @var BillingInfo $billingInfo */
@@ -428,9 +428,9 @@ class PaddleCommand extends Command
 
   public function syncDiscounts(bool $force)
   {
-    Coupon::chunkById(200, function ($coupons) use ($force) {
+    Coupon::chunkById(100, function ($coupons) use ($force) {
 
-      // API rate limit: 200 request per minutes
+      // API rate limit: 100 request per minutes
       $time = now();
 
       /** @var Coupon $coupon */
