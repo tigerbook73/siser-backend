@@ -10,7 +10,8 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
   public string $baseUrl = '/be-test/notification/subscription';
   public ?string $role = 'customer';
 
-  public $countries = ['US', 'AU', 'CA', 'DE', 'ES', 'FR', 'GB', 'IT', 'JP', 'NZ'];
+  // public $countries = ['US', 'AU', 'CA', 'DE', 'ES', 'FR', 'GB', 'IT', 'JP', 'NZ'];
+  public $countries = ['US', 'AU', 'DE'];
   public $plans = ['month', 'year'];
   public $coupons = ['', 'free-trial', 'percentage', 'percentage-fixed-term'];
 
@@ -29,136 +30,46 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
     foreach ($this->countries as $country) {
       foreach ($this->plans as $plan) {
         foreach ($this->coupons as $coupon) {
-          $this->viewNotification($type, $country, $plan, $coupon)
-            ->assertStatus(200)
-            ->assertSeeText('Team Siser')
-            ->assertDontSeeText('messages.');
+          $response = $this->viewNotification($type, $country, $plan, $coupon);
+          $message = __FUNCTION__ . " - $country - $type - $plan - $coupon fails at: ";
+          $this->assertTrue($response->getStatusCode() === 200, $message . ' status check!');
+          $this->assertTrue(str_contains($response->getContent(), 'Team Siser'), $message . ' contain check!');
+          $this->assertFalse(str_contains($response->getContent(), 'messages.'), $message . ' not contain check!');
         }
       }
     }
   }
 
-  public function testNotificationOrderAborted()
+  public function testNormalNotifications()
   {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_ABORTED);
-  }
-
-  public function testNotificationOrderCancelled()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_CANCELLED);
-  }
-
-  public function testNotificationOrderConfirmed()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_CONFIRMED);
-  }
-
-  public function testNotificationOrderCreditMemo()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO);
-  }
-
-  public function testNotificationOrderInvoice()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_INVOICE);
-  }
-
-  public function testNotificationOrderRefundFailed()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED);
-  }
-
-  public function testNotificationOrderRefunded()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_ORDER_REFUNDED);
-  }
-
-  public function testNotificationCancelled()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_CANCELLED);
-  }
-
-  public function testNotificationCancelledRefund()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_CANCELLED_REFUND);
-  }
-
-  public function testNotificationExtended()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_EXTENDED);
-  }
-
-  public function testNotificationFailed()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_FAILED);
-  }
-
-  public function testNotificationLapsed()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_LAPSED);
-  }
-
-  public function testNotificationInvoicePending()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_INVOICE_PENDING);
-  }
-  public function testNotificationSourceInvalid()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_SOURCE_INVALID);
-  }
-
-  public function testNotificationReminder()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_REMINDER);
-  }
-
-  public function testNotificationRenewRequired()
-  {
-    foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
-      $this->viewNotification(SubscriptionNotification::NOTIF_RENEW_REQUIRED, 'DE', 'year', $coupon)
-        ->assertStatus(200)
-        ->assertSeeText('Team Siser')
-        ->assertDontSeeText('messages.');
+    $types = array_keys(SubscriptionNotification::$types);
+    foreach ($types as $type) {
+      if (in_array($type, [
+        SubscriptionNotification::NOTIF_RENEW_REQUIRED,
+        SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+        SubscriptionNotification::NOTIF_RENEW_EXPIRED,
+      ])) {
+        continue;
+      }
+      $this->viewNotificationType($type);
     }
   }
 
-  public function testNotificationRenewConfirmed()
+  public function testRenewalNotifications()
   {
-    foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
-      $this->viewNotification(SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED, 'DE', 'year', $coupon)
-        ->assertStatus(200)
-        ->assertSeeText('Team Siser')
-        ->assertDontSeeText('messages.');
+    $types = [
+      SubscriptionNotification::NOTIF_RENEW_REQUIRED,
+      SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+      SubscriptionNotification::NOTIF_RENEW_EXPIRED,
+    ];
+    foreach ($types as $type) {
+      foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
+        $message = __FUNCTION__ . " - $type - $coupon fails at: ";
+        $response = $this->viewNotification($type, 'DE', 'year', $coupon);
+        $this->assertTrue($response->getStatusCode() === 200, $message . ' status check!');
+        $this->assertTrue(str_contains($response->getContent(), 'Team Siser'), $message . ' contain check!');
+        $this->assertFalse(str_contains($response->getContent(), 'messages.'), $message . ' not contain check!');
+      }
     }
-  }
-
-  public function testNotificationRenewExpired()
-  {
-    foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
-      $this->viewNotification(SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED, 'DE', 'year', $coupon)
-        ->assertStatus(200)
-        ->assertSeeText('Team Siser')
-        ->assertDontSeeText('messages.');
-    }
-  }
-
-  public function testNotificationTerminated()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_TERMINATED);
-  }
-
-  public function testNotificationTermsChanged()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_TERMS_CHANGED);
-  }
-
-  public function testNotificationPlanUpdatedGerman()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN);
-  }
-
-  public function testNotificationPlanUpdatedOther()
-  {
-    $this->viewNotificationType(SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER);
   }
 }

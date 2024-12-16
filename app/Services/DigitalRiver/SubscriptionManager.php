@@ -21,14 +21,22 @@ interface SubscriptionManager
   public function createSubscription(User $user, Plan $plan, Coupon $coupon = null, TaxId $taxId = null, LicensePackage $licensePackage = null, int $licenseQuantity = 0): Subscription;
   public function deleteSubscription(Subscription $subscription): bool;
   public function paySubscription(Subscription $subscription, PaymentMethod $paymentMethod, string|null $terms): Subscription;
-  public function cancelSubscription(Subscription $subscription, bool $refund = false, bool $immediate = false): Subscription;
+  public function cancelSubscription(Subscription $subscription, bool $immediate): Subscription;
   public function stopSubscription(Subscription $subscription, string $reason): Subscription;
   public function failSubscription(Subscription $subscription, string $reason): Subscription;
 
   /**
    * Invoice
    */
-  public function cancelOrder(Invoice $invoice): Invoice;
+  public function cancelInvoice(Invoice $invoice): Invoice;
+  public function createNewLicensePackageInvoice(Subscription $subscription, LicensePackage $licensePackage, int $licenseCount): Invoice;
+  public function createIncreaseLicenseInvoice(Subscription $subscription, int $licenseCount);
+  public function deleteInvoice(Invoice $invoice): bool;
+  public function payLicensePackageInvoice(Invoice $invoice, string $drSourceId): Invoice;
+  public function cancelLicensePackage(Subscription $subscription, bool $immediate = false): Subscription;
+  public function decreaseLicenseNumber(Subscription $subscription, int $licenseCount, bool $immediate = false): Subscription;
+
+
 
   /**
    * TaxId
@@ -49,7 +57,7 @@ interface SubscriptionManager
   /**
    * Refund
    */
-  public function createRefund(Invoice $invoice, float $amount = 0, string $reason = null): Refund;
+  public function createRefund(Invoice $invoice, string $itemType, float $amount = 0, string $reason = null): Refund;
 
   /**
    * Default webhook

@@ -6,6 +6,8 @@ use App\Models\SubscriptionPlan;
 use App\Models\User;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
+use DigitalRiver\ApiSdk\Model\ChargeType;
+use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
@@ -115,9 +117,11 @@ class DrCommand extends Command
     $this->info("Create or update plan ... done!");
 
     // create default customer
-    $this->info("Create default customer 'user1.test'");
-    $user = User::where('name', 'user1.test')->first();
-    $this->manager->createOrUpdateCustomer($user->billing_info);
+    $this->info("Create default customer 'user1.test' & 'user4.test' ...");
+    foreach (['user1.test', 'user4.test'] as $name) {
+      $user = User::where('name', $name)->first();
+      $this->manager->createOrUpdateCustomer($user->billing_info);
+    }
 
     return self::SUCCESS;
   }
@@ -190,6 +194,25 @@ class DrCommand extends Command
 
     $this->info('Clear subscriptions ...');
     $this->info('');
+
+    /**
+     * clear checkouts
+     */
+    $this->info('Clear checkouts ...');
+
+    /** @var DrCheckout[] $checkouts */
+    // clear acctpted checkout
+    $checkouts = $this->drService->checkoutApi->listCheckouts(charge_type: 'customer_initiated')->getData();
+    foreach ($checkouts as $checkout) {
+      if (!$checkout->getPayment()?->getCharges()) {
+        $this->info("  delete checkout " . $checkout->getId());
+        $this->drService->deleteCheckout($checkout->getId());
+      }
+    }
+
+    $this->info('Clear orders ...');
+    $this->info('');
+
 
     /**
      * clear order

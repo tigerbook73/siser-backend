@@ -48,6 +48,9 @@ class Subscription {
     /** @var float $subtotal */
     public $subtotal = 0;
 
+    /** @var float $discount */
+    public $discount = 0;
+
     /** @var float $tax_rate */
     public $tax_rate = 0;
 
@@ -98,5 +101,8 @@ class Subscription {
 
     /** @var string $stop_reason */
     public $stop_reason = "";
+
+    /** @var array<string,mixed> $meta */
+    public $meta;
 
 }

@@ -38,6 +38,7 @@ class Coupon extends BaseCoupon
     'condition'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'usage'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
+    'meta'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -142,5 +143,30 @@ class Coupon extends BaseCoupon
     $condition['countries'] = $countries;
     $this->condition = $condition;
     return $this;
+  }
+
+  public function getMeta(): CouponMeta
+  {
+    return CouponMeta::from($this->meta);
+  }
+
+  public function setMeta(CouponMeta $meta): self
+  {
+    $this->meta = $meta->toArray();
+    return $this;
+  }
+
+  public function setMetaPaddleDiscountId(?string $paddleDiscountId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->discount_id = $paddleDiscountId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleTimestamp(?string $paddleTimestamp): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->paddle_timestamp = $paddleTimestamp;
+    return $this->setMeta($meta);
   }
 }

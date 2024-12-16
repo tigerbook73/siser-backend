@@ -33,6 +33,7 @@ use DigitalRiver\ApiSdk\Model\InvoiceItem;
 use DigitalRiver\ApiSdk\Model\OrderItem;
 use DigitalRiver\ApiSdk\Model\Payments;
 use DigitalRiver\ApiSdk\Model\ProductDetails;
+use DigitalRiver\ApiSdk\Model\RefundItem;
 use DigitalRiver\ApiSdk\Model\Session;
 use DigitalRiver\ApiSdk\Model\Shipping;
 use DigitalRiver\ApiSdk\Model\SkuItem;
@@ -68,9 +69,7 @@ class DrTestHelper
   public float $taxRate = 0.1;
 
   // cache
-  public function __construct()
-  {
-  }
+  public function __construct() {}
 
   protected function convertModel($object, string $model): mixed
   {
@@ -276,6 +275,11 @@ class DrTestHelper
           );
           $drItem->setQuantity(1);
           $drItem->setProductDetails($productDetails);
+          $drItem->setSubscriptionInfo((new SubscriptionInfo())->setSubscriptionId($from->getDrSubscriptionId()));
+          if ($drItem instanceof OrderItem) {
+            $drItem->setAvailableToRefundAmount($drItem->getAmount());
+            $drItem->setId($this->uuid());
+          }
         }
         $drItems[] = $drItem;
       }
@@ -308,6 +312,13 @@ class DrTestHelper
           );
           $drItem->setQuantity(1);
           $drItem->setProductDetails($productDetails);
+          $drItem->setSubscriptionInfo(
+            (new SubscriptionInfo())->setSubscriptionId($item->getSubscriptionInfo()->getSubscriptionId())
+          );
+          if ($drItem instanceof OrderItem) {
+            $drItem->setAvailableToRefundAmount($drItem->getAmount());
+            $drItem->setId($this->uuid());
+          }
         }
         $drItems[] = $drItem;
       }
@@ -326,15 +337,15 @@ class DrTestHelper
     return $charge;
   }
 
-  public function createCheckout(Subscription $subscription): DrCheckout
+  public function createCheckout(Invoice $invoice): DrCheckout
   {
     $tester = new TestDigitalRiverService();
-    $checkout = $tester->createCheckout($subscription);
+    $checkout = $tester->createCheckout($invoice);
     $checkout->setId($this->uuid());
     $subscripitonId = $this->uuid();
 
     $drItems = [];
-    foreach ($subscription->items as $item) {
+    foreach ($invoice->items as $item) {
       $productDetails = ProductItem::BuildDrProductDetails($item);
 
       $subscriptionInfo = new SubscriptionInfo();
@@ -344,8 +355,8 @@ class DrTestHelper
       $drItem->setAmount($item['price']);
       $drItem->setTax(
         (new Tax())
-          ->setRate($this->getTaxRate($subscription->tax_id_info))
-          ->setAmount(round($item['price'] * $this->getTaxRate($subscription->tax_id_info), 2))
+          ->setRate($this->getTaxRate($invoice->tax_id_info))
+          ->setAmount(round($item['price'] * $this->getTaxRate($invoice->tax_id_info), 2))
       );
       $drItem->setQuantity(1);
       $drItem->setProductDetails($productDetails);
@@ -354,14 +365,14 @@ class DrTestHelper
     }
     $checkout->setItems($drItems);
 
-    $checkout->setSubtotal(round($subscription->price, 2));
-    $checkout->setTotalTax(round($checkout->getSubtotal() * $this->getTaxRate($subscription->tax_id_info), 2));
+    $checkout->setSubtotal(ProductItem::calcTotal($invoice->items, 'price'));
+    $checkout->setTotalTax(ProductItem::calcTotal($invoice->items, 'tax'));
     $checkout->setTotalAmount(round($checkout->getSubtotal() + $checkout->getTotalTax(), 2));
     $checkout->setPayment((new Payments())->setSession((new Session())->setId($this->uuid())));
 
     $this->setDrCheckout($checkout);
 
-    $this->createSubscription($subscription, $subscripitonId);
+    $this->createSubscription($invoice->subscription, $subscripitonId);
     return $checkout;
   }
 
@@ -456,7 +467,6 @@ class DrTestHelper
     $invoice->setSubtotal($subscription->next_invoice['subtotal']);
     $invoice->setTotalTax($subscription->next_invoice['total_tax']);
     $invoice->setTotalAmount($subscription->next_invoice['total_amount']);
-
     $invoice->setState(DrInvoice::STATE_DRAFT);
     if ($order_id) {
       $invoice->setOrderId($order_id);
@@ -487,7 +497,8 @@ class DrTestHelper
     $order->setId($this->uuid());
     $order->setUpstreamId($invoice->id);
     $order->setState(DrOrder::STATE_ACCEPTED);
-
+    $order->setRefundedAmount(0);
+    $order->setAvailableToRefundAmount($invoice->total_amount);
     $this->copyItemsFrom($order, $drInvoice);
 
     $this->setDrOrder($order);
@@ -506,7 +517,7 @@ class DrTestHelper
     return $order;
   }
 
-  public function convertChekcoutToOrder(string $checkoutId, string $state = DrOrder::STATE_ACCEPTED): DrOrder
+  public function convertCheckoutToOrder(string $checkoutId, string $state = DrOrder::STATE_ACCEPTED): DrOrder
   {
     $checkout = $this->getDrCheckout($checkoutId);
 
@@ -518,10 +529,12 @@ class DrTestHelper
     $this->copyItemsFrom($order, $checkout);
 
     $order->setSubtotal($checkout->getSubtotal());
-    $order->setItems($checkout->getItems());
     $order->setTotalTax($checkout->getTotalTax());
     $order->setTotalAmount($checkout->getTotalAmount());
     $order->setState($state);
+    $order->setRefundedAmount(0);
+    $order->setAvailableToRefundAmount($checkout->getTotalAmount());
+    $this->copyItemsFrom($order, $checkout);
 
     $this->setDrOrder($order);
     return $order;
@@ -679,11 +692,35 @@ class DrTestHelper
   {
     $drOrderRefund = new DrOrderRefund();
     $drOrderRefund->setId($refund->getDrRefundId() ?? $this->uuid())
+      ->setOrderId($refund->getDrOrderId())
       ->setCurrency($refund->currency)
-      ->setAmount($refund->amount)
       ->setReason($refund->reason)
-      ->setState($refund->status);
+      ->setState(DrOrderRefund::STATE_PENDING)
+      ->setMetadata([
+        'created_from' => 'siser-system',
+        'item_type' => $refund->item_type
+      ])
+    ;
+
+    // item level refund or order level refund
+    if ($refund->item_type == Refund::ITEM_LICENSE) {
+      $item = $refund->items[0];
+      $drOrderRefund->setItems([
+        (new RefundItem())
+          ->setItemId($item['dr_item_id'])
+          ->setQuantity($item['quantity'])
+          ->setAmount($item['available_to_refund_amount'])
+      ]);
+    } else {
+      $drOrderRefund->setAmount($refund->amount);
+    }
+
     $this->setDrRefund($drOrderRefund);
+
+    // update dr order's availableToRefundAmount
+    $drOrder = $this->getDrOrder($refund->getDrOrderId());
+    $drOrder->setAvailableToRefundAmount($drOrder->getAvailableToRefundAmount() - $refund->amount);
+
     return $drOrderRefund;
   }
 

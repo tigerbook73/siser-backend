@@ -2,10 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Paddle\ProductCustomData;
+use App\Models\PaddleMap;
+use App\Models\Product;
+use App\Services\CurrencyHelper;
+use App\Services\DigitalRiver\WebhookException;
 use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\ProductDetails as DrProductDetails;
+use Paddle\SDK\Entities\Shared\TransactionDetailsPreview;
+use Paddle\SDK\Entities\Subscription as PaddleSubscription;
+use Paddle\SDK\Entities\Transaction\TransactionDetails;
+
 
 class ProductItem
 {
@@ -44,34 +53,44 @@ class ProductItem
     return round($price * (100 - $coupon_info['percentage_off']) / 100, 2);
   }
 
+  static public function buildPlanItem(array $plan_info, array|null $coupon_info): array
+  {
+    $planPrice = self::calcPlanPrice($plan_info, $coupon_info);
+    return [
+      'category'  => self::ITEM_CATEGORY_PLAN,
+      'name'      => self::buildPlanName($plan_info, $coupon_info),
+      'quantity'  => 1,
+      'price'     => $planPrice,
+      'tax'       => 0, // tax is calculated later
+      'amount'    => $planPrice,
+    ];
+  }
+
+  static public function buildLicenseItem(array $license_package_info, float $planPrice): array
+  {
+    $licensePrice = round($planPrice * $license_package_info['price_rate'] / 100, 2);
+    return [
+      'category'  => self::ITEM_CATEGORY_LICENSE,
+      'name'      => $license_package_info['name'] . ' x ' . $license_package_info['quantity'],
+      'quantity'  => 1,
+      'price'     => $licensePrice,
+      'tax'       => 0, // tax is calculated later
+      'amount'    => $licensePrice,
+    ];
+  }
+
   /**
    * @return array[]
    */
-  static public function buildItems(array $plan_info, array $coupon_info = null, array $license_package_info = null): array
+  static public function buildItems(array $plan_info, array $coupon_info = null, array $license_package_info = null, float $tax_rate = null, array $prev_items = null): array
   {
-    $items = [];
-    $planPrice = self::calcPlanPrice($plan_info, $coupon_info);
-    $itemPlan = [
-      'category'    => self::ITEM_CATEGORY_PLAN,
-      'name'        => self::buildPlanName($plan_info, $coupon_info),
-      'quantity'    => 1,
-      'price'       => $planPrice,
-      'tax'         => 0, // tax is calculated later
-      'amount'      => $planPrice,
-    ];
-    $items[] = $itemPlan;
-
+    $items[] = self::buildPlanItem($plan_info, $coupon_info);
     if ($license_package_info) {
-      $licensePrice = round($planPrice * $license_package_info['price_rate'] / 100, 2);
-      $itemLicense = [
-        'category'  => self::ITEM_CATEGORY_LICENSE,
-        'name'      => $license_package_info['name'] . ' x ' . $license_package_info['quantity'],
-        'quantity'  => 1,
-        'price'     => $licensePrice,
-        'tax'       => 0, // tax is calculated later
-        'amount'    => $licensePrice,
-      ];
-      $items[] = $itemLicense;
+      $items[] = self::buildLicenseItem($license_package_info, $items[0]['price']);
+    }
+
+    if ($tax_rate) {
+      $items = self::rebuildItemsForTax($items, $tax_rate, $prev_items);
     }
     return $items;
   }
@@ -87,13 +106,20 @@ class ProductItem
         self::ITEM_CATEGORY_PLAN :
         self::ITEM_CATEGORY_LICENSE);
       $item = [
-        'category'  => $category,
-        'name'      => $drItem->getProductDetails()->getName(),
-        'quantity'  => $drItem->getQuantity(),
-        'price'     => $drItem->getAmount(),
-        'tax'       => $drItem->getTax()->getAmount(),
-        'amount'    => $drItem->getAmount(),
+        'category'                    => $category,
+        'name'                        => $drItem->getProductDetails()->getName(),
+        'quantity'                    => $drItem->getQuantity(),
+        'price'                       => $drItem->getAmount(),
+        'tax'                         => $drItem->getTax()->getAmount(),
+        'amount'                      => $drItem->getAmount(),
+        'dr_item_id'                  => null,
+        'available_to_refund_amount'  => 0,
       ];
+      if ($drObject instanceof DrOrder) {
+        $item['dr_item_id'] = $drItem->getId();
+        $item['available_to_refund_amount'] = in_array($drObject->getState(), [DrOrder::STATE_ACCEPTED, DrOrder::STATE_FULFILLED]) ?
+          $drItem->getAmount() + $drItem->getTax()->getAmount() : ($drItem->getAvailableToRefundAmount() ?? 0);
+      }
       $items[] = $item;
     }
 
@@ -108,6 +134,20 @@ class ProductItem
       $items[1] = $temp;
     }
     return $items;
+  }
+
+  /**
+   * @return array[] $items
+   */
+  static public function removeItem(array $items, string $category): array
+  {
+    $updatedItems = [];
+    foreach ($items as $item) {
+      if ($item['category'] !== $category) {
+        $updatedItems[] = $item;
+      }
+    }
+    return $updatedItems;
   }
 
   /**
@@ -181,5 +221,83 @@ class ProductItem
   static public function BuildDrProductDetails(array $item): DrProductDetails
   {
     return self::fillDrProductDetails(new DrProductDetails(), $item);
+  }
+
+  /**
+   * sort items
+   *
+   */
+  static public function sortItems(array &$items): void
+  {
+    usort(
+      $items,
+      fn($a, $b) => $a['category'] === $b['category'] ?
+        $b['quantity'] - $a['quantity'] : ($a['category'] === self::ITEM_CATEGORY_PLAN ? -1 : 1)
+    );
+  }
+
+  static public function buildItem(
+    string $productType,
+    string $paddlePriceId,
+    int $quantity,
+    float $price = null,
+    float $discount = null,
+    float $tax = null,
+    float $amount = null
+  ): array {
+    if ($productType == Product::TYPE_SUBSCRIPTION) {
+      $category = ProductItem::ITEM_CATEGORY_PLAN;
+      $name = PaddleMap::findPlanByPaddleId($paddlePriceId)?->name;
+    } else if ($productType == Product::TYPE_LICENSE_PACKAGE) {
+      $category = ProductItem::ITEM_CATEGORY_LICENSE;
+      $licensePlan = PaddleMap::findLicensePlanByPaddleId($paddlePriceId);
+      $licenseQuantity = (int)PaddleMap::findMetaByPaddleId($paddlePriceId);
+      $name = $licensePlan->getDetail($licenseQuantity)->name;
+    } else {
+      throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
+    }
+
+    return [
+      'category'                    => $category,
+      'name'                        => $name,
+      'quantity'                    => $quantity,
+      'price'                       => $price,
+      'discount'                    => $discount,
+      'tax'                         => $tax,
+      'amount'                      => $amount,
+      'dr_item_id'                  => null,
+      'available_to_refund_amount'  => 0,
+    ];
+  }
+
+  static public function buildItemsFromPaddleResource(TransactionDetails|TransactionDetailsPreview|PaddleSubscription $paddleResource): array
+  {
+    $items = [];
+    if ($paddleResource instanceof TransactionDetails || $paddleResource instanceof TransactionDetailsPreview) {
+      foreach ($paddleResource->lineItems as $lineItem) {
+        $productCustomData = ProductCustomData::from($lineItem->product->customData->data);
+        $items[] = self::buildItem(
+          productType: $productCustomData->product_type,
+          paddlePriceId: $lineItem->priceId,
+          quantity: $lineItem->quantity,
+          price: CurrencyHelper::getDecimalPrice($paddleResource->totals->currencyCode->getValue(), $lineItem->totals->subtotal),
+          discount: CurrencyHelper::getDecimalPrice($paddleResource->totals->currencyCode->getValue(), $lineItem->totals->discount),
+          tax: CurrencyHelper::getDecimalPrice($paddleResource->totals->currencyCode->getValue(), $lineItem->totals->tax),
+          amount: CurrencyHelper::getDecimalPrice($paddleResource->totals->currencyCode->getValue(), $lineItem->totals->total)
+        );
+      }
+    } else {
+      foreach ($paddleResource->items as $subscriptionItem) {
+        $productCustomData = ProductCustomData::from($subscriptionItem->product->customData->data);
+        $items[] = self::buildItem(
+          productType: $productCustomData->product_type,
+          paddlePriceId: $subscriptionItem->price->id,
+          quantity: $subscriptionItem->quantity
+        );
+      }
+    }
+
+    ProductItem::sortItems($items);
+    return $items;
   }
 }

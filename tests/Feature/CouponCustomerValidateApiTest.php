@@ -84,6 +84,8 @@ class CouponCustomerValidateApiTest extends CouponTestCase
     $plan = Plan::public()->first();
     $coupon = Coupon::where('discount_type', Coupon::DISCOUNT_TYPE_FREE_TRIAL)->first();
 
+    $this->user->getActiveSubscription()?->stop(Subscription::STATUS_STOPPED, 'test');
+
     // fake a subscription with the longterm coupon
     $subscription = (new Subscription())
       ->initFill()

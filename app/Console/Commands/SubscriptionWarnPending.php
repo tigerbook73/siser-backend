@@ -59,7 +59,7 @@ class SubscriptionWarnPending extends Command
      */
     $pendings = Invoice::select('id')
       ->where('status', Invoice::STATUS_PENDING)
-      ->where('period', 0)
+      ->where('type', Invoice::TYPE_NEW_SUBSCRIPTION)
       ->where('updated_at', '<', now()->sub(self::INVOICE_PENDING_PERIOD))
       ->limit($maxCount)
       ->get()
@@ -77,7 +77,7 @@ class SubscriptionWarnPending extends Command
      */
     $renews = Invoice::select('id')
       ->where('status', Invoice::STATUS_PENDING)
-      ->where('period', '>', 1)
+      ->where('type', Invoice::TYPE_RENEW_SUBSCRIPTION)
       ->where('updated_at', '<', now()->sub(self::INVOICE_RENEW_PERIOD))
       ->limit($maxCount)
       ->get()

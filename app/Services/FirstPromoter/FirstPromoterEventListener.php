@@ -10,9 +10,7 @@ class FirstPromoterEventListener implements ShouldQueue
   /**
    * Create the event listener.
    */
-  public function __construct(public FirstPromoterService $service)
-  {
-  }
+  public function __construct(public FirstPromoterService $service) {}
 
   /**
    * Handle the event.
@@ -28,10 +26,10 @@ class FirstPromoterEventListener implements ShouldQueue
         $this->service->trackSale(
           $event->invoice->user_id,
           $event->invoice->id,
-          $event->invoice->subtotal,
+          $event->invoice->subtotal - $event->invoice->discount,
           $event->invoice->currency,
           config('affiliate.first_promoter.plan_mapping')[$event->invoice->plan_info['interval']] ?? null,
-          $event->invoice->subscription->coupon?->code,
+          $event->invoice->coupon_info['code'] ?? null,
         );
         break;
 

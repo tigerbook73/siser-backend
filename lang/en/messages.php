@@ -13,6 +13,10 @@ return [
   'order.status.refund-failed'                    => 'Refund Failed',
 
   'order.type'                                    => 'Order Type',
+  'order.type.new-subscription'                   => 'New Subscription',
+  'order.type.renew-subscription'                 => 'Renew Subscription',
+  'order.type.new-license-package'                => 'New License Package',
+  'order.type.increase-license-number'            => 'Increase License Number',
 
   'payment_method'                                => 'Payment Method',
   'payment_method.creditCard'                     => 'Credit Card',
@@ -85,6 +89,7 @@ return [
   'coupon.period_day'                             => ':interval_count days',
   'coupon.period_month'                           => ':interval_count month(s)',
 
+  // subscritpion
   'subscription_order_abort.notification'         => 'Unfortunately, an attempted order for the <b>:plan_name</b> subscription failed. Please check your payment method and try again.',
   'subscription_order_abort.summary'              => 'Below is a summary of the attempted Order:',
 
@@ -102,19 +107,21 @@ return [
   'subscription_order_credit.summary'             => 'Below is a summary of your Order:',
 
   'subscription_order_invoice.notification'       => 'We are pleased to provide the download link for your <a href=":invoice_pdf" download><b>invoice pdf</b></a> for your subscription of the <b>:plan_name</b>. You can also download the invoice from our :customer_portal_link.',
-  'subscription_order_invoice.summary'            => 'Below is a summary of your Order & Subscription:',
+  'subscription_order_invoice.summary'            => 'Below is a summary of your Order:',
 
-  'subscription_order_refunded.notification'      => 'This is to confirm that your refund for the order #:order_id to the <b>:plan_name</b> has been processed. The total refund amount is <b>:currency :refund_total</b>. Please note that it may take a few days for the refund to appear on your account.',
-  'subscription_order_refunded.summary'           => 'Below is a summary of your Refunded Order & Subscription:',
+  'subscription_order_refunded.notification'      => 'This is to confirm that your refund for the <b>Order #:order_id</b> to the <b>:plan_name</b> has been processed. The total refund amount is <b>:amount</b>. Please note that it may take a few days for the refund to appear on your account.',
+  'subscription_order_refunded.summary'           => 'Below is a summary of your Refunded Order:',
 
-  'subscription_order_refund_failed.notification' => 'Unfortunately, we are unable to process your refund request (amount: :amount) for the order #:order_id to the <b>:plan_name</b> subscription. Please contact our support team for assistance.',
+  'subscription_order_refund_failed.notification' => 'Unfortunately, we are unable to process your refund request (amount: <b>:amount</b>) for the <b>Order #:order_id</b> to the <b>:plan_name</b> subscription. Please contact our support team for assistance.',
   'subscription_order_refund_failed.summary'      => 'Below is a summary of your order to Refund:',
 
   'subscription_cancel.notification'              => 'We’re sorry to see you go! Your <b>:plan_name</b> subscription was cancelled as per your request. You can still access your benefits until your subscription is terminated on <b>:end_date</b>.<br /><br />Thank you for your past support, and please feel free to contact us if you have any questions or require further assistance.',
-  'subscription_cancel.notification_free_trial'   => 'We’re sorry to see you go! Your <b>:plan_name</b> subscription was cancelled and terminated as per your request.',
   'subscription_cancel.summary'                   => 'Below is a summary of your Cancelled Subscription:',
 
-  'subscription_cancel_refund.notification'       => 'We’re sorry to see you go! Your <b>:plan_name</b> subscription was cancelled as per your request.<br /><br />As you selected to receieve a refund, a refund request has been submitted. Once processed, you will receive a refund confirmation email.<br /><br />Thank you for your past support, and please feel free to contact us if you have any questions or require further assistance.',
+  'subscription_cancel_immediate.notification'    => 'We’re sorry to see you go! Your <b>:plan_name</b> subscription was cancelled and terminated as per your request on <b>:end_date</b>.',
+  'subscription_cancel_immediate.summary'         => 'Below is a summary of your cancelled subscription:',
+
+  'subscription_cancel_refund.notification'       => 'We’re sorry to see you go! Your <b>:plan_name</b> subscription was cancelled and terminated as per your request on <b>:end_date</b>.<br /><br />In the meantime, a refund request has been submitted. Once processed, you will receive a refund confirmation email.<br /><br />Thank you for your past support, and please feel free to contact us if you have any questions or require further assistance.',
   'subscription_cancel_refund.summary'            => 'Below is a summary of your cancelled subscription:',
 
   'subscription_extended.notification'            => 'We are pleased to confirm that your subscription to the <b>:plan_name</b> has been successfully renewed! You can continue enjoying all of the exclusive benefits and features of your subscription.',
@@ -146,22 +153,46 @@ return [
   'subscription_terms_changed.notification'       => 'We are writing to inform you that the <b>:terms</b> of your subscription to <b>:plan_name</b> have changed.<br /><br />Here is the summury of changes:<br /> :terms_items',
   'subscription_terms_changed.summary'            => 'Below is a summary of your most recent Order & Subscription:',
 
-  'subscription_plan_updated_german.notification' => 'We are writing to inform you that the renewal policy of your subscription to <b>:plan_name</b> was updated.<br /><br />Your next invoice period will remain for the current annual plan. However, you are required to manually renew your subscription before it expires on <b>:end_date</b>. If you do not renew your subscription before the expiration date, it will be cancelled automatically when it expires. We will send a reminder notification to you 30 days before the expiration.<br /><br />Thank you for your understanding. If you have any questions, please feel free to contact us.',
-  'subscription_plan_updated_german.summary'      => 'Below is a summary of your updated Subscription:',
-
-  'subscription_plan_updated_other.notification'  => 'We are writing to inform you that the renewal policy of your subscription to <b>:plan_name</b> was updated.<br /><br />Rather than being converted to monthly plan on expiry, your annual subscription will be automatically renewed.<br /><br />Thank you for your understanding. If you have any questions, please feel free to contact us.',
-  'subscription_plan_updated_other.summary'       => 'Below is a summary of your updated Subscription:',
-
   'subscription_source_invalid.notification'      => 'We are writing to inform you that the payment method for your subscription to <b>:plan_name</b> is invalid, preventing us from completing the renewal process.<br /><br /> To prevent any disruption to your subscription access, we kindly request that you verify the validaty of your registered payment method. We will attempt to collect the payment until <b>:collection_end_date</b>. <br /><br /> If you require any assistance or have any questions regarding your payment, please contact our support team.',
   'subscription_source_invalid.summary'           => 'Below is a summary of your Subscription:',
 
   'subscription_lapsed.notification'              => 'We are writing to inform you that the renewal charge for your <b>:plan_name</b> subscription has failed and your subscription has been terminated.<br /><br />We apologise for the inconvenience caused and request that you kindly repurchase the software if you wish to continue using the product. Alternatively, you may contact our support team for assistance.',
   'subscription_lapsed.summary'                   => 'Below is a summary of your Failed Subscription:',
 
+  // license
+  'license_order_confirm.notification_new'        => 'We are pleased to inform you that your order to add <b>:license_package_name</b> item to your <b>:plan_name</b> subscription has been confirmed! Your subscription plan has been updated accordingly.',
+  'license_order_confirm.notification_increase'   => 'We are pleased to inform you that your order to increase license number for your <b>:plan_name</b> subscription has been confirmed! Your subscription plan has been updated accordingly.',
+  'license_order_confirm.summary'                 => 'Below is a summary of your Order and updated Subscription:',
+  'license_order_confirm.agreement_claim'         => 'You have agreed to the subscription terms unless you cancel your subscription.',
+
+  'license_order_credit.notification'             => 'We are pleased to provide the download link for the <a href=":credit_memo" download><b>credit memo</b></a> for your <b>Order #:order_id</b> - <b>:license_package_name</b>. You can also download the credit memo from our :customer_portal_link.',
+  'license_order_credit.summary'                  => 'Below is a summary of your Order:',
+
+  'license_order_invoice.notification'            => 'We are pleased to provide the download link for the <a href=":invoice_pdf" download><b>invoice</b></a> for your <b>Order #:order_id</b> -<b>:license_package_name</b>. You can also download the invoice from our :customer_portal_link.',
+  'license_order_invoice.summary'                 => 'Below is a summary of your Order:',
+
+  'license_order_refunded.notification'           => 'This is to confirm that your refund for the <b>:type</b> order <b>#:order_id</b> has been processed. The total refund amount is <b>:currency :refund_total</b>. Please note that it may take a few days for the refund to appear on your account.',
+  'license_order_refunded.summary'                => 'Below is a summary of your Refunded Order:',
+
+  'license_order_refund_failed.notification'      => 'Unfortunately, we are unable to process your refund request (<b>:amount</b>) for the <b>:type</b> order <b>#:order_id</b>. Please contact our support team for assistance.',
+  'license_order_refund_failed.summary'           => 'Below is a summary of your order to Refund:',
+
+  'license_cancel.notification'                   => 'We’re writing to inform that the <b>License Package</b> in your <b>:plan_name</b> subscription was cancelled as per your request. You can still access your benefits until <b>:end_date</b>.',
+  'license_cancel.summary'                        => 'Below is a summary of your updataed Subscription:',
+
+  'license_cancel_immediate.notification'         => 'We’re writing to inform that the <b>License Package</b> in your <b>:plan_name</b> subscription was cancelled as per your request on <b>:end_date</b>.',
+  'license_cancel_immediate.summary'              => 'Below is a summary of your cancelled subscription:',
+
+  'license_cancel_refund.notification'            => 'We’re writing to inform that the <b>License Package</b> in your <b>:plan_name</b> subscription was cancelled as per your request on <b>:end_date</b>.<br /><br />In the meantime, a refund request has been submitted. Once processed, you will receive a refund confirmation email.<br /><br />Thank you for your past support, and please feel free to contact us if you have any questions or require further assistance.',
+  'license_cancel_refund.summary'                 => 'Below is a summary of your cancelled subscription:',
+
+  'license_decrease.notification'                 => 'We\'re writing to inform that the license number for your <b>:plan_name</b> subscription was decreased as per your request. You can still access your benefits until <b>:end_date</b>.',
+  'license_decrease.notification_immediate'       => 'We\'re writing to inform that the license number for your <b>:plan_name</b> subscription was decreased as per your request.',
+  'license_decrease.summary'                      => 'Below is a summary of your updated subscription:',
+
   // license sharing
   'license_sharing_new_invitation.notification'       => 'We are writing to inform you that you have received a license sharing invitation for <b>:product_name</b> from <b>:owner_name (:owner_email)</b>.<br /><br />You can view and/or accept the invitation from our :customer_portal_link.',
   'license_sharing_invitation_expired.notification'   => 'We are writing to inform you that your license sharing for <b>:product_name</b> from <b>:owner_name (:owner_email)</b> is expired.<br /><br />You can view your current subscription status from our :customer_portal_link.',
   'license_sharing_invitation_cancelled.notification' => 'We are writing to inform you that your license sharing for <b>:product_name</b> from <b>:owner_name (:owner_email)</b> is cancelled.<br /><br />You can view your current subscription status from our :customer_portal_link.',
   'license_sharing_invitation_revoked.notification'   => 'We are writing to inform you that your license sharing for <b>:product_name</b> from <b>:owner_name (:owner_email)</b> is cancelled by the owner.<br /><br />You can view your current subscription status from our :customer_portal_link.',
-
 ];

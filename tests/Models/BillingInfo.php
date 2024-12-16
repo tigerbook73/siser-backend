@@ -24,16 +24,22 @@ class BillingInfo {
     /** @var string $organization */
     public $organization = "";
 
-    /** @var string $email */
-    public $email = "";
-
     /** @var \Tests\Models\Address $address */
     public $address;
 
     /** @var string $language */
     public $language = "";
 
+    /** @var float $user_id */
+    public $user_id = 0;
+
+    /** @var string $email */
+    public $email = "";
+
     /** @var string $locale */
     public $locale = "";
+
+    /** @var array<string,mixed> $meta */
+    public $meta;
 
 }

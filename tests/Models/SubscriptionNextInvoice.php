@@ -27,11 +27,17 @@ class SubscriptionNextInvoice {
     /** @var \Tests\Models\LicensePackageInfo $license_package_info */
     public $license_package_info;
 
+    /** @var \Tests\Models\ProductItem[] $items */
+    public $items = [];
+
     /** @var float $price beautified price (beautified price)*/
     public $price = 0;
 
     /** @var float $subtotal */
     public $subtotal = 0;
+
+    /** @var float $discount */
+    public $discount = 0;
 
     /** @var float $tax_rate */
     public $tax_rate = 0;

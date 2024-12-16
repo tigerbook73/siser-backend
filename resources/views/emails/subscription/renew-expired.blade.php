@@ -8,7 +8,7 @@
       'subscription_renew_expired.notification',
       [
         'plan_name' => $helper->formatSubscriptionFullName($subscription),
-        'end_date' => $helper->formatDate($subscription->end_date),
+        'end_date'  => $helper->formatDate($subscription->end_date),
       ]
     )
   !!}

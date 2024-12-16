@@ -42,7 +42,7 @@ class EmailHelper
 
   public function formatOrderType(Invoice $invoice)
   {
-    if ($invoice->period <= 1) {
+    if ($invoice->isNewSubscriptionOrder()) {
       if ($invoice->license_package_info) {
         return 'New Subscription + License Package';
       } else {
@@ -50,11 +50,23 @@ class EmailHelper
       }
     }
 
-    if ($invoice->license_package_info) {
-      return 'Renew Subscription + License Package';
-    } else {
-      return 'Renew Subscription';
+    if ($invoice->isRenewSubscritpionOrder()) {
+      if ($invoice->license_package_info) {
+        return 'Renew Subscription + License Package';
+      } else {
+        return 'Renew Subscription';
+      }
     }
+
+    if ($invoice->isNewLicensePackageOrder()) {
+      return 'New License Package';
+    }
+
+    if ($invoice->isIncreaseLicenseOrder()) {
+      return 'Increase License Number';
+    }
+
+    throw new \Exception('Unknown order type', 500);
   }
 
   public function formatOrderStatus(string $status)
@@ -169,6 +181,7 @@ class EmailHelper
   {
     return (in_array($type, [
       SubscriptionNotification::NOTIF_CANCELLED,
+      SubscriptionNotification::NOTIF_CANCELLED_IMMEDIATE,
       SubscriptionNotification::NOTIF_CANCELLED_REFUND,
       SubscriptionNotification::NOTIF_FAILED,
       SubscriptionNotification::NOTIF_LAPSED,
@@ -202,8 +215,10 @@ class EmailHelper
       SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
       SubscriptionNotification::NOTIF_SOURCE_INVALID,
 
-      SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN,
-      SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER,
+      SubscriptionNotification::NOTIF_LICENSE_ORDER_CONFIRMED,
+      SubscriptionNotification::NOTIF_LICENSE_CANCELLED,
+      SubscriptionNotification::NOTIF_LICENSE_CANCELLED_REFUND,
+      SubscriptionNotification::NOTIF_LICENSE_DECREASE,
     ]));
   }
 
@@ -247,7 +262,7 @@ class EmailHelper
   public function formatSubscriptionLicenseName(Subscription $subscription, bool $next = false)
   {
     $item = $subscription->findLicenseItem(next: $next);
-    return $item['name'];
+    return $item['name'] ?? 'Single License';
   }
 
   public function formatSubscriptionFullName(Subscription $subscription, bool $next = false)

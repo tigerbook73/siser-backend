@@ -6,6 +6,7 @@
 
 namespace App\Models\Base;
 
+use App\Models\LicensePlan;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\TraitModel;
@@ -29,8 +30,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property array $price_list
+ * @property array|null $meta
  * 
  * @property Product $product
+ * @property LicensePlan $license_plan
  * @property Collection|Subscription[] $subscriptions
  *
  * @package App\Models\Base
@@ -44,7 +47,8 @@ class Plan extends Model
   protected $casts = [
     'interval_count' => 'int',
     'subscription_level' => 'int',
-    'price_list' => 'json'
+    'price_list' => 'json',
+    'meta' => 'json'
   ];
 
   protected $fillable = [
@@ -56,12 +60,18 @@ class Plan extends Model
     'subscription_level',
     'url',
     'status',
-    'price_list'
+    'price_list',
+    'meta'
   ];
 
   public function product()
   {
     return $this->belongsTo(Product::class, 'product_name', 'name');
+  }
+
+  public function license_plan()
+  {
+    return $this->hasOne(LicensePlan::class);
   }
 
   public function subscriptions()

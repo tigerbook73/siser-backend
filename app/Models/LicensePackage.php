@@ -113,6 +113,12 @@ class LicensePackage extends BaseLicensePackage
     return self::refreshInfo($info, $quantity);
   }
 
+  public function getMaxQuantity(): int
+  {
+    $priceTable = $this->price_table;
+    return $priceTable[count($priceTable) - 1]['quantity'];
+  }
+
   static public function validatePriceTable(array $priceTable): array|null
   {
     /**

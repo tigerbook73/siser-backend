@@ -24,7 +24,7 @@ class AccountBillingInfoTestCase extends DrApiTestCase
       'last_name'     => 'last_name',
       'phone'         => '',
       'organization'  => '',
-      'email'         => 'test-case@me.com',
+      // 'email'         => 'test-case@me.com',
       'address' => [
         'line1'       => 'line1',
         'line2'       => '',

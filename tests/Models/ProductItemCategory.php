@@ -16,6 +16,8 @@ class ProductItemCategory
 
     const LICENSE = 'license';
 
+    const LICENSE_PRORATED = 'license-prorated';
+
     /**
      * Gets allowable values of the enum
      * @return string[]
@@ -24,7 +26,8 @@ class ProductItemCategory
     {
         return [
             self::PLAN,
-            self::LICENSE
+            self::LICENSE,
+            self::LICENSE_PRORATED
         ];
     }
 }

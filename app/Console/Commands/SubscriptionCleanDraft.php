@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\DigitalRiver\SubscriptionManager;
@@ -16,7 +17,8 @@ class SubscriptionCleanDraft extends Command
    *
    * @var string
    */
-  protected $signature = 'subscription:clean-draft {--dry-run : Dry run}';
+  protected $signature = 'subscription:clean-draft
+                          {--expire-minutes= : expires minutes for draft subscriptions and init invoices}';
 
   /**
    * The console command description.
@@ -24,6 +26,12 @@ class SubscriptionCleanDraft extends Command
    * @var string
    */
   protected $description = 'clean draft subscriptions';
+
+
+  /**
+   *
+   */
+  protected $expireMiniutes = 30;
 
   public function __construct(public SubscriptionManager $manager, public DigitalRiverService $drService)
   {
@@ -37,21 +45,26 @@ class SubscriptionCleanDraft extends Command
    */
   public function handle()
   {
+    Log::info('Artisan: subscription:clean-draft: start');
+
+    $this->expireMiniutes = $this->option('expire-minutes') ?? 30;
+
     $this->cleanDraftSubscriptions();
+    $this->cleanInitInvoices();
+
+    Log::info("Artisan: subscription:clean-draft: completed");
+
 
     return Command::SUCCESS;
   }
 
-  public function cleanDraftSubscriptions()
+  public function cleanDraftSubscriptions(): int
   {
-    Log::info('Artisan: subscription:clean-draft: start');
-
     $maxCount = 100;
-    $dryRun = $this->option('dry-run');
 
     /** @var Subscription[]|Collection $subscriptions */
     $subscriptions = Subscription::where('status', Subscription::STATUS_DRAFT)
-      ->where('created_at', '<', now()->subMinutes(30))
+      ->where('created_at', '<', now()->subMinutes($this->expireMiniutes))
       ->limit($maxCount + 1)
       ->get();
 
@@ -63,17 +76,14 @@ class SubscriptionCleanDraft extends Command
 
     if ($subscriptions->count() <= 0) {
       Log::info('There is no subscriptions to process.');
-      return Command::SUCCESS;
+      return 0;
     }
 
     Log::info("Process {$subscriptions->count()} subscriptions ...");
 
     foreach ($subscriptions as $subscription) {
       Log::info("  deleting subscription: id=$subscription->id");
-      if (!$dryRun) {
-        $this->manager->deleteSubscription($subscription);
-        usleep(1_000_000 / 20);
-      }
+      $this->manager->deleteSubscription($subscription);
     }
 
     Log::info("Process {$subscriptions->count()} subscriptions ... Done!");
@@ -82,11 +92,47 @@ class SubscriptionCleanDraft extends Command
       Log::info('There are more subscriptions to process');
     }
 
-    if (!$dryRun) {
-      Log::info("Artisan: subscription:clean-draft: clean {$subscriptions->count()} draft subscriptions.");
+
+    return $subscriptions->count();
+  }
+
+  public function cleanInitInvoices(): int
+  {
+    $maxCount = 100;
+
+    /** @var Invoice[]|Collection $invoices */
+    $invoices = Invoice::where('status', Invoice::STATUS_INIT)
+      ->whereIn('type', [Invoice::TYPE_NEW_LICENSE_PACKAGE, Invoice::TYPE_INCREASE_LICENSE])
+      ->where('created_at', '<', now()->subMinutes($this->expireMiniutes))
+      ->limit($maxCount + 1)
+      ->get();
+
+    $moreItems = false;
+    if ($invoices->count() > $maxCount) {
+      $invoices->pop();
+      $moreItems = true;
     }
 
-    return Command::SUCCESS;
+    if ($invoices->count() <= 0) {
+      Log::info('There is no invoices to process.');
+      return 0;
+    }
+
+    Log::info("Process {$invoices->count()} invoices ...");
+
+    foreach ($invoices as $invoice) {
+      Log::info("  deleting invoice: id=$invoice->id");
+      $this->manager->deleteInvoice($invoice);
+    }
+
+    Log::info("Process {$invoices->count()} invoices ... Done!");
+
+    if ($moreItems) {
+      Log::info('There are more invoices to process');
+    }
+
+
+    return $invoices->count();
   }
 
   // public function cleanPreCalculateTaxCheckouts()

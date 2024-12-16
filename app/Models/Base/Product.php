@@ -7,10 +7,12 @@
 namespace App\Models\Base;
 
 use App\Models\Coupon;
+use App\Models\LicensePlan;
 use App\Models\LicenseSharing;
 use App\Models\LicenseSharingInvitation;
 use App\Models\Plan;
 use App\Models\TraitModel;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,8 +22,13 @@ use Illuminate\Database\Eloquent\Model;
  * 
  * @property int $id
  * @property string $name
+ * @property string $type
+ * @property array|null $meta
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * 
  * @property Collection|Coupon[] $coupons
+ * @property Collection|LicensePlan[] $license_plans
  * @property Collection|LicenseSharingInvitation[] $license_sharing_invitations
  * @property Collection|LicenseSharing[] $license_sharings
  * @property Collection|Plan[] $plans
@@ -33,15 +40,25 @@ class Product extends Model
   use HasFactory;
   use TraitModel;
   protected $table = 'products';
-  public $timestamps = false;
+
+  protected $casts = [
+    'meta' => 'json'
+  ];
 
   protected $fillable = [
-    'name'
+    'name',
+    'type',
+    'meta'
   ];
 
   public function coupons()
   {
     return $this->hasMany(Coupon::class, 'product_name', 'name');
+  }
+
+  public function license_plans()
+  {
+    return $this->hasMany(LicensePlan::class, 'product_name', 'name');
   }
 
   public function license_sharing_invitations()

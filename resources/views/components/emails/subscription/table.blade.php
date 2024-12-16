@@ -58,9 +58,9 @@
       <td colspan="2" class="highlight">{{ $helper->trans('payment_method') }}</td>
     </tr>
     <tr>
-      <td width="40%">{{ $helper->formatPaymentMethodType($subscription->user->payment_method->info()['type']) }}</td>
+      <td width="40%">{{ $helper->formatPaymentMethodType(($invoice ?? $subscription)->payment_method_info['type']) }}</td>
       <td>
-        {!! $helper->formatPaymentMethod($subscription->user->payment_method->info()['type'], $subscription->user->payment_method->info()['display_data']) !!}
+        {!! $helper->formatPaymentMethod(($invoice ?? $subscription)->payment_method_info['type'], ($invoice ?? $subscription)->payment_method_info['display_data']) !!}
       </td>
     </tr>
   </table>
@@ -110,6 +110,9 @@
   @endif
 
   @if (in_array('subscription', $fields))
+
+  <hr class="separator"/>
+
   <table>
     <tr>
       <td colspan="2" class="highlight">{{ $helper->trans('subscription.#', ['subscription_id' => $subscription->id]) }}</td>
@@ -118,12 +121,10 @@
       <td width="40%">{{ $helper->trans('subscription.plan_name') }}</td>
       <td>{{ $helper->formatSubscriptionPlanName($subscription) }}</td>
     </tr>
-    @if ($subscription->license_package_info)
     <tr>
       <td >{{ $helper->trans('subscription.license_package') }}</td>
       <td>{{ $helper->formatSubscriptionLicenseName($subscription) }}</td>
     </tr>
-    @endif
     <tr>
       <td>{{ $helper->trans('subscription.billing_period') }}</td>
       <td>{{ $helper->formatBillingPeriod($subscription) }}</td>
@@ -176,18 +177,16 @@
     </tr>
 
     <tr>
+      <td>{{ $helper->trans('subscription.next_invoice_date') }}</td>
+      <td>{{ $helper->formatDate($subscription->next_invoice_date) }}</td>
+    </tr>
+    <tr>
       <td>{{ $helper->trans('subscription.next_invoice_plan') }}</td>
       <td>{{ $helper->formatSubscriptionPlanName($subscription, true) }}</td>
     </tr>
-    @if ($subscription->license_package_info)
     <tr>
       <td >{{ $helper->trans('subscription.next_license_package') }}</td>
       <td>{{ $helper->formatSubscriptionLicenseName($subscription, true) }}</td>
-    </tr>
-    @endif
-    <tr>
-      <td>{{ $helper->trans('subscription.next_invoice_date') }}</td>
-      <td>{{ $helper->formatDate($subscription->next_invoice_date) }}</td>
     </tr>
     <tr>
       <td>{{ $helper->trans('subscription.next_invoice_price') }}</td>

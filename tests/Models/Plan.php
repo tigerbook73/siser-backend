@@ -36,4 +36,10 @@ class Plan {
     /** @var \Tests\Models\Price $price */
     public $price;
 
+    /** @var \Tests\Models\LicensePlan $license_plan */
+    public $license_plan;
+
+    /** @var array<string,mixed> $meta */
+    public $meta;
+
 }

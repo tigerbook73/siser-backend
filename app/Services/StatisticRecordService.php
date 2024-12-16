@@ -57,6 +57,7 @@ class StatisticRecordService
           if ($subscription->current_period > 1) {
             /** @var Invoice[] $invoices */
             $invoices = $subscription->invoices()
+              ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])
               ->where('period', '>=', 1)
               ->whereIn(
                 'status',
@@ -224,7 +225,7 @@ class StatisticRecordService
 
   /**
    * query subscription classified statistic records from from DB
-   * 
+   *
    * @param string $date "<= Date($date)"
    * @return array
    *  [
@@ -243,7 +244,7 @@ class StatisticRecordService
     $date = Carbon::parse($date)->startOfDay()->addDay()->toDateString();
 
     $sql = "
-      SELECT 
+      SELECT
         JSON_UNQUOTE(JSON_EXTRACT(`subscriptions`.`billing_info`, '$.\"address\".\"country\"')) AS `country`,
         `subscriptions`.`currency`,
         `subscriptions`.`subscription_level`,

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\BillingInfo;
 use App\Models\User;
-use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\Locale;
+use App\Services\Paddle\AddressService;
+use App\Services\Paddle\BusinessService;
+use App\Services\Paddle\CustomerService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -14,8 +16,11 @@ class BillingInfoController extends SimpleController
   protected string $modelClass = BillingInfo::class;
 
 
-  public function __construct(public SubscriptionManager $manager)
-  {
+  public function __construct(
+    public AddressService $addressService,
+    public BusinessService $businessService,
+    public CustomerService $customerService,
+  ) {
     parent::__construct();
   }
 
@@ -27,7 +32,7 @@ class BillingInfoController extends SimpleController
       "phone"             => ['string', 'max:255'],
       "customer_type"     => ['string', 'in:individual,business'],
       "organization"      => ['string', 'max:255'],
-      "email"             => ['filled', 'email'],
+      // "email"             => ['filled', 'email'],
       "address"           => ['filled', 'array'],
       'address.line1'     => ['required_with:address', 'string', 'max:255'],
       'address.line2'     => ['string', 'max:255'],
@@ -95,8 +100,12 @@ class BillingInfoController extends SimpleController
 
     $billingInfo->save();
 
-    // create or update customer
-    $this->manager->createOrUpdateCustomer($billingInfo);
+    // create or update paddle customer
+    if ($billingInfo->wasChanged()) {
+      $this->customerService->createOrUpdatePaddleCustomer($billingInfo);
+      $this->addressService->createOrUpdatePaddleAddress($billingInfo);
+      // do not create business from our UI any more
+    }
 
     return $this->transformSingleResource($billingInfo->unsetRelations());
   }

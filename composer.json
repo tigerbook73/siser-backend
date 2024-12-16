@@ -11,6 +11,10 @@
     {
       "type": "vcs",
       "url": "https://github.com/futurecorporation/digital-river-php.git"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/futurecorporation/paddle-php-sdk.git"
     }
   ],
   "require": {
@@ -22,6 +26,7 @@
     "laravel/framework": "^9.11",
     "laravel/octane": "^1.5",
     "laravel/tinker": "^2.7",
+    "paddlehq/paddle-php-sdk": "*@dev",
     "php-open-source-saver/jwt-auth": "^1.4",
     "spiral/roadrunner": "^2.8.2"
   },
@@ -73,7 +78,10 @@
   "config": {
     "optimize-autoloader": true,
     "preferred-install": "dist",
-    "sort-packages": true
+    "sort-packages": true,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
   },
   "minimum-stability": "dev",
   "prefer-stable": true

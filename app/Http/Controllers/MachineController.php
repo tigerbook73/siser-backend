@@ -35,7 +35,7 @@ class MachineController extends SimpleController
 
   public function listByAccount(Request $request)
   {
-    $request->merge(['user_id' => auth('api')->user()->id]);
+    $request->merge(['user_id' => auth('api')->id()]);
     return self::list($request);
   }
 

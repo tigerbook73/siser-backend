@@ -14,7 +14,8 @@ use App\Models\TaxId;
 use App\Models\User;
 use App\Notifications\SubscriptionNotification;
 use App\Services\CouponRules;
-use App\Services\DigitalRiver\SubscriptionManager;
+use App\Services\DigitalRiver\SubscriptionManagerDR;
+use App\Services\Paddle\SubscriptionManagerPaddle;
 use App\Services\RefundRules;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -23,8 +24,10 @@ class SubscriptionController extends SimpleController
 {
   protected string $modelClass = Subscription::class;
 
-  public function __construct(public SubscriptionManager $manager)
-  {
+  public function __construct(
+    public SubscriptionManagerDR $manager,
+    public SubscriptionManagerPaddle $paddleManager
+  ) {
     parent::__construct();
   }
 
@@ -64,9 +67,7 @@ class SubscriptionController extends SimpleController
   // GET account/subscriptions
   public function accountList(Request $request)
   {
-    $this->validateUser();
-    $request->merge(['user_id' => $this->user->id]);
-
+    $request->merge(['user_id' => auth('api')->id()]);
     return parent::list($request);
   }
 
@@ -81,9 +82,7 @@ class SubscriptionController extends SimpleController
   // GET /users/{id}/subscriptions
   public function listByUser(Request $request, $user_id)
   {
-    $this->validateUser();
     $request->merge(['user_id' => $user_id]);
-
     return parent::list($request);
   }
 
@@ -95,7 +94,7 @@ class SubscriptionController extends SimpleController
 
 
   // GET /account/tax_rate
-  public function taxRate(Request $request)
+  public function accountTaxRate(Request $request)
   {
     $this->validateUser();
 
@@ -119,7 +118,7 @@ class SubscriptionController extends SimpleController
   }
 
   // POST /account/subscriptions
-  public function create(Request $request)
+  public function accountCreate(Request $request)
   {
     $this->validateUser();
     $inputs = $this->validateCreate($request);
@@ -194,7 +193,7 @@ class SubscriptionController extends SimpleController
   }
 
 
-  public function destroy(int $id)
+  public function accountDelete(int $id)
   {
     $this->validateUser();
 
@@ -211,7 +210,7 @@ class SubscriptionController extends SimpleController
     }
   }
 
-  public function pay(Request $request, int $id)
+  public function accountPay(Request $request, int $id)
   {
     $this->validateUser();
 
@@ -258,7 +257,6 @@ class SubscriptionController extends SimpleController
     $this->validateUser();
 
     $inputs = $request->validate([
-      'refund'        => ['filled', 'bool'],
       'immediate'     => ['filled', 'bool'], // ignored for now
     ]);
 
@@ -272,42 +270,39 @@ class SubscriptionController extends SimpleController
       return response()->json(['message' => 'Subscription is already on cancelling'], 422);
     }
 
-    // check refundable
-    if ($inputs['refund'] ?? false) {
-      $result = RefundRules::customerRefundable($activeSubscription);
-      if (!$result['refundable']) {
-        return response()->json(['message' => $result['reason']], 400);
-      }
-    }
-
     // cancel subscription
     try {
-      $subscription = $this->manager->cancelSubscription($activeSubscription, $inputs['refund'] ?? false, $inputs['immediate'] ?? false);
+      $subscription = $this->manager->cancelSubscription($activeSubscription, immediate: $inputs['immediate'] ?? false);
       return  response()->json($this->transformSingleResource($subscription));
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
   }
 
-  public function refundable(int $id)
+  public function accountRefundable(int $id)
   {
     $this->validateUser();
 
     /** @var Subscription|null $subscription */
-    $subscription = $this->user->subscriptions()->where('id', $id)->where('status', Subscription::STATUS_ACTIVE)->firstOrFail();
+    $subscription = $this->user->subscriptions()
+      ->where('id', $id)
+      ->where('status', Subscription::STATUS_ACTIVE)
+      ->firstOrFail();
 
-    $result = RefundRules::customerRefundable($subscription);
+    $result = RefundRules::subscriptionRefundable($subscription);
+    $invoices = array_map(fn($invoice) => $invoice->invoice, $result->getInvoices());
 
     $response = [
-      'result' => $result['refundable'] ? 'refundable' : 'not_refundable',
-      'reason' => $result['reason'] ?? '',
-      'subscription' => $this->transformSingleResource($subscription),
-      'invoice' => ($result['invoice'] ?? null)?->toResource('customer'),
+      'result'            => $result->isRefundable() ? 'refundable' : 'not_refundable',
+      'reason'            => $result->getReason(),
+      'refundable_amount' => $result->getRefundableAmount(),
+      'subscription'      => $this->transformSingleResource($subscription),
+      'invoices'          => $this->transformMultipleResources($invoices),
     ];
     return response()->json($response);
   }
 
-  public function confirmRenewal(int $id)
+  public function accountConfirmRenewal(int $id)
   {
     $this->validateUser();
 
@@ -356,7 +351,7 @@ class SubscriptionController extends SimpleController
 
     // cancel subscription
     try {
-      $subscription = $this->manager->cancelSubscription($subscription);
+      $subscription = $this->manager->cancelSubscription($subscription, immediate: false);
       return  response()->json($this->transformSingleResource($subscription));
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
@@ -387,5 +382,82 @@ class SubscriptionController extends SimpleController
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
     }
+  }
+
+  public function accountLicensePackageCancel(Request $request, int $id)
+  {
+    $this->validateUser();
+
+    $inputs = $request->validate([
+      'immediate' => ['filled', 'boolean'],
+    ]);
+
+    $subscription = $this->user->subscriptions()->find($id);
+    if (!$subscription) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    try {
+      $subscription = $this->manager->cancelLicensePackage($subscription, $inputs['immediate']);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], 409);
+    }
+  }
+
+  public function accountLicensePackageDecrease(Request $request, int $id)
+  {
+    $this->validateUser();
+
+    $inputs = $request->validate([
+      'license_count' => ['required', 'integer'],
+      'immediate' => ['filled', 'boolean'],
+    ]);
+
+    /** @var Subscription|null $subscription */
+    $subscription = $this->user->subscriptions()->find($id);
+    if (!$subscription) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    try {
+      $subscription = $this->manager->decreaseLicenseNumber($subscription, $inputs['license_count'], $inputs['immediate'] ?? false);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], 409);
+    }
+  }
+
+  public function accountLicensePackageRefundable(int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription|null $subscription */
+    $subscription = $this->user->subscriptions()
+      ->where('id', $id)
+      ->where('status', Subscription::STATUS_ACTIVE)
+      ->firstOrFail();
+
+    $result = RefundRules::licensePackageRefundable($subscription);
+    $invoices = array_map(fn($invoice) => $invoice->invoice, $result->getInvoices());
+
+    $response = [
+      'result'            => $result->isRefundable() ? 'refundable' : 'not_refundable',
+      'reason'            => $result->getReason(),
+      'refundable_amount' => $result->getRefundableAmount(),
+      'subscription'      => $this->transformSingleResource($subscription),
+      'invoices'          => $this->transformMultipleResources($invoices),
+    ];
+    return response()->json($response);
+  }
+
+  // GET account/subscriptions/{id}/paddle-link
+  public function accountGetPaddleLink(int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription $subscription */
+    $subscription = $this->baseQuery()->where('user_id', $this->user->id)->findOrFail($id);
+    return $this->paddleManager->subscriptionService->getManagementLinks($subscription);
   }
 }

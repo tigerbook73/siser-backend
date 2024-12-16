@@ -13,6 +13,7 @@ use App\Models\LicensePackage;
 use App\Models\LicenseSharing;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
+use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\SubscriptionLog;
@@ -36,7 +37,6 @@ use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use DigitalRiver\ApiSdk\Model\TaxIdentifier as DrTaxId;
 use DigitalRiver\ApiSdk\ObjectSerializer as DrObjectSerializer;
 use Exception;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 
@@ -56,7 +56,6 @@ class SubscriptionManagerDR implements SubscriptionManager
       'order.charge.capture.failed'   => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureFailed'],
       'order.complete'                => ['class' => DrOrder::class,              'handler' => 'onOrderComplete'],
       'order.chargeback'              => ['class' => DrSalesTransaction::class,   'handler' => 'onOrderChargeback'],
-      'order.refunded'                => ['class' => DrOrder::class,              'handler' => 'onOrderRefunded'],
       'order.dispute'                 => ['class' => DrOrder::class,              'handler' => 'onOrderDispute'],
       'order.dispute.resolved'        => ['class' => DrOrder::class,              'handler' => 'onOrderDisputeResolved'],
 
@@ -67,6 +66,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       'subscription.payment_failed'   => ['class' => 'array',                     'handler' => 'onSubscriptionPaymentFailed'],
       'subscription.reminder'         => ['class' => 'array',                     'handler' => 'onSubscriptionReminder'],
       'subscription.source_invalid'   => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionSourceInvalid'],
+
+      // subscription invoices
+      'invoice.open'                  => ['class' => DrInvoice::class,            'handler' => 'onInvoiceOpen'],
 
       // invoice events: see Invoice.md for state machine
       'order.invoice.created'         => ['class' => 'array',                     'handler' => 'onOrderInvoiceCreated'],
@@ -124,7 +126,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // create checkout
     try {
-      $checkout = $this->drService->createCheckout($subscription);
+      $checkout = $this->drService->createCheckout($invoice);
       $this->result->appendMessage('dr-checkout created', location: __FUNCTION__);
     } catch (\Throwable $th) {
       $invoice->delete();
@@ -172,16 +174,15 @@ class SubscriptionManagerDR implements SubscriptionManager
         $this->drService->deleteCheckout($subscription->getDrCheckoutId());
         $this->result->appendMessage("dr-checkout for subscription ({$subscription->id}) deleted", location: __FUNCTION__);
       }
-      if (isset($subscription->dr_subscription_id)) {
-        $this->drService->deleteSubscription($subscription->dr_subscription_id);
+      if ($subscription->getDrSubscriptionId()) {
+        $this->drService->deleteSubscription($subscription->getDrSubscriptionId());
         $this->result->appendMessage("dr-subscription for subscription ({$subscription->id}) deleted", location: __FUNCTION__);
       }
     } catch (\Throwable $th) {
       $this->result->appendMessage('delete dr-checkout or dr-subscription fails', location: __FUNCTION__);
     }
 
-    $invoice = $subscription->getActiveInvoice();
-    $invoice?->delete();
+    $subscription->getNewSubscriptionInvoice()->delete();
     $subscription->delete();
     $this->result->appendMessage('subscription and invoice deleted', location: __FUNCTION__);
 
@@ -206,10 +207,9 @@ class SubscriptionManagerDR implements SubscriptionManager
       $this->result->appendMessage("dr-checkout converted to dr-order for subscription ({$subscription->id})", location: __FUNCTION__);
 
       // update invoice
-      $invoice = $subscription->getActiveInvoice();
+      $invoice = $subscription->getNewSubscriptionInvoice();
       $invoice->fillFromDrObject($drOrder);
       $invoice->invoice_date = now();
-      $invoice->setDrOrderId($drOrder->getId());
       $invoice->setStatus(Invoice::STATUS_PENDING);
       $invoice->save();
       $this->result->appendMessage("invoice ({$invoice->id}) updated from drObject => pending", location: __FUNCTION__);
@@ -275,50 +275,56 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function cancelSubscription(Subscription $subscription, bool $needRefund = false, bool $immediate = false): Subscription
+  public function cancelSubscription(Subscription $subscription, bool $immediate): Subscription
   {
     try {
-      $invoiceToRefund = null;
-      if ($needRefund) {
-        $result = RefundRules::customerRefundable($subscription);
-        if (!$result['refundable']) {
-          throw new Exception("try to refund non-refundable subscription ({$subscription->id})", 500);
-        }
+      if ($subscription->isFreeTrial()) {
+        $immediate = true;
+      }
 
-        /** @var Invoice $invoiceToRefund */
-        $invoiceToRefund = $result['invoice'];
-        if ($invoiceToRefund->status == Invoice::STATUS_PROCESSING) {
-          // refund later
-          $invoiceToRefund->setSubStatus(Invoice::SUB_STATUS_TO_REFUND);
-          $invoiceToRefund->save();
-          $this->result->appendMessage("invoice ({$invoiceToRefund->id}) updated => to-refund", location: __FUNCTION__);
-        } else {
-          // refund immediately
-          $refund = $this->createRefund($invoiceToRefund, reason: 'cancel subscription with refund option');
-          $this->result->appendMessage("refund ({$refund->id}) created", location: __FUNCTION__);
+      if ($immediate) {
+        $result = RefundRules::subscriptionRefundable($subscription);
+        if ($result->isRefundable()) {
+          foreach ($result->getInvoices() as $invoice) {
+            if ($invoice->invoice->isProcessing()) {
+              // refund later
+              $invoice->invoice->setSubStatus(Invoice::SUB_STATUS_TO_REFUND)
+                ->setToRefundItemType($invoice->itemType)
+                ->save();
+              $this->result->appendMessage("invoice ({$invoice->invoice->id}) updated => to-refund", location: __FUNCTION__);
+            } else {
+              // refund immediately
+              $refund = $this->createRefund(
+                $invoice->invoice,
+                $invoice->itemType,
+                reason: 'cancel subscription with refund option'
+              );
+              $this->result->appendMessage("refund ({$refund->id}) created", location: __FUNCTION__);
+            }
+          }
         }
       }
 
-      $drSubscription = $this->drService->cancelSubscription($subscription->dr_subscription_id);
+      $drSubscription = $this->drService->cancelSubscription($subscription->getDrSubscriptionId());
       $this->result->appendMessage("dr-subscription for subscription ({$subscription->id}) cancelled", location: __FUNCTION__);
 
-      $activeInvoice = $subscription->getActiveInvoice();
-      if ($activeInvoice && $activeInvoice->id != $invoiceToRefund?->id) {
+      /** update renewing invoice which is not required to refund */
+      $activeInvoice = $subscription->getRenewingInvoice();
+      if ($activeInvoice) {
         $activeInvoice->setStatus(Invoice::STATUS_CANCELLED);
         $activeInvoice->save();
         $this->result->appendMessage("active invoice ({$activeInvoice->id}) updated => cancelled", location: __FUNCTION__);
       }
 
-      if ($invoiceToRefund || $subscription->isFreeTrial()) {
-        $this->stopSubscription($subscription, $invoiceToRefund ? 'cancelled with refund' : 'cancell during free trial');
-        $this->result->appendMessage("subscription ({$subscription->id}) stopped: refunded or is free-trial", location: __FUNCTION__);
+      if ($immediate) {
+        $this->stopSubscription($subscription, 'cancelled immediately');
+        $this->result->appendMessage("subscription ({$subscription->id}) stopped: immediately", location: __FUNCTION__);
       } else {
         $subscription->end_date =
           $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
         $subscription->sub_status = Subscription::SUB_STATUS_CANCELLING;
         $subscription->next_invoice_date = null;
         $subscription->next_invoice = null;
-        $subscription->active_invoice_id = null;
         $subscription->save();
         $this->result->appendMessage("subscription ({$subscription->id}) updated => cancelling", location: __FUNCTION__);
 
@@ -334,8 +340,10 @@ class SubscriptionManagerDR implements SubscriptionManager
       // send notification
       if ($subscription->renewal_info && $subscription->renewal_info['status'] == SubscriptionRenewal::STATUS_EXPIRED) {
         $subscription->sendNotification(SubscriptionNotification::NOTIF_RENEW_EXPIRED);
-      } else if ($invoiceToRefund) {
-        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_REFUND, $invoiceToRefund);
+      } else if ($immediate && $result->isRefundable()) {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_REFUND);
+      } else if ($immediate) {
+        $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED_IMMEDIATE);
       } else {
         $subscription->sendNotification(SubscriptionNotification::NOTIF_CANCELLED);
       }
@@ -359,7 +367,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->sendNotification(SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED);
 
     // re-send reminder notification if it has been remindered but not starting to invoice
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getRenewingInvoice();
     if ($invoice && $invoice->status == Invoice::STATUS_INIT) {
       // reminder event has been triggered, but not starting to charge
       $subscription->sendNotification(SubscriptionNotification::NOTIF_REMINDER);
@@ -368,7 +376,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $subscription;
   }
 
-  public function cancelOrder(Invoice $invoice): Invoice
+  public function cancelInvoice(Invoice $invoice): Invoice
   {
     if (!$invoice->isCancellable()) {
       throw new Exception("invoice ({$invoice->id}) is not cancellable", 500);
@@ -394,34 +402,32 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
   }
 
-  public function createRefund(Invoice $invoice, float $amount = 0, string $reason = null): Refund
+  public function createRefund(Invoice $invoice, string $itemType, float $amount = 0, string $reason = null): Refund
   {
-    $result = RefundRules::invoiceRefundable($invoice);
-    if (!$result['refundable']) {
+    $result = RefundRules::invoiceRefundable($invoice, $itemType);
+    if (!$result->isRefundable()) {
       throw new Exception("invoice ({$invoice->id}) is not refundable", 500);
     }
     // adjust amount
     if ($amount == 0) {
-      $amount = $invoice->total_amount - $invoice->total_refunded;
+      $amount = $result->getRefundableAmount();
     }
 
-    $refund = Refund::newFromInvoice($invoice, $amount, $reason);
+    // create refund
+    $refund = Refund::newFromInvoice($invoice, $itemType, $amount, $reason);
     $this->result->appendMessage("refund ({$refund->id}) created", location: __FUNCTION__);
 
     $drRefund = $this->drService->createRefund($refund);
     $this->result->appendMessage('dr-refund created', location: __FUNCTION__);
 
-    $refund->setDrRefundId($drRefund->getId());
+    $refund->fillFromDrObject($drRefund);
     $refund->save();
     $this->result->appendMessage("refund ({$refund->id}) dr-refund-id updated", location: __FUNCTION__);
 
-    $invoice->setStatus(Invoice::STATUS_REFUNDING);
-    $invoice->save();
-    $this->result->appendMessage("invoice ({$invoice->id}) status updated => refunding", location: __FUNCTION__);
+    $invoice->fillRefundStatus()->save();
+    $this->result->appendMessage("invoice ({$invoice->id}) status updated => {$invoice->status}", location: __FUNCTION__);
 
     return $refund;
-
-    // note: notification will be sent from event handler
   }
 
   public function createRefundFromDrObject(DrOrderRefund $drRefund): Refund|null
@@ -443,14 +449,21 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $refund = Refund::newFromInvoice($invoice, $drRefund->getAmount(), $drRefund->getReason());
-    $refund->setDrRefundId($drRefund->getId());
-    $refund->save();
+    /** @var ?array $metadata */
+    $metadata = $drRefund->getMetadata();
+    if (isset($metadata['item_type'])) {
+      $itemType = $metadata['item_type'];
+    } else {
+      $itemType = count($drRefund->getItems() ?? []) > 0 ? Refund::ITEM_LICENSE : Refund::ITEM_SUBSCRIPTION;
+    }
+
+    // create refund
+    $refund = Refund::newFromInvoice($invoice, $itemType, $drRefund->getAmount(), $drRefund->getReason());
+    $refund->fillFromDrObject($drRefund)->save();
     $this->result->appendMessage("refund ({$refund->id}) created from dr-refund", location: __FUNCTION__);
 
-    $invoice->setStatus(Invoice::STATUS_REFUNDING);
-    $invoice->save();
-    $this->result->appendMessage("invoice ({$invoice->id}) status updated => refunding", location: __FUNCTION__);
+    $invoice->fillRefundStatus()->save();
+    $this->result->appendMessage("invoice ({$invoice->id}) status updated", location: __FUNCTION__);
 
     return $refund;
   }
@@ -504,7 +517,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     // attach source to active subscription
     $subscription = $user->getActiveLiveSubscription();
     if ($subscription) {
-      $this->drService->updateSubscriptionSource($subscription->dr_subscription_id, $source->getId());
+      $this->drService->updateSubscriptionSource($subscription->getDrSubscriptionId(), $source->getId());
       $this->result->appendMessage("dr-source attached to dr-subscription for subscription ({$subscription->id})", location: __FUNCTION__);
     }
 
@@ -722,7 +735,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
   protected function onOrderAccepted(DrOrder $drOrder): Subscription|null
   {
-    // validate the order
+    // validate the order (only process the first order)
     $subscription = $this->validateOrder($drOrder, __FUNCTION__: __FUNCTION__);
     if (!$subscription) {
       return null;
@@ -736,7 +749,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getNewSubscriptionInvoice();
     $this->result->setInvoice($invoice);
 
     // fulfill order
@@ -760,12 +773,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // activate dr subscription
-    $drSubscription = $this->drService->activateSubscription($subscription->dr_subscription_id);
+    $drSubscription = $this->drService->activateSubscription($subscription->getDrSubscriptionId());
     $this->result->appendMessage('dr-subscription activated', location: __FUNCTION__);
 
     // cancel previous subscription
     if ($previousSubscription = $subscription->user->getActiveLiveSubscription()) {
-      $this->cancelSubscription($previousSubscription);
+      $this->cancelSubscription($previousSubscription, immediate: true);
       $this->result->appendMessage('previous subscription cancelled', location: __FUNCTION__);
     }
 
@@ -782,7 +795,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     $subscription->setStatus(Subscription::STATUS_ACTIVE);
     $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
     $subscription->fillNextInvoice();
-    $subscription->active_invoice_id = null;
+
     $subscription->save();
     $this->result->appendMessage('subscription updated from drObject => active', location: __FUNCTION__);
 
@@ -792,7 +805,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $this->result->appendMessage('dr-subscription converted to next', location: __FUNCTION__);
     }
 
-    // active license sharing if there is license package
+    // activate license sharing if there is license package
     if ($subscription->license_package_info && $subscription->license_package_info['quantity'] > 0) {
       $this->licenseService->createLicenseSharing($subscription);
       $this->result->appendMessage('license sharing created', location: __FUNCTION__);
@@ -803,10 +816,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // update invoice status
-    $invoice->fillPeriod($subscription);
-    $invoice->fillFromDrObject($drOrder);
-    $invoice->setStatus(Invoice::STATUS_PROCESSING);
-    $invoice->save();
+    $invoice->fillFromSubscription($subscription)
+      ->fillFromDrObject($drOrder)
+      ->setStatus(Invoice::STATUS_PROCESSING)
+      ->save();
     $this->result->appendMessage('invoice updated from drObject => processing', location: __FUNCTION__);
 
     if ($subscription->coupon_info) {
@@ -961,10 +974,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     if (!$subscription) {
       return null;
     }
-    $invoice = Invoice::findByDrOrderId($drOrder->getId());
-    $this->result->setInvoice($invoice);
 
+    $invoice = Invoice::findByDrOrderId($drOrder->getId());
     $this->result
+      ->setInvoice($invoice)
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
       ->appendMessage('completed', location: __FUNCTION__);
     return $invoice;
@@ -988,7 +1001,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if ($subscription->status == Subscription::STATUS_ACTIVE) {
-      $this->drService->cancelSubscription($subscription->dr_subscription_id);
+      $this->drService->cancelSubscription($subscription->getDrSubscriptionId());
       $this->result->appendMessage('dr-subscription cancelled', location: __FUNCTION__);
     }
 
@@ -1036,7 +1049,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // wait for onOrderAccepted to complete
     $this->wait(
-      check: fn() => $invoice->period > 0,
+      check: fn() => $invoice->isProcessing(),
       postCheck: fn() => $invoice->refresh(),
       location: __FUNCTION__,
       message: 'onOrderAccepted() to complete'
@@ -1049,11 +1062,17 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
+    $invoice->fillFromDrObject($drOrder);
     if ($invoice->sub_status == Invoice::SUB_STATUS_TO_REFUND) {
       $invoice->setStatus(Invoice::STATUS_COMPLETED);
       $this->result->appendMessage('invoice updated: completed', location: __FUNCTION__);
 
-      $this->createRefund($invoice, reason: 'refund when order completed');
+      $this->createRefund(
+        $invoice,
+        $invoice->getToRefundItemType(),
+        reason: 'refund when order completed'
+      );
+      $invoice->setToRefundItemType(null);
       $invoice->save();
       $this->result->appendMessage('refund created', location: __FUNCTION__);
     } else {
@@ -1099,7 +1118,12 @@ class SubscriptionManagerDR implements SubscriptionManager
     $this->result->appendMessage('invoice updated drFileId', location: __FUNCTION__);
 
     // sent notification
-    $invoice->subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_INVOICE, $invoice);
+    $invoice->subscription->sendNotification(
+      $invoice->isSubscriptionOrder() ?
+        SubscriptionNotification::NOTIF_ORDER_INVOICE :
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_INVOICE,
+      $invoice
+    );
     $this->result
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
       ->appendMessage('completed', location: __FUNCTION__);
@@ -1137,7 +1161,9 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // sent notification
     $invoice->subscription->sendNotification(
-      SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
+      $invoice->isSubscriptionOrder() ?
+        SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO :
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_CREDIT_MEMO,
       $invoice,
       ['credit_memo' => $fileLink->getUrl()]
     );
@@ -1218,7 +1244,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->status == Subscription::STATUS_ACTIVE &&
       $subscription->sub_status != Subscription::SUB_STATUS_CANCELLING
     ) {
-      $this->cancelSubscription($subscription);
+      $this->cancelSubscription($subscription, immediate: false);
       $this->result->appendMessage('subscription cancelled', location: __FUNCTION__, level: 'warning');
     }
 
@@ -1240,54 +1266,27 @@ class SubscriptionManagerDR implements SubscriptionManager
     return $invoice;
   }
 
-  protected function onOrderRefunded(DrOrder $order): Invoice|null
-  {
-    $invoice = Invoice::findByDrOrderId($order->getId());
-    if (!$invoice) {
-      $this->result
-        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
-        ->appendMessage('no valid invoice', ['dr_order_id' => $order->getId()], location: __FUNCTION__, level: 'warning');
-      return null;
-    }
-    $this->result->setInvoice($invoice);
-
-    if ($invoice->status != Invoice::STATUS_REFUNDED) {
-      $invoice->total_refunded = $order->getRefundedAmount();
-      $invoice->setStatus($order->getAvailableToRefundAmount() > 0 ?
-        Invoice::STATUS_PARTLY_REFUNDED :
-        Invoice::STATUS_REFUNDED);
-      $invoice->save();
-      $this->result->appendMessage('invoice updated: refunded amount and status', location: __FUNCTION__);
-
-      $invoice->subscription->sendNotification(SubscriptionNotification::NOTIF_ORDER_REFUNDED, $invoice);
-    }
-
-    $this->result
-      ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
-      ->appendMessage('completed', location: __FUNCTION__);
-    return $invoice;
-  }
-
   protected function createFirstInvoice(Subscription $subscription): Invoice
   {
     $invoice = new Invoice();
-    $invoice->fillBasic($subscription)
-      ->fillPeriod($subscription)
+    $invoice->setType(Invoice::TYPE_NEW_SUBSCRIPTION)
+      ->fillBasic($subscription)
+      ->fillFromSubscription($subscription)
       ->setDrOrderId(null)
       ->setStatus(Invoice::STATUS_INIT)
       ->save();
     $this->result->appendMessage('first invoice created', location: __FUNCTION__);
-
-    $subscription->active_invoice_id = $invoice->id;
-    $subscription->save();
-    $this->result->appendMessage('subscription updated: active_invoice_id', location: __FUNCTION__);
 
     return $invoice;
   }
 
   protected function createRenewInvoice(Subscription $subscription, DrInvoice $drInvoice): Invoice
   {
-    if ($subscription->invoices()->where('period', $subscription->current_period + 1)->count()) {
+    if ($subscription->invoices()
+      ->where('type', Invoice::TYPE_RENEW_SUBSCRIPTION)
+      ->where('period', $subscription->current_period + 1)
+      ->count()
+    ) {
       throw new Exception('try to create duplicated renew invoice for same period', 500);
     }
 
@@ -1297,38 +1296,32 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     $invoice = new Invoice();
-    $invoice->fillBasic($subscription, true)
-      ->fillPeriod($subscription, true)
+    $invoice->setType(Invoice::TYPE_RENEW_SUBSCRIPTION)
+      ->fillBasic($subscription)
+      ->fillFromSubscriptionNext($subscription)
       ->fillFromDrObject($drInvoice)
-      ->setDrInvoiceId($drInvoice->getId())
-      ->setDrOrderId($drInvoice->getOrderId())
       ->setStatus(Invoice::STATUS_INIT)
       ->save();
     $this->result->appendMessage('renew invoice created', location: __FUNCTION__);
-
-    $subscription->active_invoice_id = $invoice->id;
-    $subscription->save();
-    $this->result->appendMessage('subscription updated: active_invoice_id', location: __FUNCTION__);
 
     return $invoice;
   }
 
   protected function createFailedRenewInvoice(Subscription $subscription): Invoice
   {
-    if ($subscription->active_invoice_id) {
+    if ($subscription->getRenewingInvoice()) {
       throw new Exception('Try to create duplicated invoice', 500);
     }
 
     $invoice = new Invoice();
-    $invoice->fillBasic($subscription, true)
-      ->fillPeriod($subscription, true)
+    $invoice->setType(Invoice::TYPE_RENEW_SUBSCRIPTION)
+      ->fillBasic($subscription)
       ->fillFromSubscriptionNext($subscription)
       ->setDrOrderId(null)
       ->setStatus(Invoice::STATUS_FAILED)
       ->save();
     $this->result->appendMessage('failed invoice created', location: __FUNCTION__);
 
-    $subscription->active_invoice_id = $invoice->id;
     $subscription->save();
     $this->result->appendMessage('subscription updated: active_invoice_id', location: __FUNCTION__);
 
@@ -1374,7 +1367,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getRenewingInvoice();
     if (!$invoice) {
       $invoice = $this->createRenewInvoice($subscription, $drInvoice);
       $this->result->appendMessage('renew invoice created', location: __FUNCTION__);
@@ -1416,9 +1409,16 @@ class SubscriptionManagerDR implements SubscriptionManager
     } else {
       $subscription->sub_status = Subscription::SUB_STATUS_NORMAL;
     }
-    $subscription->active_invoice_id = null;
     $subscription->save();
     $this->result->appendMessage('subscription updated', location: __FUNCTION__);
+
+    // update license sharing
+    $licenseSharing = $subscription->user->getActiveLicenseSharing();
+    if ($licenseSharing) {
+      // refreshLicenseSharing will update user's subscription level
+      $this->licenseService->refreshLicenseSharing($licenseSharing);
+      $this->result->appendMessage("license sharing updated for user ({$licenseSharing->user_id})", location: __FUNCTION__);
+    }
 
     // update dr subscription
     if ($subscription->isNextPlanDifferent()) {
@@ -1433,10 +1433,10 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // update invoice
-    $invoice->fillFromDrObject($drInvoice);
-    $invoice->setDrOrderId($drInvoice->getOrderId());
-    $invoice->setStatus(Invoice::STATUS_PROCESSING);
-    $invoice->save();
+    $drOrder = $this->drService->getOrder($drInvoice->getOrderId());
+    $invoice->fillFromDrObject($drOrder)
+      ->setStatus(Invoice::STATUS_PROCESSING)
+      ->save();
     $this->result->appendMessage('invoice updated from drObject', location: __FUNCTION__);
 
     // log subscription event
@@ -1468,7 +1468,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getRenewingInvoice();
     if (!$invoice) {
       $invoice = $this->createFailedRenewInvoice($subscription);
       $this->result->appendMessage('failed invoice created', location: __FUNCTION__);
@@ -1542,7 +1542,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getRenewingInvoice();
     if (!$invoice) {
       $invoice = $this->createFailedRenewInvoice($subscription);
       $this->result->appendMessage('lapsed invoice created', location: __FUNCTION__);
@@ -1551,6 +1551,7 @@ class SubscriptionManagerDR implements SubscriptionManager
 
     // stop subscription data
     $this->failSubscription($subscription, 'subscription lapsed');
+    $this->result->appendMessage('subscription failed: lapsed', location: __FUNCTION__);
 
     // stop invoice
     $invoice->setStatus(Invoice::STATUS_FAILED);
@@ -1581,8 +1582,8 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     if (
-      $subscription->status != Subscription::STATUS_ACTIVE
-      || $subscription->sub_status == Subscription::SUB_STATUS_CANCELLING
+      $subscription->status != Subscription::STATUS_ACTIVE ||
+      $subscription->sub_status == Subscription::SUB_STATUS_CANCELLING
     ) {
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
@@ -1590,16 +1591,16 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    $invoice = $subscription->getActiveInvoice();
+    $invoice = $subscription->getRenewingInvoice();
     if (!$invoice) {
       $invoice = $this->createRenewInvoice($subscription, $drInvoice);
       $this->result->appendMessage('renew invoice created', location: __FUNCTION__);
     }
     $this->result->setInvoice($invoice);
 
-    $invoice->fillFromDrObject($drInvoice);
-    $invoice->setStatus(Invoice::STATUS_PENDING);
-    $invoice->save();
+    $invoice->fillFromDrObject($drInvoice)
+      ->setStatus(Invoice::STATUS_PENDING)
+      ->save();
     $this->result->appendMessage('invoice updated => pending', location: __FUNCTION__);
 
     // update subscription
@@ -1656,6 +1657,57 @@ class SubscriptionManagerDR implements SubscriptionManager
     $this->result
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
       ->appendMessage('completed', location: __FUNCTION__);
+    return $subscription;
+  }
+
+  protected function onInvoiceOpen(DrInvoice $drInvoice): Subscription|null
+  {
+    $drSubscriptionId = $drInvoice->getItems()[0]->getSubscriptionInfo()->getSubscriptionId();
+    $subscription = Subscription::findByDrSubscriptionId($drSubscriptionId);
+    if (!$subscription) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage('subscription not found', location: __FUNCTION__, level: 'warning');
+      return null;
+    }
+    $this->result->setSubscription($subscription);
+
+    if (
+      $subscription->status != Subscription::STATUS_ACTIVE ||
+      $subscription->sub_status == Subscription::SUB_STATUS_CANCELLING
+    ) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage('subscription not in active or in cancelling status', location: __FUNCTION__, level: 'warning');
+      return null;
+    }
+
+    $invoice = $subscription->getRenewingInvoice();
+    if (!$invoice) {
+      $invoice = $this->createRenewInvoice($subscription, $drInvoice);
+      $this->result
+        ->setInvoice($invoice)
+        ->appendMessage('renew invoice created', location: __FUNCTION__);
+    }
+    $this->result->setInvoice($invoice);
+
+    if ($invoice->status !== Invoice::STATUS_INIT) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage('invoice skipped: not in init status', location: __FUNCTION__, level: 'warning');
+      return null;
+    }
+
+    $invoice->fillFromDrObject($drInvoice)
+      ->setStatus(Invoice::STATUS_PENDING)
+      ->save();
+    $this->result->appendMessage('invoice updated => pending', location: __FUNCTION__);
+
+    // update subscription
+    $subscription->fillNextInvoiceAmountFromDrObject($drInvoice);
+    $subscription->save();
+    $this->result->appendMessage('subscription amount updated from dr object ', location: __FUNCTION__);
+
     return $subscription;
   }
 
@@ -1724,20 +1776,29 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
     $this->result->setRefund($refund);
 
-    if ($refund->status != Refund::STATUS_FAILED) {
-      $refund->status = Refund::STATUS_FAILED;
-      $refund->save();
-      $this->result->appendMessage('refund status updated => failed', location: __FUNCTION__);
-
-      $invoice = $refund->invoice;
-      $invoice->setStatus(Invoice::STATUS_REFUND_FAILED);
-      $invoice->save();
-      $this->result->appendMessage('invoice status updated => refund-failed', location: __FUNCTION__);
+    if ($refund->status === Refund::STATUS_FAILED) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage('refund already failed', location: __FUNCTION__);
+      return $refund;
     }
 
-    $refund->invoice->subscription->sendNotification(
-      SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
-      $refund->invoice,
+    $refund->status = Refund::STATUS_FAILED;
+    $refund->save();
+    $this->result->appendMessage('refund status updated => failed', location: __FUNCTION__);
+
+    $invoice = $refund->invoice;
+    $drOrder = $this->drService->getOrder($drRefund->getOrderId());
+    $invoice->fillFromDrObject($drOrder)
+      ->fillRefundStatus()
+      ->save();
+    $this->result->appendMessage('invoice updated', location: __FUNCTION__);
+
+    $invoice->subscription->sendNotification(
+      $invoice->isSubscriptionOrder() ?
+        SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED :
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUND_FAILED,
+      $invoice,
       ['refund' => $refund]
     );
 
@@ -1758,46 +1819,40 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
     $this->result->setRefund($refund);
 
-    if ($refund->status != Refund::STATUS_COMPLETED) {
-      $refund->status = Refund::STATUS_COMPLETED;
-      $refund->save();
-      $this->result->appendMessage('refund status updated => complete', location: __FUNCTION__);
-
-      // send refunded event
-      SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_REFUNDED, $refund->invoice, $refund);
-
-      // invoice is not updated here, but in onOrderRefunded()
+    if ($refund->status === Refund::STATUS_COMPLETED) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage('refund already completed', location: __FUNCTION__);
+      return $refund;
     }
+
+    $refund->status = Refund::STATUS_COMPLETED;
+    $refund->save();
+    $this->result->appendMessage('refund status updated => complete', location: __FUNCTION__);
+
+    // update invoice
+    $invoice = $refund->invoice;
+    $drOrder = $this->drService->getOrder($drRefund->getOrderId());
+    $invoice->fillFromDrObject($drOrder)
+      ->fillRefundStatus()
+      ->save();
+
+    // send refunded event
+    SubscriptionOrderEvent::dispatch(SubscriptionOrderEvent::TYPE_ORDER_REFUNDED, $refund->invoice, $refund);
+
+    // send notification
+    $refund->subscription->sendNotification(
+      $invoice->isSubscriptionOrder() ?
+        SubscriptionNotification::NOTIF_ORDER_REFUNDED :
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUNDED,
+      $invoice
+    );
 
     $this->result
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
       ->appendMessage('completed', location: __FUNCTION__);
     return $refund;
   }
-
-
-  /*
-  TODO: check data integrity
-
-  x - subscriptions in pending or processing status stay for a long period of time
-  x - there is open activity (one routing not completed)
-  x - order.accepted is missing                 => stay in pending (> 30 minutes)
-  x - order.blocked is missing                  => stay in pending (> 30 minutes)
-  x - order.cancelled is missing                => stay in pending (> 30 minutes)
-  x - order.charge.failed is missing            => stay in pending (> 30 minutes)
-  x - order.charge.capture.complete is missing  => ok
-  x - order.charge.capture.failed is missing    => staying in processing (> 30 minutes) -> checkout order state -> ???
-  x - order.complete is missing                 => staying in processing (> 30 minutes) -> checkout order state -> complete
-    - order.chargeback is missing               => ... => periodicall check event.type
-    - subscription.extended is missing          => period_end expired
-    - subscription.failed is missing            => period_end expired
-    - subscription.payment_failed is missing    => ok => notification is missing
-    - subscription.reminder is missing          => ok => notification is missing
-    - invoice.open is missing                   => invoice is not created
-    - order.invoice.created is missing          => check invoice that is in completed state
-  */
-
-  // TODO: refactor validateOrder()
 
   /**
    * try function
@@ -1829,5 +1884,576 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     return false;
+  }
+
+  /**
+   * create new license package invoice
+   */
+  public function createNewLicensePackageInvoice(Subscription $subscription, LicensePackage $licensePackage, int $licenseCount): Invoice
+  {
+    /**
+     * step1 - validate
+     *   - subscription must be active and not in cancelling status
+     *   - subscription must not contain a license package
+     *   - license package must be valid and active
+     *   - license count must > 0
+     *   - there is no pending order / invoice
+     * step2 - create invoice
+     *   - free: free-trial or 2 days to the end date of current period
+     *     - create a new invoice with
+     *       - fill basic data (user, subscription, license package)
+     *       - fill items (name, price = 0, quantity)
+     *       - fill period (start, end)
+     *       - type = new-license-package
+     *   - non-free
+     *     - price is not zero
+     * step3 - create checkout
+     *    - create checkout from invoice
+     *    - fill invoice with checkout data
+     * step4 - save and return
+     *    - save invoice
+     *    - return invoice
+     */
+    if (!$subscription->isActive() || $subscription->isCancelling()) {
+      throw new Exception("Subscription ({$subscription->id}) is not active or is in cancelling status", 500);
+    }
+
+    if ($subscription->license_package_info) {
+      throw new Exception("Subscription ({$subscription->id}) already contains a license package", 500);
+    }
+
+    if (!$licensePackage->isActive()) {
+      throw new Exception("License package for subscription ({$subscription->id}) is not active", 500);
+    }
+
+    if ($licenseCount <= 0) {
+      throw new Exception("License count must be greater than 0", 500);
+    }
+
+    if ($subscription->hasPendingInvoice()) {
+      throw new Exception("There is a pending invoice for subscription ({$subscription->id})", 500);
+    }
+
+    if ($subscription->current_period_end_date < now()) {
+      throw new Exception("Subscription ({$subscription->id}) has not been extended", 500);
+    }
+
+    // remove dangling invoices
+    $this->removeDanglingInvoices($subscription);
+
+    /** create new invoice function */
+    $invoice = new Invoice();
+    $invoice->setType(Invoice::TYPE_NEW_LICENSE_PACKAGE);
+
+    /**
+     * consider the following scenario:
+     *  - between start-date and invoice-date
+     *    - copy information from subsciption
+     *  - between invoice-date and period-end-date
+     *    - subscription is extended
+     *    - current-period is ahead of now()
+     *  - after end-date
+     *    - subscription is extended after current period
+     */
+
+    // fill basic
+    $invoice->fillBasic($subscription);
+    $invoice->fillFromSubscription($subscription);
+
+    // period
+    $invoice->period            = $subscription->current_period;
+    $invoice->period_start_date = now();
+    $invoice->period_end_date   = $subscription->current_period_end_date;
+    $invoice->invoice_date      = now();
+
+    // set license package
+    $licensePackageInfo = $licensePackage->info($licenseCount);
+    $invoice->license_package_info = $licensePackageInfo;
+
+    // items
+    $planPrice          = $subscription->items[0]['price'];
+    $invoicePeriod      = $invoice->period_start_date->diffInDays($invoice->period_end_date, false);
+    $invoicePeriod      = $invoicePeriod > 0 ? $invoicePeriod : 0;
+    $subscriptionPeriod = $subscription->current_period_start_date->diffInDays($subscription->current_period_end_date);
+    $periodPrice        = round($planPrice * $licensePackageInfo['price_rate'], 2);
+    $prorataPrice       = round($periodPrice * $invoicePeriod / $subscriptionPeriod / 100, 2);
+    $invoice->items   = [
+      [
+        'category'  => ProductItem::ITEM_CATEGORY_LICENSE,
+        'name'      => "{$licensePackageInfo['name']} x {$licensePackageInfo['quantity']} ($invoicePeriod days)",
+        'price'     => $prorataPrice,
+        'quantity'  => 1,
+        'tax'       => 0,
+        'amount'    => $prorataPrice,
+      ]
+    ];
+
+    // status
+    $invoice->setDrOrderId(null)
+      ->setStatus(Invoice::STATUS_INIT)
+      ->save();
+    $this->result->appendMessage("invoice ({$subscription->id}) created", location: __FUNCTION__);
+
+    try {
+
+      // create dr checkout from invoice
+      $drCheckout = $this->drService->createCheckout($invoice);
+      $this->result->appendMessage("dr-checkout created for invoice ({$invoice->id})", location: __FUNCTION__);
+    } catch (\Throwable $th) {
+      $invoice->delete();
+      $this->result->appendMessage("invoice ({$invoice->id}) deleted when creating dr-checkout fails", location: __FUNCTION__);
+      throw $th;
+    }
+
+    // update invoice dr checkout id and session id
+    $invoice->fillFromDrObject($drCheckout)->save();
+    $this->result->appendMessage("invoice ({$invoice->id}) updated from dr-checkout", location: __FUNCTION__);
+
+    return $invoice;
+  }
+
+  public function createIncreaseLicenseInvoice(Subscription $subscription, int $licenseCount)
+  {
+    /**
+     * step1 - validate
+     *   - subscription must be active and not in cancelling status
+     *   - subscription must contain a license package (current period)
+     *   - $licenseCount must > current license count
+     *   - there is no pending order / invoice
+     * step2 - create invoice
+     *   - fill basic data (user, subscription)
+     *   - fill items (name, price, quantity)
+     *   - fill period (start, end)
+     * step3 - create checkout
+     *    - create checkout from invoice
+     *    - fill invoice with checkout data
+     * step4 - save and return
+     *    - save invoice
+     *    - return invoice
+     */
+    if (!$subscription->isActive() || $subscription->isCancelling()) {
+      throw new Exception("Subscription ({$subscription->id}) is not active or is in cancelling status", 500);
+    }
+
+    if (!$subscription->license_package_info) {
+      throw new Exception("Subscription ({$subscription->id}) does not contain a license package", 500);
+    }
+
+    if ($licenseCount <=  $subscription->license_package_info["quantity"]) {
+      throw new Exception("License count must be greater than current license count", 500);
+    }
+
+    if ($subscription->hasPendingInvoice()) {
+      throw new Exception("There is a pending invoice for subscription ({$subscription->id})", 500);
+    }
+
+    if ($subscription->current_period_end_date < now()) {
+      throw new Exception("Subscription ({$subscription->id}) has not been extended", 500);
+    }
+
+    /** remove dangling invoices */
+    $this->removeDanglingInvoices($subscription);
+
+    /** create new invoice function */
+    $invoice = new Invoice();
+    $invoice->setType(Invoice::TYPE_INCREASE_LICENSE);
+
+    // fill basic
+    $invoice->fillBasic($subscription);
+    $invoice->fillFromSubscription($subscription);
+
+    // period
+    $invoice->period            = $subscription->current_period;
+    $invoice->period_start_date = now();
+    $invoice->period_end_date   = $subscription->current_period_end_date;
+    $invoice->invoice_date      = now();
+
+    // update license package
+    $currentLicensePackageInfo = $subscription->license_package_info;
+    $newLicensePackageInfo = LicensePackage::refreshInfo($currentLicensePackageInfo, $licenseCount);
+    $invoice->license_package_info = $newLicensePackageInfo;
+
+    // items
+    $planPrice          = $subscription->items[0]['price'];
+    $periodPrice        = $subscription->items[1]['price'];
+    $invoicePeriod      = $invoice->period_start_date->diffInDays($invoice->period_end_date, false);
+    $invoicePeriod      = $invoicePeriod > 0 ? $invoicePeriod : 0;
+    $subscriptionPeriod = $subscription->current_period_start_date->diffInDays($subscription->current_period_end_date);
+    $newperiodPrice     = round($planPrice * $newLicensePackageInfo['price_rate'] / 100, 2);
+    $prorataPrice       = round(($newperiodPrice - $periodPrice) * $invoicePeriod / $subscriptionPeriod, 2);
+    $invoice->items     = [
+      [
+        'category'  => ProductItem::ITEM_CATEGORY_LICENSE,
+        'name'      => "{$currentLicensePackageInfo['name']} x ({$currentLicensePackageInfo['quantity']} => {$newLicensePackageInfo['quantity']}) ($invoicePeriod days)",
+        'price'     => $prorataPrice,
+        'quantity'  => 1,
+        'tax'       => 0,
+        'amount'    => $prorataPrice,
+      ],
+    ];
+
+    // status
+    $invoice->setDrOrderId(null)
+      ->setStatus(Invoice::STATUS_INIT)
+      ->save();
+    $this->result->appendMessage("invoice ({$subscription->id}) created", location: __FUNCTION__);
+
+    try {
+      // create dr checkout from invoice
+      $drCheckout = $this->drService->createCheckout($invoice);
+      $this->result->appendMessage("dr-checkout created for invoice ({$invoice->id})", location: __FUNCTION__);
+    } catch (\Throwable $th) {
+      $invoice->delete();
+      $this->result->appendMessage("invoice ({$invoice->id}) deleted when creating dr-checkout fails", location: __FUNCTION__);
+      throw $th;
+    }
+
+    // update invoice dr checkout id and session id
+    $invoice->fillFromDrObject($drCheckout)
+      ->save();
+    $this->result->appendMessage("invoice ({$invoice->id}) updated from dr-checkout", location: __FUNCTION__);
+
+    return $invoice;
+  }
+
+  public function deleteInvoice(Invoice $invoice): bool
+  {
+    if (
+      $invoice->type !== Invoice::TYPE_NEW_LICENSE_PACKAGE &&
+      $invoice->type !== Invoice::TYPE_INCREASE_LICENSE
+    ) {
+      throw new Exception("Try to delete non-license-package invoice ({$invoice->id})", 500);
+    }
+
+    if ($invoice->status != Invoice::STATUS_INIT) {
+      throw new Exception("Try to delete invoice ({$invoice->id}) not in init status", 500);
+    }
+
+    try {
+      if ($invoice->getDrCheckoutId()) {
+        $this->drService->deleteCheckout($invoice->getDrCheckoutId());
+        $this->result->appendMessage("dr-checkout deleted for invoice ({$invoice->id})", location: __FUNCTION__);
+      }
+    } catch (\Throwable $th) {
+    }
+
+    $invoice->delete();
+    $this->result->appendMessage("invoice ({$invoice->id}) deleted", location: __FUNCTION__);
+
+    return true;
+  }
+
+  public function cancelLicensePackage(Subscription $subscription, bool $immediate = false): Subscription
+  {
+    if ($subscription->isFreeTrial()) {
+      $immediate = true;
+    }
+
+    if (!$subscription->isActive() || $subscription->isCancelling()) {
+      throw new Exception("Subscription ({$subscription->id}) is not active or is in cancelling status", 500);
+    }
+
+    if (!$subscription->license_package_info) {
+      throw new Exception("Subscription ({$subscription->id}) does not contain a license package", 500);
+    }
+
+    // if not immediate, next license_package_info must not be null
+    if (!$immediate && !($subscription->next_invoice['license_package_info'] ?? null)) {
+      throw new Exception("Subscription ({$subscription->id})'s next invoice does not contain a license package", 500);
+    }
+
+    if ($subscription->hasPendingInvoice()) {
+      throw new Exception("There is a pending invoice for subscription ({$subscription->id})", 500);
+    }
+
+    if ($immediate) {
+      $result = RefundRules::licensePackageRefundable($subscription);
+      if ($result->isRefundable()) {
+        foreach ($result->getInvoices() as $invoice) {
+          if ($invoice->invoice->isProcessing()) {
+            // refund later
+            $invoice->invoice->setSubStatus(Invoice::SUB_STATUS_TO_REFUND);
+            $invoice->invoice->setToRefundItemType($invoice->itemType);
+            $invoice->invoice->save();
+            $this->result->appendMessage("invoice ({$invoice->invoice->id}) updated => to-refund", location: __FUNCTION__);
+          } else {
+            // refund immediately
+            $refund = $this->createRefund(
+              $invoice->invoice,
+              $invoice->itemType,
+              reason: 'cancel license package with refund option'
+            );
+            $this->result->appendMessage("refund ({$refund->id}) created", location: __FUNCTION__);
+          }
+        }
+      }
+
+      $subscription->license_package_info = null;
+      $subscription->fillItemsAndPrice(
+        ProductItem::removeItem($subscription->items, ProductItem::ITEM_CATEGORY_LICENSE)
+      );
+      $subscription->fillNextInvoice()->save();
+      $this->result->appendMessage("subscription ({$subscription->id})'s license package removed from current and next period", location: __FUNCTION__);
+    } else {
+      $licensePackageInfo = $subscription->license_package_info;
+      $subscription->license_package_info = null; // remove license package info temporarily for fillNextInvoice()
+      $subscription->fillNextInvoice();
+      $subscription->license_package_info = $licensePackageInfo; // restore license package info
+      $subscription->save();
+      $this->result->appendMessage("subscription ({$subscription->id})'s license package removed from current period", location: __FUNCTION__);
+    }
+
+    try {
+      // convert drSubscription to next
+      $drSubscription = $this->drService->getSubscription($subscription->dr_subscription_id);
+      $drSubscription = $this->drService->convertSubscriptionToNext($drSubscription, $subscription);
+      $this->result->appendMessage("subscription ({$subscription->id})'s dr-subscription converted to next", location: __FUNCTION__);
+    } catch (\Throwable $th) {
+      $this->result->appendMessage("subscription ({$subscription->id})'s dr-subscription conversion failed", location: __FUNCTION__);
+      throw $th;
+    }
+
+    // update license sharing
+    if ($immediate && $licenseSharing = $subscription->user->getActiveLicenseSharing()) {
+      $this->licenseService->refreshLicenseSharing($licenseSharing);
+      $this->result->appendMessage("license sharing updated", location: __FUNCTION__);
+    }
+
+    // send notification
+    if ($immediate && $result->isRefundable()) {
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_LICENSE_CANCELLED_REFUND);
+    } else if ($immediate) {
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_LICENSE_CANCELLED_IMMEDIATE);
+    } else {
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_LICENSE_CANCELLED);
+    }
+
+    return $subscription;
+  }
+
+  /**
+   * decrease license count to $licenseCount
+   *
+   * @param Subscription $subscription
+   * @param int $licenseCount new license count
+   * @param bool $immediate immediate or from next period.
+   *    If immediate, current and next_invoice will be updated.
+   *    If not immediate, only current_invoice will be updated.
+   */
+  public function decreaseLicenseNumber(Subscription $subscription, int $licenseCount, bool $immediate = false): Subscription
+  {
+    if ($subscription->isFreeTrial()) {
+      $immediate = true;
+    }
+
+    if (!$subscription->isActive() || $subscription->isCancelling()) {
+      throw new Exception("Subscription ({$subscription->id}) is not active or is in cancelling status", 500);
+    }
+
+    if (!$subscription->license_package_info) {
+      throw new Exception("Subscription ({$subscription->id}) does not contain a license package", 500);
+    }
+
+    if ($immediate && $licenseCount >=  $subscription->license_package_info['quantity']) {
+      throw new Exception('License count must be less than current license count', 500);
+    }
+
+    if (!$immediate && $licenseCount >= ($subscription->next_invoice['license_package_info']['quantity'] ?? 0)) {
+      throw new Exception('License count must be less than next license count', 500);
+    }
+
+    if ($subscription->hasPendingInvoice()) {
+      throw new Exception("There is a pending invoice for subscription ({$subscription->id})", 500);
+    }
+
+    $newLicensePackageInfo = LicensePackage::refreshInfo($subscription->license_package_info, $licenseCount);
+
+    if ($immediate) {
+      $subscription->license_package_info = $newLicensePackageInfo;
+      $subscription->fillItemsAndPrice(
+        ProductItem::buildItems(
+          $subscription->plan_info,
+          $subscription->coupon_info,
+          $newLicensePackageInfo,
+          $subscription->tax_rate,
+          $subscription->items
+        )
+      );
+      $subscription->fillNextInvoice()->save();
+      $this->result->appendMessage("subscription ({$subscription->id}) license package removed from current and next period", location: __FUNCTION__);
+    } else {
+      $licensePackageInfo = $subscription->license_package_info;
+      $subscription->license_package_info = $newLicensePackageInfo; // update license package info temporarily for fillNextInvoice()
+      $subscription->fillNextInvoice();
+      $subscription->license_package_info = $licensePackageInfo; // restore license package info
+      $subscription->save();
+      $this->result->appendMessage("subscription ({$subscription->id}) license package removed from current period", location: __FUNCTION__);
+    }
+
+    try {
+      // convert drSubscription to next
+      $drSubscription = $this->drService->getSubscription($subscription->dr_subscription_id);
+      $this->drService->convertSubscriptionToNext($drSubscription, $subscription);
+      $this->result->appendMessage("subscription ({$subscription->id})'s dr-subscription converted to next", location: __FUNCTION__);
+    } catch (\Throwable $th) {
+      $this->result->appendMessage("subscription ({$subscription->id})'s dr-subscription conversion failed", location: __FUNCTION__);
+      throw $th;
+    }
+
+    // update license sharing
+    if ($immediate && $licenseSharing = $subscription->user->getActiveLicenseSharing()) {
+      $this->licenseService->refreshLicenseSharing($licenseSharing);
+      $this->result->appendMessage("user ({$subscription->user_id})'s license sharing refreshed", location: __FUNCTION__);
+    }
+
+    // send notification
+    $subscription->sendNotification(SubscriptionNotification::NOTIF_LICENSE_DECREASE);
+
+    return $subscription;
+  }
+
+  protected function removeDanglingInvoices(Subscription $subscription, int $exclude = null): void
+  {
+    $invoices = $subscription->invoices()
+      ->whereIn('type', [
+        Invoice::TYPE_NEW_LICENSE_PACKAGE,
+        Invoice::TYPE_INCREASE_LICENSE
+      ])
+      ->where('status', Invoice::STATUS_INIT)
+      ->where('id', '!=', $exclude)
+      ->get();
+
+    foreach ($invoices as $invoice) {
+      $this->deleteInvoice($invoice);
+      $this->result->appendMessage("dangling invoice ({$invoice->id}) deleted", location: __FUNCTION__);
+    }
+  }
+
+  public function payLicensePackageInvoice(Invoice $invoice, string $drSourceId): Invoice
+  {
+    if ($invoice->getStatus() !== Invoice::STATUS_INIT) {
+      throw new Exception("Invoice ({$invoice->id}) is not in init status", 500);
+    }
+
+    if ($invoice->subscription->hasPendingInvoice()) {
+      throw new Exception("There is a pending invoice for subscription ({$invoice->subscription_id})", 500);
+    }
+
+    // remove previous $invoice
+    $this->removeDanglingInvoices($invoice->subscription, $invoice->id);
+
+    try {
+      // attach source_id to checkout
+      $this->drService->attachCheckoutSource($invoice->getDrCheckoutId(), $drSourceId);
+      $this->result->appendMessage("dr-source attached to dr-checkout", location: __FUNCTION__);
+
+      // convert checkout to order
+      $drOrder = $this->drService->convertCheckoutToOrder($invoice->getDrCheckoutId());
+      $this->result->appendMessage("dr-checkout converted to dr-order", location: __FUNCTION__);
+
+      // if order is not accepted, cancel the order
+      if ($drOrder->getState() !== DrOrder::STATE_ACCEPTED) {
+        /**
+         * 1. cancel order
+         * 2. recreate checkout for invoice
+         * 3. update invoice
+         * 4. return invoice in init status
+         */
+
+        // cancel order silently
+        $this->drService->fulfillOrder($drOrder->getId(), $drOrder);
+        $this->result->appendMessage("cancel dr-order ({$drOrder->getId()}) when order is not accepted immediately.", location: __FUNCTION__);
+
+        // recreate checkout
+        $drCheckout = $this->drService->createCheckout($invoice);
+        $this->result->appendMessage("recreate dr-checkout for invoice ({$invoice->id})", location: __FUNCTION__);
+
+        // update invoice
+        $invoice->fillFromDrObject($drCheckout)
+          ->setStatus(Invoice::STATUS_INIT)
+          ->save();
+        $this->result->appendMessage("invoice ({$invoice->id}) updated from recreated dr-checkout", location: __FUNCTION__);
+
+        return $invoice;
+      }
+
+      /**
+       * 1. fulfill order
+       * 2. update invoice
+       * 3. update subscription
+       * 4. update drSubscription
+       * 5. refresh license sharing
+       * 6. send notification
+       */
+
+      $this->drService->fulfillOrder($drOrder->getId(), $drOrder);
+      $this->result->appendMessage("dr-order ({$drOrder->getId()}) fulfilled", location: __FUNCTION__);
+
+      $invoice->fillFromDrObject($drOrder)
+        ->setStatus(Invoice::STATUS_PROCESSING)
+        ->save();
+      $this->result->appendMessage("invoice ({$invoice->id}) updated from dr-order", location: __FUNCTION__);
+
+      /**
+       * update subscription's next_invoice
+       * 1. new license package order
+       *    $subscription->next_invoice['license_package_info'] = $invoice;
+       *    $subscription->next_invoice['items'][1] = $invoice->items[0];
+       * 2. increase license order
+       *    $subscription->next_invoice['license_package_info'] = build($invoice->license_package_info, $invoice->license_package_info['quantity']);
+       *    $subscription->next_invoice['items'][1] = $subscription->next_invoice['items'][1] + $invoice->items[0];
+       * 4. update price, subtotal, total_tax, total_amount
+       * 5. save()
+       */
+
+      $subscription = $invoice->subscription;
+      $subscription->license_package_info = $invoice->license_package_info;
+
+      // update subscription's current items and price info
+      $subscription->fillItemsAndPrice(ProductItem::buildItems(
+        $subscription->plan_info,
+        $subscription->coupon_info,
+        $invoice->license_package_info,
+        $subscription->tax_rate,
+        $subscription->items
+      ));
+      $subscription->fillNextInvoice()->save();
+      $this->result->appendMessage("subscription ({$subscription->id}) updated : items", location: __FUNCTION__);
+
+      // convert drSubscription to next
+      $drSubscription = $this->drService->getSubscription($subscription->dr_subscription_id);
+      $this->drService->convertSubscriptionToNext($drSubscription, $subscription);
+      $this->result->appendMessage("subscription ({$subscription->id})'s dr-subscription converted to next", location: __FUNCTION__);
+
+      // activate or refresh license sharing
+      if ($licenseSharing = $subscription->user->getActiveLicenseSharing()) {
+        $this->licenseService->refreshLicenseSharing($licenseSharing);
+        $this->result->appendMessage("user ({$subscription->user_id})'s license sharing updated", location: __FUNCTION__);
+      } else {
+        $this->licenseService->createLicenseSharing($subscription);
+        $this->result->appendMessage("user ({$subscription->user_id})'s license sharing created", location: __FUNCTION__);
+      }
+
+      // send notification
+      $subscription->sendNotification(SubscriptionNotification::NOTIF_LICENSE_ORDER_CONFIRMED, $invoice);
+
+      return $invoice;
+    } catch (\Throwable $th) {
+      throw $th;
+    }
+  }
+
+  public function refreshInvoiceByDrOrder(Invoice $invoice)
+  {
+    if (!$invoice->getDrOrderId()) {
+      return $invoice;
+    }
+
+    $drOrder = $this->drService->getOrder($invoice->getDrOrderId());
+    $invoice->fillFromDrObject($drOrder)
+      ->fillRefundStatus()
+      ->save();
+    $this->result->appendMessage("invoice ({$invoice->id}) updated from dr-order", location: __FUNCTION__);
+    return $invoice;
   }
 }

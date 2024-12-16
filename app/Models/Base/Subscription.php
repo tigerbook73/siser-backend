@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $items
  * @property array|null $payment_method_info
  * @property float $subtotal
+ * @property float $discount
  * @property float $tax_rate
  * @property float $total_tax
  * @property float $total_amount
@@ -58,12 +59,13 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $sub_status
  * @property int|null $active_invoice_id
  * @property array|null $status_transitions
+ * @property array|null $meta
  * 
  * @property Coupon|null $coupon
  * @property Plan $plan
  * @property User $user
  * @property Collection|Invoice[] $invoices
- * @property LicenseSharing $license_sharing
+ * @property Collection|LicenseSharing[] $license_sharings
  * @property Collection|Refund[] $refunds
  * @property Collection|SubscriptionRenewal[] $subscription_renewals
  *
@@ -90,6 +92,7 @@ class Subscription extends Model
     'items' => 'json',
     'payment_method_info' => 'json',
     'subtotal' => 'float',
+    'discount' => 'float',
     'tax_rate' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
@@ -103,7 +106,8 @@ class Subscription extends Model
     'renewal_info' => 'json',
     'dr' => 'json',
     'active_invoice_id' => 'int',
-    'status_transitions' => 'json'
+    'status_transitions' => 'json',
+    'meta' => 'json'
   ];
 
   protected $fillable = [
@@ -123,6 +127,7 @@ class Subscription extends Model
     'items',
     'payment_method_info',
     'subtotal',
+    'discount',
     'tax_rate',
     'total_tax',
     'total_amount',
@@ -139,7 +144,8 @@ class Subscription extends Model
     'stop_reason',
     'sub_status',
     'active_invoice_id',
-    'status_transitions'
+    'status_transitions',
+    'meta'
   ];
 
   public function coupon()
@@ -162,9 +168,9 @@ class Subscription extends Model
     return $this->hasMany(Invoice::class);
   }
 
-  public function license_sharing()
+  public function license_sharings()
   {
-    return $this->hasOne(LicenseSharing::class);
+    return $this->hasMany(LicenseSharing::class);
   }
 
   public function refunds()

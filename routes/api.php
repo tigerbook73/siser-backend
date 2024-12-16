@@ -14,6 +14,7 @@ use App\Http\Controllers\LicensePackageController;
 use App\Http\Controllers\LicenseSharingController;
 use App\Http\Controllers\LicenseSharingInvitationController;
 use App\Http\Controllers\MachineController;
+use App\Http\Controllers\PaddleWebhookController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\RefundController;
@@ -67,14 +68,19 @@ Route::domain($domainCustomer)->group(function () {
 
     // account subscription
     Route::get('/account/subscriptions', [SubscriptionController::class, 'accountList']);
-    Route::post('/account/subscriptions', [SubscriptionController::class, 'create']);
+    Route::post('/account/subscriptions', [SubscriptionController::class, 'accountCreate']);
     Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'accountIndex']);
-    Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
-    Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'pay']);
+    Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'accountDelete']);
+    Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'accountPay']);
     Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
-    Route::post('/account/subscriptions/{id}/renewal', [SubscriptionController::class, 'confirmRenewal']);
-    Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'refundable']);
-    Route::post('/account/tax-rate', [SubscriptionController::class, 'taxRate']);
+    Route::post('/account/subscriptions/{id}/renewal', [SubscriptionController::class, 'accountConfirmRenewal']);
+    Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'accountRefundable']);
+    Route::post('/account/tax-rate', [SubscriptionController::class, 'accountTaxRate']);
+    Route::get('/account/subscriptions/{id}/license-package/refundable', [SubscriptionController::class, 'accountlicensePackageRefundable']);
+    Route::post('/account/subscriptions/{id}/license-package/cancel', [SubscriptionController::class, 'accountLicensePackageCancel']);
+    Route::post('/account/subscriptions/{id}/license-package/decrease', [SubscriptionController::class, 'accountLicensePackageDecrease']);
+
+    Route::get('/account/subscriptions/{id}/paddle-link', [SubscriptionController::class, 'accountGetPaddleLink']);
 
     // account billing info
     Route::get('/account/billing-info', [BillingInfoController::class, 'accountGet']);
@@ -92,8 +98,12 @@ Route::domain($domainCustomer)->group(function () {
 
     // account invoice
     Route::get('/account/invoices', [InvoiceController::class, 'accountList']);
+    Route::post('/account/invoices', [InvoiceController::class, 'accountCreate']);
     Route::get('/account/invoices/{id}', [InvoiceController::class, 'accountIndex']);
+    Route::delete('/account/invoices/{id}', [InvoiceController::class, 'accountDelete']);
     Route::post('/account/invoices/{id}/cancel', [InvoiceController::class, 'accountCancel']);
+    Route::post('/account/invoices/{id}/pay', [InvoiceController::class, 'accountPay']);
+    Route::get('/account/invoices/{id}/pdf', [InvoiceController::class, 'accountGetInvoicePdf']);
 
     // account refund
     Route::get('/account/refunds', [RefundController::class, 'accountList']);
@@ -204,6 +214,7 @@ Route::domain($domainAdmin)->group(function () {
     // invoice
     Route::get('/invoices', [InvoiceController::class, 'list'])->middleware('access:invoice.list');
     Route::get('/invoices/{id}', [InvoiceController::class, 'index'])->middleware('access:invoice.get');
+    Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'getPdf'])->middleware('access:invoice.get');
     Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel'])->middleware('access:invoice.cancel');
 
 
@@ -247,6 +258,10 @@ Route::domain($domainAdmin)->group(function () {
   // webhook
   Route::get('/dr/webhooks', [WebhookController::class, 'check']);
   Route::post('/dr/webhooks', [WebhookController::class, 'handler']);
+
+  // webhook for paddle
+  Route::get('/paddle/webhooks', [PaddleWebhookController::class, 'check']);
+  Route::post('/paddle/webhooks', [PaddleWebhookController::class, 'handler']);
 });
 
 

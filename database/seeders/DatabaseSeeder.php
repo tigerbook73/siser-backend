@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\LicensePackage;
 use App\Models\BillingInfo;
 use App\Models\Coupon;
+use App\Models\LicensePlan;
 use App\Models\Machine;
 use App\Models\Plan;
 use App\Models\SoftwarePackage;
@@ -62,7 +63,7 @@ class DatabaseSeeder extends Seeder
     $billingInfo->save();
 
     // additional customer2
-    User::create([
+    $user2 = User::create([
       'id'            =>  28,
       'name'          =>  "user2.test",
       'cognito_id'    =>  "22222222-2222-2222-2222-222222222222",
@@ -76,6 +77,20 @@ class DatabaseSeeder extends Seeder
       'password'      => 'not allowed',
       'timezone'      => 'Australia/Sydney',
     ]);
+    $billingInfo = $user2->billing_info ?? BillingInfo::createDefault($user2);
+    $billingInfo->fill([
+      "address" => [
+        "line1" => "101 Collins Street",
+        "line2" => "",
+        "city" => "Melbourne",
+        "postcode" => "3000",
+        "state" => "VIC",
+        "country" => "AU"
+      ],
+      "language" => "en",
+      "locale" => "en_US"
+    ]);
+    $billingInfo->save();
 
     // additional customer3
     User::create([
@@ -94,7 +109,7 @@ class DatabaseSeeder extends Seeder
     ]);
 
     // additional customer4
-    User::create([
+    $user4 = User::create([
       'id'            =>  30,
       'name'          =>  "user4.test",
       'cognito_id'    =>  "44444444-4444-4444-4444-444444444444",
@@ -108,6 +123,22 @@ class DatabaseSeeder extends Seeder
       'password'      => 'not allowed',
       'timezone'      => 'Australia/Sydney',
     ]);
+    $user4->type = User::TYPE_NORMAL;
+    $user4->save();
+
+    BillingInfo::createDefault($user4)
+      ->fill([
+        "address" => [
+          "line1" => "104 Collins Street",
+          "line2" => "",
+          "city" => "Melbourne",
+          "postcode" => "3000",
+          "state" => "VIC",
+          "country" => "AU"
+        ],
+        "language" => "en",
+        "locale" => "en_US"
+      ])->save();
 
     /**
      * create software packages
@@ -186,29 +217,6 @@ class DatabaseSeeder extends Seeder
           'country' => 'AU',
           'currency' => 'AUD',
           'price' => 22.00,
-        ],
-      ],
-      'status' => 'active',
-    ]);
-
-    Plan::create([
-      'name' => 'LDS Test 3-day Plan',
-      'product_name' => 'Leonardo® Design Studio Pro',
-      'interval' => Plan::INTERVAL_DAY,
-      'interval_count' => 3,
-      'description' => '3-day plan',
-      'subscription_level' => 2,
-      'url' => 'https://www.siserna.com/leonardo-design-studio/',
-      'price_list' => [
-        [
-          'country' => 'US',
-          'currency' => 'USD',
-          'price' => 30.00,
-        ],
-        [
-          'country' => 'AU',
-          'currency' => 'AUD',
-          'price' => 33.00,
         ],
       ],
       'status' => 'active',
@@ -411,11 +419,13 @@ class DatabaseSeeder extends Seeder
       'type' => LicensePackage::TYPE_STANDARD,
       'name' => 'Standard License',
       'price_table' => [
-        ['quantity' => 10, 'discount' => 10],
-        ['quantity' => 20, 'discount' => 20],
-        ['quantity' => 50, 'discount' => 30],
+        ['quantity' => 5,  'discount' => 10],
+        ['quantity' => 10, 'discount' => 20],
+        ['quantity' => 15, 'discount' => 30],
       ],
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);
+
+    // LicensePlan::createOrRefreshAll(); // TODO: ...
   }
 }

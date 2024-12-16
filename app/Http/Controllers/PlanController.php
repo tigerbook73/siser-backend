@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LicensePlan;
 use App\Models\Plan;
+use App\Services\Paddle\PriceService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class PlanController extends SimpleController
 {
   protected string $modelClass = Plan::class;
+
+  public function __construct(public PriceService $priceService)
+  {
+    parent::__construct();
+  }
 
   protected function getListRules(array $inputs = []): array
   {
@@ -163,6 +168,11 @@ class PlanController extends SimpleController
     $plan->status = 'draft';
 
     $plan->save();
+    // LicensePlan::createOrRefreshAll(); // TODO: ...
+
+    $this->priceService->createPaddlePrice($plan);
+    // $this->priceService->createPaddleLicensePrice($plan); // TODO: ...
+
     return  response()->json($this->transformSingleResource($plan), 201);
   }
 
@@ -198,10 +208,14 @@ class PlanController extends SimpleController
       $plan->$attr = $value;
     }
 
-    DB::transaction(
-      fn() => $plan->save()
-      // TODO: update all active subscriptions
-    );
+    $plan->save();
+
+    // LicensePlan::createOrRefreshAll(); // TODO: ...
+
+    if ($plan->wasChanged()) {
+      $this->priceService->createOrUpdatePaddlePrice($plan);
+    }
+
     return $this->transformSingleResource($plan->unsetRelations());
   }
 
@@ -222,9 +236,7 @@ class PlanController extends SimpleController
       return response()->json(['message' => 'Only draft plan can be deleted'], 400);
     }
 
-    return DB::transaction(
-      fn() => $plan->delete()
-    );
+    $plan->delete();
   }
 
   /**

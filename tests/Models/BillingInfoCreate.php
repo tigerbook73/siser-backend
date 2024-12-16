@@ -24,9 +24,6 @@ class BillingInfoCreate {
     /** @var string $organization */
     public $organization = "";
 
-    /** @var string $email */
-    public $email = "";
-
     /** @var \Tests\Models\Address $address */
     public $address;
 

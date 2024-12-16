@@ -7,6 +7,7 @@ use App\Models\Coupon;
 use App\Models\CouponEvent;
 use App\Models\Plan;
 use App\Services\CouponRules;
+use App\Services\Paddle\DiscountService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -15,6 +16,11 @@ class CouponController extends SimpleController
   protected string $modelClass = Coupon::class;
 
   protected string $orderDirection = 'desc';
+
+  public function __construct(public DiscountService $discountService)
+  {
+    parent::__construct();
+  }
 
   protected function getListRules(array $inputs = []): array
   {
@@ -33,7 +39,7 @@ class CouponController extends SimpleController
   protected function getCreateRules(array $inputs = []): array
   {
     return [
-      'code'                            => ['required', 'string', 'max:255', 'unique:coupons'],
+      'code'                            => ['required', 'string', 'max:16', 'regex:/^[a-zA-Z0-9]+$/', 'unique:coupons'],
       'name'                            => ['required', 'string', 'max:255'],
       'product_name'                    => ['required', 'exists:products,name'],
       'type'                            => ['required', 'string', Rule::in([Coupon::TYPE_ONCE_OFF, Coupon::TYPE_SHARED])],
@@ -56,7 +62,7 @@ class CouponController extends SimpleController
   protected function getUpdateRules(array $inputs = []): array
   {
     return [
-      'code'                            => ['filled', 'string', 'max:255', Rule::unique('coupons')->ignore(request("id"))],
+      'code'                            => ['filled', 'string', 'max:16', 'regex:/^[a-zA-Z0-9]+$/', Rule::unique('coupons')->ignore(request("id"))],
       'name'                            => ['filled', 'string', 'max:255'],
       'product_name'                    => ['filled', 'exists:products,name'],
       'type'                            => ['filled', 'string', Rule::in([Coupon::TYPE_ONCE_OFF, Coupon::TYPE_SHARED])],
@@ -153,6 +159,8 @@ class CouponController extends SimpleController
     $coupon = new Coupon($inputs);
     $coupon->save();
 
+    $this->discountService->createPaddleDiscount($coupon);
+
     return  response()->json($this->transformSingleResource($coupon), 201);
   }
 
@@ -170,6 +178,11 @@ class CouponController extends SimpleController
     $this->validateMore($coupon->toArray());
 
     $coupon->save();
+
+    if ($coupon->wasChanged()) {
+      $this->discountService->createOrUpdatePaddleDiscount($coupon);
+    }
+
     return $this->transformSingleResource($coupon->unsetRelations());
   }
 
@@ -185,6 +198,13 @@ class CouponController extends SimpleController
     if ($coupon->subscriptions()->count() > 0) {
       return response()->json(['message' => 'Coupon has been used, can not be deleted'], 400);
     }
+
+    $coupon->status = Coupon::STATUS_INACTIVE;
+    $coupon->save();
+
+    // delete paddle discount
+    $this->discountService->updatePaddleDiscount($coupon);
+
     $coupon->delete();
 
     CouponEvent::deleteNotUsed();

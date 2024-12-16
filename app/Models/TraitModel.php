@@ -282,4 +282,11 @@ trait TraitModel
 
     return false;
   }
+
+  static public function findById(mixed $id): ?static
+  {
+    /** @var ?static $model */
+    $model = $id ? static::find($id) : null;
+    return $model;
+  }
 }

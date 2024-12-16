@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * @property ?PaymentMethod $payment_method override the base class to add it nullable
+ */
 class User extends UserWithTrait
 {
   use Notifiable;
@@ -223,7 +226,7 @@ class User extends UserWithTrait
     $subscription = $this->getActiveSubscription();
     $machineCount = $this->machines()->count();
     $invitation  = $this->getActiveLicenseSharingInvitation();
-    $licenseSharing = $subscription?->license_sharing;
+    $licenseSharing = $this->getActiveLicenseSharing();
 
     // create basic subscription if required
     if (!$subscription && $machineCount > 0) {

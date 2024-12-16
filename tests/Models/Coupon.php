@@ -54,4 +54,7 @@ class Coupon {
     /** @var \Tests\Models\CouponAllOfUsage $usage */
     public $usage;
 
+    /** @var array<string,mixed> $meta */
+    public $meta;
+
 }

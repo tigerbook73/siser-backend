@@ -13,25 +13,36 @@ use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Services\DigitalRiver\SubscriptionManagerDR;
+use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Locale;
 use DateTimeZone;
 use Illuminate\Support\Carbon;
 
 class SubscriptionNotificationTest
 {
-  public function __construct(
-    public Country|null $country = null,
-    public Plan|null $plan = null,
-    public Coupon|null $coupon = null,
-    public LicensePackage|null $licensePackage = null,
-    public array|null $planInfo = null,
-    public User|null $user = null,
-    public BillingInfo|null $billingInfo = null,
-    public PaymentMethod|null $paymentMethod = null,
-    public Subscription|null $subscription = null,
-    public Invoice|null $invoice = null,
-    public Refund|null $refund = null,
-  ) {
+  public SubscriptionManagerDR $manager;
+
+  public Country|null $country = null;
+  public Plan|null $plan = null;
+  public Coupon|null $coupon = null;
+  public LicensePackage|null $licensePackage = null;
+  public array|null $planInfo = null;
+  public User|null $user = null;
+  public BillingInfo|null $billingInfo = null;
+  public PaymentMethod|null $paymentMethod = null;
+  public Subscription|null $subscription = null;
+  public Invoice|null $invoice = null;
+  public Refund|null $refund = null;
+
+  public function __construct()
+  {
+    $this->manager = new SubscriptionManagerDR(
+      new DigitalRiverServiceTest(),
+      new LicenseSharingService(),
+      new SubscriptionManagerResult()
+    );
   }
 
   static public function init(string $country, string $plan, string $coupon)
@@ -44,9 +55,6 @@ class SubscriptionNotificationTest
     $inst->updatePaymentMethod();
     $inst->updateLicensePackage();
 
-    $orderDate = now()->subHour();
-    $inst->updateSubscription(startDate: $orderDate);
-    $inst->updateInvoice(Invoice::STATUS_PENDING);
     return $inst;
   }
 
@@ -92,9 +100,9 @@ class SubscriptionNotificationTest
       $code = 'free3m-test';
       $discount_type = Coupon::DISCOUNT_TYPE_FREE_TRIAL;
       $interval = Coupon::INTERVAL_DAY;
-      $interval_count = 20;
+      $interval_count = 3;
       $percentage_off = 100;
-      $name = 'LDS Pro 20-day free trial';
+      $name = 'LDS Pro 3-day free trial';
     } else if ($type == 'percentage') {
       $code = '15off0m-test';
       $discount_type = Coupon::DISCOUNT_TYPE_PERCENTAGE;
@@ -148,9 +156,9 @@ class SubscriptionNotificationTest
         'type' => LicensePackage::TYPE_STANDARD,
         'name' => $name,
         'price_table' => [
-          ['quantity' => 1, 'discount' => 10],
-          ['quantity' => 2, 'discount' => 20],
-          ['quantity' => 5, 'discount' => 30],
+          ['quantity' => 10, 'discount' => 10],
+          ['quantity' => 20, 'discount' => 20],
+          ['quantity' => 30, 'discount' => 30],
         ],
         'status' => LicensePackage::STATUS_ACTIVE,
       ]);
@@ -226,27 +234,25 @@ class SubscriptionNotificationTest
   public function updateSubscription(
     Carbon $startDate = null,
     int|null $currentPeriod = null,
-    float|null $taxRate = null,
     string|null $status = null,
     string|null $subStatus = null,
     int $licenseCount = 0
   ) {
-    $this->subscription = $this->subscription ?? new Subscription();
-    $this->subscription->fillBillingInfo($this->billingInfo);
+    // default value
+    $startDate = $startDate ?? now()->subDays(2);
+
+    $this->subscription?->stop(Subscription::STATUS_STOPPED, "Test stop");
+    $this->subscription = $this->manager->createSubscription(
+      user: $this->user,
+      plan: $this->plan,
+      coupon: $this->coupon,
+      licensePackage: $licenseCount ? $this->licensePackage : null,
+      licenseQuantity: $licenseCount,
+    );
+
     $this->subscription->fillPaymentMethod($this->paymentMethod);
-    $this->subscription->fillPlanAndCoupon($this->plan, $this->coupon, $licenseCount ? $this->licensePackage : null, $licenseCount);
-    $this->subscription->subtotal = $this->subscription->price;
-    $this->subscription->tax_rate = $taxRate && $this->subscription->tax_rate ?: 0.1;
-
-    /** update item tax */
-    $this->subscription->items = ProductItem::rebuildItemsForTax($this->subscription->items, $this->subscription->tax_rate);
-    $this->subscription->total_tax = ProductItem::calcTotal($this->subscription->items, 'tax');
-    /** update item tax */
-
-    $this->subscription->total_amount = $this->subscription->subtotal + $this->subscription->total_tax;
-
     $this->subscription->current_period = $currentPeriod ?? $this->subscription->current_period ?? 0;
-    $this->subscription->start_date = $startDate ?? $this->subscription->start_date ?? now();
+    $this->subscription->start_date = $startDate;
 
     // period start & end date
     if ($this->subscription->isFreeTrial()) {
@@ -297,20 +303,18 @@ class SubscriptionNotificationTest
   {
     $this->invoice = $this->invoice ?? new Invoice();
 
-    $this->invoice->fillBasic($this->subscription);
-    $this->invoice->fillPeriod($this->subscription, $next);
-
     if ($next) {
-      $this->invoice->subtotal              = $this->subscription->next_invoice['subtotal'];
-      $this->invoice->total_tax             = $this->subscription->next_invoice['total_tax'];
-      $this->invoice->total_amount          = $this->subscription->next_invoice['total_amount'];
-      $this->invoice->total_refunded        = 0;
+      $this->invoice->setType(Invoice::TYPE_RENEW_SUBSCRIPTION)
+        ->fillBasic($this->subscription)
+        ->fillFromSubscriptionNext($this->subscription);
     } else {
-      $this->invoice->subtotal              = $this->subscription->subtotal;
-      $this->invoice->total_tax             = $this->subscription->total_tax;
-      $this->invoice->total_amount          = $this->subscription->total_amount;
-      $this->invoice->total_refunded        = 0;
+      $this->invoice->setType(Invoice::TYPE_NEW_SUBSCRIPTION)
+        ->fillBasic($this->subscription)
+        ->fillFromSubscription($this->subscription);
     }
+
+    $this->invoice->total_refunded        = 0;
+    $this->invoice->available_to_refund_amount  = $this->invoice->total_amount;
 
     $this->invoice->pdf_file              = "/robots.txt";
     $this->invoice->status                = $status ?? $this->invoice->status ?? Invoice::STATUS_PENDING;
@@ -319,6 +323,27 @@ class SubscriptionNotificationTest
       "order_id"  =>  "dr-order-0000",
     ];
     $this->invoice->save();
+    return $this;
+  }
+
+  public function createLicenseInvoice(string $type, int $licenseCount)
+  {
+    if ($this->invoice) {
+      $this->invoice->delete();
+    }
+
+    if ($type == Invoice::TYPE_NEW_LICENSE_PACKAGE) {
+      $this->invoice = $this->manager->createNewLicensePackageInvoice(
+        $this->subscription,
+        $this->licensePackage,
+        $licenseCount
+      );
+    } else {
+      $this->invoice = $this->manager->createIncreaseLicenseInvoice(
+        $this->subscription,
+        $licenseCount
+      );
+    }
     return $this;
   }
 
@@ -341,8 +366,19 @@ class SubscriptionNotificationTest
     /** @var Refund|null @refund */
     $refund = Refund::where('dr->refund_id', 'dr-refund-id-0000')->first();
 
+    if (!$this->invoice->getDrOrderId()) {
+      $this->invoice->setDrOrderId('dr-order-id-0000');
+    }
+    $this->invoice->available_to_refund_amount = $this->invoice->total_amount;
+    $this->invoice->save();
+
     $this->refund = $refund ??
-      Refund::newFromInvoice($this->invoice, $this->invoice->total_amount - $this->invoice->total_refunded, "test reason");
+      Refund::newFromInvoice(
+        $this->invoice,
+        $this->invoice->isSubscriptionOrder() ? Refund::ITEM_SUBSCRIPTION : Refund::ITEM_LICENSE,
+        $this->invoice->available_to_refund_amount,
+        "test reason"
+      );
     $this->refund->setDrRefundId('dr-refund-id-0000');
     $this->refund->setStatus($success ? Refund::STATUS_COMPLETED : Refund::STATUS_FAILED);
     $this->refund->save();

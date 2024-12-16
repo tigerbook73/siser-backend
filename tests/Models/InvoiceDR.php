@@ -21,4 +21,7 @@ class InvoiceDR {
     /** @var string[] $invoice_id_list */
     public $invoice_id_list = [];
 
+    /** @var string $checkout_payment_session_id only for non-subscription invoice*/
+    public $checkout_payment_session_id = "";
+
 }

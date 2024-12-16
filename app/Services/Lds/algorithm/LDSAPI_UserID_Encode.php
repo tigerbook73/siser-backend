@@ -6,10 +6,10 @@ require_once __DIR__ . '/LDSAPI_common.php';
 /**
  *  In: $s8 : the 7digit database ID, prepended with '1' (8 digits in total)
  *      $s5 : the 5 digit hash validation code
- * 
+ *
  *  Out: a 13 digit string, interleaving the two values (to avoid long sequences
  *      of repeated digits
- * 
+ *
  *  e.g.  s8 = 12345678, s5 = abcde, Result = a12b34c56d78e
  */
 function InterleaveDigits(string $s8, string $s5): string
@@ -28,7 +28,7 @@ function InterleaveDigits(string $s8, string $s5): string
 
 /**
  *  Convert back to DatabaseID format (un shuffle)
- * 
+ *
  * e.g.  a12b34c56d78e --> 12345678abcde
  */
 function UnInterleaveDigits(string $s13): string
@@ -53,11 +53,11 @@ function UnInterleaveDigits(string $s13): string
 
 
 /**
- * Take an (int) between 0 and 9,999,999 (10 million) and convert to a 
- * fifteen digit USER_ID the encoded USER_ID, 
+ * Take an (int) between 0 and 9,999,999 (10 million) and convert to a
+ * fifteen digit USER_ID the encoded USER_ID,
  *
  * The resulting number has a 2 digit checksum to catch typing errors
- * and a 5 digit validation hash to prevent making up/impersonating a 
+ * and a 5 digit validation hash to prevent making up/impersonating a
  * user_id.
  * the result is shuffled to eliminate repeating sequences of 0's
  */
@@ -68,16 +68,16 @@ function encodeUserId(int $dbid): ?string
   // 1. pad string to 7 digits. and append the fixed leading digit (reserved , =1)
   $s8 = '1' . normalize((string)$dbid, 7);
 
-  // 2. calculate 5 digit sha1   
-  $hash = sha1($s8 . HASH_KEY);   // use last 16 bits (8 hex chars) <= 5 digits      
-  $sa = strtoupper(substr($hash, -4));  // to number    
+  // 2. calculate 5 digit sha1
+  $hash = sha1($s8 . HASH_KEY);   // use last 16 bits (8 hex chars) <= 5 digits
+  $sa = strtoupper(substr($hash, -4));  // to number
   $h5 = base_convert($sa, 16, 10);
   $s5 = normalize($h5, 5);
 
   // 3. Shuffle (interleave) to remove repeated sequences, e.g.  100000000 (hard to type in correctly)
   $n = InterleaveDigits($s8, $s5);
 
-  // 4. append mod97 check digits (2)   
+  // 4. append mod97 check digits (2)
   $n = (int)$n * 100;
   $result = ($n + 98) - $n % 97;
   $result = normalize((string)$result, 15);
@@ -93,7 +93,7 @@ function encodeUserId(int $dbid): ?string
 function ValidateChecksum15(string $s15): bool
 {
   if (!strlen($s15)) return false;
-  $cs = $s15 % 97;
+  $cs = (int)$s15 % 97;
   return ($cs == 1);
 }
 
@@ -116,7 +116,7 @@ function decodeUserId(string $sUserID): ?int
   $s8 = substr($s, 0, 8);
   $s5 = substr($s, -5);
 
-  //compute hash    
+  //compute hash
   $sh = sha1($s8 . HASH_KEY);   // use last 16 bits (8 hex chars) <= 5 digits
   $correcthash = strtoupper(substr($sh, -4));
 

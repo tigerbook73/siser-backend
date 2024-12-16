@@ -10,10 +10,9 @@
       [
         'order_id'        => $invoice->id,
         'plan_name'       => $helper->formatOrderPlanName($invoice),
-        'currency'        => $invoice->currency,
-        'refund_total'    => $helper->formatPrice($invoice->total_refunded),
+        'amount'          => $helper->formatPriceWithCurrency($invoice->total_refunded),
       ]
-    ) 
+    )
   !!}
   <br />
   <br />

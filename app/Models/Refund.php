@@ -3,11 +3,16 @@
 namespace App\Models;
 
 use App\Models\Base\Refund as BaseRefund;
+use DigitalRiver\ApiSdk\Model\OrderRefund as DrRefund;
 
 class Refund extends BaseRefund
 {
   use TraitDrAttr;
   use TraitStatusTransition;
+
+  // type
+  public const ITEM_SUBSCRIPTION    = 'subscription';   // refund the whole subscription (may or may not include the license package)
+  public const ITEM_LICENSE         = 'license';        // refund the license package only
 
   // status -- see invoice.md
   public const STATUS_PENDING       = 'pending';
@@ -24,6 +29,8 @@ class Refund extends BaseRefund
     'subscription_id'     => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'invoice_id'          => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'currency'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'item_type'           => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'items'               => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'amount'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'reason'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'payment_method_info' => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -58,13 +65,30 @@ class Refund extends BaseRefund
   /**
    * create a new Refund model (without saving to database) from Invoice
    */
-  static public function newFromInvoice(Invoice $invoice, float $amount, string $reason = null): Refund
+  static public function newFromInvoice(Invoice $invoice, string $itemType, float $amount, string $reason = null): Refund
   {
+    if ($amount > $invoice->available_to_refund_amount) {
+      throw new \Exception('Refund amount exceeds the available amount');
+    }
+
+    $item = null;
+    if ($itemType === self::ITEM_LICENSE) {
+      $item = $invoice->findLicenseItem();
+      if (!$item) {
+        throw new \Exception('itemType and invoice does not match');
+      }
+      if ($item['available_to_refund_amount'] < $amount) {
+        throw new \Exception('Refund amount exceeds the item\'s available amount');
+      }
+    }
+
     $refund = new self();
     $refund->user_id              = $invoice->user_id;
     $refund->subscription_id      = $invoice->subscription_id;
     $refund->invoice_id           = $invoice->id;
     $refund->currency             = $invoice->currency;
+    $refund->item_type            = $itemType;
+    $refund->items                = $item ? [$item] : [];
     $refund->amount               = $amount;
     $refund->payment_method_info  = $invoice->payment_method_info;
     $refund->reason               = $reason ?? "";
@@ -76,5 +100,13 @@ class Refund extends BaseRefund
   static public function findByDrRefundId(string $drRefundId): ?Refund
   {
     return self::where('dr_refund_id', $drRefundId)->first();
+  }
+
+  public function fillFromDrObject(DrRefund $drRefund): self
+  {
+    $this->setDrRefundId($drRefund->getId());
+    $this->amount = $drRefund->getAmount() ?? array_reduce($drRefund->getItems() ?? [], fn($carry, $item) => $carry + $item->getAmount(), 0);
+
+    return $this;
   }
 }

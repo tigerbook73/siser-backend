@@ -9,6 +9,7 @@ use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
 use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
 use DigitalRiver\ApiSdk\Model\Order as DrOrder;
 use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 
@@ -52,6 +53,7 @@ class Subscription extends BaseSubscription
     'currency'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'price'                     => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'subtotal'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'discount'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'tax_rate'                  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_tax'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_amount'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -70,6 +72,7 @@ class Subscription extends BaseSubscription
     'status'                    => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'status_transitions'        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'sub_status'                => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'meta'                      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -105,7 +108,6 @@ class Subscription extends BaseSubscription
         'sub_status'                => Subscription::SUB_STATUS_NORMAL,
       ]
     );
-    $subscription->setStatus(Subscription::STATUS_DRAFT);
     $subscription->setStatus(Subscription::STATUS_ACTIVE);
     $subscription->save();
     return $subscription;
@@ -138,7 +140,7 @@ class Subscription extends BaseSubscription
 
   public function getDrSubscriptionId(): string|null
   {
-    return $this->getDrAttr(self::DR_SUBSCRIPTION_ID);
+    return $this->dr_subscription_id;
   }
 
   public function setDrCustomerId(string $customer_id): self
@@ -172,6 +174,10 @@ class Subscription extends BaseSubscription
     return $this->setDrAttr(self::DR_SUBSCRIPTION_ID, $subscription_id);
   }
 
+  static public function findByDrSubscriptionId(string $drSubscriptionId): Subscription|null
+  {
+    return self::where('dr_subscription_id', $drSubscriptionId)->first();
+  }
 
   public function initFill(): self
   {
@@ -214,6 +220,27 @@ class Subscription extends BaseSubscription
     return $this->findItem(ProductItem::ITEM_CATEGORY_LICENSE, $next);
   }
 
+  public function fillItemsAndPrice(array $items): self
+  {
+    $this->items        = $items;
+    $this->price        = ProductItem::calcTotal($items, 'price');
+    $this->subtotal     = $this->price;
+    $this->total_tax    = ProductItem::calcTotal($items, 'tax');
+    $this->total_amount = round($this->subtotal + $this->total_tax, 2);
+    return $this;
+  }
+
+  public function fillNextInvoiceItemsAndPrice(array &$next_invoice, array $items): self
+  {
+    $next_invoice['items']        = $items;
+    $next_invoice['price']        = ProductItem::calcTotal($items, 'price');
+    $next_invoice['subtotal']     = $next_invoice['price'];
+    $next_invoice['tax_rate']     = $this->tax_rate ?? 0;
+    $next_invoice['total_tax']    = ProductItem::calcTotal($items, 'tax');
+    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
+    return $this;
+  }
+
   public function fillPlanAndCoupon(Plan $plan, Coupon $coupon = null, LicensePackage $licensePackage = null, int $licenseQuantity = 0): self
   {
     $plan_info    = $plan->info($this->billing_info['address']['country']);
@@ -226,10 +253,10 @@ class Subscription extends BaseSubscription
     $this->coupon_id            = $coupon_info['id'] ?? null;
     $this->coupon_info          = $coupon_info;
     $this->license_package_info = $license_package_info;
-    $this->items                = ProductItem::buildItems($plan_info, $coupon_info, $license_package_info);
 
-    // total price
-    $this->price = ProductItem::calcTotal($this->items, 'price');
+    $this->fillItemsAndPrice(
+      ProductItem::buildItems($plan_info, $coupon_info, $license_package_info, $this->tax_rate, $this->items)
+    );
     return $this;
   }
 
@@ -289,7 +316,7 @@ class Subscription extends BaseSubscription
     $this->items                     = $next_invoice['items'];
     $this->price                     = $next_invoice['price'];
     $this->subtotal                  = $next_invoice['subtotal'];
-    $this->tax_rate                  = $next_invoice['tax_rate'];
+    $this->tax_rate                  = $next_invoice['tax_rate'] ?? 0;
     $this->total_tax                 = $next_invoice['total_tax'];
     $this->total_amount              = $next_invoice['total_amount'];
 
@@ -319,14 +346,17 @@ class Subscription extends BaseSubscription
       }
     }
 
-    // items
-    $items = ProductItem::buildItems($next_invoice['plan_info'], $next_invoice['coupon_info'], $next_invoice['license_package_info']);
-    $next_invoice['items']        = ProductItem::rebuildItemsForTax($items, $this->tax_rate, $this->items);
-    $next_invoice['price']        = ProductItem::calcTotal($next_invoice['items'], 'price');
-    $next_invoice['subtotal']     = $next_invoice['price'];
-    $next_invoice['tax_rate']     = $this->tax_rate;
-    $next_invoice['total_tax']    = ProductItem::calcTotal($next_invoice['items'], 'tax');
-    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
+    // items & prices
+    $this->fillNextInvoiceItemsAndPrice(
+      $next_invoice,
+      ProductItem::buildItems(
+        $next_invoice['plan_info'],
+        $next_invoice['coupon_info'],
+        $next_invoice['license_package_info'],
+        $this->tax_rate,
+        $this->items
+      )
+    );
 
     $next_invoice['current_period_start_date'] = $this->current_period_end_date->addSecond()->toDateTimeString();
     $next_invoice['current_period_end_date'] = $this->current_period_end_date->add(
@@ -355,6 +385,11 @@ class Subscription extends BaseSubscription
   {
     // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
     $next_invoice = $this->next_invoice;
+
+    // fill items
+    $next_invoice['items'] = ProductItem::buildItemsFromDrObject($drObject);
+
+    // fill price
     $next_invoice['subtotal']       = $drObject->getSubtotal();
     $next_invoice['total_tax']      = $drObject->getTotalTax();
     $next_invoice['total_amount']   = $drObject->getTotalAmount();
@@ -362,8 +397,6 @@ class Subscription extends BaseSubscription
       0 :
       $drObject->getItems()[0]->getTax()->getRate();
 
-    // fill items
-    $next_invoice['items'] = ProductItem::buildItemsFromDrObject($drObject);
 
     $this->next_invoice = $next_invoice;
     return $this;
@@ -393,7 +426,6 @@ class Subscription extends BaseSubscription
     $this->next_invoice_date = null;
     $this->next_reminder_date = null;
     $this->next_invoice = null;
-    $this->active_invoice_id = null;
 
     $this->setStatus($status);
     $this->stop_reason = $stopReason;
@@ -405,20 +437,58 @@ class Subscription extends BaseSubscription
     }
   }
 
-  public function getActiveInvoice(): Invoice|null
-  {
-    return $this->active_invoice_id ? $this->invoices()->find($this->active_invoice_id) : null;
-  }
+  /**
+   * invoice related
+   */
 
   public function getCurrentPeriodInvoice(): Invoice|null
   {
-    return $this->invoices()->where('period', $this->current_period)->first();
+    return $this->invoices()
+      ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])
+      ->where('period', $this->current_period)
+      ->first();
   }
 
   public function getInvoiceByOrderId(string $orderId): Invoice|null
   {
     return $this->invoices()->where('dr_order_id', $orderId)->first();
   }
+
+  public function getNewSubscriptionInvoice(): Invoice
+  {
+    return $this->invoices()
+      ->where('type', Invoice::TYPE_NEW_SUBSCRIPTION)
+      ->first();
+  }
+
+  public function getRenewingInvoice(): Invoice|null
+  {
+    return $this->invoices()
+      ->where('type', Invoice::TYPE_RENEW_SUBSCRIPTION)
+      ->whereIn('status', [Invoice::STATUS_INIT, Invoice::STATUS_PENDING])
+      ->first();
+  }
+
+  public function hasPendingInvoice(): bool
+  {
+    return $this->invoices()
+      ->where('status', Invoice::STATUS_PENDING)
+      ->exists();
+  }
+
+  /**
+   * @return Invoice[]|Collection
+   */
+  public function getRenewalInvoices()
+  {
+    return $this->invoices()
+      ->where('type', Invoice::TYPE_RENEW_SUBSCRIPTION)
+      ->get();
+  }
+
+  /**
+   * notification related
+   */
 
   public function routeNotificationForMail($notification)
   {
@@ -711,5 +781,82 @@ class Subscription extends BaseSubscription
     }
 
     return null;
+  }
+
+
+  /**
+   * status related
+   */
+
+  public function isActive()
+  {
+    return $this->status === Subscription::STATUS_ACTIVE;
+  }
+
+  public function isCancelling()
+  {
+    return $this->status === Subscription::STATUS_ACTIVE &&
+      $this->sub_status === Subscription::SUB_STATUS_CANCELLING;
+  }
+
+  public function isPaid()
+  {
+    return $this->subscription_level > 2;
+  }
+
+  /**
+   * meta
+   */
+  public function getMeta(): SubscriptionMeta
+  {
+    return SubscriptionMeta::from($this->meta);
+  }
+
+  public function setMeta(SubscriptionMeta $meta): self
+  {
+    $this->meta = $meta->toArray();
+    return $this;
+  }
+
+  public function setMetaPaddleSubscriptionId(?string $paddleSubscriptionId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->subscription_id = $paddleSubscriptionId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleCustomerId(?string $paddleCustomerId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->customer_id = $paddleCustomerId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleProductId(?string $paddleProductId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->product_id = $paddleProductId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddlePriceId(?string $paddlePriceId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->price_id = $paddlePriceId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleDiscountId(?string $paddleDiscountId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->discount_id = $paddleDiscountId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleTimestamp(?string $paddleTimestamp): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->paddle_timestamp = $paddleTimestamp;
+    return $this->setMeta($meta);
   }
 }

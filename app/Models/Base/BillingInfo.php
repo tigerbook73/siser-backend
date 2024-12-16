@@ -28,6 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $updated_at
  * @property string $language
  * @property string $locale
+ * @property array|null $meta
  * 
  * @property User $user
  *
@@ -41,7 +42,8 @@ class BillingInfo extends Model
 
   protected $casts = [
     'user_id' => 'int',
-    'address' => 'json'
+    'address' => 'json',
+    'meta' => 'json'
   ];
 
   protected $fillable = [
@@ -54,7 +56,8 @@ class BillingInfo extends Model
     'email',
     'address',
     'language',
-    'locale'
+    'locale',
+    'meta'
   ];
 
   public function user()

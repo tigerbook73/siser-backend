@@ -8,44 +8,52 @@ use App\Models\Subscription;
 use App\Models\TaxId;
 use App\Models\User;
 
+/**
+ * @property array{
+ *    result            : string,
+ *    event_id?         : string|null,
+ *    event_type?       : string|null,
+ *    message?          : string|null,
+ *    user_id?          : int|null,
+ *    subscription_id?  : int|null,
+ *    invoice_id?       : int|null,
+ *    refund_id?        : int|null,
+ *    tax_id?           : int|null,
+ * } $data
+ */
 class SubscriptionManagerResult
 {
   const CONTEXT_API       = 'api';
   const CONTEXT_WEBHOOK   = 'webhook';
 
-  const RESULT_INIT       = 'init';           // before process
-  const RESULT_PROCESSED  = 'success';        // processed successfully
-  const RESULT_IGNORED    = 'ignored';        // no handler or duplicated event (event handler of the event type is not invoked)
-  const RESULT_SKIPPED    = 'skipped';        // event handler of the event type is invoked but no action is taken
-  const RESULT_FAILED     = 'failed';         // failed to process, warning message is logged.
-  const RESULT_EXCEPTION  = 'exception';      // exception occured, error message is logged.
-
   const DATA_RESULT           = 'result';
   const DATA_EVENT_ID         = 'event_id';
   const DATA_EVENT_TYPE       = 'event_type';
+  const DATA_RESULT_MESSAGE   = 'message';
   const DATA_USER_ID          = 'user_id';
   const DATA_SUBSCRIPTION_ID  = 'subscription_id';
   const DATA_INVOICE_ID       = 'invoice_id';
   const DATA_REFUND_ID        = 'refund_id';
   const DATA_TAX_ID           = 'tax_id';
 
+  const RESULT_INIT       = 'init';           // before processing
+  const RESULT_PROCESSED  = 'success';        // processed successfully
+  const RESULT_IGNORED    = 'ignored';        // no handler or duplicated event (event handler of the event type is not invoked)
+  const RESULT_SKIPPED    = 'skipped';        // event handler of the event type is invoked but no action is taken
+  const RESULT_FAILED     = 'failed';         // failed to process, warning message is logged.
+  const RESULT_EXCEPTION  = 'exception';      // exception occured, error message is logged.
+
+  const RESULT_MESSAGES = [
+    self::RESULT_INIT      => 'before processing',
+    self::RESULT_PROCESSED => 'processed successfully',
+    self::RESULT_IGNORED   => 'no handler or duplicated event',
+    self::RESULT_SKIPPED   => 'event handler invoked but no action taken',
+    self::RESULT_FAILED    => 'failed to process',
+    self::RESULT_EXCEPTION => 'exception occured',
+  ];
+
   public string $contextType;
   public string $result;
-
-  /**
-   * General data
-   * @var array{
-   *    result            : string,
-   *    event_id?         : string|null,
-   *    event_type?       : string|null,
-   *    user_id?          : int|null,
-   *    subscription_id?  : int|null,
-   *    invoice_id?       : int|null,
-   *    refund_id?        : int|null,
-   *    tax_id?           : int|null,
-   * } $data
-   */
-
   public array $data;
 
   // message
@@ -70,10 +78,11 @@ class SubscriptionManagerResult
     return $this;
   }
 
-  public function setResult(string $result): self
+  public function setResult(string $result, string $message = null): self
   {
     $this->result = $result;
     $this->data[self::DATA_RESULT] = $result;
+    $this->data[self::DATA_RESULT_MESSAGE] = $message ?? self::RESULT_MESSAGES[$result] ?? '';
     return $this;
   }
 

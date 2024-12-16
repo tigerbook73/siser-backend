@@ -7,6 +7,7 @@ use App\Models\Refund;
 use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\RefundRules;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RefundController extends SimpleController
 {
@@ -31,6 +32,7 @@ class RefundController extends SimpleController
   {
     return [
       'invoice_id'      => ['required', 'exists:invoices,id'],
+      'item_type'       => ['filled', 'string', Rule::in([Refund::ITEM_SUBSCRIPTION, Refund::ITEM_LICENSE])],
       'amount'          => ['required', 'decimal:0,2'],
       'reason'          => ['required', 'string', 'max:255'],
     ];
@@ -70,28 +72,35 @@ class RefundController extends SimpleController
   // GET /refunds/{id}
   // default implementation
 
+  // POST /refunds
   public function create(Request $request)
   {
     $this->validateUser();
     $inputs = $this->validateCreate($request);
+    $inputs['item_type'] = $inputs['item_type'] ?? Refund::ITEM_SUBSCRIPTION;
 
     /** @var Invoice $invoice */
     $invoice = Invoice::findOrFail($inputs['invoice_id']);
 
     // check refundable
-    $result = RefundRules::invoiceRefundable($invoice);
-    if (!$result['refundable']) {
-      return response()->json(['message' => $result['reason']], 400);
+    $result = RefundRules::invoiceRefundable($invoice, $inputs['item_type']);
+    if (!$result->isRefundable()) {
+      return response()->json(['message' => $result->getReason()], 400);
     }
 
     // check amount
-    if ($inputs['amount'] <= 0 || $inputs['amount'] > $invoice->total_amount - $invoice->total_refunded + 0.000001) {
+    if ($inputs['amount'] <= 0 || $inputs['amount'] > $result->getRefundableAmount()) {
       return response()->json(['message' => 'amount must be greater than 0 and less or equal than total refundable'], 400);
     }
 
     // create refund
     try {
-      $refund = $this->manager->createRefund($invoice, $inputs['amount'], $inputs['reason']);
+      $refund = $this->manager->createRefund(
+        $invoice,
+        $inputs['item_type'],
+        $inputs['amount'],
+        $inputs['reason']
+      );
       return  response()->json($this->transformSingleResource($refund));
     } catch (\Throwable $th) {
       return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));

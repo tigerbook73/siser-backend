@@ -37,7 +37,7 @@ class CouponTestCase extends ApiTestCase
       'coupon_event'            => $coupon_event,
       'discount_type'           => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'type'                    => Coupon::TYPE_SHARED,
-      'code'                    => 'COUPON-CREATE20',
+      'code'                    => 'COUPONCREATE20',
       'product_name'            => Product::find(2)->name,
       'name'                    => '20% percent off',
       'percentage_off'          => 20,
@@ -58,7 +58,7 @@ class CouponTestCase extends ApiTestCase
       'coupon_event'            => $coupon_event,
       'discount_type'           => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'type'                    => Coupon::TYPE_SHARED,
-      'code'                    => 'COUPON-CODE30',
+      'code'                    => 'COUPONCODE30',
       'product_name'            => Product::find(2)->name,
       'name'                    => '30% percent off',
       'percentage_off'          => 30,
@@ -76,13 +76,13 @@ class CouponTestCase extends ApiTestCase
     ];
 
     $createData = $this->modelCreate;
-    $createData['code']         = 'test-precreate-20';
+    $createData['code']         = 'testprecreate20';
     $createData['start_date']   = Carbon::today();
     $createData['status']       = 'active';
     $this->object = Coupon::create($createData);
 
     $createData = $this->modelCreate;
-    $createData['code']         = 'test-precreate-30';
+    $createData['code']         = 'testprecreate30';
     $createData['start_date']   = Carbon::tomorrow();
     $createData['status']       = 'draft';
     $this->object2 = Coupon::create($createData);

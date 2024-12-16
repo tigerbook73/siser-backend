@@ -1,0 +1,482 @@
+<?php
+
+namespace App\Services\Paddle;
+
+use App\Models\Paddle\PriceCustomData;
+use App\Models\Paddle\SubscriptionCustomData;
+use App\Models\PaddleMap;
+use App\Models\ProductItem;
+use App\Models\Subscription;
+use App\Services\CurrencyHelper;
+use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\DigitalRiver\WebhookException;
+use Illuminate\Support\Carbon;
+use Paddle\SDK\Entities\Shared\Interval;
+use Paddle\SDK\Entities\Subscription as PaddleSubscription;
+use Paddle\SDK\Entities\Subscription\SubscriptionScheduledChangeAction;
+use Paddle\SDK\Entities\Subscription\SubscriptionStatus;
+use Paddle\SDK\Entities\Transaction as PaddleTransaction;
+use Paddle\SDK\Notifications\Entities\Subscription as NotificationPaddleSubscription;
+use Paddle\SDK\Notifications\Events\SubscriptionCreated;
+use Paddle\SDK\Notifications\Events\SubscriptionUpdated;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+
+class SubscriptionService extends PaddleEntityService
+{
+  public function createSubscriptionFromPaddle(PaddleSubscription $paddleSubscription, PaddleTransaction $paddleTransaction): Subscription
+  {
+    $subscription = (new Subscription([
+      'user_id' => SubscriptionCustomData::from($paddleSubscription->customData->data)->user_id,
+    ]))->initFill();
+
+    // if user already has active live subscription, throw exception
+    if ($subscription->user->getActiveLiveSubscription()) {
+      $this->result->appendMessage("user {$subscription->user_id} already has active live subscription", location: __FUNCTION__);
+      throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
+    }
+
+    // stop basic subscription
+    $basicSubscription = $subscription->user->getActiveSubscription();
+    if ($basicSubscription) {
+      $this->result->appendMessage("stopping basic subscription ({$basicSubscription->id})", location: __FUNCTION__);
+      $basicSubscription->stop(Subscription::STATUS_STOPPED, 'new subscription activated');
+    }
+
+    // fill subscription and save
+    $this->result->appendMessage("filling subscription ({$subscription->id}) from ({$paddleSubscription->id})", location: __FUNCTION__);
+    $this->fillSubscription($subscription, $paddleSubscription, $paddleTransaction);
+
+    $this->result->appendMessage("saving subscription ({$subscription->id})", location: __FUNCTION__);
+    $subscription->save();
+
+    $this->result->appendMessage("refreshing license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
+    $this->refreshLicenseSharing($subscription);
+
+    PaddleMap::createOrUpdate($paddleSubscription->id, Subscription::class, $subscription->id);
+
+    $this->result->appendMessage("subscription ({$subscription->id}) created successfully", location: __FUNCTION__);
+    return $subscription;
+  }
+
+  public function updateSubscriptionFromPaddle(Subscription $subscription, PaddleSubscription $paddleSubscription, ?PaddleTransaction $paddleTransaction = null): Subscription
+  {
+    $this->result->appendMessage("filling subscription ({$subscription->id}) from ({$paddleSubscription->id})", location: __FUNCTION__);
+    $this->fillSubscription($subscription, $paddleSubscription, $paddleTransaction);
+
+    $this->result->appendMessage("saving subscription ({$subscription->id})", location: __FUNCTION__);
+    $subscription->save();
+
+    $this->result->appendMessage("refreshing license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
+    $this->refreshLicenseSharing($subscription);
+
+    PaddleMap::createOrUpdate($paddleSubscription->id, Subscription::class, $subscription->id);
+
+    $this->result->appendMessage("subscription ({$subscription->id}) updated successfully", location: __FUNCTION__);
+    return $subscription;
+  }
+
+  public function refreshLicenseSharing(Subscription $subscription): Subscription
+  {
+    $licenseSharing = $subscription->user->getActiveLicenseSharing();
+    if ($licenseSharing) {
+      $this->result->appendMessage("refreshing license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
+      $this->manager->licenseService->refreshLicenseSharing($licenseSharing);
+    } else if (
+      $subscription->getStatus() == Subscription::STATUS_ACTIVE &&
+      $subscription->license_package_info &&
+      $subscription->license_package_info['quantity'] > 0
+    ) {
+      $this->result->appendMessage("creating license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
+      $this->licenseService->createLicenseSharing($subscription);
+    } else {
+      $this->result->appendMessage("updating user ({$subscription->user_id}) subscription level", location: __FUNCTION__);
+      $subscription->user->updateSubscriptionLevel();
+    }
+    return $subscription->refresh();
+  }
+
+  /**
+   * Fill subscription from Paddle Subscription and Paddle Transaction (optional) without saving
+   */
+  public function fillSubscription(
+    Subscription $subscription,
+    PaddleSubscription $paddleSubscription,
+    ?PaddleTransaction $paddleTransaction
+  ): Subscription {
+
+    // validate paddle timestamp
+    if (
+      $subscription->getMeta()->paddle->paddle_timestamp &&
+      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte($paddleSubscription->updatedAt)
+    ) {
+      $this->result->appendMessage("subscription ({$subscription->id}) for ({$paddleSubscription->id}) already updated", location: __FUNCTION__);
+      return $subscription;
+    }
+
+    // custom data
+    $subscriptionCustomerData = SubscriptionCustomData::from($paddleSubscription->customData->data);
+
+    // user id
+    $subscription->user_id      = $subscriptionCustomerData->user_id;
+
+    // plan id
+    $subscription->plan_id      = $subscriptionCustomerData->plan_id;
+    foreach ($paddleSubscription->items as $subscriptionItem) {
+      $priceCustomData = PriceCustomData::from($subscriptionItem->price->customData?->data);
+      if ($priceCustomData->plan_id) {
+        $subscription->plan_id = $priceCustomData->plan_id;
+        break;
+      }
+    }
+
+
+    // currency
+    $subscription->currency     = $paddleSubscription->currencyCode->getValue();
+
+    //
+    // amount
+    // 1. purchase subscription: use the amount from the recurring transaction
+    // 2. renewal subscription: use the amount from the recurring transaction
+    // 3. other cases: keep the current data: TODO: ...
+    //
+    $recurringTransactionDetails = $paddleSubscription->recurringTransactionDetails;
+    if ($recurringTransactionDetails) {
+      // purchase subscription and renewal scenario
+      if (
+        !$subscription->id ||
+        ($paddleSubscription->nextBilledAt && $subscription->next_invoice_date &&
+          $subscription->next_invoice_date->lt(Carbon::parse($paddleSubscription->nextBilledAt)->floorSecond()))
+      ) {
+        $subscription->price        = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->subtotal);
+        $subscription->subtotal     = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->subtotal);
+        $subscription->discount     = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->discount);
+        $subscription->total_amount = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->total);
+        $subscription->total_tax    = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->tax);
+        $subscription->tax_rate     = (float)($recurringTransactionDetails->taxRatesUsed[0]->taxRate);
+      }
+    } else {
+      // keep current data
+    }
+
+    // start & end data
+    if (!$paddleSubscription->startedAt) {
+      throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
+    }
+    $subscription->start_date   = Carbon::parse($paddleSubscription->startedAt);
+    $subscription->end_date     = $paddleSubscription->canceledAt ? Carbon::parse($paddleSubscription->canceledAt) : null;
+
+    // current billing period
+    if ($paddleSubscription->currentBillingPeriod) {
+      $initialPeriod = $paddleSubscription->startedAt !== $paddleSubscription->firstBilledAt ? 1 : 0;
+
+      // calc offset
+      $diff = 0;
+      $firstBilledAt = Carbon::parse($paddleSubscription->firstBilledAt);
+      $currentPeriodStartsAt = Carbon::parse($paddleSubscription->currentBillingPeriod->startsAt);
+      $interval = Interval::from($paddleSubscription->billingCycle->interval->getValue());
+      $frequency = $paddleSubscription->billingCycle->frequency;
+      if ($interval == Interval::Day()) {
+        $diff = $currentPeriodStartsAt->diffInDays($firstBilledAt) % $frequency;
+      } else if ($interval == Interval::Month()) {
+        $diff = $currentPeriodStartsAt->startOfMonth()->diffInMonths($firstBilledAt->startOfMonth()) % $frequency;
+      } else if ($interval == Interval::Year()) {
+        $diff = $currentPeriodStartsAt->startOfYear()->diffInYears($firstBilledAt->startOfYear()) % $frequency;
+      }
+      $subscription->current_period = $initialPeriod +  $diff;
+
+      // current period start & end date
+      $subscription->current_period_start_date = Carbon::parse($paddleSubscription->currentBillingPeriod->startsAt);
+      $subscription->current_period_end_date = Carbon::parse($paddleSubscription->currentBillingPeriod->endsAt);
+    } else {
+      // keep current data
+    }
+
+    // next invoice date & reminder date
+    if ($paddleSubscription->nextBilledAt) {
+      $subscription->next_invoice_date  = Carbon::parse($paddleSubscription->nextBilledAt);
+      $subscription->next_reminder_date = Carbon::parse($paddleSubscription->nextBilledAt)->subDays(3); // hard code
+    } else {
+      $subscription->next_invoice_date  = null;
+      $subscription->next_reminder_date = null;
+    }
+
+    // update billing info and generate billing info.
+    if ($this->isPaddleSubscriptionActive($paddleSubscription) && $paddleTransaction) {
+      $billingInfo = $subscription->user->billing_info;
+      $this->manager->addressService->updateBillingInfo($billingInfo, $paddleTransaction->address);
+      if ($paddleTransaction->business) {
+        $this->manager->businessService->updateBillingInfo($billingInfo, $paddleTransaction->business);
+      }
+      $subscription->billing_info = $billingInfo->info();
+    } else {
+      // keep current data
+    }
+
+    // update payment method and generate payment method info
+    if ($this->isPaddleSubscriptionActive($paddleSubscription) && !empty($paddleTransaction?->payments)) {
+      $paymentMethod = $this->manager->paymentMethodService->createOrUpdatePaymentMethod(
+        $subscription->user,
+        $paddleTransaction->payments[0] // most recent payment
+      );
+      $subscription->payment_method_info = $paymentMethod->info();
+    } else {
+      // keep current data
+    }
+
+    // plan info, TODO: plan may change later
+    $subscription->plan_info = $subscription->plan->info($subscription->user->billing_info->address['country']);
+    $subscription->subscription_level = $subscription->plan->subscription_level;
+
+    // license package info
+    $subscription->license_package_info = null;
+
+    // coupon info
+    $coupon = ($paddleSubscription->discount?->startsAt) ?
+      PaddleMap::findCouponByPaddleId($paddleSubscription->discount->id) :
+      null;
+    if (
+      $coupon &&
+      $paddleSubscription->discount->startsAt <= $paddleSubscription->currentBillingPeriod?->startsAt &&
+      (!$paddleSubscription->discount->endsAt ||
+        $paddleSubscription->discount->endsAt > $paddleSubscription->currentBillingPeriod?->startsAt)
+    ) {
+      $subscription->coupon_id   = $coupon->id;
+      $subscription->coupon_info = $coupon->info();
+    } else {
+      $subscription->coupon_id   = null;
+      $subscription->coupon_info = null;
+    }
+
+    // tax id info
+    $subscription->tax_id_info = null;
+
+    // items
+    $subscription->items = ProductItem::buildItemsFromPaddleResource($paddleSubscription);
+
+    // next_invoice
+    $nextTransaction  = $paddleSubscription->nextTransaction;
+    if ($nextTransaction) {
+      $billingPeriod    = $nextTransaction->billingPeriod;
+      $currency         = $nextTransaction->details->totals->currencyCode->getValue();
+      $totals           = $nextTransaction->details->totals;
+      $taxRate          = (float)($nextTransaction->details->taxRatesUsed[0]->taxRate);
+      $couponInfo       = (
+        $coupon &&
+        $paddleSubscription->discount->startsAt <= $billingPeriod->endsAt &&
+        (!$paddleSubscription->discount->endsAt ||
+          $paddleSubscription->discount->endsAt > $billingPeriod->endsAt)
+      ) ?
+        $coupon->info() :
+        null;
+
+      $subscription->next_invoice = [
+        'current_period'            => $subscription->current_period + 1,
+        'current_period_start_date' => Carbon::parse($billingPeriod->startsAt)->format('Y-m-d\TH:i:s\Z'),
+        'current_period_end_date'   => Carbon::parse($billingPeriod->endsAt)->format('Y-m-d\TH:i:s\Z'),
+        'plan_info'                 => $subscription->plan_info,
+        'coupon_info'               => $couponInfo,
+        'license_package_info'      => null,
+        'items'                     => ProductItem::buildItemsFromPaddleResource($nextTransaction->details),
+        'price'                     => CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
+        'subtotal'                  => CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
+        'discount'                  => CurrencyHelper::getDecimalPrice($currency, $totals->discount),
+        'tax_rate'                  => (float)$taxRate,
+        'total_tax'                 => CurrencyHelper::getDecimalPrice($currency, $totals->tax),
+        'total_amount'              => CurrencyHelper::getDecimalPrice($currency, $totals->total),
+      ];
+    } else {
+      $subscription->next_invoice = null;
+    }
+
+    // renewal info
+    $subscription->renewal_info = null;
+
+    // other info
+    $subscription->dr = [];
+    $subscription->dr_subscription_id = $paddleSubscription->id;
+    $subscription->stop_reason = '';
+    $subscription->active_invoice_id = null;
+    $subscription->setMetaPaddleSubscriptionId($paddleSubscription->id)
+      ->setMetaPaddleCustomerId($paddleSubscription->customerId)
+      ->setMetaPaddleProductId($subscription->plan->getMeta()->paddle->product_id)
+      ->setMetaPaddlePriceId($subscription->plan->getMeta()->paddle->price_id)
+      ->setMetaPaddleDiscountId($subscription->coupon?->getMeta()->paddle->discount_id)
+      ->setMetaPaddleTimestamp($paddleSubscription->updatedAt->format('Y-m-d\TH:i:s\Z'));
+
+    // status
+    if ($this->isPaddleSubscriptionActive($paddleSubscription)) {
+      $status = Subscription::STATUS_ACTIVE;
+      $subStatus =
+        $paddleSubscription->scheduledChange?->action == SubscriptionScheduledChangeAction::Cancel() ?
+        Subscription::SUB_STATUS_CANCELLING :
+        Subscription::SUB_STATUS_NORMAL;
+    } else {
+      $status = Subscription::STATUS_STOPPED;
+      $subStatus = Subscription::SUB_STATUS_NORMAL;
+    }
+    if ($subscription->getStatus() !== $status) {
+      $this->result->appendMessage("subscription ({$subscription->id}) status updated: {$subscription->getStatus()} => {$status}", location: __FUNCTION__);
+      $subscription->setStatus($status);
+    }
+    if ($subscription->sub_status !== $subStatus) {
+      $this->result->appendMessage("subscription ({$subscription->id}) sub_status updated: {$subscription->sub_status} => {$subStatus}", location: __FUNCTION__);
+      $subscription->sub_status = $subStatus;
+    }
+
+    return $subscription;
+  }
+
+  public function onSubscriptionCreated(SubscriptionCreated $subscriptionCreated): void
+  {
+    $paddleSubscriptionNotification = $subscriptionCreated->subscription;
+    $subscription = PaddleMap::findSubscriptionByPaddleId($paddleSubscriptionNotification->id);
+    if ($subscription) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED, 'subscription already exists')
+        ->appendMessage("subscription ({$subscription->id}) already exists for {$paddleSubscriptionNotification->id}", location: __FUNCTION__);
+      return;
+    }
+    if (!$paddleSubscriptionNotification->transactionId) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED, 'no transactionId')
+        ->appendMessage("paddle subscription ({$paddleSubscriptionNotification->id}) does not have transactionId", location: __FUNCTION__);
+      return;
+    }
+
+    $this->result->appendMessage("retrieving paddle subscription for {$paddleSubscriptionNotification->id}", location: __FUNCTION__);
+    $paddleSubscription = $this->paddleService->getSubscriptionWithIncludes($paddleSubscriptionNotification->id);
+
+    $this->result->appendMessage("retrieving paddle transaction for {$paddleSubscriptionNotification->transactionId}", location: __FUNCTION__);
+    $paddleTransaction = $this->paddleService->getTransaction($paddleSubscriptionNotification->transactionId);
+
+    $this->result->appendMessage("creating subscription for {$paddleSubscription->id}", location: __FUNCTION__);
+    $subscription = $this->createSubscriptionFromPaddle($paddleSubscription, $paddleTransaction);
+    $this->result
+      ->setSubscription($subscription)
+      ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
+      ->appendMessage("subscription ({$subscription->id}) for {$paddleSubscription->id} created", location: __FUNCTION__);
+  }
+
+  public function onSubscriptionUpdated(SubscriptionUpdated $subscriptionUpdated): void
+  {
+    /**
+     * Steps:
+     * 1. get notification.paddleSubscription
+     * 2. if user_id is empty, skip
+     * 3. if subscription not exist, fails
+     * 4. validate subscription.timestamp, if it's newer than the paddleSubscription.updated_at, skip
+     * 5. if subscription.status is stopped or failed, skip
+     * 6. update scription from paddle subscription and transaction
+     */
+
+    // step 1: get notification.paddleSubscription
+    $paddleSubscriptionNotification = $subscriptionUpdated->subscription;
+
+    // step 2. if user_id is empty, skip
+    if (!SubscriptionCustomData::from($paddleSubscriptionNotification->customData?->data)->user_id) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED, 'no user_id, not created from customer portal')
+        ->appendMessage("paddle subscription ({$paddleSubscriptionNotification->id}) does not have user_id", location: __FUNCTION__);
+      return;
+    }
+
+    // step 3: if subscription not exist, fails
+    $subscription = PaddleMap::findSubscriptionByPaddleId($paddleSubscriptionNotification->id);
+    if (!$subscription) {
+      $this->result->appendMessage("subscription not found for paddle Subscription {$paddleSubscriptionNotification->id}", location: __FUNCTION__);
+      throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
+    }
+    $this->result->setSubscription($subscription);
+
+    // step 4 validate subscription.timestamp, if it's newer than the paddleSubscription.updated_at, skip
+    if (
+      $subscription->getMeta()->paddle->paddle_timestamp &&
+      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte($paddleSubscriptionNotification->updatedAt)
+    ) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED, 'subscription already updated')
+        ->appendMessage("subscription ({$subscription->id}) for ({$paddleSubscriptionNotification->id}) already updated", location: __FUNCTION__);
+      return;
+    }
+
+    // step 5 if subscription.status is stopped or failed, skip
+    if (
+      $subscription->getStatus() == Subscription::STATUS_STOPPED ||
+      $subscription->getStatus() == Subscription::STATUS_FAILED
+    ) {
+      $this->result->appendMessage("Subscription {$subscription->id} already stopped or failed", location: __FUNCTION__);
+      return;
+    }
+
+    // step 6. update subscription from paddle
+    $this->result->appendMessage("retrieving paddle subscription for {$paddleSubscriptionNotification->id}", location: __FUNCTION__);
+    $paddleSubscription = $this->paddleService->getSubscriptionWithIncludes($paddleSubscriptionNotification->id);
+
+    if ($paddleSubscriptionNotification->transactionId) {
+      $this->result->appendMessage("retrieving paddle transaction for {$paddleSubscriptionNotification->transactionId}", location: __FUNCTION__);
+      $paddleTransaction = $this->paddleService->getTransaction($paddleSubscriptionNotification->transactionId);
+    } else {
+      $paddleTransaction = null;
+    }
+
+    $this->result->appendMessage("updating subscription ({$subscription->id}) for {$paddleSubscription->id}", location: __FUNCTION__);
+    $this->updateSubscriptionFromPaddle($subscription, $paddleSubscription, $paddleTransaction);
+
+    $this->result
+      ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
+      ->appendMessage("subscription ({$subscription->id}) for {$paddleSubscription->id} updated", location: __FUNCTION__);
+  }
+
+  public function isPaddleSubscriptionActive(PaddleSubscription|NotificationPaddleSubscription $paddleSubscription): bool
+  {
+    $activeStatues = [
+      SubscriptionStatus::Active()->getValue(),
+      SubscriptionStatus::Trialing()->getValue(),
+      SubscriptionStatus::PastDue()->getValue(),
+    ];
+    return in_array($paddleSubscription->status->getValue(), $activeStatues);
+  }
+
+  public function isPaddleSubscriptionStopped(PaddleSubscription|NotificationPaddleSubscription $paddleSubscription): bool
+  {
+    return $paddleSubscription->status->getValue() === SubscriptionStatus::Canceled()->getValue();
+  }
+
+  public function getManagementLinks(Subscription $subscription): array
+  {
+    if (
+      !$subscription->isActive() ||
+      !$subscription->getMeta()->paddle->subscription_id
+    ) {
+      throw new HttpException(400, 'Subscription is not active or not created from Paddle');
+    }
+
+    $paddleSubscription = $this->paddleService->getSubscription($subscription->getMeta()->paddle->subscription_id);
+
+    return [
+      'update_payment_method' => $paddleSubscription->managementUrls->updatePaymentMethod,
+      'cancel' => $paddleSubscription->managementUrls->cancel,
+    ];
+  }
+
+  public function cancelSubscription(Subscription $subscription, bool $immediate): Subscription
+  {
+    if ($subscription->isActive() && $subscription->isPaid()) {
+      throw new WebhookException('Subscription is active and paid, cannot cancel', 400);
+    }
+
+    if (!$subscription->getMeta()->paddle->subscription_id) {
+      throw new WebhookException('Subscription is not created from Paddle', 400);
+    }
+
+
+    /**
+     * TODO: refund consideration
+     */
+    $paddleSubscription = $this->paddleService->cancelSubscription($subscription->getMeta()->paddle->subscription_id, $immediate);
+    $this->result->appendMessage("paddle-subscription for subscription ({$subscription->id}) cancelled", location: __FUNCTION__);
+
+    $this->updateSubscriptionFromPaddle($subscription, $paddleSubscription);
+    return $subscription;
+  }
+}

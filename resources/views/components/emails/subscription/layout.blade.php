@@ -58,6 +58,10 @@
         text-align: right;
         /* min-width: 200px; */
       }
+
+      hr.separator {
+        border: 3px dashed darkgray;
+      }
     </style>
   </head>
 

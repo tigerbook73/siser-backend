@@ -54,6 +54,7 @@ use DigitalRiver\ApiSdk\Model\OrderRequest as DrOrderRequest;
 use DigitalRiver\ApiSdk\Model\Plan as DrPlan;
 use DigitalRiver\ApiSdk\Model\PlanRequest as DrPlanRequest;
 use DigitalRiver\ApiSdk\Model\ProductDetails as DrProductDetails;
+use DigitalRiver\ApiSdk\Model\RefundItemRequest;
 use DigitalRiver\ApiSdk\Model\RefundRequest as DrRefundRequest;
 use DigitalRiver\ApiSdk\Model\Shipping as DrShipping;
 use DigitalRiver\ApiSdk\Model\SkuDiscount as DrSkuDiscount;
@@ -400,44 +401,51 @@ class DigitalRiverService
   }
 
   /**
-   * create & fill a DrSkuRequestItem array from a subscription
+   * create & fill a DrSkuRequestItem array from a invoice
    *
    * @return DrSkuRequestItem[]
    */
-  protected function fillCheckoutItems(Subscription $subscription): array
+  protected function fillCheckoutItems(Invoice $invoice): array
   {
-    // free trial
-    if ($subscription->isFreeTrial()) {
-      $drPlanId = SubscriptionPlan::findFreePlanDrId(
-        $subscription->coupon_info['interval'],
-        $subscription->coupon_info['interval_count']
-      );
-    } else {
-      $drPlanId = SubscriptionPlan::findNormalPlanDrId(
-        $subscription->plan_info['interval'],
-        $subscription->plan_info['interval_count']
-      );
+    if ($invoice->isNewSubscriptionOrder()) {
+      $subscription = $invoice->subscription;
+
+      // free trial
+      if ($subscription->isFreeTrial()) {
+        $drPlanId = SubscriptionPlan::findFreePlanDrId(
+          $subscription->coupon_info['interval'],
+          $subscription->coupon_info['interval_count']
+        );
+      } else {
+        $drPlanId = SubscriptionPlan::findNormalPlanDrId(
+          $subscription->plan_info['interval'],
+          $subscription->plan_info['interval_count']
+        );
+      }
+
+      // subscriptionInfo
+      $subscriptionInfo = new DrSubscriptionInfo();
+      $subscriptionInfo->setPlanId($drPlanId);
+      $subscriptionInfo->setTerms('These are the terms...');
+      $subscriptionInfo->setAutoRenewal(true);
+      $subscriptionInfo->setFreeTrial($subscription->isFreeTrial());
     }
 
-    // subscriptionInfo
-    $subscriptionInfo = new DrSubscriptionInfo();
-    $subscriptionInfo->setPlanId($drPlanId);
-    $subscriptionInfo->setTerms('These are the terms...');
-    $subscriptionInfo->setAutoRenewal(true);
-    $subscriptionInfo->setFreeTrial($subscription->isFreeTrial());
-
     $items = [];
-    foreach ($subscription->items as $productItem) {
+    foreach ($invoice->items as $productItem) {
       $productDetails = ProductItem::buildDrProductDetails($productItem);
 
       // item
       $item = new DrSkuRequestItem();
       $item->setProductDetails($productDetails);
-      $item->setSubscriptionInfo($subscriptionInfo);
+      if (isset($subscriptionInfo)) {
+        $item->setSubscriptionInfo($subscriptionInfo);
+      }
       $item->setPrice($productItem['price']);
       $item->setQuantity(1);
       $item->setMetadata([
-        'subscription_id' => $subscription->id,
+        'subscription_id' => $invoice->subscription_id,
+        'invoice_id' => $invoice->id,
         'category' => $productItem['category']
       ]);
       $items[] = $item;
@@ -446,29 +454,32 @@ class DigitalRiverService
   }
 
   /**
-   * create a DrCheckout from a subscription
+   * create a DrCheckout from a invoice
    */
-  public function createCheckout(Subscription $subscription): DrCheckout
+  public function createCheckout(Invoice $invoice): DrCheckout
   {
     try {
       // checkout
       $checkoutRequest = new DrCheckoutRequest();
-      $checkoutRequest->setCustomerId((string)$subscription->user->getDrCustomerId());
-      $checkoutRequest->setCustomerType($subscription->billing_info['customer_type']);
-      $checkoutRequest->setEmail($subscription->billing_info['email']);
-      $checkoutRequest->setLocale($subscription->billing_info['locale']);
+      $checkoutRequest->setCustomerId((string)$invoice->user->getDrCustomerId());
+      $checkoutRequest->setCustomerType($invoice->billing_info['customer_type']);
+      $checkoutRequest->setEmail($invoice->billing_info['email']);
+      $checkoutRequest->setLocale($invoice->billing_info['locale']);
       $checkoutRequest->setBrowserIp(request()->ip());
-      $checkoutRequest->setBillTo($this->fillBilling($subscription->billing_info));
-      $checkoutRequest->setCurrency($subscription->currency);
+      $checkoutRequest->setBillTo($this->fillBilling($invoice->billing_info));
+      $checkoutRequest->setCurrency($invoice->currency);
       $checkoutRequest->setTaxInclusive(false);
-      $checkoutRequest->setItems($this->fillCheckoutItems($subscription));
+      $checkoutRequest->setItems($this->fillCheckoutItems($invoice));
       $checkoutRequest->setChargeType(DrChargeType::CUSTOMER_INITIATED); // @phpstan-ignore-line
-      $checkoutRequest->setMetadata(['subscription_id' => $subscription->id]);
-      $checkoutRequest->setUpstreamId((string)$subscription->active_invoice_id);
+      $checkoutRequest->setMetadata([
+        'subscription_id' => $invoice->subscription_id,
+        'invoice_id' => $invoice->id
+      ]);
+      $checkoutRequest->setUpstreamId((string)$invoice->id);
 
       // set tax id
-      if (!empty($subscription->tax_id_info)) {
-        $checkoutRequest->setTaxIdentifiers([(new DrCheckoutTaxIdentifierRequest())->setId($subscription->tax_id_info['dr_tax_id'])]);
+      if (!empty($invoice->tax_id_info)) {
+        $checkoutRequest->setTaxIdentifiers([(new DrCheckoutTaxIdentifierRequest())->setId($invoice->tax_id_info['dr_tax_id'])]);
       } else {
         $checkoutRequest->setTaxIdentifiers([]);
       }
@@ -889,9 +900,27 @@ class DigitalRiverService
     $refundRequest = new DrRefundRequest();
     $refundRequest->setOrderId($refund->getDrOrderId());
     $refundRequest->setCurrency($refund->currency);
-    $refundRequest->setAmount($refund->amount);
     $refundRequest->setReason($refund->reason ?? "");
-    $refundRequest->setMetadata(['created_from' => 'siser-system']); // create from siser-system
+    $refundRequest->setMetadata([
+      'created_from' => 'siser-system',     // not created from dr portal or api directly
+      'item_type' => $refund->item_type
+    ]); // create from siser-system
+
+    // item level refund or order level refund
+    if ($refund->item_type == Refund::ITEM_LICENSE) {
+      $item = $refund->items[0];
+      if ($item['category'] != ProductItem::ITEM_CATEGORY_LICENSE) {
+        throw new Exception('Invalid refund item category', 400);
+      }
+      $refundRequest->setItems([
+        (new RefundItemRequest())
+          ->setItemId($item['dr_item_id'])
+          ->setQuantity($item['quantity'])
+          ->setAmount($refund->amount)
+      ]);
+    } else {
+      $refundRequest->setAmount($refund->amount);
+    }
 
     try {
       return $this->refundApi->createRefunds($refundRequest);

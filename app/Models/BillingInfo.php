@@ -18,10 +18,11 @@ class BillingInfo extends BaseBillingInfo
     'phone'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'customer_type' => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'organization'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
-    'email'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
+    'email'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'address'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'language'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_1, 'listable' => 0b0_1_1],
     'locale'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'meta'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
@@ -67,5 +68,37 @@ class BillingInfo extends BaseBillingInfo
   public function info()
   {
     return $this->toResource('customer');
+  }
+
+  public function getMeta(): BillingInfoMeta
+  {
+    return BillingInfoMeta::from($this->meta);
+  }
+
+  public function setMeta(BillingInfoMeta $meta): self
+  {
+    $this->meta = $meta->toArray();
+    return $this;
+  }
+
+  public function setMetaPaddleCustomerId(?string $paddleCustomerId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->customer_id = $paddleCustomerId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleAddressId(?string $paddleAddressId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->address_id = $paddleAddressId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddleBusinessId(?string $paddleBusinessId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->business_id = $paddleBusinessId;
+    return $this->setMeta($meta);
   }
 }

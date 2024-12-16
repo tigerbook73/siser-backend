@@ -18,6 +18,9 @@ class Invoice {
     /** @var int $subscription_id */
     public $subscription_id = 0;
 
+    /** @var string $type */
+    public $type = "";
+
     /** @var int $period */
     public $period = 0;
 
@@ -51,8 +54,11 @@ class Invoice {
     /** @var \Tests\Models\ProductItem[] $items */
     public $items = [];
 
-    /** @var float $subtotal price - discount*/
+    /** @var float $subtotal price*/
     public $subtotal = 0;
+
+    /** @var float $discount discount*/
+    public $discount = 0;
 
     /** @var float $total_tax */
     public $total_tax = 0;
@@ -62,6 +68,9 @@ class Invoice {
 
     /** @var float $total_refunded */
     public $total_refunded = 0;
+
+    /** @var float $available_to_refund_amount */
+    public $available_to_refund_amount = 0;
 
     /** @var \DateTime $invoice_date */
     public $invoice_date;
@@ -83,5 +92,8 @@ class Invoice {
 
     /** @var string $dispute_status */
     public $dispute_status = "";
+
+    /** @var array<string,mixed> $meta */
+    public $meta;
 
 }

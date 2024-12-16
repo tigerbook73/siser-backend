@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $type
  * @property array|null $display_data
  * @property array $dr
+ * @property array|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
@@ -36,14 +37,16 @@ class PaymentMethod extends Model
   protected $casts = [
     'user_id' => 'int',
     'display_data' => 'json',
-    'dr' => 'json'
+    'dr' => 'json',
+    'meta' => 'json'
   ];
 
   protected $fillable = [
     'user_id',
     'type',
     'display_data',
-    'dr'
+    'dr',
+    'meta'
   ];
 
   public function user()

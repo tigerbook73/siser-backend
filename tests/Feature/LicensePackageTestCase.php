@@ -17,6 +17,9 @@ class LicensePackageTestCase extends ApiTestCase
   {
     parent::setUp();
 
+    // remove existing data
+    LicensePackage::query()->delete();
+
     $this->modelSchema = array_keys((array)new ModelsLicensePackage);
 
     $this->modelCreate = [

@@ -3,16 +3,17 @@
 namespace App\Models;
 
 use App\Models\Base\Plan as BasePlan;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Class Plan
- * 
+ *
  * @property array $price
- * 
+ *
  */
 class Plan extends BasePlan
 {
+  use TraitMetaAttr;
+
   const TYPE_STANDARD             = 'standard';
   const TYPE_TEST                 = 'test';
 
@@ -37,9 +38,13 @@ class Plan extends BasePlan
     'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'price'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_0_1],
     'price_list'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
+    'license_plan'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'meta'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
+
+  static protected $withAttrs = ['license_plan'];
 
 
   public function scopePublic($query)
@@ -122,5 +127,30 @@ class Plan extends BasePlan
 
     $this->status = 'inactive';
     $this->save();
+  }
+
+  public function getMeta(): PlanMeta
+  {
+    return PlanMeta::from($this->meta);
+  }
+
+  public function setMeta(PlanMeta $meta): self
+  {
+    $this->meta = $meta->toArray();
+    return $this;
+  }
+
+  public function setMetaPaddleProductId(?string $paddleProductId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->product_id = $paddleProductId;
+    return $this->setMeta($meta);
+  }
+
+  public function setMetaPaddlePriceId(?string $paddlePriceId): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->price_id = $paddlePriceId;
+    return $this->setMeta($meta);
   }
 }

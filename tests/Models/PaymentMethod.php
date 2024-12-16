@@ -21,4 +21,7 @@ class PaymentMethod {
     /** @var \Tests\Models\PaymentMethodDR $dr */
     public $dr;
 
+    /** @var array<string,mixed> $meta */
+    public $meta;
+
 }

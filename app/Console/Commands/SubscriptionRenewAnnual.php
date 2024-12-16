@@ -43,7 +43,7 @@ class SubscriptionRenewAnnual extends Command
      * 2. skip notified subscriptions
      * 3. skip subscriptions that has invoice in pending status
      * 4. notify customer to renew the subscriptions
-     * 
+     *
      * some others to do in other files:
      * 1. add flag for subscriptions that are notified
      * 2. add flag for subscriptions that are confirmed
@@ -90,7 +90,7 @@ class SubscriptionRenewAnnual extends Command
       $subscription = $renewal->subscription;
       $subscription->expireActiveRenewal();
       try {
-        $this->manager->cancelSubscription($subscription);
+        $this->manager->cancelSubscription($subscription, immediate: false);
       } catch (\Throwable $th) {
         Log::error('Error cancelling subscription: ' . $subscription->id . ' ' . $th->getMessage());
       }

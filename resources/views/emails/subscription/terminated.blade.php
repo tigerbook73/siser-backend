@@ -8,7 +8,7 @@
       'subscription_terminated.notification',
       [
         'plan_name' => $helper->formatSubscriptionFullName($subscription),
-        'end_date' => $subscription->end_date
+        'end_date'  => $subscription->end_date
       ]
     )
   !!}

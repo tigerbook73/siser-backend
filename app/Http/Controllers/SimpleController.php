@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AdminUser;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
@@ -81,12 +82,12 @@ class SimpleController extends Controller
     return $object->toResource($this->userType);
   }
 
-  protected function transformMultipleResources($objects)
+  protected function transformMultipleResources(Collection|array $objects)
   {
     if (count($objects) > 0) {
       return array_map(function ($object) {
         return $object->toResource($this->userType);
-      }, $objects->all());
+      }, is_array($objects) ? $objects : $objects->all());
     }
     return [];
   }

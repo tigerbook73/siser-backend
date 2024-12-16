@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $subscription_id
  * @property int $invoice_id
  * @property string $currency
+ * @property string $item_type
+ * @property array|null $items
  * @property float $amount
  * @property string|null $reason
  * @property array|null $payment_method_info
@@ -48,6 +50,7 @@ class Refund extends Model
     'user_id' => 'int',
     'subscription_id' => 'int',
     'invoice_id' => 'int',
+    'items' => 'json',
     'amount' => 'float',
     'payment_method_info' => 'json',
     'dr' => 'json',
@@ -59,6 +62,8 @@ class Refund extends Model
     'subscription_id',
     'invoice_id',
     'currency',
+    'item_type',
+    'items',
     'amount',
     'reason',
     'payment_method_info',

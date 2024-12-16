@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon $end_date
  * @property string $status
  * @property array|null $usage
+ * @property array|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
@@ -53,7 +54,8 @@ class Coupon extends Model
     'condition' => 'json',
     'start_date' => 'datetime',
     'end_date' => 'datetime',
-    'usage' => 'json'
+    'usage' => 'json',
+    'meta' => 'json'
   ];
 
   protected $fillable = [
@@ -70,7 +72,8 @@ class Coupon extends Model
     'start_date',
     'end_date',
     'status',
-    'usage'
+    'usage',
+    'meta'
   ];
 
   public function coupon_event()

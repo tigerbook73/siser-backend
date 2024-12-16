@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Test\DigitalRiverServiceTest;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Notifications\SubscriptionNotification;
@@ -10,35 +11,59 @@ use App\Http\Controllers\Test\SubscriptionNotificationTest;
 use App\Models\Country;
 use App\Models\SubscriptionRenewal;
 use App\Services\DigitalRiver\SubscriptionManager;
+use App\Services\DigitalRiver\SubscriptionManagerDR;
+use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\LicenseSharing\LicenseSharingService;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SubscriptionNotifcationTestController extends Controller
 {
-  public function __construct(public SubscriptionManager $manager)
+  public SubscriptionManager $manager;
+
+  public function __construct()
   {
+    $this->manager = new SubscriptionManagerDR(
+      new DigitalRiverServiceTest(),
+      new LicenseSharingService(),
+      new SubscriptionManagerResult()
+    );
   }
 
-  public function prepare(string $type, string $country, string $plan, string $coupon = null, int $licenseCount = 0): SubscriptionNotificationTest|null
-  {
+  public function prepare(
+    string $type,
+    string $country,
+    string $plan,
+    string $coupon = null,
+    int $licenseCount = 0,
+    string $invoiceType = Invoice::TYPE_NEW_SUBSCRIPTION,
+    bool $immediate = false
+  ): SubscriptionNotificationTest|null {
     $mockup = SubscriptionNotificationTest::init($country, $plan, $coupon);
 
     // skip invalid free-trial scenario
     if (
       in_array($type, [
+        SubscriptionNotification::NOTIF_CANCELLED,
         SubscriptionNotification::NOTIF_CANCELLED_REFUND,
+        SubscriptionNotification::NOTIF_EXTENDED,
         SubscriptionNotification::NOTIF_FAILED,
         SubscriptionNotification::NOTIF_INVOICE_PENDING,
         SubscriptionNotification::NOTIF_LAPSED,
         SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
-        SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
         SubscriptionNotification::NOTIF_ORDER_INVOICE,
         SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
         SubscriptionNotification::NOTIF_ORDER_REFUNDED,
-        SubscriptionNotification::NOTIF_EXTENDED,
-        SubscriptionNotification::NOTIF_RENEW_REQUIRED,
-        SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
         SubscriptionNotification::NOTIF_RENEW_EXPIRED,
+        SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
+        SubscriptionNotification::NOTIF_RENEW_REQUIRED,
         SubscriptionNotification::NOTIF_SOURCE_INVALID,
+
+        SubscriptionNotification::NOTIF_LICENSE_CANCELLED,
+        SubscriptionNotification::NOTIF_LICENSE_CANCELLED_REFUND,
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_CREDIT_MEMO,
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_INVOICE,
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUND_FAILED,
+        SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUNDED,
       ])
       && $coupon == 'free-trial'
     ) {
@@ -54,6 +79,16 @@ class SubscriptionNotifcationTestController extends Controller
       ])
       && ($plan !== 'year' || $country !== 'DE')
     ) {
+      return null;
+    }
+
+    // skip license scenario if license count is 0
+    if (str_starts_with($type, 'subscription.license.') && $licenseCount == 0) {
+      return null;
+    }
+
+    // skip license scenario if license count is <= 1
+    if ($type == SubscriptionNotification::NOTIF_LICENSE_DECREASE && $licenseCount <= 1) {
       return null;
     }
 
@@ -118,13 +153,14 @@ class SubscriptionNotifcationTestController extends Controller
         break;
 
       case SubscriptionNotification::NOTIF_CANCELLED:
+      case SubscriptionNotification::NOTIF_CANCELLED_IMMEDIATE:
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_CANCELLING,
           currentPeriod: 1,
           licenseCount: $licenseCount
         );
-        if ($mockup->subscription->isFreeTrial()) {
+        if ($mockup->subscription->isFreeTrial() || $immediate) {
           $this->manager->stopSubscription($mockup->subscription, 'cancelled');
         } else {
           $mockup->subscription->end_date = $mockup->subscription->current_period_end_date;
@@ -311,23 +347,90 @@ class SubscriptionNotifcationTestController extends Controller
         $mockup->updateInvoice(status: Invoice::STATUS_COMPLETED);
         break;
 
-      case SubscriptionNotification::NOTIF_PLAN_UPDATED_GERMAN:
-        $mockup->updateSubscription(
-          status: Subscription::STATUS_ACTIVE,
-          subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1,
-          licenseCount: $licenseCount
-        );
+      case SubscriptionNotification::NOTIF_LICENSE_ORDER_CONFIRMED:
+      case SubscriptionNotification::NOTIF_LICENSE_ORDER_INVOICE:
+      case SubscriptionNotification::NOTIF_LICENSE_ORDER_CREDIT_MEMO:
+      case SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUNDED:
+      case SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUND_FAILED:
+        if ($invoiceType == Invoice::TYPE_NEW_LICENSE_PACKAGE) {
+          $mockup->updateSubscription(
+            status: Subscription::STATUS_ACTIVE,
+            subStatus: Subscription::SUB_STATUS_NORMAL,
+            currentPeriod: 1,
+            licenseCount: 0
+          );
+          $mockup->createLicenseInvoice(Invoice::TYPE_NEW_LICENSE_PACKAGE, $licenseCount);
+          $mockup->updateSubscription(
+            status: Subscription::STATUS_ACTIVE,
+            subStatus: Subscription::SUB_STATUS_NORMAL,
+            currentPeriod: 1,
+            licenseCount: $licenseCount
+          );
+          $mockup->invoice->setStatus(Invoice::STATUS_COMPLETED);
+        } else {
+          $mockup->updateSubscription(
+            status: Subscription::STATUS_ACTIVE,
+            subStatus: Subscription::SUB_STATUS_NORMAL,
+            currentPeriod: 1,
+            licenseCount: $licenseCount
+          );
+          $mockup->createLicenseInvoice(Invoice::TYPE_INCREASE_LICENSE, $licenseCount + 1);
+          $mockup->updateSubscription(
+            status: Subscription::STATUS_ACTIVE,
+            subStatus: Subscription::SUB_STATUS_NORMAL,
+            currentPeriod: 1,
+            licenseCount: $licenseCount + 1
+          );
+          $mockup->invoice->setStatus(Invoice::STATUS_COMPLETED);
+        }
+
+        if ($type == SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUNDED) {
+          $mockup->invoice->setStatus(Invoice::STATUS_REFUNDED);
+          $mockup->updateRefund(true);
+        } elseif ($type == SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUND_FAILED) {
+          $mockup->invoice->setStatus(Invoice::STATUS_REFUND_FAILED);
+          $mockup->updateRefund(false);
+        }
+
         break;
 
-      case SubscriptionNotification::NOTIF_PLAN_UPDATED_OTHER:
+      case SubscriptionNotification::NOTIF_LICENSE_CANCELLED:
+      case SubscriptionNotification::NOTIF_LICENSE_CANCELLED_IMMEDIATE:
         $mockup->updateSubscription(
           status: Subscription::STATUS_ACTIVE,
           subStatus: Subscription::SUB_STATUS_NORMAL,
           currentPeriod: 1,
           licenseCount: $licenseCount
         );
+        $this->manager->cancelLicensePackage($mockup->subscription, $immediate);
         break;
+
+      case SubscriptionNotification::NOTIF_LICENSE_CANCELLED_REFUND:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1,
+          licenseCount: $licenseCount
+        );
+        $this->manager->cancelLicensePackage($mockup->subscription, immediate: true);
+        break;
+
+      case SubscriptionNotification::NOTIF_LICENSE_DECREASE:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_ACTIVE,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1,
+          licenseCount: $licenseCount
+        );
+        $this->manager->decreaseLicenseNumber($mockup->subscription, $licenseCount - 1, $immediate);
+        break;
+
+      default:
+        if (isset(SubscriptionNotification::$types[$type])) {
+          throw new HttpException(400, "SubscriptionNotification type $type not implemented!");
+        }
+
+        return null;
     }
     return $mockup;
   }
@@ -353,13 +456,28 @@ class SubscriptionNotifcationTestController extends Controller
       throw new HttpException(400, 'Invalid coupon');
     }
     $licenseCount = $request->license_count ?? 0;
-    return ['country' => $country, 'plan' => $plan, 'coupon' => $coupon, 'licenseCount' => $licenseCount];
+    return [
+      'country'       => $country,
+      'plan'          => $plan,
+      'coupon'        => $coupon,
+      'licenseCount'  => $licenseCount,
+      'invoiceType'   => $request->invoice_type ?? Invoice::TYPE_NEW_SUBSCRIPTION,
+      'immediate'     => ($request->immediate == 'true'),
+    ];
   }
 
   public function sendMail(Request $request, string $type)
   {
     $data = $this->validateNotificationRequest($request, $type);
-    $mockup = $this->prepare($type, $data['country'], $data['plan'], $data['coupon']);
+    $mockup = $this->prepare(
+      $type,
+      $data['country'],
+      $data['plan'],
+      $data['coupon'],
+      $data['licenseCount'],
+      $data['invoiceType'],
+      $data['immediate']
+    );
     if (!$mockup) {
       return response("Team Siser ... Skipped!");
     }
@@ -375,7 +493,15 @@ class SubscriptionNotifcationTestController extends Controller
   public function viewNotification(Request $request, string $type)
   {
     $data = $this->validateNotificationRequest($request, $type);
-    $mockup = $this->prepare($type, $data['country'], $data['plan'], $data['coupon'], $data['licenseCount']);
+    $mockup = $this->prepare(
+      $type,
+      $data['country'],
+      $data['plan'],
+      $data['coupon'],
+      $data['licenseCount'],
+      $data['invoiceType'],
+      $data['immediate']
+    );
     if (!$mockup) {
       return response("Team Siser ... Skipped!");
     }
