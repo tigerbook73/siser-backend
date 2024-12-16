@@ -180,8 +180,8 @@ class PaddleCommand extends Command
         $diff = $time->diffInSeconds(now());
         $allowance = $apiCall / 150 * 60;
         $sleep = ($allowance - $diff) > 0 ? $allowance - $diff : 0;
-        $this->info("Sleeping for " . ($sleep + 2) . " seconds.");
-        sleep($sleep + 2);
+        $this->info("Sleeping for " . ($sleep + 1) . " seconds.");
+        sleep($sleep + 1);
       });
   }
 
@@ -479,7 +479,7 @@ class PaddleCommand extends Command
       $allowance = $apiCall / 150 * 60;
       $sleep = ($allowance - $diff) > 0 ? $allowance - $diff : 0;
       $this->info("Sleeping for " . ($sleep + 1) . " seconds.");
-      sleep($sleep);
+      sleep($sleep + 1);
     });
   }
 
