@@ -139,8 +139,8 @@ class TransactionService extends PaddleEntityService
     $invoice->credit_memos = null;
 
     $invoice->dr = [];
-    $invoice->dr_invoice_id = $paddleTransaction->id;
-    $invoice->dr_order_id = $paddleTransaction->id;
+    $invoice->dr_invoice_id = null;
+    $invoice->dr_order_id = null;
     $invoice->extra_data = null;
 
     $invoice->available_to_refund_amount = 0; // TODO: ...

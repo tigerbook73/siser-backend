@@ -293,7 +293,7 @@ class SubscriptionService extends PaddleEntityService
 
     // other info
     $subscription->dr = [];
-    $subscription->dr_subscription_id = $paddleSubscription->id;
+    $subscription->dr_subscription_id = null;
     $subscription->stop_reason = '';
     $subscription->active_invoice_id = null;
     $subscription->setMetaPaddleSubscriptionId($paddleSubscription->id)
