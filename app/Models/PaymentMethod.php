@@ -17,6 +17,7 @@ class PaymentMethod extends BasePaymentMethod
   const TYPE_CREDIT_CARD    = 'creditCard';
   const TYPE_GOOGLE_PAY     = 'googlePay';
   const TYPE_PAYPAL         = 'payPal';
+  const TYPE_PAYPAL_BILLING = 'payPalBilling';
   const TYPE_UNKNOWN        = 'unknown';
 
   static protected $attributesOption = [

@@ -64,6 +64,9 @@ class SubscriptionNotifcationTestController extends Controller
         SubscriptionNotification::NOTIF_LICENSE_ORDER_INVOICE,
         SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUND_FAILED,
         SubscriptionNotification::NOTIF_LICENSE_ORDER_REFUNDED,
+
+        SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED,
+        SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW,
       ])
       && $coupon == 'free-trial'
     ) {
@@ -423,6 +426,22 @@ class SubscriptionNotifcationTestController extends Controller
           licenseCount: $licenseCount
         );
         $this->manager->decreaseLicenseNumber($mockup->subscription, $licenseCount - 1, $immediate);
+        break;
+
+      case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED:
+      case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW:
+        $mockup->updateSubscription(
+          status: Subscription::STATUS_STOPPED,
+          subStatus: Subscription::SUB_STATUS_NORMAL,
+          currentPeriod: 1,
+          licenseCount: $licenseCount
+        );
+        $mockup->subscription->end_date = now();
+        $mockup->subscription->save();
+        $mockup->updateInvoice(
+          status: Invoice::STATUS_FAILED,
+          next: true
+        );
         break;
 
       default:

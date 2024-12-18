@@ -10,7 +10,10 @@ use App\Models\Paddle\PriceCustomData;
 use App\Models\Paddle\ProductCustomData;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Subscription;
 use App\Models\TaxId;
+use App\Notifications\SubscriptionNotification;
+use App\Services\DigitalRiver\DigitalRiverService;
 use App\Services\Paddle\AddressService;
 use App\Services\Paddle\BusinessService;
 use App\Services\Paddle\CustomerService;
@@ -72,6 +75,10 @@ class PaddleCommand extends Command
       $this->info('  sync-product:    sync products & plans to paddle');
       $this->info('  sync-discount:   sync discounts to paddle');
       $this->info('  sync-all:        sync all to paddle');
+      $this->info('  archive-all:     archive all');
+      $this->info('  send-stopped:    send emails to stopped customers');
+      $this->info('  send-renew:      send emails to renewal customers');
+      $this->info('  stop-all-dr:     stop all digital river subscriptions');
       $this->info('');
 
       return self::SUCCESS;
@@ -106,8 +113,20 @@ class PaddleCommand extends Command
 
       case 'archive-all':
         if (env('APP_TEST_CODE')) {
-          $this->achieveAllCustomers();
+          $this->archiveAllCustomers();
         }
+        return self::SUCCESS;
+
+      case 'send-stopped':
+        $this->sendEmailToStoppedCustomers();
+        return self::SUCCESS;
+
+      case 'send-renew':
+        $this->sendEmailToRenewCustomers();
+        return self::SUCCESS;
+
+      case 'stop-all-dr':
+        $this->stopAllDigitalRiver();
         return self::SUCCESS;
 
       default:
@@ -483,12 +502,88 @@ class PaddleCommand extends Command
     });
   }
 
-  public function achieveAllCustomers()
+  public function archiveAllCustomers()
   {
+    $this->info("Starting to archive all customers...");
     foreach ($this->paddleService->paddle->customers->list() as $paddleCustomers) {
       $this->paddleService->paddle->customers->update($paddleCustomers->id, new UpdateCustomer(
         status: Status::Archived(),
       ));
+      printf(".");
     }
+    $this->info("All customers archived.");
+  }
+
+  public function sendEmailToStoppedCustomers()
+  {
+    $this->info("Starting to send email to stopped customers...");
+
+    Subscription::whereNotNull('dr_subscription_id')
+      ->where('status', Subscription::STATUS_FAILED)
+      ->where('end_date', '>', '2024-10-01')
+      ->whereIn('payment_method_info->type', ['payPalBilling', 'googlePay'])
+      ->whereNull('dr->email')
+      ->chunkById(10, function ($subscriptions) {
+        /** @var Collection<int, Subscription> $subscriptions */
+        foreach ($subscriptions as $subscription) {
+          // skip active users
+          if ($subscription->user->subscription_level == 2) {
+            continue;
+          }
+          $subscription->sendNotification(SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED);
+          $dr = $subscription->dr;
+          $dr['email'] = 'welcome-back';
+          $subscription->dr = $dr;
+          $subscription->save();
+          printf(".");
+        }
+        printf("\n");
+        $this->info("Sent welcome back email to {$subscriptions->count()} subscriptions, sleeping for 3 second...");
+        sleep(3);
+      });
+
+    $this->info("All emails are queued.");
+  }
+
+  public function stopAllDigitalRiver()
+  {
+    $this->info("Starting to stop all digital river subscriptions...");
+
+    $drService = new DigitalRiverService();
+    Subscription::whereNotNull('dr_subscription_id')
+      ->whereNotNull('dr->subscription_id')
+      ->whereNull('dr->stopped')
+      ->where('status', Subscription::STATUS_ACTIVE)
+      ->whereNot('sub_status', Subscription::SUB_STATUS_CANCELLING)
+      ->chunkById(10, function ($subscriptions) use ($drService) {
+        /** @var Collection<int, Subscription> $subscriptions */
+        foreach ($subscriptions as $subscription) {
+          // skip if env is local
+          if (env('APP_ENV') !== 'local') {
+            try {
+              $drService->cancelSubscription($subscription->dr_subscription_id);
+            } catch (\Exception $e) {
+              $this->error("Failed to cancel subscription {$subscription->dr_subscription_id}.");
+              continue;
+            }
+          }
+          $dr = $subscription->dr;
+          $dr['stopped'] = 'by-force';
+          $subscription->dr = $dr;
+          $subscription->save();
+
+          printf(".");
+        }
+        printf("\n");
+        $this->info("Cancel {$subscriptions->count()} subscriptions, sleeping for 1 second...");
+        sleep(1);
+      });
+
+    $this->info("All subscriptions are stopped.");
+  }
+
+  public function sendEmailToRenewCustomers()
+  {
+    return self::SUCCESS;
   }
 }

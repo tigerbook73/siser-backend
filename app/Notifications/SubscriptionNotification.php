@@ -50,6 +50,8 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   public const NOTIF_LICENSE_CANCELLED_REFUND     = 'subscription.license.cancelled-refund';
   public const NOTIF_LICENSE_DECREASE             = 'subscription.license.decrease';
 
+  public const NOTIF_WELCOME_BACK_FOR_STOPPED     = 'subscription.welcome-back.for-stopped';
+  public const NOTIF_WELCOME_BACK_FOR_RENEW       = 'subscription.welcome-back.for-renew';
 
   static public $types = [
     self::NOTIF_ORDER_ABORTED                 => ['subject' => "Order ##O Aborted",                       'validate' => null],
@@ -85,6 +87,9 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     self::NOTIF_LICENSE_CANCELLED_IMMEDIATE   => ['subject' => "Subscription ##S's License Package Cancelled & Terminated", 'validate' => null],
     self::NOTIF_LICENSE_CANCELLED_REFUND      => ['subject' => "Subscription ##S's License Package Cancelled & Terminated", 'validate' => null],
     self::NOTIF_LICENSE_DECREASE              => ['subject' => "Subscription ##S's License Number Decrease",                'validate' => null],
+
+    self::NOTIF_WELCOME_BACK_FOR_STOPPED      => ['subject' => "Welcome Back Package",                    'validate' => null],
+    self::NOTIF_WELCOME_BACK_FOR_RENEW        => ['subject' => "Welcome Back Package",                    'validate' => null],
   ];
 
   public Subscription $subscription;

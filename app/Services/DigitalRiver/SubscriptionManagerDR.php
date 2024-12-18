@@ -48,12 +48,12 @@ class SubscriptionManagerDR implements SubscriptionManager
   {
     $this->eventHandlers = [
       // order events
-      'order.accepted'                => ['class' => DrOrder::class,              'handler' => 'onOrderAccepted'],
-      'order.blocked'                 => ['class' => DrOrder::class,              'handler' => 'onOrderBlocked'],
-      'order.cancelled'               => ['class' => DrOrder::class,              'handler' => 'onOrderCancelled'],
-      'order.charge.failed'           => ['class' => DrCharge::class,             'handler' => 'onOrderChargeFailed'],
-      'order.charge.capture.complete' => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureComplete'],
-      'order.charge.capture.failed'   => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureFailed'],
+      // 'order.accepted'                => ['class' => DrOrder::class,              'handler' => 'onOrderAccepted'],
+      // 'order.blocked'                 => ['class' => DrOrder::class,              'handler' => 'onOrderBlocked'],
+      // 'order.cancelled'               => ['class' => DrOrder::class,              'handler' => 'onOrderCancelled'],
+      // 'order.charge.failed'           => ['class' => DrCharge::class,             'handler' => 'onOrderChargeFailed'],
+      // 'order.charge.capture.complete' => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureComplete'],
+      // 'order.charge.capture.failed'   => ['class' => DrCharge::class,             'handler' => 'onOrderChargeCaptureFailed'],
       'order.complete'                => ['class' => DrOrder::class,              'handler' => 'onOrderComplete'],
       'order.chargeback'              => ['class' => DrSalesTransaction::class,   'handler' => 'onOrderChargeback'],
       'order.dispute'                 => ['class' => DrOrder::class,              'handler' => 'onOrderDispute'],
@@ -61,11 +61,11 @@ class SubscriptionManagerDR implements SubscriptionManager
 
       // subscription events
       'subscription.extended'         => ['class' => 'array',                     'handler' => 'onSubscriptionExtended'],
-      'subscription.failed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionFailed'],
-      'subscription.lapsed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionLapsed'],
-      'subscription.payment_failed'   => ['class' => 'array',                     'handler' => 'onSubscriptionPaymentFailed'],
-      'subscription.reminder'         => ['class' => 'array',                     'handler' => 'onSubscriptionReminder'],
-      'subscription.source_invalid'   => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionSourceInvalid'],
+      // 'subscription.failed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionFailed'],
+      // 'subscription.lapsed'           => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionLapsed'],
+      // 'subscription.payment_failed'   => ['class' => 'array',                     'handler' => 'onSubscriptionPaymentFailed'],
+      // 'subscription.reminder'         => ['class' => 'array',                     'handler' => 'onSubscriptionReminder'],
+      // 'subscription.source_invalid'   => ['class' => DrSubscription::class,       'handler' => 'onSubscriptionSourceInvalid'],
 
       // subscription invoices
       'invoice.open'                  => ['class' => DrInvoice::class,            'handler' => 'onInvoiceOpen'],
@@ -80,8 +80,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       'refund.complete'               => ['class' => DrOrderRefund::class,        'handler' => 'onRefundComplete'],
 
       // tax id
-      'tax_identifier.verified'       => ['class' => DrTaxId::class,              'handler' => 'onTaxIdStateChange'],
-      'tax_identifier.not_valid'      => ['class' => DrTaxId::class,              'handler' => 'onTaxIdStateChange'],
+      // 'tax_identifier.verified'       => ['class' => DrTaxId::class,              'handler' => 'onTaxIdStateChange'],
+      // 'tax_identifier.not_valid'      => ['class' => DrTaxId::class,              'handler' => 'onTaxIdStateChange'],
     ];
   }
 
@@ -305,8 +305,9 @@ class SubscriptionManagerDR implements SubscriptionManager
         }
       }
 
-      $drSubscription = $this->drService->cancelSubscription($subscription->getDrSubscriptionId());
-      $this->result->appendMessage("dr-subscription for subscription ({$subscription->id}) cancelled", location: __FUNCTION__);
+      // all subscription has been cancelled in adavance
+      // $drSubscription = $this->drService->cancelSubscription($subscription->getDrSubscriptionId());
+      $this->result->appendMessage("dr-subscription for subscription ({$subscription->id}) cancelled - skipped", location: __FUNCTION__);
 
       /** update renewing invoice which is not required to refund */
       $activeInvoice = $subscription->getRenewingInvoice();
@@ -320,8 +321,9 @@ class SubscriptionManagerDR implements SubscriptionManager
         $this->stopSubscription($subscription, 'cancelled immediately');
         $this->result->appendMessage("subscription ({$subscription->id}) stopped: immediately", location: __FUNCTION__);
       } else {
-        $subscription->end_date =
-          $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
+        // $subscription->end_date =
+        //   $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
+        $subscription->end_date = now();
         $subscription->sub_status = Subscription::SUB_STATUS_CANCELLING;
         $subscription->next_invoice_date = null;
         $subscription->next_invoice = null;
@@ -1481,9 +1483,11 @@ class SubscriptionManagerDR implements SubscriptionManager
       $subscription->payment_method_info['type'] === 'googlePay'
     ) {
       // skip stop subscription for paypal billing and google pay
+      $this->result->appendMessage('subscription stoped skipped: renewal failed', location: __FUNCTION__);
     } else {
-      $this->failSubscription($subscription, 'renew failed');
-      $this->result->appendMessage('subscription stoped: renewal failed', location: __FUNCTION__);
+      // $this->failSubscription($subscription, 'renew failed');
+      // $this->result->appendMessage('subscription stoped: renewal failed', location: __FUNCTION__);
+      $this->result->appendMessage('subscription stoped skipped: renewal failed', location: __FUNCTION__);
     }
 
     // stop invoice
