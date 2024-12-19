@@ -133,6 +133,7 @@ class PriceService extends PaddleEntityService
       );
     } else {
       return new UpdatePrice(
+        description: $plan->description,
         unitPrice: $unitPrice,
         name: trim(str_replace($plan->product_name, '', $plan->name)),
         type: CatalogType::Standard(),

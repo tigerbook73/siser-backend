@@ -255,6 +255,10 @@ class PlanController extends SimpleController
     $plan->status = 'active';
     $plan->save();
 
+    if ($plan->wasChanged()) {
+      $this->priceService->createOrUpdatePaddlePrice($plan);
+    }
+
     return $this->transformSingleResource($plan);
   }
 
@@ -277,6 +281,10 @@ class PlanController extends SimpleController
 
     $plan->status = 'inactive';
     $plan->save();
+
+    if ($plan->wasChanged()) {
+      $this->priceService->createOrUpdatePaddlePrice($plan);
+    }
 
     return $this->transformSingleResource($plan);
   }
