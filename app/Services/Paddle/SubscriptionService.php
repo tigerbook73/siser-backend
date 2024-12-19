@@ -236,7 +236,7 @@ class SubscriptionService extends PaddleEntityService
       null;
     if (
       $coupon &&
-      $paddleSubscription->discount->startsAt <= $paddleSubscription->currentBillingPeriod?->startsAt &&
+      $paddleSubscription->discount->startsAt <= $paddleSubscription->currentBillingPeriod?->endsAt &&
       (!$paddleSubscription->discount->endsAt ||
         $paddleSubscription->discount->endsAt > $paddleSubscription->currentBillingPeriod?->startsAt)
     ) {
