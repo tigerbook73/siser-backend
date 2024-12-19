@@ -21,6 +21,7 @@ use App\Services\Paddle\DiscountService;
 use App\Services\Paddle\PaddleService;
 use App\Services\Paddle\PriceService;
 use App\Services\Paddle\ProductService;
+use App\Services\Paddle\SubscriptionService;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,10 @@ class PaddleCommand extends Command
    *
    * @var string
    */
-  protected $signature = 'paddle:cmd {subcmd=help} {--force}';
+  protected $signature = 'paddle:cmd
+                          {subcmd=help : subcommand}
+                          {--subscription= : subscription id}
+                          {--force}';
 
   /**
    * The console command description.
@@ -54,6 +58,7 @@ class PaddleCommand extends Command
     public DiscountService $discountService,
     public PriceService $priceService,
     public ProductService $productService,
+    public SubscriptionService $subscriptionService,
   ) {
     parent::__construct();
   }
@@ -67,18 +72,23 @@ class PaddleCommand extends Command
   {
     $subcmd = $this->argument('subcmd');
     if (!$subcmd || $subcmd == 'help') {
-      $this->info('Usage: php artisan paddle:cmd {subcmd}');
+      $this->info('Usage: php artisan paddle:cmd {subcmd} {--subscription?} {--force}');
       $this->info('');
       $this->info('subcmd:');
-      $this->info('  help:            display this information');
-      $this->info('  sync-customer:   sync customers to paddle');
-      $this->info('  sync-product:    sync products & plans to paddle');
-      $this->info('  sync-discount:   sync discounts to paddle');
-      $this->info('  sync-all:        sync all to paddle');
-      $this->info('  archive-all:     archive all');
-      $this->info('  send-stopped:    send emails to stopped customers');
-      $this->info('  send-renew:      send emails to renewal customers');
-      $this->info('  stop-all-dr:     stop all digital river subscriptions');
+      $this->info('  help:                display this information');
+      $this->info('  sync-customer:       sync customers to paddle');
+      $this->info('  sync-product:        sync products & plans to paddle');
+      $this->info('  sync-discount:       sync discounts to paddle');
+      $this->info('  sync-all:            sync all to paddle');
+      $this->info('  archive-all:         archive all');
+      $this->info('  send-stopped:        send emails to stopped customers');
+      $this->info('  send-renew:          send emails to renewal customers');
+      $this->info('  stop-all-dr:         stop all digital river subscriptions');
+      $this->info('  update-subscription: update subscription from paddle');
+      $this->info('');
+      $this->info('options:');
+      $this->info('  --subscription:      subscription id, only for update-subscription');
+      $this->info('  --force:             force update');
       $this->info('');
 
       return self::SUCCESS;
@@ -127,6 +137,10 @@ class PaddleCommand extends Command
 
       case 'stop-all-dr':
         $this->stopAllDigitalRiver();
+        return self::SUCCESS;
+
+      case 'update-subscription':
+        $this->updateSubscriptionFromPaddle();
         return self::SUCCESS;
 
       default:
@@ -584,6 +598,34 @@ class PaddleCommand extends Command
 
   public function sendEmailToRenewCustomers()
   {
+    return self::SUCCESS;
+  }
+
+
+  public function updateSubscriptionFromPaddle()
+  {
+    $subscriptionId = $this->option('subscription');
+    if (!$subscriptionId) {
+      $this->error("Subscription id is required.");
+      return self::FAILURE;
+    }
+
+    $subscription = Subscription::findById($subscriptionId);
+    if (!$subscription) {
+      $this->error("Subscription not found.");
+      return self::FAILURE;
+    }
+
+    if (!$subscription->getMeta()->paddle->subscription_id) {
+      $this->error("Subscription has no paddle subscription id.");
+      return self::FAILURE;
+    }
+
+    $this->info("Updating subscription {$subscription->id} from paddle...");
+    $paddleSubscription = $this->paddleService->getSubscriptionWithIncludes($subscription->getMeta()->paddle->subscription_id);
+    $this->subscriptionService->updateSubscriptionFromPaddle($subscription, $paddleSubscription);
+    $this->info("Subscription {$subscription->id} updated.");
+
     return self::SUCCESS;
   }
 }
