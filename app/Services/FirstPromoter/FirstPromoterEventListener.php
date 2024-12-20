@@ -19,7 +19,7 @@ class FirstPromoterEventListener implements ShouldQueue
   {
     switch ($event->type) {
       case SubscriptionOrderEvent::TYPE_ORDER_CONFIRMED:
-        if ($event->invoice->subtotal <= 0) {
+        if ($event->invoice->subtotal - $event->invoice->discount <= 0) {
           break;
         }
 
