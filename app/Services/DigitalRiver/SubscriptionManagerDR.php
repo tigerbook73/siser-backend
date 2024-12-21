@@ -323,7 +323,7 @@ class SubscriptionManagerDR implements SubscriptionManager
       } else {
         // $subscription->end_date =
         //   $drSubscription->getCurrentPeriodEndDate() ? Carbon::parse($drSubscription->getCurrentPeriodEndDate()) : null;
-        $subscription->end_date = now();
+        $subscription->end_date = $subscription->current_period_end_date;
         $subscription->sub_status = Subscription::SUB_STATUS_CANCELLING;
         $subscription->next_invoice_date = null;
         $subscription->next_invoice = null;
