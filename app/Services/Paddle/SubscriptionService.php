@@ -11,6 +11,7 @@ use App\Services\CurrencyHelper;
 use App\Services\DigitalRiver\SubscriptionManagerResult;
 use App\Services\DigitalRiver\WebhookException;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Paddle\SDK\Entities\Shared\Interval;
 use Paddle\SDK\Entities\Subscription as PaddleSubscription;
 use Paddle\SDK\Entities\Subscription\SubscriptionScheduledChangeAction;
@@ -35,11 +36,16 @@ class SubscriptionService extends PaddleEntityService
       throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
     }
 
-    // stop basic subscription
-    $basicSubscription = $subscription->user->getActiveSubscription();
-    if ($basicSubscription) {
-      $this->result->appendMessage("stopping basic subscription ({$basicSubscription->id})", location: __FUNCTION__);
-      $basicSubscription->stop(Subscription::STATUS_STOPPED, 'new subscription activated');
+    // stop active subscription if any
+    $previousSubscription = $subscription->user->getActiveSubscription();
+    if ($previousSubscription) {
+      $this->result->appendMessage("stopping previous subscription ({$previousSubscription->id})", location: __FUNCTION__);
+      $previousSubscription->stop(Subscription::STATUS_STOPPED, 'new subscription activated');
+
+      // if it's a paddle subscription, warning!!
+      if ($previousSubscription->getMeta()->paddle->subscription_id) {
+        Log::error("paddle subscription ({$previousSubscription->id}) is stopped by new paddle subscription ({$paddleSubscription->id})");
+      }
     }
 
     // fill subscription and save

@@ -67,6 +67,7 @@ class SubscriptionNotifcationTestController extends Controller
 
         SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED,
         SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW,
+        SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_FAILED,
       ])
       && $coupon == 'free-trial'
     ) {
@@ -430,6 +431,7 @@ class SubscriptionNotifcationTestController extends Controller
 
       case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED:
       case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW:
+      case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_FAILED:
         $mockup->updateSubscription(
           status: Subscription::STATUS_STOPPED,
           subStatus: Subscription::SUB_STATUS_NORMAL,

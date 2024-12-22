@@ -52,6 +52,7 @@ class SubscriptionNotification extends Notification implements ShouldQueue
 
   public const NOTIF_WELCOME_BACK_FOR_STOPPED     = 'subscription.welcome-back.for-stopped';
   public const NOTIF_WELCOME_BACK_FOR_RENEW       = 'subscription.welcome-back.for-renew';
+  public const NOTIF_WELCOME_BACK_FOR_FAILED     = 'subscription.welcome-back.for-failed';
 
   static public $types = [
     self::NOTIF_ORDER_ABORTED                 => ['subject' => "Order ##O Aborted",                       'validate' => null],
@@ -90,6 +91,7 @@ class SubscriptionNotification extends Notification implements ShouldQueue
 
     self::NOTIF_WELCOME_BACK_FOR_STOPPED      => ['subject' => "Welcome Back Package",                    'validate' => null],
     self::NOTIF_WELCOME_BACK_FOR_RENEW        => ['subject' => "Welcome Back Package",                    'validate' => null],
+    self::NOTIF_WELCOME_BACK_FOR_FAILED       => ['subject' => "Subscription ##S Terminated",             'validate' => null],
   ];
 
   public Subscription $subscription;

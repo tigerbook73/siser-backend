@@ -19,9 +19,7 @@ class SiserSynchronizer implements ShouldQueue
    *
    * @return void
    */
-  public function __construct(public User $user)
-  {
-  }
+  public function __construct(public User $user) {}
 
   /**
    * Execute the job.
@@ -31,6 +29,8 @@ class SiserSynchronizer implements ShouldQueue
   public function handle()
   {
     // TODO: split to different routines
-    app()->make(CognitoProvider::class)->updateUserSubscriptionLevel($this->user->name, $this->user->subscription_level);
+    if (config('app.env') !== 'local') {
+      app()->make(CognitoProvider::class)->updateUserSubscriptionLevel($this->user->name, $this->user->subscription_level);
+    }
   }
 }
