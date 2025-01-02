@@ -24,9 +24,6 @@ class CouponUpdate {
     /** @var string $discount_type */
     public $discount_type = "";
 
-    /** @var \Tests\Models\CouponUpdateCondition $condition */
-    public $condition;
-
     /** @var float $percentage_off must be 100 for free-trial coupon*/
     public $percentage_off = 0;
 

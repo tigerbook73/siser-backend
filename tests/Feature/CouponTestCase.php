@@ -43,12 +43,6 @@ class CouponTestCase extends ApiTestCase
       'percentage_off'          => 20,
       'interval'                => Coupon::INTERVAL_MONTH,
       'interval_count'          => 6,
-      'condition' => [
-        'new_customer_only'     => false,
-        'new_subscription_only' => false,
-        'upgrade_only'          => false,
-        'countries'             => [],
-      ],
       'status'                  => 'active',
       'start_date'              => Carbon::tomorrow(),
       'end_date'                => '2099-12-31'
@@ -64,12 +58,6 @@ class CouponTestCase extends ApiTestCase
       'percentage_off'          => 30,
       'interval'                => Coupon::INTERVAL_MONTH,
       'interval_count'          => 6,
-      'condition' => [
-        'new_customer_only'     => false,
-        'new_subscription_only' => false,
-        'upgrade_only'          => false,
-        'countries'             => [],
-      ],
       'status'                  => 'inactive',
       'start_date'              => Carbon::today(),
       'end_date'                => '2099-12-31'

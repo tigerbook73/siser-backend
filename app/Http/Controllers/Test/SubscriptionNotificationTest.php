@@ -133,11 +133,6 @@ class SubscriptionNotificationTest
     $this->coupon->interval       = $interval;
     $this->coupon->interval_count = $interval_count;
     $this->coupon->percentage_off = $percentage_off;
-    $this->coupon->condition      = [
-      'new_customer_only' => false,
-      'new_subscription_only' => false,
-      'upgrade_only' => false
-    ];
     $this->coupon->start_date = now();
     $this->coupon->end_date = Carbon::parse('2099-12-31');
     $this->coupon->status = Coupon::STATUS_ACTIVE;

@@ -48,11 +48,7 @@ class CouponController extends SimpleController
       'percentage_off'                  => ['required_if:discount_type,' . Coupon::DISCOUNT_TYPE_PERCENTAGE, 'decimal:0,2', 'between:0,100'],
       'interval'                        => ['required', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
       'interval_count'                  => ['required', 'integer', 'between:0,12'],
-      'condition'                       => ['required', 'array'],
-      'condition.new_customer_only'     => ['required', 'boolean'],
-      'condition.new_subscription_only' => ['required', 'boolean'],
-      'condition.upgrade_only'          => ['required', 'boolean'],
-      'condition.countries'             => ['nullable', 'array'],
+      'condition'                       => ['nullable', 'array'], // for compatibility
       'start_date'                      => ['required', 'date'],
       'end_date'                        => ['required', 'after:start_date', 'after:today'],
       'status'                          => ['required', Rule::in([Coupon::STATUS_DRAFT, Coupon::STATUS_ACTIVE])],
@@ -71,11 +67,7 @@ class CouponController extends SimpleController
       'percentage_off'                  => ['filled', 'decimal:0,2', 'between:0,100'],
       'interval'                        => ['filled', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
       'interval_count'                  => ['filled', 'integer', 'between:0,12'],
-      'condition'                       => ['filled', 'array'],
-      'condition.new_customer_only'     => ['required_with:condition', 'boolean'],
-      'condition.new_subscription_only' => ['required_with:condition', 'boolean'],
-      'condition.upgrade_only'          => ['required_with:condition', 'boolean'],
-      'condition.countries'             => ['nullable', 'array'],
+      'condition'                       => ['nullable', 'array'], // for compatibility
       'start_date'                      => ['filled', 'date'],
       'end_date'                        => ['filled', 'date', 'after:start_date', 'after:today'],
       'status'                          => ['filled', Rule::in([Coupon::STATUS_DRAFT, Coupon::STATUS_ACTIVE, Coupon::STATUS_INACTIVE])],
@@ -122,17 +114,6 @@ class CouponController extends SimpleController
       // validate interval and interval_count
       if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM || $inputs['interval_count'] == 0) {
         abort(response()->json(['message' => 'free_trial can not be longterm.'], 400));
-      }
-    }
-
-    // validate condition
-    $countryCodes = $inputs['condition']['countries'] ?? [];
-    if (count($countryCodes) > 0) {
-      // find invalid country code
-      $countryCodesFromDB = Country::select('code')->get()->pluck('code')->toArray();
-      $invalidCountryCodes = array_diff($countryCodes, $countryCodesFromDB);
-      if (count($invalidCountryCodes) > 0) {
-        abort(response()->json(['message' => 'Invalid country code: ' . implode(', ', $invalidCountryCodes)], 400));
       }
     }
   }

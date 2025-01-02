@@ -40,17 +40,6 @@ class CouponRules
       return ['applicable' => false, 'reason' => 'coupon\'s interval and plan\'s interval do not matched'];
     }
 
-    // addition condition
-    $condition = $coupon->getCondition();
-
-    // countries
-    if ($condition['countries'] && count($condition['countries']) > 0) {
-      $country = $user->billing_info->address['country'];
-      if (!in_array($country, $condition['countries'])) {
-        return ['applicable' => false, 'reason' => 'coupon is not applicable for this country'];
-      }
-    }
-
     // free-trial coupon can not be redeemed twice by the same user
     if ($coupon->discount_type == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
       if ($user->subscriptions()

@@ -35,7 +35,6 @@ class Coupon extends BaseCoupon
     'interval_count'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'start_date'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'end_date'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
-    'condition'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'usage'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
     'meta'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
@@ -46,13 +45,7 @@ class Coupon extends BaseCoupon
   protected function beforeSave()
   {
     $this->code = strtoupper($this->code);
-
-    // sort & unique countries if required
-    if ($this->isDirty('condition')) {
-      $condition = $this->condition;
-      $condition['countries'] = collect($condition['countries'] ?? [])->sort()->unique()->values()->toArray();
-      $this->condition = $condition;
-    }
+    $this->condition = []; // for compatibility
 
     // update interval_count to 0 if interval is longterm
     if ($this->interval == self::INTERVAL_LONGTERM) {
@@ -77,7 +70,6 @@ class Coupon extends BaseCoupon
 
   public function info()
   {
-    // note: condition is not required. Update coupon does not affect the applied coupon
     return [
       'id'              => $this->id,
       'code'            => $this->code,
@@ -126,22 +118,6 @@ class Coupon extends BaseCoupon
     $usage['count'] = ($usage['count'] ?? 1) - 1;
     $usage['updated_at'] = now()->toString();
     $this->usage = $usage;
-    return $this;
-  }
-
-  public function getCondition(): array
-  {
-    $condition = [];
-    $condition['countries'] = $this->condition['countries'] ?? [];
-
-    return $condition;
-  }
-
-  public function setCondition(array $countries)
-  {
-    $condition = $this->condition;
-    $condition['countries'] = $countries;
-    $this->condition = $condition;
     return $this;
   }
 

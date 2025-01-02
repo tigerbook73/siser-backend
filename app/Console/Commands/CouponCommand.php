@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Coupon;
+use App\Services\Paddle\DiscountService;
 use Illuminate\Console\Command;
 
 class CouponCommand extends Command
@@ -20,6 +21,14 @@ class CouponCommand extends Command
    * @var string
    */
   protected $description = 'coupon related commands.';
+
+  /**
+   * constructor
+   */
+  public function __construct(private DiscountService $discountService)
+  {
+    parent::__construct();
+  }
 
   /**
    * Execute the console command.
@@ -59,13 +68,13 @@ class CouponCommand extends Command
 
     // default data
     $coupon_number    = 10;
-    $code_pattern     = "ENT-######";
+    $code_pattern     = "########";
 
     $coupon_event     = "";
     $product_name     = "Leonardo® Design Studio Pro";
     $type             = Coupon::TYPE_ONCE_OFF;
-    $discount_type    = Coupon::DISCOUNT_TYPE_FREE_TRIAL;
-    $percentage_off   = 100;
+    $discount_type    = Coupon::DISCOUNT_TYPE_PERCENTAGE;
+    $percentage_off   = 20;
     $interval         = Coupon::INTERVAL_MONTH;
     $interval_count   = 1;
     $start_date       = date('Y-m-d');
@@ -79,18 +88,26 @@ class CouponCommand extends Command
         if ($coupon_number >= 1 && $coupon_number <= 5000) {
           break;
         }
+        $this->error("Invalid number of coupons: {$coupon_number}");
       }
       while (true) {
-        $code_pattern = strtoupper(trim($this->ask('Code Pattern (e.g. ABC-######, len: 5~20)', $code_pattern)));
+        $code_pattern = strtoupper(trim($this->ask('Code Pattern (e.g. ABC######, len: 5~16)', $code_pattern)));
         if (
           strlen($code_pattern) >= 5 &&
-          strlen($code_pattern) <= 20 &&
-          pow(26, substr_count($code_pattern, '#')) > $coupon_number
+          strlen($code_pattern) <= 16 &&
+          pow(26, substr_count($code_pattern, '#')) >= $coupon_number
         ) {
           break;
         }
+        $this->error("Invalid code pattern: {$code_pattern}");
       }
-      $coupon_event = trim($this->ask('Coupon Event (e.g. HSN)', $coupon_event));
+      while (true) {
+        $coupon_event = trim($this->ask('Coupon Event (e.g. HSN)'));
+        if ($coupon_event && strlen($coupon_event) > 2) {
+          break;
+        }
+        $this->error('Coupon event is required and should be at least 3 characters long.');
+      }
       $product_name = $this->choice('Product Name', ['Leonardo® Design Studio Pro'], $product_name);
       $type = $this->choice('Type', [Coupon::TYPE_SHARED, Coupon::TYPE_ONCE_OFF], $type);
       $discount_type = $this->choice('Discount Type', [Coupon::DISCOUNT_TYPE_PERCENTAGE, Coupon::DISCOUNT_TYPE_FREE_TRIAL], $discount_type);
@@ -103,11 +120,12 @@ class CouponCommand extends Command
         if ($percentage_off >= 1 && $percentage_off <= 99) {
           break;
         }
+        $this->error("Invalid percentage off: {$percentage_off}");
       }
       if ($discount_type == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
-        $interval = $this->choice('Interval', [Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR], $interval);
+        $interval = $this->choice('Interval', [Coupon::INTERVAL_DAY, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR], $interval);
       } else {
-        $interval = $this->choice('Interval', [Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM], $interval);
+        $interval = $this->choice('Interval', [Coupon::INTERVAL_DAY, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM], $interval);
       }
 
       if ($interval == Coupon::INTERVAL_LONGTERM) {
@@ -118,6 +136,7 @@ class CouponCommand extends Command
         if ($interval_count >= 1 && $interval_count <= 30) {
           break;
         }
+        $this->error("Invalid interval count: {$interval_count}");
       }
       $start_date = $this->ask('Start Date (YYYY-MM-DD)', $start_date);
       $end_date = $this->ask('End Date (YYYY-MM-DD)', $end_date);
@@ -139,7 +158,7 @@ class CouponCommand extends Command
 
       // update coupon name
       if ($couponData['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
-        $couponData['name'] = "{$couponData['product_name']} {$couponData['interval_count']}-{$couponData['interval']} Free Trial";
+        $couponData['name'] = "{$couponData['interval_count']}-{$couponData['interval']} Free Trial";
       } else {
         if ($couponData['interval_count'] == 0) {
           $couponData['name'] = "{$couponData['percentage_off']}% off";
@@ -203,15 +222,12 @@ class CouponCommand extends Command
     }
 
     // create coupons
-    $couponData['condition'] = [
-      "new_customer_only" => false,
-      "new_subscription_only" => false,
-      "upgrade_only" => false,
-    ];
     $this->withProgressBar($couponCodes, function ($code) use ($couponData) {
       $coupon = new Coupon($couponData);
       $coupon->code = $code;
       $coupon->save();
+
+      $this->discountService->createOrUpdatePaddleDiscount($coupon);
     });
 
     $this->info('');

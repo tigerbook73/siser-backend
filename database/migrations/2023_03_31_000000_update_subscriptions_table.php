@@ -50,11 +50,6 @@ return new class extends Migration
         "id": 0,
         "code": "string",
         "description": "string",
-        "condition": {
-          "new_customer_only": true,
-          "new_subscription_only": true,
-          "upgrade_only": true
-        },
         "percentage_off": 20,
         "period": 6
       }')));
@@ -136,7 +131,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };
