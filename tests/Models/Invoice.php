@@ -36,9 +36,6 @@ class Invoice {
     /** @var \Tests\Models\BillingInfo $billing_info */
     public $billing_info;
 
-    /** @var \Tests\Models\TaxIdInfo $tax_id_info */
-    public $tax_id_info;
-
     /** @var \Tests\Models\PlanInfo $plan_info */
     public $plan_info;
 

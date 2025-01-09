@@ -171,55 +171,22 @@ class EmailHelper
 
   public function showStart(string $type)
   {
-    return (!in_array($type, [
-      SubscriptionNotification::NOTIF_ORDER_ABORTED,
-      SubscriptionNotification::NOTIF_ORDER_CANCELLED,
-    ]));
+    return true;
   }
 
   public function showEnd(string $type)
   {
-    return (in_array($type, [
-      SubscriptionNotification::NOTIF_CANCELLED,
-      SubscriptionNotification::NOTIF_CANCELLED_IMMEDIATE,
-      SubscriptionNotification::NOTIF_CANCELLED_REFUND,
-      SubscriptionNotification::NOTIF_FAILED,
-      SubscriptionNotification::NOTIF_LAPSED,
-      SubscriptionNotification::NOTIF_RENEW_EXPIRED,
-      SubscriptionNotification::NOTIF_TERMINATED,
-    ]));
+    return false;
   }
 
   public function showPeriod(string $type)
   {
-    return (in_array($type, [
-      SubscriptionNotification::NOTIF_ORDER_CONFIRMED,
-      SubscriptionNotification::NOTIF_EXTENDED,
-      SubscriptionNotification::NOTIF_ORDER_INVOICE,
-      SubscriptionNotification::NOTIF_INVOICE_PENDING,
-      SubscriptionNotification::NOTIF_REMINDER,
-      SubscriptionNotification::NOTIF_RENEW_REQUIRED,
-      SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
-      SubscriptionNotification::NOTIF_RENEW_EXPIRED,
-    ]));
+    return false;
   }
 
   public function showNextInvoice(string $type)
   {
-    return (in_array($type, [
-      SubscriptionNotification::NOTIF_ORDER_CONFIRMED,
-      SubscriptionNotification::NOTIF_EXTENDED,
-      SubscriptionNotification::NOTIF_INVOICE_PENDING,
-      SubscriptionNotification::NOTIF_REMINDER,
-      SubscriptionNotification::NOTIF_RENEW_REQUIRED,
-      SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
-      SubscriptionNotification::NOTIF_SOURCE_INVALID,
-
-      SubscriptionNotification::NOTIF_LICENSE_ORDER_CONFIRMED,
-      SubscriptionNotification::NOTIF_LICENSE_CANCELLED,
-      SubscriptionNotification::NOTIF_LICENSE_CANCELLED_REFUND,
-      SubscriptionNotification::NOTIF_LICENSE_DECREASE,
-    ]));
+    return false;
   }
 
   public function formatCouponDescription(array $coupon)

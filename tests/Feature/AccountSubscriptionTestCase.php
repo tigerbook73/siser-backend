@@ -3,10 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Subscription;
-use Tests\DR\DrApiTestCase;
+use Tests\ApiTestCase;
 use Tests\Models\Subscription as ModelsSubscription;
 
-class AccountSubscriptionTestCase extends DrApiTestCase
+class AccountSubscriptionTestCase extends ApiTestCase
 {
   public string $baseUrl = '/api/v1/account/subscriptions';
   public string $model = Subscription::class;

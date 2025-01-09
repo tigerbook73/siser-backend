@@ -11,9 +11,4 @@ class CountryUpdateApiTest extends CountryTestCase
   {
     $this->updateAssert(200, $this->object->code);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

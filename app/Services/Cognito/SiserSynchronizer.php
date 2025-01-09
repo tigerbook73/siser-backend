@@ -28,8 +28,7 @@ class SiserSynchronizer implements ShouldQueue
    */
   public function handle()
   {
-    // TODO: split to different routines
-    if (config('app.env') !== 'local') {
+    if (config('app.env') === 'production' || config('app.env') === 'staging') {
       app()->make(CognitoProvider::class)->updateUserSubscriptionLevel($this->user->name, $this->user->subscription_level);
     }
   }

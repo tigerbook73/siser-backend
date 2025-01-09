@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BillingInfo;
 use App\Models\User;
 use App\Services\Locale;
-use App\Services\Paddle\AddressService;
-use App\Services\Paddle\BusinessService;
-use App\Services\Paddle\CustomerService;
+use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -17,9 +15,7 @@ class BillingInfoController extends SimpleController
 
 
   public function __construct(
-    public AddressService $addressService,
-    public BusinessService $businessService,
-    public CustomerService $customerService,
+    public SubscriptionManagerPaddle $manager,
   ) {
     parent::__construct();
   }
@@ -102,8 +98,8 @@ class BillingInfoController extends SimpleController
 
     // create or update paddle customer
     if ($billingInfo->wasChanged()) {
-      $this->customerService->createOrUpdatePaddleCustomer($billingInfo);
-      $this->addressService->createOrUpdatePaddleAddress($billingInfo);
+      $this->manager->customerService->createOrUpdatePaddleCustomer($billingInfo);
+      $this->manager->addressService->createOrUpdatePaddleAddress($billingInfo);
       // do not create business from our UI any more
     }
 

@@ -20,9 +20,4 @@ class AdminUserDeleteApiTest extends AdminUserTestCase
     $response = $this->deleteJson("$this->baseUrl/" . 999999);
     $response->assertStatus(404);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete("more test cases to come");
-  }
 }

@@ -10,9 +10,4 @@ class DesignPlanCreateApiTest_ extends DesignPlanTestCase
   {
     $this->createAssert();
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

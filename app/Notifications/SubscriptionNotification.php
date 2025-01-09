@@ -16,78 +16,18 @@ class SubscriptionNotification extends Notification implements ShouldQueue
 {
   use Queueable;
 
-  public const NOTIF_ORDER_ABORTED                = 'subscription.order-aborted';
-  public const NOTIF_ORDER_CANCELLED              = 'subscription.order-cancelled';
-  public const NOTIF_ORDER_CONFIRMED              = 'subscription.order-confirmed';
   public const NOTIF_ORDER_CREDIT_MEMO            = 'subscription.order-credit-memo';
-  public const NOTIF_ORDER_INVOICE                = 'subscription.order-invoice';
   public const NOTIF_ORDER_REFUND_FAILED          = 'subscription.order-refund-failed';
   public const NOTIF_ORDER_REFUNDED               = 'subscription.order-refunded';
 
-  public const NOTIF_CANCELLED                    = 'subscription.cancelled';
-  public const NOTIF_CANCELLED_IMMEDIATE          = 'subscription.cancelled-immediate';
-  public const NOTIF_CANCELLED_REFUND             = 'subscription.cancelled-refund';
-  public const NOTIF_EXTENDED                     = 'subscription.extended';
-  public const NOTIF_FAILED                       = 'subscription.failed';
-  public const NOTIF_INVOICE_PENDING              = 'subscription.invoice-pending';
-  public const NOTIF_LAPSED                       = 'subscription.lapsed';
-  public const NOTIF_REMINDER                     = 'subscription.reminder';
-  public const NOTIF_RENEW_REQUIRED               = 'subscription.renew-required';
-  public const NOTIF_RENEW_REQ_CONFIRMED          = 'subscription.renew-req-confirmed';
-  public const NOTIF_RENEW_EXPIRED                = 'subscription.renew-expired';
-  public const NOTIF_SOURCE_INVALID               = 'subscription.source-invalid';
-  public const NOTIF_TERMINATED                   = 'subscription.terminated';
-  public const NOTIF_TERMS_CHANGED                = 'subscription.terms-changed';
-
-  public const NOTIF_LICENSE_ORDER_CONFIRMED      = 'subscription.license.order-confirmed';
-  public const NOTIF_LICENSE_ORDER_CREDIT_MEMO    = 'subscription.license.order-credit-memo';
-  public const NOTIF_LICENSE_ORDER_INVOICE        = 'subscription.license.order-invoice';
-  public const NOTIF_LICENSE_ORDER_REFUND_FAILED  = 'subscription.license.order-refund-failed';
-  public const NOTIF_LICENSE_ORDER_REFUNDED       = 'subscription.license.order-refunded';
-
-  public const NOTIF_LICENSE_CANCELLED            = 'subscription.license.cancelled';
-  public const NOTIF_LICENSE_CANCELLED_IMMEDIATE  = 'subscription.license.cancelled-immediate';
-  public const NOTIF_LICENSE_CANCELLED_REFUND     = 'subscription.license.cancelled-refund';
-  public const NOTIF_LICENSE_DECREASE             = 'subscription.license.decrease';
-
   public const NOTIF_WELCOME_BACK_FOR_STOPPED     = 'subscription.welcome-back.for-stopped';
   public const NOTIF_WELCOME_BACK_FOR_RENEW       = 'subscription.welcome-back.for-renew';
-  public const NOTIF_WELCOME_BACK_FOR_FAILED     = 'subscription.welcome-back.for-failed';
+  public const NOTIF_WELCOME_BACK_FOR_FAILED      = 'subscription.welcome-back.for-failed';
 
   static public $types = [
-    self::NOTIF_ORDER_ABORTED                 => ['subject' => "Order ##O Aborted",                       'validate' => null],
-    self::NOTIF_ORDER_CANCELLED               => ['subject' => "Order ##O Cancelled",                     'validate' => null],
-    self::NOTIF_ORDER_CONFIRMED               => ['subject' => "Order ##O Confirmed",                     'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
     self::NOTIF_ORDER_CREDIT_MEMO             => ['subject' => "Order ##O Credit Memo",                   'validate' => null],
-    self::NOTIF_ORDER_INVOICE                 => ['subject' => "Order ##O Invoice PDF",                   'validate' => null],
     self::NOTIF_ORDER_REFUND_FAILED           => ['subject' => "Order ##O Refund Failed",                 'validate' => null],
     self::NOTIF_ORDER_REFUNDED                => ['subject' => "Order ##O Refund Confirmed",              'validate' => null],
-
-    self::NOTIF_CANCELLED                     => ['subject' => "Subscription ##S Cancelled",              'validate' => null],
-    self::NOTIF_CANCELLED_IMMEDIATE           => ['subject' => "Subscription ##S Cancelled",              'validate' => null],
-    self::NOTIF_CANCELLED_REFUND              => ['subject' => "Subscription ##S Cancelled & Terminated", 'validate' => null],
-    self::NOTIF_EXTENDED                      => ['subject' => "Subscription ##S Extended",               'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_FAILED                        => ['subject' => "Subscription ##S Failed",                 'validate' => null],
-    self::NOTIF_INVOICE_PENDING               => ['subject' => "Subscription ##S Payment Failed",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_LAPSED                        => ['subject' => "Subscription ##S Failed",                 'validate' => null],
-    self::NOTIF_REMINDER                      => ['subject' => "Subscription ##S Renew Reminder",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_RENEW_REQUIRED                => ['subject' => "Subscription ##S Renew Required",         'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_RENEW_REQ_CONFIRMED           => ['subject' => "Subscription ##S Renew Request Confirmed", 'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_RENEW_EXPIRED                 => ['subject' => "Subscription ##S Renew Expired",          'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_SOURCE_INVALID                => ['subject' => "Subscription ##S Payment Method Invalid", 'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_TERMINATED                    => ['subject' => "Subscription ##S Terminated",             'validate' => null],
-    self::NOTIF_TERMS_CHANGED                 => ['subject' => "Subscription ##S Terms Changed",          'validate' => null],
-
-    self::NOTIF_LICENSE_ORDER_CONFIRMED       => ['subject' => "License Order ##O Confirmed",             'validate' => ['status' => [Subscription::STATUS_ACTIVE]]],
-    self::NOTIF_LICENSE_ORDER_CREDIT_MEMO     => ['subject' => "License Order ##O Credit Memo",           'validate' => null],
-    self::NOTIF_LICENSE_ORDER_INVOICE         => ['subject' => "License Order ##O Invoice PDF",           'validate' => null],
-    self::NOTIF_LICENSE_ORDER_REFUNDED        => ['subject' => "License Order ##O Refunded",              'validate' => null],
-    self::NOTIF_LICENSE_ORDER_REFUND_FAILED   => ['subject' => "License Order ##O Refund Failed",         'validate' => null],
-
-    self::NOTIF_LICENSE_CANCELLED             => ['subject' => "Subscription ##S's License Package Cancelled",              'validate' => null],
-    self::NOTIF_LICENSE_CANCELLED_IMMEDIATE   => ['subject' => "Subscription ##S's License Package Cancelled & Terminated", 'validate' => null],
-    self::NOTIF_LICENSE_CANCELLED_REFUND      => ['subject' => "Subscription ##S's License Package Cancelled & Terminated", 'validate' => null],
-    self::NOTIF_LICENSE_DECREASE              => ['subject' => "Subscription ##S's License Number Decrease",                'validate' => null],
 
     self::NOTIF_WELCOME_BACK_FOR_STOPPED      => ['subject' => "Welcome Back Package",                    'validate' => null],
     self::NOTIF_WELCOME_BACK_FOR_RENEW        => ['subject' => "Welcome Back Package",                    'validate' => null],

@@ -10,9 +10,4 @@ class InvoiceListApiTest extends InvoiceTestCase
   {
     $this->listAssert(200, [], 0);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

@@ -110,9 +110,6 @@ class TransactionService extends PaddleEntityService
     // plan info, TODO: subscription may not be updated? maybe not important
     $invoice->plan_info = $subscription->plan->info($invoice->billing_info['address']['country']);
 
-    // tax id info: ignored
-    $invoice->tax_id_info = null;
-
     // coupon info
     $coupon = $paddleTransaction->discount ? PaddleMap::findCouponByPaddleId($paddleTransaction->discount->id) : null;
     $invoice->coupon_info = $coupon?->info();

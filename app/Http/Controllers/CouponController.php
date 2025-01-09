@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Country;
 use App\Models\Coupon;
 use App\Models\CouponEvent;
 use App\Models\Plan;
 use App\Services\CouponRules;
-use App\Services\Paddle\DiscountService;
+use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +16,7 @@ class CouponController extends SimpleController
 
   protected string $orderDirection = 'desc';
 
-  public function __construct(public DiscountService $discountService)
+  public function __construct(public SubscriptionManagerPaddle $manager)
   {
     parent::__construct();
   }
@@ -140,7 +139,7 @@ class CouponController extends SimpleController
     $coupon = new Coupon($inputs);
     $coupon->save();
 
-    $this->discountService->createPaddleDiscount($coupon);
+    $this->manager->discountService->createPaddleDiscount($coupon);
 
     return  response()->json($this->transformSingleResource($coupon), 201);
   }
@@ -161,7 +160,7 @@ class CouponController extends SimpleController
     $coupon->save();
 
     if ($coupon->wasChanged()) {
-      $this->discountService->createOrUpdatePaddleDiscount($coupon);
+      $this->manager->discountService->createOrUpdatePaddleDiscount($coupon);
     }
 
     return $this->transformSingleResource($coupon->unsetRelations());
@@ -184,7 +183,7 @@ class CouponController extends SimpleController
     $coupon->save();
 
     // delete paddle discount
-    $this->discountService->updatePaddleDiscount($coupon);
+    $this->manager->discountService->updatePaddleDiscount($coupon);
 
     $coupon->delete();
 

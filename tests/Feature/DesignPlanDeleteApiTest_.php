@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Base\DesignPlan;
-
 class DesignPlanDeleteApiTest_ extends DesignPlanTestCase
 {
   public ?string $role = 'admin';
@@ -13,10 +11,5 @@ class DesignPlanDeleteApiTest_ extends DesignPlanTestCase
     $createResponse = $this->createAssert();
     $response = $this->deleteJson("$this->baseUrl/" . $createResponse->json()['id']);
     $response->assertStatus(200);
-  }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
   }
 }

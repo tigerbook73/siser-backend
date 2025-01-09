@@ -15,9 +15,4 @@ class DesignPlanActivateApiTest_ extends DesignPlanTestCase
     $response->assertStatus(200)
       ->assertJson(['status' => Plan::STATUS_ACTIVE]);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

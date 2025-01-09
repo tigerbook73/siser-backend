@@ -18,7 +18,5 @@ class DesignPlanGetApiTest extends DesignPlanTestCase
     $this->getAssert(404, -1);
 
     $this->getAssert(404, 0);
-
-    $this->markTestIncomplete('more test cases to come');
   }
 }

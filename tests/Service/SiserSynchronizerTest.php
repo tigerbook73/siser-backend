@@ -6,16 +6,20 @@ use App\Models\User;
 use App\Services\Cognito\CognitoProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
+use Tests\Trait\CognitoProviderMockup;
 
 class SiserSynchronizerTest extends TestCase
 {
-  use RefreshDatabase;
+  use RefreshDatabase, CognitoProviderMockup;
 
   protected $seed = true;
 
+  /**
+   * @dataProvider
+   */
   public function testUserSubscriptionLevel()
   {
-    $cognito = new CognitoProvider();
+    $cognito = app(CognitoProvider::class);
 
     /** @var User $user */
     $user = User::first();

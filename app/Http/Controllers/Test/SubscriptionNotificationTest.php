@@ -9,20 +9,15 @@ use App\Models\Invoice;
 use App\Models\LicensePackage;
 use App\Models\PaymentMethod;
 use App\Models\Plan;
-use App\Models\ProductItem;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\User;
-use App\Services\DigitalRiver\SubscriptionManagerDR;
-use App\Services\DigitalRiver\SubscriptionManagerResult;
-use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Locale;
 use DateTimeZone;
 use Illuminate\Support\Carbon;
 
 class SubscriptionNotificationTest
 {
-  public SubscriptionManagerDR $manager;
 
   public Country|null $country = null;
   public Plan|null $plan = null;
@@ -36,14 +31,6 @@ class SubscriptionNotificationTest
   public Invoice|null $invoice = null;
   public Refund|null $refund = null;
 
-  public function __construct()
-  {
-    $this->manager = new SubscriptionManagerDR(
-      new DigitalRiverServiceTest(),
-      new LicenseSharingService(),
-      new SubscriptionManagerResult()
-    );
-  }
 
   static public function init(string $country, string $plan, string $coupon)
   {
@@ -68,7 +55,6 @@ class SubscriptionNotificationTest
 
     $user->refunds()->delete();
     $user->invoices()->delete();
-    $user->subscription_renewals()->delete();
     $user->subscriptions()->delete();
     $user->payment_method()->delete();
     $user->billing_info()->delete();
@@ -226,6 +212,25 @@ class SubscriptionNotificationTest
     return $this;
   }
 
+  public function createFakeSubscription(
+    User $user,
+    Plan $plan,
+    ?Coupon $coupon,
+    ?LicensePackage $licensePackage,
+    int $licenseQuantity
+  ) {
+    $user->getActiveSubscription()?->stop(Subscription::STATUS_STOPPED, 'test');
+    $subscription = (new Subscription())
+      ->initFill()
+      ->fillBillingInfo($user->billing_info ?? BillingInfo::createDefault($user))
+      ->fillPlanAndCoupon($plan, $coupon, $licensePackage, 2);
+    $subscription->setStatus(Subscription::STATUS_ACTIVE);
+    $subscription->save();
+    $subscription->user->updateSubscriptionLevel();
+
+    return $subscription;
+  }
+
   public function updateSubscription(
     Carbon $startDate = null,
     int|null $currentPeriod = null,
@@ -237,7 +242,7 @@ class SubscriptionNotificationTest
     $startDate = $startDate ?? now()->subDays(2);
 
     $this->subscription?->stop(Subscription::STATUS_STOPPED, "Test stop");
-    $this->subscription = $this->manager->createSubscription(
+    $this->subscription = $this->createFakeSubscription(
       user: $this->user,
       plan: $this->plan,
       coupon: $this->coupon,
@@ -318,27 +323,6 @@ class SubscriptionNotificationTest
       "order_id"  =>  "dr-order-0000",
     ];
     $this->invoice->save();
-    return $this;
-  }
-
-  public function createLicenseInvoice(string $type, int $licenseCount)
-  {
-    if ($this->invoice) {
-      $this->invoice->delete();
-    }
-
-    if ($type == Invoice::TYPE_NEW_LICENSE_PACKAGE) {
-      $this->invoice = $this->manager->createNewLicensePackageInvoice(
-        $this->subscription,
-        $this->licensePackage,
-        $licenseCount
-      );
-    } else {
-      $this->invoice = $this->manager->createIncreaseLicenseInvoice(
-        $this->subscription,
-        $licenseCount
-      );
-    }
     return $this;
   }
 

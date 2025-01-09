@@ -2,19 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\BillingInfo;
-use App\Models\Plan;
-use App\Models\Subscription;
-use App\Models\User;
-use App\Services\DigitalRiver\DigitalRiverService;
-use App\Services\DigitalRiver\SubscriptionManagerDR;
 use Illuminate\Console\Command;
-
-use DigitalRiver\ApiSdk\Model\CheckoutRequest as DrCheckoutRequest;
-use DigitalRiver\ApiSdk\Model\Address as DrAddress;
-use DigitalRiver\ApiSdk\Model\Billing as DrBilling;
-use DigitalRiver\ApiSdk\Model\SkuRequestItem as DrSkuRequestItem;
-use DigitalRiver\ApiSdk\Model\ProductDetails as DrProductDetails;
 
 class TestCommand extends Command
 {
@@ -32,7 +20,7 @@ class TestCommand extends Command
    */
   protected $description = 'Command description';
 
-  public function __construct(public SubscriptionManagerDR $manager, public DigitalRiverService $drService)
+  public function __construct()
   {
     parent::__construct();
   }

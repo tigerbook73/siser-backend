@@ -5,8 +5,6 @@ namespace App\Services\DigitalRiver;
 use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
-use App\Models\TaxId;
-use App\Models\User;
 
 /**
  * @property array{
@@ -18,7 +16,6 @@ use App\Models\User;
  *    subscription_id?  : int|null,
  *    invoice_id?       : int|null,
  *    refund_id?        : int|null,
- *    tax_id?           : int|null,
  * } $data
  */
 class SubscriptionManagerResult
@@ -34,7 +31,6 @@ class SubscriptionManagerResult
   const DATA_SUBSCRIPTION_ID  = 'subscription_id';
   const DATA_INVOICE_ID       = 'invoice_id';
   const DATA_REFUND_ID        = 'refund_id';
-  const DATA_TAX_ID           = 'tax_id';
 
   const RESULT_INIT       = 'init';           // before processing
   const RESULT_PROCESSED  = 'success';        // processed successfully
@@ -144,13 +140,6 @@ class SubscriptionManagerResult
     $this->data[self::DATA_SUBSCRIPTION_ID] = $refund->subscription_id;
     $this->data[self::DATA_INVOICE_ID]      = $refund->invoice_id;
     $this->data[self::DATA_REFUND_ID]       = $refund->id;
-    return $this;
-  }
-
-  public function setTaxId(TaxId $taxId): self
-  {
-    $this->data[self::DATA_USER_ID]         = $taxId->user_id;
-    $this->data[self::DATA_TAX_ID]          = $taxId->id;
     return $this;
   }
 

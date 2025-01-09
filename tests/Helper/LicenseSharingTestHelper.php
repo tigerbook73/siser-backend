@@ -40,8 +40,7 @@ class LicenseSharingTestHelper
     $subscription = (new Subscription())
       ->initFill()
       ->fillBillingInfo($user->billing_info ?? BillingInfo::createDefault($user))
-      ->fillPlanAndCoupon($plan, $coupon, $licensePackage, 2)
-      ->fillTaxId();
+      ->fillPlanAndCoupon($plan, $coupon, $licensePackage, 2);
     $subscription->setStatus(Subscription::STATUS_ACTIVE);
     $subscription->save();
     $subscription->user->updateSubscriptionLevel();

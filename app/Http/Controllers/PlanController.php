@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LicensePlan;
 use App\Models\Plan;
-use App\Services\Paddle\PriceService;
+use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Http\Request;
 
 class PlanController extends SimpleController
 {
   protected string $modelClass = Plan::class;
 
-  public function __construct(public PriceService $priceService)
+  public function __construct(public SubscriptionManagerPaddle $manager)
   {
     parent::__construct();
   }
@@ -170,8 +169,7 @@ class PlanController extends SimpleController
     $plan->save();
     // LicensePlan::createOrRefreshAll(); // TODO: ...
 
-    $this->priceService->createPaddlePrice($plan);
-    // $this->priceService->createPaddleLicensePrice($plan); // TODO: ...
+    $this->manager->priceService->createPaddlePrice($plan);
 
     return  response()->json($this->transformSingleResource($plan), 201);
   }
@@ -213,7 +211,7 @@ class PlanController extends SimpleController
     // LicensePlan::createOrRefreshAll(); // TODO: ...
 
     if ($plan->wasChanged()) {
-      $this->priceService->createOrUpdatePaddlePrice($plan);
+      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
     }
 
     return $this->transformSingleResource($plan->unsetRelations());
@@ -256,7 +254,7 @@ class PlanController extends SimpleController
     $plan->save();
 
     if ($plan->wasChanged()) {
-      $this->priceService->createOrUpdatePaddlePrice($plan);
+      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
     }
 
     return $this->transformSingleResource($plan);
@@ -283,7 +281,7 @@ class PlanController extends SimpleController
     $plan->save();
 
     if ($plan->wasChanged()) {
-      $this->priceService->createOrUpdatePaddlePrice($plan);
+      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
     }
 
     return $this->transformSingleResource($plan);

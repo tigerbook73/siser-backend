@@ -18,9 +18,4 @@ class UserBillingInfoGetApiTest extends UserBillingInfoTestCase
 
     return $response;
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

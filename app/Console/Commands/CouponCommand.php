@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Coupon;
-use App\Services\Paddle\DiscountService;
+use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Console\Command;
 
 class CouponCommand extends Command
@@ -25,7 +25,7 @@ class CouponCommand extends Command
   /**
    * constructor
    */
-  public function __construct(private DiscountService $discountService)
+  public function __construct(private SubscriptionManagerPaddle $manager)
   {
     parent::__construct();
   }
@@ -227,7 +227,7 @@ class CouponCommand extends Command
       $coupon->code = $code;
       $coupon->save();
 
-      $this->discountService->createOrUpdatePaddleDiscount($coupon);
+      $this->manager->discountService->createOrUpdatePaddleDiscount($coupon);
     });
 
     $this->info('');

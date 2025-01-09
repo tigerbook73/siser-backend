@@ -24,9 +24,4 @@ class CountryDeleteApiTest extends CountryTestCase
     $response = $this->deleteJson("$this->baseUrl/" . $this->object->code);
     $response->assertStatus(422);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

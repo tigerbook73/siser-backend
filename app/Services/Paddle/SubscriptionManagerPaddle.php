@@ -7,6 +7,7 @@ use App\Services\DigitalRiver\SubscriptionManagerResult;
 use App\Services\DigitalRiver\WebhookException;
 use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Paddle\PaddleService;
+use DigitalRiver\ApiSdk\Model\Discount;
 use Paddle\SDK\Entities\Event;
 use Paddle\SDK\Notifications\Events\PaymentMethodDeleted;
 use Paddle\SDK\Notifications\Events\SubscriptionCreated;
@@ -19,7 +20,10 @@ class SubscriptionManagerPaddle
   public AddressService $addressService;
   public BusinessService $businessService;
   public CustomerService $customerService;
+  public DiscountService $discountService;
   public PaymentMethodService $paymentMethodService;
+  public PriceService $priceService;
+  public ProductService $productService;
   public SubscriptionService $subscriptionService;
   public TransactionService $transactionService;
 
@@ -33,12 +37,15 @@ class SubscriptionManagerPaddle
     public LicenseSharingService $licenseService,
     public SubscriptionManagerResult $result,
   ) {
-    $this->addressService = new AddressService($this);
-    $this->businessService = new BusinessService($this);
-    $this->customerService = new CustomerService($this);
+    $this->addressService       = new AddressService($this);
+    $this->businessService      = new BusinessService($this);
+    $this->customerService      = new CustomerService($this);
+    $this->discountService      = new DiscountService($this);
     $this->paymentMethodService = new PaymentMethodService($this);
-    $this->subscriptionService = new SubscriptionService($this);
-    $this->transactionService = new TransactionService($this);
+    $this->priceService         = new PriceService($this);
+    $this->productService       = new ProductService($this);
+    $this->subscriptionService  = new SubscriptionService($this);
+    $this->transactionService   = new TransactionService($this);
 
     $this->eventHandlers = [
       // // customer events
@@ -65,7 +72,7 @@ class SubscriptionManagerPaddle
    */
   public function updateDefaultWebhook(bool $enable)
   {
-    // TODO: update webhook
+    $this->paddleService->updateDefaultWebhook(array_keys($this->eventHandlers), $enable);
   }
 
   public function webhookHandler(array $eventRaw): \Illuminate\Http\JsonResponse

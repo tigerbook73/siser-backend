@@ -38,9 +38,4 @@ class UserPaymentMethodGetApiTest extends UserPaymentMethodTestCase
       ->assertJsonStructure($this->modelSchema)
       ->assertJson($paymentMethodCreate);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

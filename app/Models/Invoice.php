@@ -65,7 +65,6 @@ class Invoice extends BaseInvoice
     'period_end_date'             => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'currency'                    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'billing_info'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
-    'tax_id_info'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'plan_info'                   => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'payment_method_info'         => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'coupon_info'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -283,7 +282,6 @@ class Invoice extends BaseInvoice
     $this->currency               = $subscription->currency;
 
     $this->billing_info           = $subscription->billing_info;
-    $this->tax_id_info            = $subscription->tax_id_info;
 
     // dynamic part
     $this->payment_method_info    = $subscription->payment_method_info;
@@ -331,16 +329,6 @@ class Invoice extends BaseInvoice
         'display_data'  => $display_data,
         'dr'            => ['source_id' => $source->getId()],
       ];
-    }
-
-    // fill tax id info
-    $drTaxId = $drObject->getTaxIdentifiers();
-    if (!empty($drTaxId)) {
-      /** @var TaxId|null $taxId */
-      $taxId = TaxId::where('value', $drTaxId[0]->getId())->first();
-      if ($taxId) {
-        $this->tax_id_info = $taxId->info();
-      }
     }
 
     return $this;

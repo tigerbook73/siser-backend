@@ -28,6 +28,7 @@ use Paddle\SDK\Resources\Customers\Operations\ListCustomers;
 use Paddle\SDK\Resources\Customers\Operations\UpdateCustomer;
 use Paddle\SDK\Resources\Discounts\Operations\CreateDiscount;
 use Paddle\SDK\Resources\Discounts\Operations\UpdateDiscount;
+use Paddle\SDK\Resources\NotificationSettings\Operations\UpdateNotificationSetting;
 use Paddle\SDK\Resources\Prices\Operations\CreatePrice;
 use Paddle\SDK\Resources\Prices\Operations\ListPrices;
 use Paddle\SDK\Resources\Prices\Operations\UpdatePrice;
@@ -261,6 +262,17 @@ class PaddleService
   /**
    * Notification
    */
+
+  public function updateDefaultWebhook(array $events, bool $enable): void
+  {
+    $this->paddle->notificationSettings->update(
+      config('paddle.webhook_id'),
+      new UpdateNotificationSetting(
+        subscribedEvents: $events,
+        active: $enable,
+      )
+    );
+  }
 
   public function replayNotification(string $id): string
   {

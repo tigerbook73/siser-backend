@@ -15,9 +15,4 @@ class DesignPlanDeactivateApiTest_ extends DesignPlanTestCase
     $response = $this->postJson($this->baseUrl . '/' . $createResponse->json('id') . '/deactivate');
     $response->assertStatus(200);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

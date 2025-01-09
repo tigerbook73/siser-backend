@@ -253,9 +253,6 @@ class SubscriptionService extends PaddleEntityService
       $subscription->coupon_info = null;
     }
 
-    // tax id info
-    $subscription->tax_id_info = null;
-
     // items
     $subscription->items = ProductItem::buildItemsFromPaddleResource($paddleSubscription);
 

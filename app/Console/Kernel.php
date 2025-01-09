@@ -20,10 +20,7 @@ class Kernel extends ConsoleKernel
 
     // $schedule->command('auth:clear-resets')->everyFifteenMinutes();
 
-    // $schedule->call(fn() => Artisan::queue('subscription:clean-draft'))->everyThirtyMinutes()->name('queue subscription:clean-draft');
-    // $schedule->call(fn() => Artisan::queue('subscription:stop-cancelled'))->hourly()->name('queue subscription:stop-cancelled');
-    // $schedule->call(fn() => Artisan::queue('subscription:renew-annual'))->hourly()->name('queue subscription:renew-annual');
-    // $schedule->call(fn() => Artisan::queue('subscription:warn-pending'))->daily()->name('queue subscription:warn-pending');
+    $schedule->call(fn() => Artisan::queue('subscription:warn-pending'))->daily()->name('queue subscription:warn-pending');
     $schedule->call(fn() => Artisan::queue('subscription:log', ['subcmd' => 'statistic']))->dailyAt('00:33')->name('queue subscription:log statistic');
     $schedule->call(fn() => Artisan::queue('financial:cmd', ['subcmd' => 'sync']))->dailyAt('00:10')->name('queue financial:cmd sync');
     $schedule->call(fn() => Artisan::queue('license-sharing:cmd', ['subcmd' => 'expire']))->dailyAt('00:20')->name('queue license-sharing:cmd expire');

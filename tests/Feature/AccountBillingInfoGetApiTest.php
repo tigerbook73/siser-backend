@@ -14,9 +14,4 @@ class AccountBillingInfoGetApiTest extends AccountBillingInfoTestCase
 
     return $response;
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

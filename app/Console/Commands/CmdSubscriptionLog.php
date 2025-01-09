@@ -2,17 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Subscription;
-use App\Models\SubscriptionLog;
-use App\Models\SubscriptionPlan;
-use App\Models\User;
-use App\Services\DigitalRiver\DigitalRiverService;
-use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\StatisticRecordService;
-use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
-use DigitalRiver\ApiSdk\Model\Customer as DrCustomer;
-use DigitalRiver\ApiSdk\Model\Order as DrOrder;
-use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
 use Illuminate\Console\Command;
 
 class CmdSubscriptionLog extends Command
@@ -33,8 +23,6 @@ class CmdSubscriptionLog extends Command
 
 
   public function __construct(
-    public SubscriptionManager $manager,
-    public DigitalRiverService $drService,
     public StatisticRecordService $statisticService
   ) {
     parent::__construct();

@@ -33,14 +33,4 @@ class AccountBillingInfoSetApiTest_ extends AccountBillingInfoTestCase
 
     $this->markTestIncomplete('more test cases to come');
   }
-
-  public function testCustomerType()
-  {
-    $this->markTestIncomplete('test customer type');
-  }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

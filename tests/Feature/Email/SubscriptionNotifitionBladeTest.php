@@ -44,32 +44,7 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
   {
     $types = array_keys(SubscriptionNotification::$types);
     foreach ($types as $type) {
-      if (in_array($type, [
-        SubscriptionNotification::NOTIF_RENEW_REQUIRED,
-        SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
-        SubscriptionNotification::NOTIF_RENEW_EXPIRED,
-      ])) {
-        continue;
-      }
       $this->viewNotificationType($type);
-    }
-  }
-
-  public function testRenewalNotifications()
-  {
-    $types = [
-      SubscriptionNotification::NOTIF_RENEW_REQUIRED,
-      SubscriptionNotification::NOTIF_RENEW_REQ_CONFIRMED,
-      SubscriptionNotification::NOTIF_RENEW_EXPIRED,
-    ];
-    foreach ($types as $type) {
-      foreach (['', 'percentage', 'percentage-fixed-term'] as $coupon) {
-        $message = __FUNCTION__ . " - $type - $coupon fails at: ";
-        $response = $this->viewNotification($type, 'DE', 'year', $coupon);
-        $this->assertTrue($response->getStatusCode() === 200, $message . ' status check!');
-        $this->assertTrue(str_contains($response->getContent(), 'Team Siser'), $message . ' contain check!');
-        $this->assertFalse(str_contains($response->getContent(), 'messages.'), $message . ' not contain check!');
-      }
     }
   }
 }

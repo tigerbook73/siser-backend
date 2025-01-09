@@ -15,9 +15,4 @@ class AccountInvoiceGetApiTest extends AccountInvoiceTestCase
   {
     $this->getAssert(404, 999999999999999999);
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }

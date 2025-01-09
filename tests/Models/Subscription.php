@@ -21,9 +21,6 @@ class Subscription {
     /** @var \Tests\Models\BillingInfo $billing_info */
     public $billing_info;
 
-    /** @var \Tests\Models\TaxIdInfo $tax_id_info */
-    public $tax_id_info;
-
     /** @var \Tests\Models\PlanInfo $plan_info */
     public $plan_info;
 
@@ -86,9 +83,6 @@ class Subscription {
 
     /** @var \Tests\Models\SubscriptionNextInvoice $next_invoice */
     public $next_invoice;
-
-    /** @var \Tests\Models\SubscriptionRenewalInfo $renewal_info */
-    public $renewal_info;
 
     /** @var \Tests\Models\SubscriptionDR $dr */
     public $dr;

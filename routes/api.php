@@ -21,7 +21,6 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
 use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\TaxIdController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -68,17 +67,12 @@ Route::domain($domainCustomer)->group(function () {
 
     // account subscription
     Route::get('/account/subscriptions', [SubscriptionController::class, 'accountList']);
-    Route::post('/account/subscriptions', [SubscriptionController::class, 'accountCreate']);
     Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'accountIndex']);
-    Route::delete('/account/subscriptions/{id}', [SubscriptionController::class, 'accountDelete']);
-    Route::post('/account/subscriptions/{id}/pay', [SubscriptionController::class, 'accountPay']);
-    Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
-    Route::post('/account/subscriptions/{id}/renewal', [SubscriptionController::class, 'accountConfirmRenewal']);
-    Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'accountRefundable']);
-    Route::post('/account/tax-rate', [SubscriptionController::class, 'accountTaxRate']);
-    Route::get('/account/subscriptions/{id}/license-package/refundable', [SubscriptionController::class, 'accountlicensePackageRefundable']);
-    Route::post('/account/subscriptions/{id}/license-package/cancel', [SubscriptionController::class, 'accountLicensePackageCancel']);
-    Route::post('/account/subscriptions/{id}/license-package/decrease', [SubscriptionController::class, 'accountLicensePackageDecrease']);
+    // Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
+    // Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'accountRefundable']);
+    // Route::get('/account/subscriptions/{id}/license-package/refundable', [SubscriptionController::class, 'accountlicensePackageRefundable']);
+    // Route::post('/account/subscriptions/{id}/license-package/cancel', [SubscriptionController::class, 'accountLicensePackageCancel']);
+    // Route::post('/account/subscriptions/{id}/license-package/decrease', [SubscriptionController::class, 'accountLicensePackageDecrease']);
 
     Route::get('/account/subscriptions/{id}/paddle-link', [SubscriptionController::class, 'accountGetPaddleLink']);
 
@@ -88,21 +82,10 @@ Route::domain($domainCustomer)->group(function () {
 
     // account payment method
     Route::get('/account/payment-method', [PaymentMethodController::class, 'accountGet']);
-    Route::post('/account/payment-method', [PaymentMethodController::class, 'accountSet']);
-
-    // tax id
-    Route::get('/account/tax-ids', [TaxIdController::class, 'accountList']);
-    Route::post('/account/tax-ids', [TaxIdController::class, 'accountCreate']);
-    Route::get('/account/tax-ids/{id}', [TaxIdController::class, 'accountIndex']);
-    Route::delete('/account/tax-ids/{id}', [TaxIdController::class, 'accountDelete']);
 
     // account invoice
     Route::get('/account/invoices', [InvoiceController::class, 'accountList']);
-    Route::post('/account/invoices', [InvoiceController::class, 'accountCreate']);
     Route::get('/account/invoices/{id}', [InvoiceController::class, 'accountIndex']);
-    Route::delete('/account/invoices/{id}', [InvoiceController::class, 'accountDelete']);
-    Route::post('/account/invoices/{id}/cancel', [InvoiceController::class, 'accountCancel']);
-    Route::post('/account/invoices/{id}/pay', [InvoiceController::class, 'accountPay']);
     Route::get('/account/invoices/{id}/pdf', [InvoiceController::class, 'accountGetInvoicePdf']);
 
     // account refund
@@ -214,8 +197,7 @@ Route::domain($domainAdmin)->group(function () {
     // invoice
     Route::get('/invoices', [InvoiceController::class, 'list'])->middleware('access:invoice.list');
     Route::get('/invoices/{id}', [InvoiceController::class, 'index'])->middleware('access:invoice.get');
-    Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'getPdf'])->middleware('access:invoice.get');
-    Route::post('/invoices/{id}/cancel', [InvoiceController::class, 'cancel'])->middleware('access:invoice.cancel');
+    Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'getInvoicePdf'])->middleware('access:invoice.get');
 
 
     // refund
@@ -226,8 +208,8 @@ Route::domain($domainAdmin)->group(function () {
     // subscription
     Route::get('/subscriptions', [SubscriptionController::class, 'list'])->middleware('access:subscription.list');
     Route::get('/subscriptions/{id}', [SubscriptionController::class, 'index'])->middleware('access:subscription.get');
-    Route::post('/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel'])->middleware('access:subscription.cancel');
-    Route::post('/subscriptions/{id}/stop', [SubscriptionController::class, 'stop'])->middleware('access:subscription.stop');
+    // Route::post('/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel'])->middleware('access:subscription.cancel');
+    // Route::post('/subscriptions/{id}/stop', [SubscriptionController::class, 'stop'])->middleware('access:subscription.stop');
 
     // user
     Route::get('/users', [UserController::class, 'list']);

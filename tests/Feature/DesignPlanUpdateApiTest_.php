@@ -13,9 +13,4 @@ class DesignPlanUpdateApiTest_ extends DesignPlanTestCase
     $createResponse = $this->createAssert();
     $this->updateAssert(200, $createResponse->json('id'));
   }
-
-  public function testMore()
-  {
-    $this->markTestIncomplete('more test cases to come');
-  }
 }
