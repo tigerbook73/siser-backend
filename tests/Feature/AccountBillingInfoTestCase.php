@@ -9,7 +9,7 @@ use Tests\Models\BillingInfo as ModelsBillingInfo;
 
 class AccountBillingInfoTestCase extends ApiTestCase
 {
-  public string $baseUrl = '/api/v1/account';
+  public string $baseUrl = '/api/v1/account/billing-info';
   public string $model = BillingInfo::class;
 
   protected function setUp(): void
@@ -35,5 +35,6 @@ class AccountBillingInfoTestCase extends ApiTestCase
       ],
       'language'      => 'en',
     ];
+    $this->modelCreate = $this->modelUpdate;
   }
 }

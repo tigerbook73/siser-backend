@@ -55,20 +55,6 @@ class BillingInfoController extends SimpleController
     $billingInfo = $this->user->billing_info()->first() ?: BillingInfo::createDefault($this->user);
     $inputs = $this->validateUpdate($request, $billingInfo->id);
 
-    // if there is active pay subscription, it is not allowed to update country/state/postcode
-    if ($this->user->getActivePaidSubscription()) {
-      if (
-        isset($inputs['country']) && $inputs['country'] != $billingInfo->address['country'] ||
-        isset($inputs['postcode']) && $inputs['postcode'] != $billingInfo->address['postcode'] ||
-        isset($inputs['state']) && $inputs['state'] != $billingInfo->address['state']
-      ) {
-        return response()->json(
-          ['message' => 'BillingInfos state/postcode/country can not be modified when there is active paid subscription.'],
-          400
-        );
-      }
-    }
-
     if (isset($inputs['address']['country']) && !isset($inputs['language'])) {
       $inputs['language'] = Locale::defaultLanguage($inputs['address']['country']);
     }
