@@ -8,7 +8,7 @@ class AccountBillingInfoGetApiTest extends AccountBillingInfoTestCase
 
   public function testAccountBillingInfoGetOk()
   {
-    $response = $this->getJson("{$this->baseUrl}/billing-info");
+    $response = $this->getJson($this->baseUrl);
     $response->assertStatus(200)
       ->assertJsonStructure($this->modelSchema);
 
