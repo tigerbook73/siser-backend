@@ -42,7 +42,7 @@ class PriceService extends PaddleEntityService
    * @param Plan $plan
    * @param string $mode - create|update
    */
-  public function preparePaddlePrice(Plan $plan, string $mode): CreatePrice|UpdatePrice
+  public function prepareData(Plan $plan, string $mode): CreatePrice|UpdatePrice
   {
     if ($mode !== 'create' && $mode !== 'update') {
       throw new \Exception('Invalid mode');
@@ -160,7 +160,7 @@ class PriceService extends PaddleEntityService
       throw new \Exception('Plan is not active');
     }
 
-    $createPrice = $this->preparePaddlePrice($plan, 'create');
+    $createPrice = $this->prepareData($plan, 'create');
     $paddlePrice = $this->paddleService->createPrice($createPrice);
     $this->updatePlan($plan, $paddlePrice);
     return $paddlePrice;
@@ -173,7 +173,7 @@ class PriceService extends PaddleEntityService
       throw new \Exception('Paddle price not exist');
     }
 
-    $updatePrice = $this->preparePaddlePrice($plan, 'update');
+    $updatePrice = $this->prepareData($plan, 'update');
     return $this->paddleService->updatePrice($meta->paddle->price_id, $updatePrice);
   }
 

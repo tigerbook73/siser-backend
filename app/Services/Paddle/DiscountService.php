@@ -12,13 +12,16 @@ use Paddle\SDK\Entities\Discount\DiscountStatus;
 use Paddle\SDK\Entities\Discount\DiscountType;
 use Paddle\SDK\Entities\Shared\CurrencyCode;
 use Paddle\SDK\Exceptions\ApiError\DiscountApiError;
-use Paddle\SDK\Notifications\Entities\Discount as EntitiesDiscount;
 use Paddle\SDK\Resources\Discounts\Operations\CreateDiscount;
 use Paddle\SDK\Resources\Discounts\Operations\UpdateDiscount;
 
 class DiscountService extends PaddleEntityService
 {
-  public function preparePaddleDiscount(Coupon $coupon, string $mode): CreateDiscount|UpdateDiscount
+  /**
+   * @param Coupon $coupon
+   * @param string $mode create|update
+   */
+  public function prepareData(Coupon $coupon, string $mode): CreateDiscount|UpdateDiscount
   {
     if ($mode !== 'create' && $mode !== 'update') {
       throw new \Exception('Invalid mode');
@@ -111,7 +114,7 @@ class DiscountService extends PaddleEntityService
       throw new \Exception('Coupon is not active');
     }
 
-    $createDiscount = $this->preparePaddleDiscount($coupon, 'create');
+    $createDiscount = $this->prepareData($coupon, 'create');
 
     try {
       $paddleDiscount = $this->paddleService->createDiscount($createDiscount);
@@ -144,7 +147,7 @@ class DiscountService extends PaddleEntityService
       throw new \Exception('Paddle discount not exist');
     }
 
-    $updateDiscount = $this->preparePaddleDiscount($coupon, 'update');
+    $updateDiscount = $this->prepareData($coupon, 'update');
     $paddleCoupon = $this->paddleService->updateDiscount($meta->paddle->discount_id, $updateDiscount);
     $this->updateCoupon($coupon, $paddleCoupon);
     return $paddleCoupon;

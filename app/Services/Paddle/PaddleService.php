@@ -38,7 +38,6 @@ use Paddle\SDK\Resources\Products\Operations\UpdateProduct;
 use Paddle\SDK\Resources\Subscriptions\Operations\CancelSubscription;
 use Paddle\SDK\Resources\Subscriptions\Operations\Get\Includes as SubscriptionIncludes;
 use Paddle\SDK\Resources\Transactions\Operations\List\Includes as TransactionIncludes;
-use Paddle\SDK\ResponseParser;
 
 class PaddleService
 {

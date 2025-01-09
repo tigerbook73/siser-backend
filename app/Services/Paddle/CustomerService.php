@@ -14,21 +14,33 @@ use Paddle\SDK\Resources\Customers\Operations\UpdateCustomer;
 
 class CustomerService extends PaddleEntityService
 {
+  public function prepareData(BillingInfo $billingInfo, $mode): CreateCustomer|UpdateCustomer
+  {
+    if ($mode !== 'create' && $mode !== 'update') {
+      throw new \Exception('Invalid mode');
+    }
+
+    $data = [
+      'email' => $billingInfo->email,
+      'name' => $billingInfo->first_name . ' ' . $billingInfo->last_name,
+      'customData' => CustomerCustomData::from([
+        'user_id' => $billingInfo->user_id,
+        'billing_info_id' => $billingInfo->id,
+      ])->toCustomData()
+    ];
+    if ($mode === 'update') {
+      $data['status'] = Status::Active();
+    }
+    return $mode === 'create' ? new CreateCustomer(...$data) : new UpdateCustomer(...$data);
+  }
+
   /**
    * create customer from user and billing information
    */
   public function createPaddleCustomer(BillingInfo $billingInfo): Customer
   {
-    $createCustomer = new CreateCustomer(
-      email: $billingInfo->email,
-      name: $billingInfo->first_name . ' ' . $billingInfo->last_name,
-      customData: CustomerCustomData::from([
-        'user_id' => $billingInfo->user_id,
-        'billing_info_id' => $billingInfo->id,
-      ])->toCustomData()
-    );
-
     try {
+      $createCustomer = $this->prepareData($billingInfo, 'create');
       $paddleCustomer = $this->paddleService->createCustomer($createCustomer);
       $this->updateBillingInfo($billingInfo, $paddleCustomer);
       return $paddleCustomer;
@@ -59,16 +71,7 @@ class CustomerService extends PaddleEntityService
       throw new \Exception('Paddle customer not exist');
     }
 
-    $updateCustomer = new UpdateCustomer(
-      email: $billingInfo->email,
-      name: $billingInfo->last_name . ' ' . $billingInfo->first_name,
-      customData: CustomerCustomData::from([
-        'user_id' => $billingInfo->user_id,
-        'billing_info_id' => $billingInfo->id,
-      ])->toCustomData(),
-      status: Status::Active(),
-    );
-
+    $updateCustomer = $this->prepareData($billingInfo, 'update');
     return $this->paddleService->updateCustomer($meta->paddle->customer_id, $updateCustomer);
   }
 

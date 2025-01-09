@@ -14,7 +14,7 @@ use Paddle\SDK\Resources\Products\Operations\UpdateProduct;
 
 class ProductService extends PaddleEntityService
 {
-  public function preparePaddleProduct(Product $product, string $mode): CreateProduct|UpdateProduct
+  public function prepareData(Product $product, string $mode): CreateProduct|UpdateProduct
   {
     if ($mode !== 'create' && $mode !== 'update') {
       throw new \Exception('Invalid mode');
@@ -49,7 +49,7 @@ class ProductService extends PaddleEntityService
 
   public function createPaddleProduct(Product $product): PaddleProduct
   {
-    $createProduct = $this->preparePaddleProduct($product, 'create');
+    $createProduct = $this->prepareData($product, 'create');
     $paddleProduct = $this->paddleService->createProduct($createProduct);
     $this->updateProduct($product, $paddleProduct);
     return $paddleProduct;
@@ -62,7 +62,7 @@ class ProductService extends PaddleEntityService
       throw new \Exception('Paddle product not exist');
     }
 
-    $updateProduct = $this->preparePaddleProduct($product, 'update');
+    $updateProduct = $this->prepareData($product, 'update');
     return $this->paddleService->updateProduct($meta->paddle->product_id, $updateProduct);
   }
 
