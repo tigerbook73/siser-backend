@@ -219,7 +219,7 @@ return [
     To re-subscribe to Leonardo Pro, please follow the steps below: <br />
     <ol>
       <li>Go to <a href="https://software.siser.com/account/subscription">https://software.siser.com</a> and sign in to your Leonardo account.</li>
-      <li>Select “NEW SUBSCRIPTION” and fill out your billing info</li>
+      <li>Select “RENEW SUBSCRIPTION” and fill out your billing info</li>
       <li>On the next page, choose either the Monthly or Annual plan</li>
       <li>On the checkout page, select your payment method or enter your credit card information and complete the purchase</li>
     </ol>
