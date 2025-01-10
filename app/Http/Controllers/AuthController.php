@@ -138,8 +138,10 @@ class AuthController extends Controller
   public function loginTest(Request $request)
   {
     $name = $request->name ?: '';
-    if (!preg_match('/^user\d+\.test$/', $name)) {
-      return response('Invalid user name!!', 400);
+    if (config('app.env') !== 'local') {
+      if (!preg_match('/^user\d+\.test$/', $name)) {
+        return response('Invalid user name!!', 400);
+      }
     }
 
     $user = User::where('name', $name)->first();
