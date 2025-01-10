@@ -62,9 +62,4 @@ class LdsUnregDeviceApiTest extends LdsTestCase
     $response = $this->postJson($this->baseUrl . '/unreg-device', $unregRequest);
     $this->assertFailed($response);
   }
-
-  public function testToDo()
-  {
-    $this->markTestIncomplete("more test accert && error case to do");
-  }
 }
