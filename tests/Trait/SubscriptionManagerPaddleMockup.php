@@ -3,6 +3,7 @@
 namespace Tests\Trait;
 
 use App\Models\BillingInfo;
+use App\Models\Plan;
 use App\Services\DigitalRiver\SubscriptionManagerResult;
 use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Paddle\AddressService as AddressServiceStandard;
@@ -18,26 +19,46 @@ use App\Services\Paddle\TransactionService as TransactionServiceStandard;
 use App\Services\Paddle\SubscriptionManagerPaddle as SubscriptionManagerPaddleStandard;
 use Paddle\SDK\Entities\Address;
 use Paddle\SDK\Entities\Customer;
+use Paddle\SDK\Entities\DateTime;
+use Paddle\SDK\Entities\Price;
+use Paddle\SDK\Entities\Shared\Status;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
+use Symfony\Component\Serializer\Normalizer\JsonSerializableNormalizer;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+
+function serialize($data)
+{
+  $serializer = new Serializer(
+    [
+      new BackedEnumNormalizer(),
+      new DateTimeNormalizer([DateTimeNormalizer::FORMAT_KEY => DateTime::PADDLE_RFC3339]),
+      new JsonSerializableNormalizer(),
+      new ObjectNormalizer(nameConverter: new CamelCaseToSnakeCaseNameConverter()),
+    ],
+    [new JsonEncoder()],
+  );
+
+  return $serializer->serialize($data, 'json', [
+    AbstractObjectNormalizer::PRESERVE_EMPTY_OBJECTS => true,
+  ]);
+}
 
 class AddressService extends AddressServiceStandard
 {
-  public function fake(BillingInfo $billingInfo): Address
+  public function fake(BillingInfo $billingInfo, $mode): Address
   {
+    $data = json_decode(serialize($this->prepareData($billingInfo, $mode)), true);
     return Address::from(
       [
-        'id' => "adr_{$billingInfo->id}",
+        ...$data,
+        'id' => "add_{$billingInfo->id}",
         'customer_id' => $billingInfo->getMeta()->paddle->customer_id,
-        'first_line' => $billingInfo->address['line1'],
-        'second_line' => $billingInfo->address['line2'],
-        'city' => $billingInfo->address['city'],
-        'postal_code' => $billingInfo->address['postcode'],
-        'region' => $billingInfo->address['state'],
-        'country_code' => $billingInfo->address['country'],
-        'custom_data' => [
-          'user_id' => $billingInfo->user_id,
-          'billing_info_id' => $billingInfo->id,
-        ],
-        'status' => 'active',
+        'status' => $data['status'] ?? Status::Active()->getValue(),
         'created_at' => $billingInfo->created_at,
         'updated_at' => $billingInfo->updated_at,
       ]
@@ -46,14 +67,14 @@ class AddressService extends AddressServiceStandard
 
   public function createPaddleAddress(BillingInfo $billingInfo): Address
   {
-    $address = $this->fake($billingInfo);
+    $address = $this->fake($billingInfo, 'create');
     $this->updateBillingInfo($billingInfo, $address);
     return $address;
   }
 
   public function updatePaddleAddress(BillingInfo $billingInfo): Address
   {
-    $address = $this->fake($billingInfo);
+    $address = $this->fake($billingInfo, 'update');
     $this->updateBillingInfo($billingInfo, $address);
     return $address;
   }
@@ -63,19 +84,17 @@ class BusinessService extends BusinessServiceStandard {}
 
 class CustomerService extends CustomerServiceStandard
 {
-  public function fake(BillingInfo $billingInfo): Customer
+  public function fake(BillingInfo $billingInfo, $mode): Customer
   {
+    $data = json_decode(serialize($this->prepareData($billingInfo, $mode)), true);
     return Customer::from(
       [
+        ...$data,
         'id' => "ctm_{$billingInfo->id}",
         'email' => $billingInfo->email,
         'marketing_consent' => false,
-        'status' => 'active',
-        'custom_data' => [
-          'user_id' => $billingInfo->user_id,
-          'billing_info_id' => $billingInfo->id,
-        ],
-        "locale" => "en-US",
+        'status' => $data['status'] ?? Status::Active()->getValue(),
+        'locale' => 'en-US',
         'created_at' => $billingInfo->created_at,
         'updated_at' => $billingInfo->updated_at,
       ]
@@ -87,14 +106,14 @@ class CustomerService extends CustomerServiceStandard
    */
   public function createPaddleCustomer(BillingInfo $billingInfo): Customer
   {
-    $customer = $this->fake($billingInfo);
+    $customer = $this->fake($billingInfo, 'create');
     $this->updateBillingInfo($billingInfo, $customer);
     return $customer;
   }
 
   public function updatePaddleCustomer(BillingInfo $billingInfo): Customer
   {
-    $customer = $this->fake($billingInfo);
+    $customer = $this->fake($billingInfo, 'update');
     $this->updateBillingInfo($billingInfo, $customer);
     return $customer;
   }
@@ -104,14 +123,51 @@ class DiscountService extends DiscountServiceStandard {}
 
 class PaymentMethodService extends PaymentMethodServiceStandard {}
 
-class PriceService extends PriceServiceStandard {}
+class PriceService extends PriceServiceStandard
+{
+  /**
+   * @param Plan $plan
+   * @param string $mode - create|update
+   */
+  public function fake(Plan $plan, string $mode): Price
+  {
+    // prepare product
+    $product = $plan->product;
+    $product->setMetaPaddleProductId("pro_{$product->id}")->save();
+
+    $price = json_decode(serialize($this->prepareData($plan, $mode)), true);
+    return Price::from(
+      [
+        ...$price,
+        'id' => "pri_{$plan->id}",
+        'product_id' => $product->getMeta()->paddle->product_id ?? "pro_{$product->id}",
+        'status' => $price['status'] ?? Status::Active()->getValue(),
+        'created_at' => $plan->created_at,
+        'updated_at' => $plan->updated_at,
+      ]
+    );
+  }
+
+  public function createPaddlePrice(Plan $plan): Price
+  {
+    $paddlePrice = $this->fake($plan, 'create');
+    $this->updatePlan($plan, $paddlePrice);
+    return $paddlePrice;
+  }
+
+  public function updatePaddlePrice(Plan $plan): Price
+  {
+    $updatePrice = $this->fake($plan, 'update');
+    $this->updatePlan($plan, $updatePrice);
+    return $updatePrice;
+  }
+}
 
 class ProductService extends ProductServiceStandard {}
 
 class SubscriptionService extends SubscriptionServiceStandard {}
 
 class TransactionService extends TransactionServiceStandard {}
-
 
 class SubscriptionManagerPaddle extends SubscriptionManagerPaddleStandard
 {

@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Plan;
 
-class DesignPlanDeactivateApiTest_ extends DesignPlanTestCase
+class DesignPlanDeactivateApiTest extends DesignPlanTestCase
 {
   public ?string $role = 'admin';
 

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-class DesignPlanCreateApiTest_ extends DesignPlanTestCase
+class DesignPlanCreateApiTest extends DesignPlanTestCase
 {
   public ?string $role = 'admin';
 

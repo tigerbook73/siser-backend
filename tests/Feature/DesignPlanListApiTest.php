@@ -15,12 +15,5 @@ class DesignPlanListApiTest extends DesignPlanTestCase
     $this->listAssert(200, ['product_name' => 'Leonardo® Design Studio Basic']);
 
     $this->listAssert(200, ['product_name' => 'Leonardo® Design Studio Software']);
-
-    $this->markTestIncomplete('more filter to do');
-  }
-
-  public function testDesignPlanListError()
-  {
-    $this->markTestIncomplete('more filter to do');
   }
 }

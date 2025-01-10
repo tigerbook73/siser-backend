@@ -164,8 +164,8 @@ class PlanController extends SimpleController
     // TODO: validate currency
 
     $plan = new Plan($inputs);
+    $plan->interval_count = 1;
     $plan->status = 'draft';
-
     $plan->save();
     // LicensePlan::createOrRefreshAll(); // TODO: ...
 
