@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-class AccountPaymentMethodGetApiTest_ extends AccountPaymentMethodTestCase
+class AccountPaymentMethodGetApiTest extends AccountPaymentMethodTestCase
 {
   public ?string $role = 'customer';
 
