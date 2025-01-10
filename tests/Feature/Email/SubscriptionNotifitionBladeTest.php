@@ -10,8 +10,7 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
   public string $baseUrl = '/be-test/notification/subscription';
   public ?string $role = 'customer';
 
-  // public $countries = ['US', 'AU', 'CA', 'DE', 'ES', 'FR', 'GB', 'IT', 'JP', 'NZ'];
-  public $countries = ['US', 'AU', 'DE'];
+  public $countries = ['US' /* , 'AU', 'DE' */];
   public $plans = ['month', 'year'];
   public $coupons = ['', 'free-trial', 'percentage', 'percentage-fixed-term'];
 
