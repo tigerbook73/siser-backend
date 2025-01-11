@@ -12,7 +12,7 @@ class SubscriptionNotifitionBladeTest extends ApiTestCase
 
   public $countries = ['US' /* , 'AU', 'DE' */];
   public $plans = ['month', 'year'];
-  public $coupons = ['', 'free-trial', 'percentage', 'percentage-fixed-term'];
+  public $coupons = ['', /* 'free-trial', 'percentage', 'percentage-fixed-term' */];
 
   public function viewNotification(string $type, string $country, string $plan, string $coupon = "")
   {

@@ -7,12 +7,14 @@ use App\Models\LdsLicense;
 use App\Models\User;
 use App\Services\Lds\LdsException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class LdsLicenseTest extends TestCase
 {
-  use RefreshDatabase;
+  use DatabaseTransactions;
+
   protected $seed = true;
 
   /** @var User $user */

@@ -189,7 +189,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->assertTrue($device !== null && $device->getStatus() == 'online');
     $first_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
-    sleep(3);
+    ApiTestTimeHelper::setCurrentTime(\time() + 3);
 
     // check-in
     $response = $this->verifyCheckInResponse($checkInRequest);
@@ -231,7 +231,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->assertTrue($device !== null && $device->getStatus() == 'online');
     $first_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
-    sleep(3);
+    ApiTestTimeHelper::setCurrentTime(\time() + 3);
 
     // check-in (offline)
     $this->verifyCheckInResponse($checkInRequest, FALSE);
@@ -257,7 +257,7 @@ class LdsCheckInApiTest extends LdsTestCase
     $this->assertTrue($device !== null && $device->getStatus() == 'online');
     $first_time_expires_at = date('Y-m-d H:i:s', $device->getExpiresAt());
 
-    sleep(3);
+    ApiTestTimeHelper::setCurrentTime(\time() + 3);
 
     // check-in
     $this->verifyCheckInResponse($checkInRequest);

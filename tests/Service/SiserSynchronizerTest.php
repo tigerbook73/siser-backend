@@ -4,13 +4,15 @@ namespace Tests\Service;
 
 use App\Models\User;
 use App\Services\Cognito\CognitoProvider;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Tests\Trait\CognitoProviderMockup;
 
 class SiserSynchronizerTest extends TestCase
 {
-  use RefreshDatabase, CognitoProviderMockup;
+  use DatabaseTransactions;
+  use CognitoProviderMockup;
 
   protected $seed = true;
 

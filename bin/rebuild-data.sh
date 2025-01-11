@@ -27,3 +27,10 @@ php $BASEDIR/../artisan paddle:cmd sync-all
 
 rm -rf $BASEDIR/../storage/logs/laravel.log
 
+
+echo
+
+if [ "$1" == "--model" ]; then
+  echo "Rebuilding database 'testing' and seeding"
+  DB_DATABASE=testing php $BASEDIR/../artisan migrate:fresh --seed
+fi
