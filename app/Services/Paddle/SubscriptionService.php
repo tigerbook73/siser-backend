@@ -242,9 +242,9 @@ class SubscriptionService extends PaddleEntityService
       null;
     if (
       $coupon &&
-      $paddleSubscription->discount->startsAt <= $paddleSubscription->currentBillingPeriod?->endsAt &&
+      $paddleSubscription->discount->startsAt < Carbon::parse($paddleSubscription->currentBillingPeriod?->endsAt)->subSeconds(60) &&
       (!$paddleSubscription->discount->endsAt ||
-        $paddleSubscription->discount->endsAt > $paddleSubscription->currentBillingPeriod?->startsAt)
+        $paddleSubscription->discount->endsAt > Carbon::parse($paddleSubscription->currentBillingPeriod?->endsAt)->subSeconds(60))
     ) {
       $subscription->coupon_id   = $coupon->id;
       $subscription->coupon_info = $coupon->info();
@@ -265,9 +265,9 @@ class SubscriptionService extends PaddleEntityService
       $taxRate          = (float)($nextTransaction->details->taxRatesUsed[0]->taxRate);
       $couponInfo       = (
         $coupon &&
-        $paddleSubscription->discount->startsAt <= $billingPeriod->endsAt &&
+        $paddleSubscription->discount->startsAt < Carbon::parse($billingPeriod->startsAt)->addSeconds(60) &&
         (!$paddleSubscription->discount->endsAt ||
-          $paddleSubscription->discount->endsAt > $billingPeriod->endsAt)
+          $paddleSubscription->discount->endsAt > Carbon::parse($billingPeriod->endsAt)->subSeconds(60))
       ) ?
         $coupon->info() :
         null;
