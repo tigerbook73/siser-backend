@@ -197,7 +197,7 @@ class TransactionService extends PaddleEntityService
 
   public function onTransactionPastDue(TransactionPastDue $transactionPastDue)
   {
-    if ($transactionPastDue->transaction->origin !== NotificationTransactionOrigin::SubscriptionRecurring()) {
+    if ($transactionPastDue->transaction->origin->getValue() !== NotificationTransactionOrigin::SubscriptionRecurring()->getValue()) {
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
         ->appendMessage("only origin == subscription recurring is supported", location: __FUNCTION__);
