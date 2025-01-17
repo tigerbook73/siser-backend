@@ -354,8 +354,13 @@ class SubscriptionService extends PaddleEntityService
 
     $this->result->appendMessage("creating subscription for {$paddleSubscription->id}", location: __FUNCTION__);
     $subscription = $this->createSubscriptionFromPaddle($paddleSubscription, $paddleTransaction);
+
+    // create invoice immediately because transaction.completed event may come before subscription is created
+    $this->result->appendMessage("createing transaction for {$paddleTransaction->id}", location: __FUNCTION__);
+    $invoice = $this->manager->transactionService->createOrUpdateInvoice($subscription, $paddleTransaction);
+
     $this->result
-      ->setSubscription($subscription)
+      ->setInvoice($invoice)
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
       ->appendMessage("subscription ({$subscription->id}) for {$paddleSubscription->id} created", location: __FUNCTION__);
   }

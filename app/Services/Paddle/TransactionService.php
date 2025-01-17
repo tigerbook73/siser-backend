@@ -165,6 +165,14 @@ class TransactionService extends PaddleEntityService
 
   public function onTransactionCompleted(TransactionCompleted $transactionCompleted)
   {
+    // when it is a web transaction, this event will be skipped and invoice will be created by subscription service
+    if ($transactionCompleted->transaction->origin->getValue() === NotificationTransactionOrigin::Web()->getValue()) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage("invoice is created from subscription.created event, skip this event", location: __FUNCTION__);
+      return;
+    }
+
     $subscription = $this->validateTransaction($transactionCompleted->transaction);
 
     $this->createOrUpdatePaymentMethod($subscription->user, $transactionCompleted->transaction);
