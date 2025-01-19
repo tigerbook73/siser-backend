@@ -169,26 +169,22 @@ class SubscriptionService extends PaddleEntityService
       throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
     }
     $subscription->start_date   = Carbon::parse($paddleSubscription->startedAt);
-    $subscription->end_date     = $paddleSubscription->canceledAt ? Carbon::parse($paddleSubscription->canceledAt) : null;
+    if ($paddleSubscription->canceledAt) {
+      $subscription->end_date = Carbon::parse($paddleSubscription->canceledAt);
+    } else if (($paddleSubscription->scheduledChange?->action == SubscriptionScheduledChangeAction::Cancel())) {
+      $subscription->end_date = Carbon::parse($paddleSubscription->scheduledChange->effectiveAt);
+    } else {
+      $subscription->end_date = null;
+    }
 
     // current billing period
     if ($paddleSubscription->currentBillingPeriod) {
-      $initialPeriod = $paddleSubscription->startedAt !== $paddleSubscription->firstBilledAt ? 1 : 0;
-
-      // calc offset
-      $diff = 0;
-      $firstBilledAt = Carbon::parse($paddleSubscription->firstBilledAt);
-      $currentPeriodStartsAt = Carbon::parse($paddleSubscription->currentBillingPeriod->startsAt);
-      $interval = Interval::from($paddleSubscription->billingCycle->interval->getValue());
-      $frequency = $paddleSubscription->billingCycle->frequency;
-      if ($interval == Interval::Day()) {
-        $diff = $currentPeriodStartsAt->diffInDays($firstBilledAt) % $frequency;
-      } else if ($interval == Interval::Month()) {
-        $diff = $currentPeriodStartsAt->startOfMonth()->diffInMonths($firstBilledAt->startOfMonth()) % $frequency;
-      } else if ($interval == Interval::Year()) {
-        $diff = $currentPeriodStartsAt->startOfYear()->diffInYears($firstBilledAt->startOfYear()) % $frequency;
-      }
-      $subscription->current_period = $initialPeriod +  $diff;
+      $subscription->current_period = PeriodHelper::calcCurrentPeriod(
+        $paddleSubscription->billingCycle->interval->getValue(),
+        $paddleSubscription->billingCycle->frequency,
+        $paddleSubscription->startedAt,
+        $paddleSubscription->currentBillingPeriod->startsAt,
+      );
 
       // current period start & end date
       $subscription->current_period_start_date = Carbon::parse($paddleSubscription->currentBillingPeriod->startsAt);

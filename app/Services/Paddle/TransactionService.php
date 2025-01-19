@@ -120,10 +120,22 @@ class TransactionService extends PaddleEntityService
     // items
     $invoice->items = ProductItem::buildItemsFromPaddleResource($paddleTransaction->details);
 
-    $invoice->period = $subscription->current_period; // TODO: see subscription
-    $invoice->period_start_date = $paddleTransaction->billingPeriod ? Carbon::parse($paddleTransaction->billingPeriod->startsAt) : null;
-    $invoice->period_end_date   = $paddleTransaction->billingPeriod ?  Carbon::parse($paddleTransaction->billingPeriod->endsAt) : null;
-    $invoice->invoice_date      = $paddleTransaction->billedAt ? Carbon::parse($paddleTransaction->billedAt) : null;
+    // period
+    if ($paddleTransaction->billingPeriod) {
+      $invoice->period = PeriodHelper::calcCurrentPeriod(
+        $subscription->plan_info['interval'],
+        $subscription->plan_info['interval_count'] ?? 1,
+        $subscription->start_date,
+        $paddleTransaction->billingPeriod->endsAt
+      );
+      $invoice->period_start_date = Carbon::parse($paddleTransaction->billingPeriod->startsAt);
+      $invoice->period_end_date   = Carbon::parse($paddleTransaction->billingPeriod->endsAt);
+    } else {
+      $invoice->period = 0;
+      $invoice->period_start_date = null;
+      $invoice->period_end_date = null;
+    }
+    $invoice->invoice_date = Carbon::parse($paddleTransaction->billedAt);
 
     // check
     $invoice->subtotal =      CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->subtotal);

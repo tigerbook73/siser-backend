@@ -16,5 +16,5 @@ parameters:
   excludePaths:
     - ./*/*/FileToBeExcluded.php
 
-  editorUrl: "vscode://file/%%file%%:%%line%%"
+  editorUrl: "vscode://file/c:/work/future/code/siser-backend/%%relFile%%:%%line%%"
   editorUrlTitle: "%%relFile%%:%%line%%"
