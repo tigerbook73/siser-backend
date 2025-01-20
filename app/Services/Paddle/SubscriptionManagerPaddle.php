@@ -136,8 +136,18 @@ class SubscriptionManagerPaddle
   /**
    * trigger event
    */
-  public function triggerEvent(string $notificationId)
+  public function triggerEvent(string $notificationId, bool $force = false)
   {
+    if ($force) {
+      /** @var ?DrEventRecord $drEvent */
+      $drEvent = DrEventRecord::where('event_id', $notificationId)->first();
+      if ($drEvent) {
+        $drEvent->setStatus(DrEventRecord::STATUS_FAILED);
+        $drEvent->setResolvedStatus(DrEventRecord::RESOLVE_STATUS_UNRESOLVED);
+        $drEvent->setResolveComments('force to retry');
+        $drEvent->save();
+      }
+    }
     $this->paddleService->replayNotification($notificationId);
   }
 
