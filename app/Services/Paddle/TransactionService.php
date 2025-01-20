@@ -15,6 +15,7 @@ use App\Services\DigitalRiver\SubscriptionManagerResult;
 use App\Services\DigitalRiver\WebhookException;
 use Illuminate\Support\Carbon;
 use Paddle\SDK\Entities\Shared\TransactionOrigin;
+use Paddle\SDK\Entities\Shared\TransactionStatus;
 use Paddle\SDK\Entities\Transaction as PaddleTransaction;
 use Paddle\SDK\Notifications\Entities\Shared\TransactionOrigin as NotificationTransactionOrigin;
 use Paddle\SDK\Notifications\Entities\Transaction as NotificationPaddleTransaction;
@@ -154,7 +155,16 @@ class TransactionService extends PaddleEntityService
 
     $invoice->available_to_refund_amount = 0; // TODO: ...
 
-    $invoice->setStatus(Invoice::STATUS_COMPLETED);
+    if ($paddleTransaction->status == TransactionStatus::Completed() || $paddleTransaction->status == TransactionStatus::Paid()) {
+      $invoice->setStatus(Invoice::STATUS_COMPLETED);
+    } else if ($paddleTransaction->status == TransactionStatus::PastDue()) {
+      $invoice->setStatus(Invoice::STATUS_PENDING);
+    } else if ($paddleTransaction->status == TransactionStatus::Canceled()) {
+      $invoice->setStatus(Invoice::STATUS_CANCELLED);
+    } else {
+      throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
+    }
+
     $invoice->setSubStatus(Invoice::SUB_STATUS_NONE);
     $invoice->setDisputeStatus(Invoice::DISPUTE_STATUS_NONE);
 
