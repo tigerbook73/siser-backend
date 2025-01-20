@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 class UserController extends SimpleController
 {
   protected string $modelClass = User::class;
+  protected string $orderDirection = 'desc';
 
   protected function getListRules(array $inputs = []): array
   {

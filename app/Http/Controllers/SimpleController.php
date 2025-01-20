@@ -6,7 +6,6 @@ use App\Models\AdminUser;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -26,7 +25,7 @@ class SimpleController extends Controller
 
   // query options
   protected string $orderAttr = "";        // default is primary key
-  protected string $orderDirection = 'asc';  // default is 'desc'
+  protected string $orderDirection = 'asc';  // default is 'asc'
 
   // default list filter
   private $defaultRules = [
