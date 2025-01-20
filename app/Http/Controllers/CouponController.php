@@ -13,7 +13,6 @@ use Illuminate\Validation\Rule;
 class CouponController extends SimpleController
 {
   protected string $modelClass = Coupon::class;
-
   protected string $orderDirection = 'desc';
 
   public function __construct(public SubscriptionManagerPaddle $manager)

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 class PlanController extends SimpleController
 {
   protected string $modelClass = Plan::class;
+  protected string $orderDirection = 'desc';
 
   public function __construct(public SubscriptionManagerPaddle $manager)
   {
