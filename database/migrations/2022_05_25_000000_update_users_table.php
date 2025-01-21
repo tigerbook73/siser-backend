@@ -40,7 +40,7 @@ return new class extends Migration
         'name'                => 'admin',
         'email'               => 'admin@iifuture.com',
         'full_name'           => 'default admin',
-        'roles'               => json_encode(['admin']),
+        'roles'               => json_encode(['admin', 'developer']),
         'password'            => Hash::make('password'),
       ],
       [

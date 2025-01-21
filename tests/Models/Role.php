@@ -14,6 +14,8 @@ class Role
      */
     const ADMIN = 'admin';
 
+    const DEVELOPER = 'developer';
+
     const SISER_BACKEND = 'siser-backend';
 
     const SUPPORT = 'support';
@@ -26,6 +28,7 @@ class Role
     {
         return [
             self::ADMIN,
+            self::DEVELOPER,
             self::SISER_BACKEND,
             self::SUPPORT
         ];
