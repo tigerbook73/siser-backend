@@ -34,8 +34,12 @@ $domainLds = $domainCustomer ? 'lds.' . $domainCustomer : '';
  */
 Route::domain($domainCustomer)->group(function () use ($testCode) {
   // authentication
-  Route::get('/auth/login', [AuthController::class, 'loginWeb']);
-  Route::get('/auth/logout', [AuthController::class, 'logoutWeb']);
+  if (config('app.env') === 'local') {
+    Route::get('/auth/login', [AuthController::class, 'loginTest']);
+  } else {
+    Route::get('/auth/login', [AuthController::class, 'loginWeb']);
+    Route::get('/auth/logout', [AuthController::class, 'logoutWeb']);
+  }
 
   // LDS
   Route::get('/check-in', [LdsLicenseController::class, 'checkIn']);
