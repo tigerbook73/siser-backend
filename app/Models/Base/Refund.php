@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $dr_refund_id
  * @property string $status
  * @property array|null $status_transitions
+ * @property array|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * 
@@ -54,7 +55,8 @@ class Refund extends Model
     'amount' => 'float',
     'payment_method_info' => 'json',
     'dr' => 'json',
-    'status_transitions' => 'json'
+    'status_transitions' => 'json',
+    'meta' => 'json'
   ];
 
   protected $fillable = [
@@ -70,7 +72,8 @@ class Refund extends Model
     'dr',
     'dr_refund_id',
     'status',
-    'status_transitions'
+    'status_transitions',
+    'meta'
   ];
 
   public function invoice()

@@ -9,6 +9,8 @@ use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Paddle\PaddleService;
 use DigitalRiver\ApiSdk\Model\Discount;
 use Paddle\SDK\Entities\Event;
+use Paddle\SDK\Notifications\Events\AdjustmentCreated;
+use Paddle\SDK\Notifications\Events\AdjustmentUpdated;
 use Paddle\SDK\Notifications\Events\PaymentMethodDeleted;
 use Paddle\SDK\Notifications\Events\SubscriptionCreated;
 use Paddle\SDK\Notifications\Events\SubscriptionUpdated;
@@ -18,6 +20,7 @@ use Paddle\SDK\Notifications\Events\TransactionPastDue;
 class SubscriptionManagerPaddle
 {
   public AddressService $addressService;
+  public AdjustmentService $adjustmentService;
   public BusinessService $businessService;
   public CustomerService $customerService;
   public DiscountService $discountService;
@@ -38,6 +41,7 @@ class SubscriptionManagerPaddle
     public SubscriptionManagerResult $result,
   ) {
     $this->addressService       = new AddressService($this);
+    $this->adjustmentService    = new AdjustmentService($this);
     $this->businessService      = new BusinessService($this);
     $this->customerService      = new CustomerService($this);
     $this->discountService      = new DiscountService($this);
@@ -64,6 +68,10 @@ class SubscriptionManagerPaddle
       // transaction events
       'transaction.completed'           => 'onTransactionCompleted',
       'transaction.past_due'            => 'onTransactionPastDue',
+
+      // adjustment events
+      'adjustment.created'              => 'onAdjustmentCreated',
+      'adjustment.updated'              => 'onAdjustmentUpdated',
     ];
   }
 
@@ -136,7 +144,7 @@ class SubscriptionManagerPaddle
   /**
    * trigger event
    */
-  public function triggerEvent(string $notificationId, bool $force = false)
+  public function triggerEvent(string $notificationId, bool $force = false): string
   {
     if ($force) {
       /** @var ?DrEventRecord $drEvent */
@@ -148,7 +156,7 @@ class SubscriptionManagerPaddle
         $drEvent->save();
       }
     }
-    $this->paddleService->replayNotification($notificationId);
+    return $this->paddleService->replayNotification($notificationId);
   }
 
 
@@ -196,5 +204,18 @@ class SubscriptionManagerPaddle
   public function onTransactionPastDue(TransactionPastDue $event)
   {
     $this->transactionService->onTransactionPastDue($event);
+  }
+
+  /**
+   * adjustment event handler
+   */
+  public function onAdjustmentCreated(AdjustmentCreated $event)
+  {
+    $this->adjustmentService->onAdjustmentCreated($event);
+  }
+
+  public function onAdjustmentUpdated(AdjustmentUpdated $event)
+  {
+    $this->adjustmentService->onAdjustmentUpdated($event);
   }
 }

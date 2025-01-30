@@ -120,4 +120,12 @@ class PaddleMap extends BasePaddleMap
   {
     return self::findModelByPaddleId($paddleId, Invoice::class);
   }
+
+  /**
+   * @param string $paddleId  Paddle ID for refund
+   */
+  static public function findRefundByPaddleId(string $paddleId): ?Refund
+  {
+    return self::findModelByPaddleId($paddleId, Refund::class);
+  }
 }

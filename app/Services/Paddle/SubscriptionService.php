@@ -12,7 +12,6 @@ use App\Services\DigitalRiver\SubscriptionManagerResult;
 use App\Services\DigitalRiver\WebhookException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
-use Paddle\SDK\Entities\Shared\Interval;
 use Paddle\SDK\Entities\Subscription as PaddleSubscription;
 use Paddle\SDK\Entities\Subscription\SubscriptionScheduledChangeAction;
 use Paddle\SDK\Entities\Subscription\SubscriptionStatus;
@@ -24,7 +23,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SubscriptionService extends PaddleEntityService
 {
-  public function createSubscriptionFromPaddle(PaddleSubscription $paddleSubscription, PaddleTransaction $paddleTransaction): Subscription
+  public function createSubscription(PaddleSubscription $paddleSubscription, PaddleTransaction $paddleTransaction): Subscription
   {
     $subscription = (new Subscription([
       'user_id' => SubscriptionCustomData::from($paddleSubscription->customData->data)->user_id,
@@ -64,8 +63,18 @@ class SubscriptionService extends PaddleEntityService
     return $subscription;
   }
 
-  public function updateSubscriptionFromPaddle(Subscription $subscription, PaddleSubscription $paddleSubscription, ?PaddleTransaction $paddleTransaction = null): Subscription
+  public function updateSubscription(Subscription $subscription, PaddleSubscription $paddleSubscription, ?PaddleTransaction $paddleTransaction = null, bool $force = false): Subscription
   {
+    if (
+      !$force &&
+      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte(
+        $paddleSubscription->updatedAt->format('Y-m-d\TH:i:s\Z')
+      )
+    ) {
+      $this->result->appendMessage("subscription ({$subscription->id}) for ({$paddleSubscription->id}) already updated", location: __FUNCTION__);
+      return $subscription;
+    }
+
     $this->result->appendMessage("filling subscription ({$subscription->id}) from ({$paddleSubscription->id})", location: __FUNCTION__);
     $this->fillSubscription($subscription, $paddleSubscription, $paddleTransaction);
 
@@ -109,16 +118,6 @@ class SubscriptionService extends PaddleEntityService
     PaddleSubscription $paddleSubscription,
     ?PaddleTransaction $paddleTransaction
   ): Subscription {
-
-    // validate paddle timestamp
-    if (
-      $subscription->getMeta()->paddle->paddle_timestamp &&
-      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte($paddleSubscription->updatedAt)
-    ) {
-      $this->result->appendMessage("subscription ({$subscription->id}) for ({$paddleSubscription->id}) already updated", location: __FUNCTION__);
-      return $subscription;
-    }
-
     // custom data
     $subscriptionCustomerData = SubscriptionCustomData::from($paddleSubscription->customData->data);
 
@@ -349,7 +348,7 @@ class SubscriptionService extends PaddleEntityService
     $paddleTransaction = $this->paddleService->getTransaction($paddleSubscriptionNotification->transactionId);
 
     $this->result->appendMessage("creating subscription for {$paddleSubscription->id}", location: __FUNCTION__);
-    $subscription = $this->createSubscriptionFromPaddle($paddleSubscription, $paddleTransaction);
+    $subscription = $this->createSubscription($paddleSubscription, $paddleTransaction);
 
     // create invoice immediately because transaction.completed event may come before subscription is created
     $this->result->appendMessage("createing transaction for {$paddleTransaction->id}", location: __FUNCTION__);
@@ -395,7 +394,9 @@ class SubscriptionService extends PaddleEntityService
     // step 4 validate subscription.timestamp, if it's newer than the paddleSubscription.updated_at, skip
     if (
       $subscription->getMeta()->paddle->paddle_timestamp &&
-      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte($paddleSubscriptionNotification->updatedAt)
+      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte(
+        $paddleSubscriptionNotification->updatedAt->format('Y-m-d\TH:i:s\Z')
+      )
     ) {
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_SKIPPED, 'subscription already updated')
@@ -424,7 +425,7 @@ class SubscriptionService extends PaddleEntityService
     }
 
     $this->result->appendMessage("updating subscription ({$subscription->id}) for {$paddleSubscription->id}", location: __FUNCTION__);
-    $this->updateSubscriptionFromPaddle($subscription, $paddleSubscription, $paddleTransaction);
+    $this->updateSubscription($subscription, $paddleSubscription, $paddleTransaction);
 
     $this->result
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
@@ -480,7 +481,14 @@ class SubscriptionService extends PaddleEntityService
     $paddleSubscription = $this->paddleService->cancelSubscription($subscription->getMeta()->paddle->subscription_id, $immediate);
     $this->result->appendMessage("paddle-subscription for subscription ({$subscription->id}) cancelled", location: __FUNCTION__);
 
-    $this->updateSubscriptionFromPaddle($subscription, $paddleSubscription);
+    $this->updateSubscription($subscription, $paddleSubscription);
+    return $subscription;
+  }
+
+  public function refreshSubscription(Subscription $subscription): Subscription
+  {
+    $paddleSubscription = $this->paddleService->getSubscription($subscription->getMeta()->paddle->subscription_id);
+    $this->updateSubscription($subscription, $paddleSubscription, force: true);
     return $subscription;
   }
 }

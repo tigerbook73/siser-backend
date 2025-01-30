@@ -132,24 +132,10 @@ class DigitalRiverService
     $refundRequest->setReason($refund->reason ?? "");
     $refundRequest->setMetadata([
       'created_from' => 'siser-system',     // not created from dr portal or api directly
-      'item_type' => $refund->item_type
     ]); // create from siser-system
 
     // item level refund or order level refund
-    if ($refund->item_type == Refund::ITEM_LICENSE) {
-      $item = $refund->items[0];
-      if ($item['category'] != ProductItem::ITEM_CATEGORY_LICENSE) {
-        throw new Exception('Invalid refund item category', 400);
-      }
-      $refundRequest->setItems([
-        (new RefundItemRequest())
-          ->setItemId($item['dr_item_id'])
-          ->setQuantity($item['quantity'])
-          ->setAmount($refund->amount)
-      ]);
-    } else {
-      $refundRequest->setAmount($refund->amount);
-    }
+    $refundRequest->setAmount($refund->amount);
 
     try {
       return $this->refundApi->createRefunds($refundRequest);

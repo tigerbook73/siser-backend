@@ -19,8 +19,6 @@ class Invoice extends BaseInvoice
   // type
   public const TYPE_NEW_SUBSCRIPTION    = 'new-subscription';
   public const TYPE_RENEW_SUBSCRIPTION  = 'renew-subscription';
-  public const TYPE_NEW_LICENSE_PACKAGE = 'new-license-package';
-  public const TYPE_INCREASE_LICENSE    = 'increase-license-number';
   public const TYPE_UPDATE_SUBSCRIPTION = 'update-subscription';
 
   // status -- see invoice.md
@@ -43,9 +41,6 @@ class Invoice extends BaseInvoice
   public const DISPUTE_STATUS_NONE      = 'none';
   public const DISPUTE_STATUS_DISPUTING = 'disputing';
   public const DISPUTE_STATUS_DISPUTED  = 'disputed';
-
-  // extra data
-  public const DATA_TO_REFUND_ITEM_TYPE = 'to_refund_item_type';
 
   // dr attributes
   public const DR_FILE_ID           = 'file_id';
@@ -101,8 +96,6 @@ class Invoice extends BaseInvoice
     if (!in_array($type, [
       self::TYPE_NEW_SUBSCRIPTION,
       self::TYPE_RENEW_SUBSCRIPTION,
-      self::TYPE_NEW_LICENSE_PACKAGE,
-      self::TYPE_INCREASE_LICENSE,
       self::TYPE_UPDATE_SUBSCRIPTION
     ])) {
       throw new \InvalidArgumentException("Invalid type: $type");
@@ -133,19 +126,6 @@ class Invoice extends BaseInvoice
   public function getSubStatus(): string
   {
     return $this->sub_status ?? self::SUB_STATUS_NONE;
-  }
-
-  public function setToRefundItemType(?string $itemType): self
-  {
-    $data = $this->extra_data ?? [];
-    $data[self::DATA_TO_REFUND_ITEM_TYPE] = $itemType;
-    $this->extra_data = $data;
-    return $this;
-  }
-
-  public function getToRefundItemType(): string|null
-  {
-    return $this->extra_data[self::DATA_TO_REFUND_ITEM_TYPE] ?? null;
   }
 
   public function getDrFileId(): string|null
@@ -345,11 +325,6 @@ class Invoice extends BaseInvoice
     return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
 
-  public function findLicenseItem(bool $next = false): array|null
-  {
-    return $this->findItem(ProductItem::ITEM_CATEGORY_LICENSE, $next);
-  }
-
   public function fillFromSubscription(Subscription $subscription): self
   {
     $this->plan_info            = $subscription->plan_info;
@@ -511,31 +486,14 @@ class Invoice extends BaseInvoice
     return $this->type === self::TYPE_RENEW_SUBSCRIPTION;
   }
 
-  public function isNewLicensePackageOrder(): bool
-  {
-    return $this->type === self::TYPE_NEW_LICENSE_PACKAGE;
-  }
-
-  public function isIncreaseLicenseOrder(): bool
-  {
-    return $this->type === self::TYPE_INCREASE_LICENSE;
-  }
-
   public function isSubscriptionOrder(): bool
   {
     return $this->type === self::TYPE_NEW_SUBSCRIPTION || $this->type === self::TYPE_RENEW_SUBSCRIPTION;
   }
 
-  public function isLicensePackageOrder(): bool
-  {
-    return $this->type === self::TYPE_NEW_LICENSE_PACKAGE || $this->type === self::TYPE_INCREASE_LICENSE;
-  }
-
   public function isCustomerInitiatedOrder(): bool
   {
-    return $this->type === self::TYPE_NEW_SUBSCRIPTION ||
-      $this->type === self::TYPE_NEW_LICENSE_PACKAGE ||
-      $this->type === self::TYPE_INCREASE_LICENSE;
+    return $this->type === self::TYPE_NEW_SUBSCRIPTION;
   }
 
   /**

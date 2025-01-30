@@ -19,6 +19,7 @@ php artisan migrate --force
 
 # update webhook
 php artisan dr:cmd enable-hook
+php artisan paddle:cmd enable-hook
 
 echo "start $role service ..."
 php artisan octane:roadrunner --log-level=debug

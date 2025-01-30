@@ -213,11 +213,6 @@ class Subscription extends BaseSubscription
     return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
 
-  public function findLicenseItem(bool $next = false): array|null
-  {
-    return $this->findItem(ProductItem::ITEM_CATEGORY_LICENSE, $next);
-  }
-
   public function fillItemsAndPrice(array $items): self
   {
     $this->items        = $items;

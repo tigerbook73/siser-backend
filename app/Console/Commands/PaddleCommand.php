@@ -4,11 +4,13 @@ namespace App\Console\Commands;
 
 use App\Models\BillingInfo;
 use App\Models\Coupon;
+use App\Models\Invoice;
 use App\Models\LicensePlan;
 use App\Models\Paddle\PriceCustomData;
 use App\Models\Paddle\ProductCustomData;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Refund;
 use App\Models\Subscription;
 use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Console\Command;
@@ -36,6 +38,9 @@ class PaddleCommand extends Command
   protected $signature = 'paddle:cmd
                           {subcmd=help : subcommand}
                           {--subscription= : subscription id}
+                          {--invoice= : invoice id}
+                          {--refund= : refund id}
+                          {--notification= : notification id}
                           {--force}';
 
   /**
@@ -70,10 +75,15 @@ class PaddleCommand extends Command
       $this->info('  sync-discount:       sync discounts to paddle');
       $this->info('  sync-all:            sync all to paddle');
       $this->info('  archive-all:         archive all');
-      $this->info('  update-subscription: update subscription from paddle');
+      $this->info('  enable-hook:         enable & update webbook');
+      $this->info('  refresh-model:       update model from paddle');
+      $this->info('  replay-notification: replay notification');
       $this->info('');
       $this->info('options:');
-      $this->info('  --subscription:      subscription id, only for update-subscription');
+      $this->info('  --subscription:      subscription id, only for refresh-model');
+      $this->info('  --invoice:           invoice id, only for refresh-model');
+      $this->info('  --refund:            refund id, only for refresh-model');
+      $this->info('  --notification:      notification id, only for replay-notification');
       $this->info('  --force:             force update');
       $this->info('');
 
@@ -113,8 +123,16 @@ class PaddleCommand extends Command
         }
         return self::SUCCESS;
 
-      case 'update-subscription':
-        $this->updateSubscriptionFromPaddle();
+      case 'refresh-model':
+        $this->refreshModel();
+        return self::SUCCESS;
+
+      case 'enable-hook':
+        $this->manager->updateDefaultWebhook(true);
+        return self::SUCCESS;
+
+      case 'replay-notification':
+        $this->replayNotification();
         return self::SUCCESS;
 
       default:
@@ -563,30 +581,51 @@ class PaddleCommand extends Command
     $this->info("All subscriptions stopped.");
   }
 
-  public function updateSubscriptionFromPaddle()
+  public function refreshModel()
   {
     $subscriptionId = $this->option('subscription');
-    if (!$subscriptionId) {
-      $this->error("Subscription id is required.");
+    $invoiceId = $this->option('invoice');
+    $refundId = $this->option('refund');
+
+    // there must be one and only one option in [subscription, invoice, refund] is set
+    if ((int)empty($subscriptionId) + (int)empty($invoiceId) + (int)empty($refundId) != 2) {
+      $this->error("One and only one option in [subscription, invoice, refund] is required.");
       return self::FAILURE;
     }
 
-    $subscription = Subscription::findById($subscriptionId);
-    if (!$subscription) {
-      $this->error("Subscription not found.");
-      return self::FAILURE;
+    if ($subscriptionId) {
+      $subscription = Subscription::findById($subscriptionId);
+      if (!$subscription) {
+        $this->error("Subscription not found.");
+        return self::FAILURE;
+      }
+      $this->manager->subscriptionService->refreshSubscription($subscription);
+    } else if ($invoiceId) {
+      $invoice = Invoice::findById($invoiceId);
+      if (!$invoice) {
+        $this->error("Invoice not found.");
+        return self::FAILURE;
+      }
+      $this->manager->transactionService->refreshInvoice($invoice);
+    } else if ($refundId) {
+      $refund = Refund::findById($refundId);
+      if (!$refund) {
+        $this->error("Refund not found.");
+        return self::FAILURE;
+      }
+      $this->manager->adjustmentService->refreshRefund($refund);
     }
-
-    if (!$subscription->getMeta()->paddle->subscription_id) {
-      $this->error("Subscription has no paddle subscription id.");
-      return self::FAILURE;
-    }
-
-    $this->info("Updating subscription {$subscription->id} from paddle...");
-    $paddleSubscription = $this->manager->paddleService->getSubscriptionWithIncludes($subscription->getMeta()->paddle->subscription_id);
-    $this->manager->subscriptionService->updateSubscriptionFromPaddle($subscription, $paddleSubscription);
-    $this->info("Subscription {$subscription->id} updated.");
-
     return self::SUCCESS;
+  }
+
+  public function replayNotification()
+  {
+    $notificationId = $this->option('notification');
+    if (!$notificationId) {
+      $this->error("Notification id is required.");
+      return self::FAILURE;
+    }
+    $string = $this->manager->triggerEvent($notificationId, true);
+    $this->info($string);
   }
 }

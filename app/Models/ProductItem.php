@@ -20,7 +20,6 @@ class ProductItem
 {
   // subscription item category
   public const ITEM_CATEGORY_PLAN             = 'plan';
-  public const ITEM_CATEGORY_LICENSE          = 'license';
 
   static public function buildPlanName(array $plan_info, array|null $coupon_info): string
   {
@@ -66,18 +65,6 @@ class ProductItem
     ];
   }
 
-  static public function buildLicenseItem(array $license_package_info, float $planPrice): array
-  {
-    $licensePrice = round($planPrice * $license_package_info['price_rate'] / 100, 2);
-    return [
-      'category'  => self::ITEM_CATEGORY_LICENSE,
-      'name'      => $license_package_info['name'] . ' x ' . $license_package_info['quantity'],
-      'quantity'  => 1,
-      'price'     => $licensePrice,
-      'tax'       => 0, // tax is calculated later
-      'amount'    => $licensePrice,
-    ];
-  }
 
   /**
    * @return array[]
@@ -86,7 +73,6 @@ class ProductItem
   {
     $items[] = self::buildPlanItem($plan_info, $coupon_info);
     if ($license_package_info) {
-      $items[] = self::buildLicenseItem($license_package_info, $items[0]['price']);
     }
 
     if ($tax_rate) {
@@ -102,9 +88,7 @@ class ProductItem
   {
     $items = [];
     foreach ($drObject->getItems() as $drItem) {
-      $category = $drItem->getProductDetails()->getDescription() ?: (str_contains($drItem->getProductDetails()->getName(), 'Plan') ?
-        self::ITEM_CATEGORY_PLAN :
-        self::ITEM_CATEGORY_LICENSE);
+      $category = self::ITEM_CATEGORY_PLAN;
       $item = [
         'category'                    => $category,
         'name'                        => $drItem->getProductDetails()->getName(),
@@ -123,16 +107,8 @@ class ProductItem
       $items[] = $item;
     }
 
-    // make the plan item first if possible
-    if (
-      count($items) >= 2 &&
-      $items[0]['category'] === self::ITEM_CATEGORY_LICENSE &&
-      $items[1]['category'] === self::ITEM_CATEGORY_PLAN
-    ) {
-      $temp = $items[0];
-      $items[0] = $items[1];
-      $items[1] = $temp;
-    }
+    // TODO: make the plan item first if possible
+
     return $items;
   }
 
@@ -195,14 +171,6 @@ class ProductItem
   }
 
   /**
-   * @param array[] $items
-   */
-  static public function findLicenseItem(array $items): array|null
-  {
-    return self::findItem($items, self::ITEM_CATEGORY_LICENSE);
-  }
-
-  /**
    * fill DrProductDetails with item data
    */
   static public function fillDrProductDetails(DrProductDetails $drProductDetails, array $item): DrProductDetails
@@ -248,11 +216,6 @@ class ProductItem
     if ($productType == Product::TYPE_SUBSCRIPTION) {
       $category = ProductItem::ITEM_CATEGORY_PLAN;
       $name = PaddleMap::findPlanByPaddleId($paddlePriceId)?->name;
-    } else if ($productType == Product::TYPE_LICENSE_PACKAGE) {
-      $category = ProductItem::ITEM_CATEGORY_LICENSE;
-      $licensePlan = PaddleMap::findLicensePlanByPaddleId($paddlePriceId);
-      $licenseQuantity = (int)PaddleMap::findMetaByPaddleId($paddlePriceId);
-      $name = $licensePlan->getDetail($licenseQuantity)->name;
     } else {
       throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
     }

@@ -32,7 +32,6 @@ class RefundController extends SimpleController
   {
     return [
       'invoice_id'      => ['required', 'exists:invoices,id'],
-      'item_type'       => ['filled', 'string', Rule::in([Refund::ITEM_SUBSCRIPTION, Refund::ITEM_LICENSE])],
       'amount'          => ['required', 'decimal:0,2'],
       'reason'          => ['required', 'string', 'max:255'],
     ];
@@ -77,13 +76,12 @@ class RefundController extends SimpleController
   {
     $this->validateUser();
     $inputs = $this->validateCreate($request);
-    $inputs['item_type'] = $inputs['item_type'] ?? Refund::ITEM_SUBSCRIPTION;
 
     /** @var Invoice $invoice */
     $invoice = Invoice::findOrFail($inputs['invoice_id']);
 
     // check refundable
-    $result = RefundRules::invoiceRefundable($invoice, $inputs['item_type']);
+    $result = RefundRules::invoiceRefundable($invoice);
     if (!$result->isRefundable()) {
       return response()->json(['message' => $result->getReason()], 400);
     }
@@ -97,7 +95,6 @@ class RefundController extends SimpleController
     try {
       $refund = $this->manager->createRefund(
         $invoice,
-        $inputs['item_type'],
         $inputs['amount'],
         $inputs['reason']
       );

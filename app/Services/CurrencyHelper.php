@@ -27,4 +27,10 @@ class CurrencyHelper
   {
     return (int)$price / self::getDecimalFactor($currency);
   }
+
+  static public function getLowestDenominationPrice(string $currency, float $price): string
+  {
+    // Round up to the nearest whole number
+    return (string)(int)round($price * self::getDecimalFactor($currency), 0);
+  }
 }

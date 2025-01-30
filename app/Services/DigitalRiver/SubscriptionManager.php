@@ -33,7 +33,7 @@ interface SubscriptionManager
   /**
    * Refund
    */
-  public function createRefund(Invoice $invoice, string $itemType, float $amount = 0, string $reason = null): Refund;
+  public function createRefund(Invoice $invoice, float $amount = 0, string $reason = null): Refund;
 
   /**
    * Default webhook

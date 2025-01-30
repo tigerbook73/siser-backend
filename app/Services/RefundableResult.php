@@ -59,10 +59,10 @@ class RefundableResult
   /**
    * @param Invoice|Invoice[] $invoice
    */
-  public function setInvoices(Invoice|array $invoice, string $itemType): RefundableResult
+  public function setInvoices(Invoice|array $invoice): RefundableResult
   {
     $invoices = is_array($invoice) ? $invoice : [$invoice];
-    $this->invoices = array_map(fn($invoice) => new RefundableInvoice($invoice, $itemType), $invoices);
+    $this->invoices = array_map(fn($invoice) => new RefundableInvoice($invoice), $invoices);
     $this->updateRefundableAmount();
     return $this;
   }
@@ -70,10 +70,10 @@ class RefundableResult
   /**
    * @param Invoice|Invoice[] $invoice
    */
-  public function appendInvoices(Invoice|array $invoice, string $itemType): RefundableResult
+  public function appendInvoices(Invoice|array $invoice): RefundableResult
   {
     $invoices = is_array($invoice) ? $invoice : [$invoice];
-    $this->invoices = array_merge($this->invoices, array_map(fn($invoice) => new RefundableInvoice($invoice, $itemType), $invoices));
+    $this->invoices = array_merge($this->invoices, array_map(fn($invoice) => new RefundableInvoice($invoice), $invoices));
     $this->updateRefundableAmount();
     return $this;
   }

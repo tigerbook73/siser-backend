@@ -86,9 +86,9 @@ class SubscriptionManagerDR implements SubscriptionManager
   }
 
 
-  public function createRefund(Invoice $invoice, string $itemType, float $amount = 0, string $reason = null): Refund
+  public function createRefund(Invoice $invoice, float $amount = 0, string $reason = null): Refund
   {
-    $result = RefundRules::invoiceRefundable($invoice, $itemType);
+    $result = RefundRules::invoiceRefundable($invoice);
     if (!$result->isRefundable()) {
       throw new Exception("invoice ({$invoice->id}) is not refundable", 500);
     }
@@ -98,7 +98,7 @@ class SubscriptionManagerDR implements SubscriptionManager
     }
 
     // create refund
-    $refund = Refund::newFromInvoice($invoice, $itemType, $amount, $reason);
+    $refund = Refund::newFromInvoice($invoice, $amount, $reason);
     $this->result->appendMessage("refund ({$refund->id}) created", location: __FUNCTION__);
 
     $drRefund = $this->drService->createRefund($refund);
@@ -133,16 +133,8 @@ class SubscriptionManagerDR implements SubscriptionManager
       return null;
     }
 
-    /** @var ?array $metadata */
-    $metadata = $drRefund->getMetadata();
-    if (isset($metadata['item_type'])) {
-      $itemType = $metadata['item_type'];
-    } else {
-      $itemType = count($drRefund->getItems() ?? []) > 0 ? Refund::ITEM_LICENSE : Refund::ITEM_SUBSCRIPTION;
-    }
-
     // create refund
-    $refund = Refund::newFromInvoice($invoice, $itemType, $drRefund->getAmount(), $drRefund->getReason());
+    $refund = Refund::newFromInvoice($invoice, $drRefund->getAmount(), $drRefund->getReason());
     $refund->fillFromDrObject($drRefund)->save();
     $this->result->appendMessage("refund ({$refund->id}) created from dr-refund", location: __FUNCTION__);
 

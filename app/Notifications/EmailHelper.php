@@ -58,14 +58,6 @@ class EmailHelper
       }
     }
 
-    if ($invoice->isNewLicensePackageOrder()) {
-      return 'New License Package';
-    }
-
-    if ($invoice->isIncreaseLicenseOrder()) {
-      return 'Increase License Number';
-    }
-
     throw new \Exception('Unknown order type', 500);
   }
 
@@ -226,33 +218,16 @@ class EmailHelper
     return $item['name'];
   }
 
-  public function formatSubscriptionLicenseName(Subscription $subscription, bool $next = false)
-  {
-    $item = $subscription->findLicenseItem(next: $next);
-    return $item['name'] ?? 'Single License';
-  }
-
   public function formatSubscriptionFullName(Subscription $subscription, bool $next = false)
   {
     $planItem = $subscription->findPlanItem();
-    $licenseItem = $subscription->findLicenseItem();
-    if ($licenseItem) {
-      return $planItem['name'] . '+ License Package';
-    } else {
-      return $planItem['name'];
-    }
+    return $planItem['name'];
   }
 
   public function formatOrderPlanName(Invoice $invoice): string
   {
     $planItem = $invoice->findPlanItem();
-    $licenseItem = $invoice->findLicenseItem();
-
-    if ($licenseItem) {
-      return $planItem['name'] . ' + License Package';
-    } else {
-      return $planItem['name'];
-    }
+    return $planItem['name'];
   }
 
   public function formatOrderPrice(Invoice $invoice)

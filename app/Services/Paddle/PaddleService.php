@@ -6,10 +6,10 @@ use Exception;
 use Illuminate\Support\Collection;
 use Paddle\SDK\Client;
 use Paddle\SDK\Entities\Address;
+use Paddle\SDK\Entities\Adjustment;
 use Paddle\SDK\Entities\Business;
 use Paddle\SDK\Entities\Customer;
 use Paddle\SDK\Entities\Discount;
-use Paddle\SDK\Entities\PaymentMethod;
 use Paddle\SDK\Entities\Product;
 use Paddle\SDK\Entities\Price;
 use Paddle\SDK\Entities\Subscription;
@@ -21,6 +21,8 @@ use Paddle\SDK\Notifications\Verifier;
 use Paddle\SDK\Options;
 use Paddle\SDK\Resources\Addresses\Operations\CreateAddress;
 use Paddle\SDK\Resources\Addresses\Operations\UpdateAddress;
+use Paddle\SDK\Resources\Adjustments\Operations\CreateAdjustment;
+use Paddle\SDK\Resources\Adjustments\Operations\ListAdjustments;
 use Paddle\SDK\Resources\Businesses\Operations\CreateBusiness;
 use Paddle\SDK\Resources\Businesses\Operations\UpdateBusiness;
 use Paddle\SDK\Resources\Customers\Operations\CreateCustomer;
@@ -256,6 +258,24 @@ class PaddleService
   {
     $transactionData = $this->paddle->transactions->getInvoicePDF($id);
     return $transactionData->url;
+  }
+
+  /**
+   * Refund
+   */
+  public function createAdjustment(CreateAdjustment $createAdjustment): Adjustment
+  {
+    return $this->paddle->adjustments->create($createAdjustment);
+  }
+
+  public function getAdjustment(string $id): Adjustment
+  {
+    $adjustments = $this->paddle->adjustments->list(new ListAdjustments(ids: [$id]));
+    if ($adjustments->valid()) {
+      return $adjustments->current();
+    } {
+      throw new Exception('Not found!', 404);
+    }
   }
 
   /**

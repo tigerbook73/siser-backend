@@ -24,9 +24,6 @@ class Refund {
     /** @var string $currency */
     public $currency = "";
 
-    /** @var string $item_type */
-    public $item_type = "";
-
     /** @var \Tests\Models\ProductItem[] $items */
     public $items = [];
 

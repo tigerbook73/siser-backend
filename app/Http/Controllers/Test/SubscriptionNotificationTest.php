@@ -354,7 +354,6 @@ class SubscriptionNotificationTest
     $this->refund = $refund ??
       Refund::newFromInvoice(
         $this->invoice,
-        $this->invoice->isSubscriptionOrder() ? Refund::ITEM_SUBSCRIPTION : Refund::ITEM_LICENSE,
         $this->invoice->available_to_refund_amount,
         "test reason"
       );

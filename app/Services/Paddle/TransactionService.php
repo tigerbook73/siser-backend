@@ -14,6 +14,7 @@ use App\Services\CurrencyHelper;
 use App\Services\DigitalRiver\SubscriptionManagerResult;
 use App\Services\DigitalRiver\WebhookException;
 use Illuminate\Support\Carbon;
+use Paddle\SDK\Entities\Shared\AdjustmentStatus;
 use Paddle\SDK\Entities\Shared\TransactionOrigin;
 use Paddle\SDK\Entities\Shared\TransactionStatus;
 use Paddle\SDK\Entities\Transaction as PaddleTransaction;
@@ -24,6 +25,14 @@ use Paddle\SDK\Notifications\Events\TransactionPastDue;
 
 class TransactionService extends PaddleEntityService
 {
+  /**
+   * update billing info (address, business) from paddle transaction
+   *
+   * @param BillingInfo $billingInfo
+   * @param PaddleTransaction $paddleTransaction
+   *
+   * @return BillingInfo
+   */
   public function updateBillingInfo(BillingInfo $billingInfo, PaddleTransaction $paddleTransaction): BillingInfo
   {
     $this->result->appendMessage("updating billing info", location: __FUNCTION__);
@@ -34,6 +43,14 @@ class TransactionService extends PaddleEntityService
     return $billingInfo;
   }
 
+  /**
+   * create or update payment method from paddle transaction
+   *
+   * @param User $user
+   * @param PaddleTransaction|NotificationPaddleTransaction $paddleTransaction
+   *
+   * @return PaymentMethod
+   */
   public function createOrUpdatePaymentMethod(User $user, PaddleTransaction|NotificationPaddleTransaction $paddleTransaction): PaymentMethod
   {
     if (!empty($paddleTransaction->payments)) {
@@ -45,6 +62,14 @@ class TransactionService extends PaddleEntityService
     }
   }
 
+  /**
+   * update subscription's billing info and payment method.
+   * NOTE: this method shall be called after payment method is updated
+   *
+   * @param Subscription $subscription
+   *
+   * @return Subscription
+   */
   public function updateSubscription(Subscription $subscription): Subscription
   {
     $this->result->appendMessage("updating subscription's billing info and payment method", location: __FUNCTION__);
@@ -56,31 +81,33 @@ class TransactionService extends PaddleEntityService
     return $subscription;
   }
 
-  public function createOrUpdateInvoice(Subscription $subscription, PaddleTransaction $paddleTransaction): Invoice
+  /**
+   * create or update invoice from paddle transaction
+   *
+   * @param Subscription $subscription
+   * @param PaddleTransaction $paddleTransaction
+   * @param bool $force
+   *
+   * @return Invoice
+   */
+  public function createOrUpdateInvoice(Subscription $subscription, PaddleTransaction $paddleTransaction, bool $force = false): Invoice
   {
-    /**
-     * Steps
-     * 1. find subscription by paddle subscription id
-     * 2. if subscription not found, throw exception
-     * 5. update billing info
-     * 6. update payment method
-     * 3. find or create invoice
-     * 4. fill invoice from paddle transaction
-     * 7. save invoice
-     * 8. update subscription->payment_method / billing_info
-     * 9. save
-     */
-
     // find or create invoice
     $invoice = PaddleMap::findInvoiceByPaddleId($paddleTransaction->id);
     if ($invoice) {
+      // check if invoice is up-to-date
+      if (
+        !$force &&
+        Carbon::parse($invoice->getMeta()->paddle->paddle_timestamp)->gte($paddleTransaction->updatedAt->format('Y-m-d\TH:i:s\Z'))
+      ) {
+        $this->result->appendMessage("invoice ({$invoice->id}) is up-to-date, skip updating", location: __FUNCTION__);
+        return $invoice;
+      }
       $this->result->appendMessage("updating invoice for paddle transaction ({$paddleTransaction->id})", location: __FUNCTION__);
-      // check paddle_timestamp
     } else {
       $invoice =  (new Invoice())->setStatus(Invoice::STATUS_INIT);
       $this->result->appendMessage("creating invoice for paddle transaction ({$paddleTransaction->id})", location: __FUNCTION__);
     }
-
 
     if (
       $paddleTransaction->origin == TransactionOrigin::Web() ||
@@ -143,20 +170,39 @@ class TransactionService extends PaddleEntityService
     $invoice->discount =      CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->discount);
     $invoice->total_tax =     CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->tax);
     $invoice->total_amount =  CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->total);
-    $invoice->total_refunded = 0; // TODO: ...
+
+    // update refunded
+    if ($paddleTransaction->adjustmentsTotals) {
+      $invoice->total_refunded = CurrencyHelper::getDecimalPrice(
+        $paddleTransaction->adjustmentsTotals->currencyCode->getValue(),
+        $paddleTransaction->adjustmentsTotals->total
+      );
+    } else {
+      $invoice->total_refunded = 0;
+    }
+    $invoice->available_to_refund_amount = $invoice->total_amount - $invoice->total_refunded;
 
     $invoice->pdf_file = null;
     $invoice->credit_memos = null;
 
     $invoice->dr = [];
-    $invoice->dr_invoice_id = null;
-    $invoice->dr_order_id = null;
-    $invoice->extra_data = null;
 
-    $invoice->available_to_refund_amount = 0; // TODO: ...
 
     if ($paddleTransaction->status == TransactionStatus::Completed() || $paddleTransaction->status == TransactionStatus::Paid()) {
-      $invoice->setStatus(Invoice::STATUS_COMPLETED);
+      if ($invoice->total_amount > 0 && $invoice->total_amount - $invoice->total_refunded < 0.005) {
+        $invoice->setStatus(Invoice::STATUS_REFUNDED);
+      } else {
+        if (
+          !empty($paddleTransaction->adjustments) &&
+          !empty(array_filter($paddleTransaction->adjustments, fn($item) => $item->status == AdjustmentStatus::PendingApproval()))
+        ) {
+          $invoice->setStatus(Invoice::STATUS_REFUNDING);
+        } else if ($invoice->total_refunded > 0) {
+          $invoice->setStatus(Invoice::STATUS_PARTLY_REFUNDED);
+        } else {
+          $invoice->setStatus(Invoice::STATUS_COMPLETED);
+        }
+      }
     } else if ($paddleTransaction->status == TransactionStatus::PastDue()) {
       $invoice->setStatus(Invoice::STATUS_PENDING);
     } else if ($paddleTransaction->status == TransactionStatus::Canceled()) {
@@ -210,7 +256,7 @@ class TransactionService extends PaddleEntityService
     }
 
     $this->result->appendMessage("retrieving paddle transaction for {$transactionCompleted->transaction->id}", location: __FUNCTION__);
-    $paddleTransaction = $this->manager->paddleService->getTransaction($transactionCompleted->transaction->id);
+    $paddleTransaction = $this->paddleService->getTransaction($transactionCompleted->transaction->id);
 
     $this->updateBillingInfo($subscription->user->billing_info, $paddleTransaction);
     $this->updateSubscription($subscription);
@@ -240,7 +286,7 @@ class TransactionService extends PaddleEntityService
     $this->createOrUpdatePaymentMethod($subscription->user, $transactionPastDue->transaction);
 
     $this->result->appendMessage("retrieving paddle transaction for {$transactionPastDue->transaction->id}", location: __FUNCTION__);
-    $paddleTransaction = $this->manager->paddleService->getTransaction($transactionPastDue->transaction->id);
+    $paddleTransaction = $this->paddleService->getTransaction($transactionPastDue->transaction->id);
 
     $this->updateBillingInfo($subscription->user->billing_info, $paddleTransaction);
     $this->updateSubscription($subscription);
@@ -271,6 +317,12 @@ class TransactionService extends PaddleEntityService
 
   public function getInvoicePdf(string $transactionId): string
   {
-    return $this->manager->paddleService->getTransactionInvoicePdf($transactionId);
+    return $this->paddleService->getTransactionInvoicePdf($transactionId);
+  }
+
+  public function refreshInvoice(Invoice $invoice): Invoice
+  {
+    $paddleTransaction = $this->paddleService->getTransaction($invoice->getMeta()->paddle->transaction_id);
+    return $this->createOrUpdateInvoice($invoice->subscription, $paddleTransaction, force: true);
   }
 }

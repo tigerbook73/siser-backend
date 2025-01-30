@@ -122,10 +122,6 @@
       <td>{{ $helper->formatSubscriptionPlanName($subscription) }}</td>
     </tr>
     <tr>
-      <td >{{ $helper->trans('subscription.license_package') }}</td>
-      <td>{{ $helper->formatSubscriptionLicenseName($subscription) }}</td>
-    </tr>
-    <tr>
       <td>{{ $helper->trans('subscription.billing_period') }}</td>
       <td>{{ $helper->formatBillingPeriod($subscription) }}</td>
     </tr>
@@ -183,10 +179,6 @@
     <tr>
       <td>{{ $helper->trans('subscription.next_invoice_plan') }}</td>
       <td>{{ $helper->formatSubscriptionPlanName($subscription, true) }}</td>
-    </tr>
-    <tr>
-      <td >{{ $helper->trans('subscription.next_license_package') }}</td>
-      <td>{{ $helper->formatSubscriptionLicenseName($subscription, true) }}</td>
     </tr>
     <tr>
       <td>{{ $helper->trans('subscription.next_invoice_price') }}</td>
