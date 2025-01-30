@@ -7,7 +7,6 @@ use App\Models\PaddleMap;
 use App\Models\Refund;
 use App\Services\CurrencyHelper;
 use App\Services\DigitalRiver\SubscriptionManagerResult;
-use Illuminate\Support\Carbon;
 use Paddle\SDK\Entities\Adjustment as PaddleAdjustment;
 use Paddle\SDK\Entities\Shared\Action;
 use Paddle\SDK\Entities\Shared\AdjustmentStatus;
@@ -47,15 +46,12 @@ class AdjustmentService extends PaddleEntityService
    *
    * refreshRefund($refund)
    * 1. fetch adjustment
-   * 2. updateRefund($refund, $adjustment, $force = true)
+   * 2. updateRefund($refund, $adjustment)
    *
    * helper functions:
    * createRefund($invoice, $adjustment)
    * updateRefund($refund, $adjustment)
    * createAdjustmentFromTransaction($transaction, ?$amount, ?$items[item_id, amount], $reason)
-   *
-   * other consideration:
-   * 1. timestamp: update refund only timestamp is newer or by force
    */
 
   /**
@@ -195,14 +191,14 @@ class AdjustmentService extends PaddleEntityService
   }
 
   /**
-   * Refresh refund from adjustment by force
+   * Refresh refund from adjustment
    *
    * @param Refund $refund the refund to be refreshed
    */
   public function refreshRefund(Refund $refund): Refund
   {
     $adjustment = $this->paddleService->getAdjustment($refund->getMeta()->paddle->adjustment_id);
-    return $this->updateRefund($refund, $adjustment, true);
+    return $this->updateRefund($refund, $adjustment);
   }
 
   /**
@@ -240,28 +236,13 @@ class AdjustmentService extends PaddleEntityService
   /**
    * Update refund from adjustment
    *
-   * if not force update and $adjustment is not newer, just return the $refund
-   *
    * @param Refund $refund the refund to be updated
    * @param PaddleAdjustment $adjustment the corresponding adjustment
-   * @param bool $force force update
    *
    * @return Refund
    */
-  public function updateRefund(Refund $refund, PaddleAdjustment $adjustment, bool $force = false): Refund
+  public function updateRefund(Refund $refund, PaddleAdjustment $adjustment): Refund
   {
-    // if not force update and $adjustment is not newer, just return $refund
-    if (
-      !$force &&
-      $refund->getMeta()->paddle->paddle_timestamp &&
-      Carbon::parse($refund->getMeta()->paddle->paddle_timestamp)->gte(
-        ($adjustment->updatedAt ?? $adjustment->createdAt)->format('Y-m-d\TH:i:s\Z')
-      )
-    ) {
-      $this->result->appendMessage("update skipped because it is up-to-date", location: __FUNCTION__);
-      return $refund;
-    }
-
     $refund = $this->fillRefundFromAdjustment($refund, $adjustment);
     $refund->save();
     $this->result->appendMessage("refund {$refund->id} updated from adjustment {$adjustment->id}", location: __FUNCTION__);

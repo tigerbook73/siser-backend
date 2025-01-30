@@ -86,23 +86,14 @@ class TransactionService extends PaddleEntityService
    *
    * @param Subscription $subscription
    * @param PaddleTransaction $paddleTransaction
-   * @param bool $force
    *
    * @return Invoice
    */
-  public function createOrUpdateInvoice(Subscription $subscription, PaddleTransaction $paddleTransaction, bool $force = false): Invoice
+  public function createOrUpdateInvoice(Subscription $subscription, PaddleTransaction $paddleTransaction): Invoice
   {
     // find or create invoice
     $invoice = PaddleMap::findInvoiceByPaddleId($paddleTransaction->id);
     if ($invoice) {
-      // check if invoice is up-to-date
-      if (
-        !$force &&
-        Carbon::parse($invoice->getMeta()->paddle->paddle_timestamp)->gte($paddleTransaction->updatedAt->format('Y-m-d\TH:i:s\Z'))
-      ) {
-        $this->result->appendMessage("invoice ({$invoice->id}) is up-to-date, skip updating", location: __FUNCTION__);
-        return $invoice;
-      }
       $this->result->appendMessage("updating invoice for paddle transaction ({$paddleTransaction->id})", location: __FUNCTION__);
     } else {
       $invoice =  (new Invoice())->setStatus(Invoice::STATUS_INIT);
@@ -323,6 +314,6 @@ class TransactionService extends PaddleEntityService
   public function refreshInvoice(Invoice $invoice): Invoice
   {
     $paddleTransaction = $this->paddleService->getTransaction($invoice->getMeta()->paddle->transaction_id);
-    return $this->createOrUpdateInvoice($invoice->subscription, $paddleTransaction, force: true);
+    return $this->createOrUpdateInvoice($invoice->subscription, $paddleTransaction);
   }
 }

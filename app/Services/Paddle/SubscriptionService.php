@@ -63,18 +63,8 @@ class SubscriptionService extends PaddleEntityService
     return $subscription;
   }
 
-  public function updateSubscription(Subscription $subscription, PaddleSubscription $paddleSubscription, ?PaddleTransaction $paddleTransaction = null, bool $force = false): Subscription
+  public function updateSubscription(Subscription $subscription, PaddleSubscription $paddleSubscription, ?PaddleTransaction $paddleTransaction = null): Subscription
   {
-    if (
-      !$force &&
-      Carbon::parse($subscription->getMeta()->paddle->paddle_timestamp)->gte(
-        $paddleSubscription->updatedAt->format('Y-m-d\TH:i:s\Z')
-      )
-    ) {
-      $this->result->appendMessage("subscription ({$subscription->id}) for ({$paddleSubscription->id}) already updated", location: __FUNCTION__);
-      return $subscription;
-    }
-
     $this->result->appendMessage("filling subscription ({$subscription->id}) from ({$paddleSubscription->id})", location: __FUNCTION__);
     $this->fillSubscription($subscription, $paddleSubscription, $paddleTransaction);
 
@@ -362,16 +352,6 @@ class SubscriptionService extends PaddleEntityService
 
   public function onSubscriptionUpdated(SubscriptionUpdated $subscriptionUpdated): void
   {
-    /**
-     * Steps:
-     * 1. get notification.paddleSubscription
-     * 2. if user_id is empty, skip
-     * 3. if subscription not exist, fails
-     * 4. validate subscription.timestamp, if it's newer than the paddleSubscription.updated_at, skip
-     * 5. if subscription.status is stopped or failed, skip
-     * 6. update scription from paddle subscription and transaction
-     */
-
     // step 1: get notification.paddleSubscription
     $paddleSubscriptionNotification = $subscriptionUpdated->subscription;
 
@@ -488,7 +468,7 @@ class SubscriptionService extends PaddleEntityService
   public function refreshSubscription(Subscription $subscription): Subscription
   {
     $paddleSubscription = $this->paddleService->getSubscription($subscription->getMeta()->paddle->subscription_id);
-    $this->updateSubscription($subscription, $paddleSubscription, force: true);
+    $this->updateSubscription($subscription, $paddleSubscription);
     return $subscription;
   }
 }
