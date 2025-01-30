@@ -18,7 +18,6 @@ echo "do migration ..."
 php artisan migrate --force
 
 # update webhook
-php artisan dr:cmd enable-hook
 php artisan paddle:cmd enable-hook
 
 echo "start $role service ..."
