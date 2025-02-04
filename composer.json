@@ -10,10 +10,6 @@
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/futurecorporation/digital-river-php.git"
-    },
-    {
-      "type": "vcs",
       "url": "https://github.com/futurecorporation/paddle-php-sdk.git"
     }
   ],
@@ -21,7 +17,6 @@
     "php": "^8.0.2",
     "aws/aws-sdk-php": "^3.224",
     "bugsnag/bugsnag-laravel": "^2.0",
-    "digitalriver/digital-river-php": "*@dev",
     "doctrine/dbal": "^3.4",
     "laravel/framework": "^9.11",
     "laravel/octane": "^1.5",

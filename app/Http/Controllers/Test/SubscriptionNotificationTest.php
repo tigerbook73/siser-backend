@@ -32,7 +32,7 @@ class SubscriptionNotificationTest
   public Refund|null $refund = null;
 
 
-  static public function init(string $country, string $plan, string $coupon)
+  static public function init(string $country, string $plan)
   {
     $inst = new self();
     $inst->updateCountry($country);
@@ -207,7 +207,7 @@ class SubscriptionNotificationTest
       'expiration_month'    => 12,
       'last_four_digits'    => '1111'
     ];
-    $this->paymentMethod->setDrSourceId('dr-source-0000');
+    $this->paymentMethod->dr = [];
     $this->paymentMethod->save();
     return $this;
   }
@@ -297,71 +297,5 @@ class SubscriptionNotificationTest
     $this->subscription->sub_status                   = $subStatus ?? $this->subscription->sub_status ?? Subscription::SUB_STATUS_NORMAL;
     $this->subscription->save();
     return $this;
-  }
-
-  public function updateInvoice(string $status = null, bool $next = false)
-  {
-    $this->invoice = $this->invoice ?? new Invoice();
-
-    if ($next) {
-      $this->invoice->setType(Invoice::TYPE_RENEW_SUBSCRIPTION)
-        ->fillBasic($this->subscription)
-        ->fillFromSubscriptionNext($this->subscription);
-    } else {
-      $this->invoice->setType(Invoice::TYPE_NEW_SUBSCRIPTION)
-        ->fillBasic($this->subscription)
-        ->fillFromSubscription($this->subscription);
-    }
-
-    $this->invoice->total_refunded        = 0;
-    $this->invoice->available_to_refund_amount  = $this->invoice->total_amount;
-
-    $this->invoice->pdf_file              = "/robots.txt";
-    $this->invoice->status                = $status ?? $this->invoice->status ?? Invoice::STATUS_PENDING;
-    $this->invoice->dr                    = [
-      "file_id"   =>  "dr-file-0000",
-      "order_id"  =>  "dr-order-0000",
-    ];
-    $this->invoice->save();
-    return $this;
-  }
-
-  public function updateInvoiceCoupon()
-  {
-    // if ($this->subscription->current_period > 1) {
-    //   return $this;
-    // }
-
-    $this->invoice->coupon_info      = $this->coupon->info();
-    $this->invoice->subtotal         = $this->subscription->subtotal;
-    $this->invoice->total_tax        = $this->subscription->total_tax;
-    $this->invoice->total_amount     = $this->subscription->total_amount;
-    $this->invoice->save();
-    return $this;
-  }
-
-  public function updateRefund(bool $success = true)
-  {
-    /** @var Refund|null @refund */
-    $refund = Refund::where('dr->refund_id', 'dr-refund-id-0000')->first();
-
-    if (!$this->invoice->getDrOrderId()) {
-      $this->invoice->setDrOrderId('dr-order-id-0000');
-    }
-    $this->invoice->available_to_refund_amount = $this->invoice->total_amount;
-    $this->invoice->save();
-
-    $this->refund = $refund ??
-      Refund::newFromInvoice(
-        $this->invoice,
-        $this->invoice->available_to_refund_amount,
-        "test reason"
-      );
-    $this->refund->setDrRefundId('dr-refund-id-0000');
-    $this->refund->setStatus($success ? Refund::STATUS_COMPLETED : Refund::STATUS_FAILED);
-    $this->refund->save();
-
-    $this->invoice->total_refunded = $success ? $this->invoice->total_amount : 0;
-    $this->invoice->save();
   }
 }

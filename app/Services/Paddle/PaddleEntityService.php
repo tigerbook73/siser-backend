@@ -2,7 +2,7 @@
 
 namespace App\Services\Paddle;
 
-use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\SubscriptionManager\SubscriptionManagerResult;
 use App\Services\LicenseSharing\LicenseSharingService;
 
 class PaddleEntityService

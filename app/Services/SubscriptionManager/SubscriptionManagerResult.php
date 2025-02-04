@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\DigitalRiver;
+namespace App\Services\SubscriptionManager;
 
 use App\Models\Invoice;
 use App\Models\Refund;

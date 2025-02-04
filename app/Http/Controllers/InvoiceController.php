@@ -26,12 +26,18 @@ class InvoiceController extends SimpleController
     ];
   }
 
+  /**
+   * GET /account/invoices
+   */
   public function accountList(Request $request)
   {
     $request->merge(['user_id' => auth('api')->id()]);
     return $this->list($request);
   }
 
+  /**
+   * GET /account/invoices/{id}
+   */
   public function accountIndex(int $id)
   {
     $this->validateUser();
@@ -44,6 +50,9 @@ class InvoiceController extends SimpleController
    * API for paddles
    */
 
+  /**
+   * get invoice's pdf
+   */
   protected function getTransactionInvoicePDF(Invoice $invoice)
   {
     if (!$invoice->isCompleted()) {
@@ -62,11 +71,18 @@ class InvoiceController extends SimpleController
     }
   }
 
+  /**
+   * GET /invoices/{id}/pdf
+   */
   public function getInvoicePdf(int $id)
   {
     return $this->getTransactionInvoicePDF(Invoice::findOrFail($id));
   }
 
+
+  /**
+   * GET /account/invoices/{id}/pdf
+   */
   public function accountGetInvoicePdf(int $id)
   {
     $this->validateUser();

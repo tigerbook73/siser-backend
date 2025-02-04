@@ -4,16 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Refund;
-use App\Services\DigitalRiver\SubscriptionManager;
 use App\Services\RefundRules;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class RefundController extends SimpleController
 {
   protected string $modelClass = Refund::class;
 
-  public function __construct(public SubscriptionManager $manager)
+  public function __construct()
   {
     parent::__construct();
   }
@@ -91,16 +89,16 @@ class RefundController extends SimpleController
       return response()->json(['message' => 'amount must be greater than 0 and less or equal than total refundable'], 400);
     }
 
-    // create refund
-    try {
-      $refund = $this->manager->createRefund(
-        $invoice,
-        $inputs['amount'],
-        $inputs['reason']
-      );
-      return  response()->json($this->transformSingleResource($refund));
-    } catch (\Throwable $th) {
-      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
-    }
+    // create refund, TODO:
+    // try {
+    //   $refund = $this->manager->createRefund(
+    //     $invoice,
+    //     $inputs['amount'],
+    //     $inputs['reason']
+    //   );
+    //   return  response()->json($this->transformSingleResource($refund));
+    // } catch (\Throwable $th) {
+    //   return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    // }
   }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\DigitalRiver;
+namespace App\Services\SubscriptionManager;
 
 use Exception;
 

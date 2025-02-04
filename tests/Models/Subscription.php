@@ -84,7 +84,7 @@ class Subscription {
     /** @var \Tests\Models\SubscriptionNextInvoice $next_invoice */
     public $next_invoice;
 
-    /** @var \Tests\Models\SubscriptionDR $dr */
+    /** @var array<string,mixed> $dr */
     public $dr;
 
     /** @var string $status */

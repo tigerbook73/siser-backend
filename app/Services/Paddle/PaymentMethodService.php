@@ -5,7 +5,7 @@ namespace App\Services\Paddle;
 use App\Models\PaddleMap;
 use App\Models\PaymentMethod;
 use App\Models\User;
-use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\SubscriptionManager\SubscriptionManagerResult;
 use Paddle\SDK\Entities\Shared\TransactionPaymentAttempt;
 use Paddle\SDK\Notifications\Entities\Shared\TransactionPaymentAttempt as NotificationTransactionPaymentAttempt;
 use Paddle\SDK\Notifications\Events\PaymentMethodDeleted;

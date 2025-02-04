@@ -28,9 +28,7 @@ class UserPaymentMethodGetApiTest extends UserPaymentMethodTestCase
         'expiration_year'   => 2099,
         'expiration_month'  => 7,
       ],
-      'dr' => [
-        'source_id' => 'digital-river-source-id-visa'
-      ],
+      'dr' => [],
     ];
     PaymentMethod::create($paymentMethodCreate);
     $response = $this->getJson("{$this->baseUrl}/{$user->id}/payment-method");

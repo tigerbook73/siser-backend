@@ -18,19 +18,12 @@ class SubscriptionNotifcationTestController extends Controller
     string $plan,
     string $coupon = null,
     int $licenseCount = 0,
-    string $invoiceType = Invoice::TYPE_NEW_SUBSCRIPTION,
-    bool $immediate = false
   ): SubscriptionNotificationTest|null {
-    $mockup = SubscriptionNotificationTest::init($country, $plan, $coupon);
+    $mockup = SubscriptionNotificationTest::init($country, $plan);
 
     // skip invalid free-trial scenario
     if (
       in_array($type, [
-        SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO,
-        SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED,
-        SubscriptionNotification::NOTIF_ORDER_REFUNDED,
-
-        SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED,
         SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW,
         SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_FAILED,
       ])
@@ -49,40 +42,6 @@ class SubscriptionNotifcationTestController extends Controller
     }
 
     switch ($type) {
-      case SubscriptionNotification::NOTIF_ORDER_REFUNDED:
-        $mockup->updateSubscription(
-          status: Subscription::STATUS_ACTIVE,
-          subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1,
-          licenseCount: $licenseCount
-        );
-        $mockup->updateInvoice(status: Invoice::STATUS_REFUNDED);
-        $mockup->updateRefund(true);
-        break;
-
-      case SubscriptionNotification::NOTIF_ORDER_REFUND_FAILED:
-        $mockup->updateSubscription(
-          status: Subscription::STATUS_ACTIVE,
-          subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1,
-          licenseCount: $licenseCount
-        );
-        $mockup->updateInvoice(status: Invoice::STATUS_REFUND_FAILED);
-        $mockup->updateRefund(false);
-        break;
-
-      case SubscriptionNotification::NOTIF_ORDER_CREDIT_MEMO:
-        $mockup->updateSubscription(
-          status: Subscription::STATUS_ACTIVE,
-          subStatus: Subscription::SUB_STATUS_NORMAL,
-          currentPeriod: 1,
-          licenseCount: $licenseCount
-        );
-        $mockup->updateInvoice(status: Invoice::STATUS_REFUNDED);
-        $mockup->updateRefund(true);
-        break;
-
-      case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_STOPPED:
       case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW:
       case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_FAILED:
         $mockup->updateSubscription(
@@ -93,10 +52,6 @@ class SubscriptionNotifcationTestController extends Controller
         );
         $mockup->subscription->end_date = now();
         $mockup->subscription->save();
-        $mockup->updateInvoice(
-          status: Invoice::STATUS_FAILED,
-          next: true
-        );
         break;
 
       default:
@@ -149,8 +104,6 @@ class SubscriptionNotifcationTestController extends Controller
       $data['plan'],
       $data['coupon'],
       $data['licenseCount'],
-      $data['invoiceType'],
-      $data['immediate']
     );
     if (!$mockup) {
       return response("Team Siser ... Skipped!");
@@ -173,8 +126,6 @@ class SubscriptionNotifcationTestController extends Controller
       $data['plan'],
       $data['coupon'],
       $data['licenseCount'],
-      $data['invoiceType'],
-      $data['immediate']
     );
     if (!$mockup) {
       return response("Team Siser ... Skipped!");

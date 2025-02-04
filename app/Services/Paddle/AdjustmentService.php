@@ -6,7 +6,7 @@ use App\Models\Invoice;
 use App\Models\PaddleMap;
 use App\Models\Refund;
 use App\Services\CurrencyHelper;
-use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\SubscriptionManager\SubscriptionManagerResult;
 use Paddle\SDK\Entities\Adjustment as PaddleAdjustment;
 use Paddle\SDK\Entities\Shared\Action;
 use Paddle\SDK\Entities\Shared\AdjustmentStatus;

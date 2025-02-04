@@ -22,7 +22,6 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SoftwarePackageController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -69,10 +68,6 @@ Route::domain($domainCustomer)->group(function () {
     Route::get('/account/subscriptions', [SubscriptionController::class, 'accountList']);
     Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'accountIndex']);
     // Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
-    // Route::get('/account/subscriptions/{id}/refundable', [SubscriptionController::class, 'accountRefundable']);
-    // Route::get('/account/subscriptions/{id}/license-package/refundable', [SubscriptionController::class, 'accountlicensePackageRefundable']);
-    // Route::post('/account/subscriptions/{id}/license-package/cancel', [SubscriptionController::class, 'accountLicensePackageCancel']);
-    // Route::post('/account/subscriptions/{id}/license-package/decrease', [SubscriptionController::class, 'accountLicensePackageDecrease']);
 
     Route::get('/account/subscriptions/{id}/paddle-link', [SubscriptionController::class, 'accountGetPaddleLink']);
 
@@ -236,10 +231,6 @@ Route::domain($domainAdmin)->group(function () {
     Route::get('/x-ray/summary', [ReportController::class, 'summary'])->middleware('access:x-ray.summary');
     Route::get('/x-ray/statistic-records', [ReportController::class, 'listStaticsRecord'])->middleware('access:x-ray.summary');
   });
-
-  // webhook
-  Route::get('/dr/webhooks', [WebhookController::class, 'check']);
-  Route::post('/dr/webhooks', [WebhookController::class, 'handler']);
 
   // webhook for paddle
   Route::get('/paddle/webhooks', [PaddleWebhookController::class, 'check']);

@@ -19,9 +19,6 @@ if [ "$1" == "--model" ]; then
 fi
 
 php $BASEDIR/../artisan db:seed
-# php $BASEDIR/../artisan dr:cmd clear
-# php $BASEDIR/../artisan dr:cmd init
-# php $BASEDIR/../artisan dr:cmd enable-hook
 
 php $BASEDIR/../artisan paddle:cmd sync-all
 

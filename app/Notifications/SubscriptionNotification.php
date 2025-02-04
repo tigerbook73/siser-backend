@@ -16,20 +16,10 @@ class SubscriptionNotification extends Notification implements ShouldQueue
 {
   use Queueable;
 
-  public const NOTIF_ORDER_CREDIT_MEMO            = 'subscription.order-credit-memo';
-  public const NOTIF_ORDER_REFUND_FAILED          = 'subscription.order-refund-failed';
-  public const NOTIF_ORDER_REFUNDED               = 'subscription.order-refunded';
-
-  public const NOTIF_WELCOME_BACK_FOR_STOPPED     = 'subscription.welcome-back.for-stopped';
   public const NOTIF_WELCOME_BACK_FOR_RENEW       = 'subscription.welcome-back.for-renew';
   public const NOTIF_WELCOME_BACK_FOR_FAILED      = 'subscription.welcome-back.for-failed';
 
   static public $types = [
-    self::NOTIF_ORDER_CREDIT_MEMO             => ['subject' => "Order ##O Credit Memo",                   'validate' => null],
-    self::NOTIF_ORDER_REFUND_FAILED           => ['subject' => "Order ##O Refund Failed",                 'validate' => null],
-    self::NOTIF_ORDER_REFUNDED                => ['subject' => "Order ##O Refund Confirmed",              'validate' => null],
-
-    self::NOTIF_WELCOME_BACK_FOR_STOPPED      => ['subject' => "Welcome Back Package",                    'validate' => null],
     self::NOTIF_WELCOME_BACK_FOR_RENEW        => ['subject' => "Welcome Back Package",                    'validate' => null],
     self::NOTIF_WELCOME_BACK_FOR_FAILED       => ['subject' => "Subscription ##S Terminated",             'validate' => null],
   ];

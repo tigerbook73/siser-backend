@@ -3,11 +3,9 @@
 namespace App\Models;
 
 use App\Models\Base\Refund as BaseRefund;
-use DigitalRiver\ApiSdk\Model\OrderRefund as DrRefund;
 
 class Refund extends BaseRefund
 {
-  use TraitDrAttr;
   use TraitStatusTransition;
 
   // type
@@ -17,10 +15,6 @@ class Refund extends BaseRefund
   public const STATUS_PENDING       = 'pending';
   public const STATUS_FAILED        = 'failed';
   public const STATUS_COMPLETED     = 'completed';
-
-  // dr attributes
-  public const DR_REFUND_ID         = 'refund_id';
-  public const DR_ORDER_ID          = 'order_id';
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -39,26 +33,6 @@ class Refund extends BaseRefund
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
   ];
 
-  public function getDrRefundId()
-  {
-    return $this->getDrAttr(self::DR_REFUND_ID);
-  }
-
-  public function setDrRefundId(string $drRefundId)
-  {
-    $this->dr_refund_id = $drRefundId;
-    return $this->setDrAttr(self::DR_REFUND_ID, $drRefundId);
-  }
-
-  public function getDrOrderId()
-  {
-    return $this->getDrAttr(self::DR_ORDER_ID);
-  }
-
-  public function setDrOrderId(string $drOrderId)
-  {
-    return $this->setDrAttr(self::DR_ORDER_ID, $drOrderId);
-  }
 
   /**
    * create a new Refund model (without saving to database) from Invoice
@@ -81,22 +55,8 @@ class Refund extends BaseRefund
     $refund->amount               = $amount;
     $refund->payment_method_info  = $invoice->payment_method_info;
     $refund->reason               = $reason ?? "";
-    $refund->setDrOrderId($invoice->getDrOrderId());
     $refund->setStatus(self::STATUS_PENDING);
     return $refund;
-  }
-
-  static public function findByDrRefundId(string $drRefundId): ?Refund
-  {
-    return self::where('dr_refund_id', $drRefundId)->first();
-  }
-
-  public function fillFromDrObject(DrRefund $drRefund): self
-  {
-    $this->setDrRefundId($drRefund->getId());
-    $this->amount = $drRefund->getAmount() ?? array_reduce($drRefund->getItems() ?? [], fn($carry, $item) => $carry + $item->getAmount(), 0);
-
-    return $this;
   }
 
   public function getMeta(): RefundMeta

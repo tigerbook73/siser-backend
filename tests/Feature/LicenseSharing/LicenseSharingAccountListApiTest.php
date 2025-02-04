@@ -2,9 +2,7 @@
 
 namespace Tests\Feature\LicenseSharing;
 
-use App\Models\Subscription;
 use App\Models\User;
-use App\Services\DigitalRiver\SubscriptionManager;
 use Tests\Feature\LicenseSharing\LicenseSharingTestCase;
 use Tests\Helper\LicenseSharingTestHelper;
 
@@ -26,11 +24,13 @@ class LicenseSharingAccountListApiTest extends LicenseSharingTestCase
 
   public function test_list_normal_ok()
   {
-    $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
-    $this->listAssert(count: 1);
+    $this->markTestIncomplete();
 
-    $this->manager->stopSubscription($licenseSharing->subscription, 'test');
+    // $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
+    // $this->listAssert(count: 1);
 
-    $this->listAssert(count: 0);
+    // $this->manager->stopSubscription($licenseSharing->subscription, 'test');
+
+    // $this->listAssert(count: 0);
   }
 }

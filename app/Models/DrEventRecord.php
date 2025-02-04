@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\DrEventRecord as BaseDrEventRecord;
-use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\SubscriptionManager\SubscriptionManagerResult;
 
 
 class DrEventRecord extends BaseDrEventRecord

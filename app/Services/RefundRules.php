@@ -6,7 +6,6 @@ use App\Models\Invoice;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Models\User;
-use App\Services\DigitalRiver\DigitalRiverService;
 
 class RefundRules
 {
@@ -41,9 +40,6 @@ class RefundRules
         ->setRefundable(false)
         ->setReason('invoice is in disputing or disputed');
     }
-
-    // update invoice from DR order
-    self::updateInvoicesFromDrOrder($invoice);
 
     // check 4: invoice must not be fully refunded (amount)
     if ($invoice->available_to_refund_amount < 0.01) {
@@ -116,7 +112,6 @@ class RefundRules
 
     // update invoice and check again
     if ($subscriptionInvoice) {
-      self::updateInvoicesFromDrOrder($subscriptionInvoice);
       if ($subscriptionInvoice->available_to_refund_amount < 0.01) {
         $subscriptionInvoice = null;
       }
@@ -160,23 +155,6 @@ class RefundRules
       return (new RefundableResult())
         ->setRefundable(true)
         ->appendInvoices($subscriptionInvoice);
-    }
-  }
-
-  /**
-   * @param Invoice|Invoice[] $invoices
-   */
-  static public function updateInvoicesFromDrOrder(Invoice|array $invoices): void
-  {
-    /**
-     * @var DigitalRiverService $service
-     */
-    $service = app(DigitalRiverService::class);
-
-    $invoices = is_array($invoices) ? $invoices : [$invoices];
-    foreach ($invoices as $invoice) {
-      $drOrder = $service->getOrder($invoice->getDrOrderId());
-      $invoice->fillFromDrObject($drOrder)->save();
     }
   }
 }

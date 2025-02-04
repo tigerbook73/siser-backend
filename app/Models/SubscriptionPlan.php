@@ -28,7 +28,6 @@ class SubscriptionPlan extends BaseSubscriptionPlan
     'billing_offset_days'     => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
     'reminder_offset_days'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'collection_period_days'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
-    'dr_plan_id'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'status'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'created_at'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
@@ -50,25 +49,6 @@ class SubscriptionPlan extends BaseSubscriptionPlan
       $names[] = self::buildPlanName($type, $interval, $interval_count, $suffix);
     }
     return self::whereIn('name', $names)->where('status', self::STATUS_ACTIVE)->first();
-  }
-
-  static protected function findDrPlanId(string|array $type, string $interval, int $interval_count, string $suffix = null): string|null
-  {
-    $plan = self::findByTypeAndIterval($type, $interval, $interval_count, $suffix);
-    return $plan?->dr_plan_id;
-  }
-
-  static public function findFreePlanDrId(string $interval, int $interval_count, string $suffix = null): string|null
-  {
-    return self::findDrPlanId(self::TYPE_FREE_TRIAL, $interval, $interval_count, $suffix);
-  }
-
-  static public function findNormalPlanDrId(string $interval, int $interval_count, string $suffix = null): string|null
-  {
-    $types = (config('dr.mode') == 'prod') ?
-      [SubscriptionPlan::TYPE_STANDARD] :
-      [SubscriptionPlan::TYPE_STANDARD, SubscriptionPlan::TYPE_TEST];
-    return self::findDrPlanId($types, $interval, $interval_count, $suffix);
   }
 
   public function beforeCreate()

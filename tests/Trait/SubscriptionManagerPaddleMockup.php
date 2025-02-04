@@ -4,7 +4,7 @@ namespace Tests\Trait;
 
 use App\Models\BillingInfo;
 use App\Models\Plan;
-use App\Services\DigitalRiver\SubscriptionManagerResult;
+use App\Services\SubscriptionManager\SubscriptionManagerResult;
 use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Paddle\AddressService as AddressServiceStandard;
 use App\Services\Paddle\BusinessService as BusinessServiceStandard;

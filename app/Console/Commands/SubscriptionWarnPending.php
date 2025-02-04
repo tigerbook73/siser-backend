@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Subscription;
 use App\Notifications\SubscriptionWarning;
-use App\Services\DigitalRiver\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -33,7 +32,7 @@ class SubscriptionWarnPending extends Command
   const REFUND_PROCESSING_PERIOD      = '3 days';
   const SUBSCRIPTION_HANGING_PERIOD   = '15 days';
 
-  public function __construct(public SubscriptionManager $manager)
+  public function __construct()
   {
     parent::__construct();
   }

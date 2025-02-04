@@ -14,16 +14,12 @@ use Illuminate\Support\Facades\Log;
 class User extends UserWithTrait
 {
   use Notifiable;
-  use TraitDrAttr;
 
   // user_type
   public const TYPE_NORMAL        = 'normal';
   public const TYPE_STAFF         = 'staff';
   public const TYPE_VIP           = 'vip';
   public const TYPE_BLACKLISTED   = 'blacklisted';
-
-  // DR
-  public const DR_CUSTOMER_ID     = 'customer_id';
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -101,16 +97,6 @@ class User extends UserWithTrait
     if ($this->wasChanged(['subscription_level', 'seat_count'])) {
       $this->lds_license->updateSubscriptionLevel($this->subscription_level, $this->seat_count);
     };
-  }
-
-  public function getDrCustomerId(): string|null
-  {
-    return $this->getDrAttr(User::DR_CUSTOMER_ID);
-  }
-
-  public function setDrCustomerId(string $drCustomerId): self
-  {
-    return $this->setDrAttr(User::DR_CUSTOMER_ID, $drCustomerId);
   }
 
   static public function createOrUpdateFromCognitoUser(CognitoUser $cognitoUser): User

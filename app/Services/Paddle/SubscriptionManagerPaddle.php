@@ -3,11 +3,10 @@
 namespace App\Services\Paddle;
 
 use App\Models\DrEventRecord;
-use App\Services\DigitalRiver\SubscriptionManagerResult;
-use App\Services\DigitalRiver\WebhookException;
+use App\Services\SubscriptionManager\SubscriptionManagerResult;
+use App\Services\SubscriptionManager\WebhookException;
 use App\Services\LicenseSharing\LicenseSharingService;
 use App\Services\Paddle\PaddleService;
-use DigitalRiver\ApiSdk\Model\Discount;
 use Paddle\SDK\Entities\Event;
 use Paddle\SDK\Notifications\Events\AdjustmentCreated;
 use Paddle\SDK\Notifications\Events\AdjustmentUpdated;
@@ -112,7 +111,7 @@ class SubscriptionManagerPaddle
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_FAILED, 'in-processing')
         ->appendMessage("event [{$this->result->getEventType()}] failed: already in processing", location: __FUNCTION__);
-      return response()->json($this->result->getData(), 409); // return 409 to ask DR to retry
+      return response()->json($this->result->getData(), 409);
     }
 
     try {

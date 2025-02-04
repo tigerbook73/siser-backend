@@ -6,11 +6,7 @@ use App\Models\Paddle\ProductCustomData;
 use App\Models\PaddleMap;
 use App\Models\Product;
 use App\Services\CurrencyHelper;
-use App\Services\DigitalRiver\WebhookException;
-use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
-use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
-use DigitalRiver\ApiSdk\Model\Order as DrOrder;
-use DigitalRiver\ApiSdk\Model\ProductDetails as DrProductDetails;
+use App\Services\SubscriptionManager\WebhookException;
 use Paddle\SDK\Entities\Shared\TransactionDetailsPreview;
 use Paddle\SDK\Entities\Subscription as PaddleSubscription;
 use Paddle\SDK\Entities\Transaction\TransactionDetails;
@@ -82,37 +78,6 @@ class ProductItem
   }
 
   /**
-   * @return array[]
-   */
-  static public function buildItemsFromDrObject(DrCheckout|DrOrder|DrInvoice $drObject): array
-  {
-    $items = [];
-    foreach ($drObject->getItems() as $drItem) {
-      $category = self::ITEM_CATEGORY_PLAN;
-      $item = [
-        'category'                    => $category,
-        'name'                        => $drItem->getProductDetails()->getName(),
-        'quantity'                    => $drItem->getQuantity(),
-        'price'                       => $drItem->getAmount(),
-        'tax'                         => $drItem->getTax()->getAmount(),
-        'amount'                      => $drItem->getAmount(),
-        'dr_item_id'                  => null,
-        'available_to_refund_amount'  => 0,
-      ];
-      if ($drObject instanceof DrOrder) {
-        $item['dr_item_id'] = $drItem->getId();
-        $item['available_to_refund_amount'] = in_array($drObject->getState(), [DrOrder::STATE_ACCEPTED, DrOrder::STATE_FULFILLED]) ?
-          $drItem->getAmount() + $drItem->getTax()->getAmount() : ($drItem->getAvailableToRefundAmount() ?? 0);
-      }
-      $items[] = $item;
-    }
-
-    // TODO: make the plan item first if possible
-
-    return $items;
-  }
-
-  /**
    * @return array[] $items
    */
   static public function removeItem(array $items, string $category): array
@@ -171,27 +136,6 @@ class ProductItem
   }
 
   /**
-   * fill DrProductDetails with item data
-   */
-  static public function fillDrProductDetails(DrProductDetails $drProductDetails, array $item): DrProductDetails
-  {
-    $drProductDetails
-      ->setSkuGroupId(config('dr.sku_grp_subscription'))
-      ->setDescription($item['category'])
-      ->setName($item['name'])
-      ->setCountryOfOrigin('AU');
-    return $drProductDetails;
-  }
-
-  /**
-   * build DrProductDetails from item data
-   */
-  static public function BuildDrProductDetails(array $item): DrProductDetails
-  {
-    return self::fillDrProductDetails(new DrProductDetails(), $item);
-  }
-
-  /**
    * sort items
    *
    */
@@ -228,7 +172,6 @@ class ProductItem
       'discount'                    => $discount,
       'tax'                         => $tax,
       'amount'                      => $amount,
-      'dr_item_id'                  => null,
       'available_to_refund_amount'  => 0,
     ];
   }

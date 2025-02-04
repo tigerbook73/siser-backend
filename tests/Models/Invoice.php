@@ -78,7 +78,7 @@ class Invoice {
     /** @var \Tests\Models\InvoiceCreditMemo[] $credit_memos */
     public $credit_memos = [];
 
-    /** @var \Tests\Models\InvoiceDR $dr */
+    /** @var array<string,mixed> $dr */
     public $dr;
 
     /** @var string $status */

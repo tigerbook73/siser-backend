@@ -30,9 +30,6 @@ class ProductItem {
     /** @var float|null $amount price after tax*/
     public $amount = null;
 
-    /** @var string $dr_order_id */
-    public $dr_order_id = "";
-
     /** @var float $available_to_refund_amount */
     public $available_to_refund_amount = 0;
 

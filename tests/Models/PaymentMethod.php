@@ -18,7 +18,7 @@ class PaymentMethod {
     /** @var \Tests\Models\PaymentMethodDisplayData $display_data */
     public $display_data;
 
-    /** @var \Tests\Models\PaymentMethodDR $dr */
+    /** @var array<string,mixed> $dr */
     public $dr;
 
     /** @var array<string,mixed> $meta */

@@ -5,18 +5,13 @@ namespace App\Models;
 use App\Models\Base\Subscription as BaseSubscription;
 use App\Notifications\SubscriptionNotification;
 use Carbon\Carbon;
-use DigitalRiver\ApiSdk\Model\Checkout as DrCheckout;
-use DigitalRiver\ApiSdk\Model\Invoice as DrInvoice;
-use DigitalRiver\ApiSdk\Model\Order as DrOrder;
-use DigitalRiver\ApiSdk\Model\Subscription as DrSubscription;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Log;
 
 class Subscription extends BaseSubscription
 {
   use Notifiable;
-  use TraitStatusTransition, TraitDrAttr;
+  use TraitStatusTransition;
 
   // status
   public const STATUS_ACTIVE                  = 'active';
@@ -29,14 +24,6 @@ class Subscription extends BaseSubscription
   public const SUB_STATUS_CANCELLING          = 'cancelling';     // to be cancelled at the end of current period
   public const SUB_STATUS_NORMAL              = 'normal';         // default sub status for all status
   public const SUB_STATUS_ORDER_PENDING       = 'order_pending';  // for STATUS_PENDING
-
-  // dr attributes
-  public const DR_CUSTOMER_ID       = 'customer_id';
-  public const DR_CHECKOUT_ID       = 'checkout_id';
-  public const DR_ORDER_ID          = 'order_id';
-  public const DR_SESSION_ID        = 'checkout_payment_session_id';
-  public const DR_SOURCE_ID         = 'source_id';
-  public const DR_SUBSCRIPTION_ID   = 'subscription_id';
 
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -109,72 +96,6 @@ class Subscription extends BaseSubscription
     $subscription->setStatus(Subscription::STATUS_ACTIVE);
     $subscription->save();
     return $subscription;
-  }
-
-  public function getDrCustomerId(): string|null
-  {
-    return $this->getDrAttr(self::DR_CUSTOMER_ID);
-  }
-
-  public function getDrCheckoutId(): string|null
-  {
-    return $this->getDrAttr(self::DR_CHECKOUT_ID);
-  }
-
-  public function getDrOrderId(): string|null
-  {
-    return $this->getDrAttr(self::DR_ORDER_ID);
-  }
-
-  public function getDrSessionId(): string|null
-  {
-    return $this->getDrAttr(self::DR_SESSION_ID);
-  }
-
-  public function getDrSourceId(): string|null
-  {
-    return $this->getDrAttr(self::DR_SOURCE_ID);
-  }
-
-  public function getDrSubscriptionId(): string|null
-  {
-    return $this->dr_subscription_id;
-  }
-
-  public function setDrCustomerId(string $customer_id): self
-  {
-    return $this->setDrAttr(self::DR_CHECKOUT_ID, $customer_id);
-  }
-
-  public function setDrCheckoutId(string $checkout_id): self
-  {
-    return $this->setDrAttr(self::DR_CHECKOUT_ID, $checkout_id);
-  }
-
-  public function setDrOrderId(string $order_id): self
-  {
-    return $this->setDrAttr(self::DR_ORDER_ID, $order_id);
-  }
-
-  public function setDrSessionId(string $session_id): self
-  {
-    return $this->setDrAttr(self::DR_SESSION_ID, $session_id);
-  }
-
-  public function setDrSourceId(string $source_id): self
-  {
-    return $this->setDrAttr(self::DR_SOURCE_ID, $source_id);
-  }
-
-  public function setDrSubscriptionId(string $subscription_id): self
-  {
-    $this->dr_subscription_id = $subscription_id;
-    return $this->setDrAttr(self::DR_SUBSCRIPTION_ID, $subscription_id);
-  }
-
-  static public function findByDrSubscriptionId(string $drSubscriptionId): Subscription|null
-  {
-    return self::where('dr_subscription_id', $drSubscriptionId)->first();
   }
 
   public function initFill(): self
@@ -256,55 +177,6 @@ class Subscription extends BaseSubscription
   public function fillPaymentMethod(PaymentMethod $paymentMethod): self
   {
     $this->payment_method_info = $paymentMethod->info();
-    $this->setDrSourceId($paymentMethod->getDrSourceId());
-    return $this;
-  }
-
-  public function fillAmountFromDrObject(DrCheckout|DrOrder|DrInvoice $drObject): self
-  {
-    // Note: DrCheckout, DrOrder and DrInvoice has same memeber functions
-
-    // fill items
-    $this->items = ProductItem::buildItemsFromDrObject($drObject);
-
-    // fill price
-    $this->price        = $drObject->getSubtotal();
-    $this->subtotal     = $drObject->getSubtotal();
-    $this->total_tax    = $drObject->getTotalTax();
-    $this->total_amount = $drObject->getTotalAmount();
-    $this->tax_rate     = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ?
-      0 :
-      $drObject->getItems()[0]->getTax()->getRate();
-    return $this;
-  }
-
-  public function fillPeriodFromDrObject(DrSubscription $drSubscription): self
-  {
-    $this->start_date = $this->start_date ?? Carbon::parse($drSubscription->getCurrentPeriodStartDate());
-    $this->current_period = $this->current_period ?: 1;
-    $this->current_period_start_date = Carbon::parse($drSubscription->getCurrentPeriodStartDate());
-    $this->current_period_end_date = Carbon::parse($drSubscription->getCurrentPeriodEndDate());
-    $this->next_invoice_date = Carbon::parse($drSubscription->getNextInvoiceDate());
-    $this->next_reminder_date = Carbon::parse($drSubscription->getNextReminderDate());
-    return $this;
-  }
-
-  public function moveToNext(): self
-  {
-    $next_invoice = $this->next_invoice;
-
-    $this->current_period            = $next_invoice['current_period'];
-    $this->current_period_start_date = $next_invoice['current_period_start_date'];
-    $this->current_period_end_date   = $next_invoice['current_period_end_date'];
-    $this->coupon_info               = $next_invoice['coupon_info'];
-    $this->license_package_info      = $next_invoice['license_package_info'];
-    $this->items                     = $next_invoice['items'];
-    $this->price                     = $next_invoice['price'];
-    $this->subtotal                  = $next_invoice['subtotal'];
-    $this->tax_rate                  = $next_invoice['tax_rate'] ?? 0;
-    $this->total_tax                 = $next_invoice['total_tax'];
-    $this->total_amount              = $next_invoice['total_amount'];
-
     return $this;
   }
 
@@ -366,27 +238,6 @@ class Subscription extends BaseSubscription
     return $this;
   }
 
-  public function fillNextInvoiceAmountFromDrObject(DrOrder|DrInvoice $drObject): self
-  {
-    // Note: DrCheckout, DrOrder and DrInvoice has same following memeber functions
-    $next_invoice = $this->next_invoice;
-
-    // fill items
-    $next_invoice['items'] = ProductItem::buildItemsFromDrObject($drObject);
-
-    // fill price
-    $next_invoice['subtotal']       = $drObject->getSubtotal();
-    $next_invoice['total_tax']      = $drObject->getTotalTax();
-    $next_invoice['total_amount']   = $drObject->getTotalAmount();
-    $next_invoice['tax_rate']       = ($drObject->getSubtotal() != 0 && $drObject->getTotalTax() == 0) ?
-      0 :
-      $drObject->getItems()[0]->getTax()->getRate();
-
-
-    $this->next_invoice = $next_invoice;
-    return $this;
-  }
-
   public function isNextPlanDifferent(): bool
   {
     if ($this->plan_info['id'] !== $this->next_invoice['plan_info']['id']) {
@@ -432,11 +283,6 @@ class Subscription extends BaseSubscription
       ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])
       ->where('period', $this->current_period)
       ->first();
-  }
-
-  public function getInvoiceByOrderId(string $orderId): Invoice|null
-  {
-    return $this->invoices()->where('dr_order_id', $orderId)->first();
   }
 
   public function getNewSubscriptionInvoice(): Invoice

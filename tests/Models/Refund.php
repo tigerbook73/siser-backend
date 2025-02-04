@@ -36,7 +36,7 @@ class Refund {
     /** @var \Tests\Models\PaymentMethodInfo $payment_method_info */
     public $payment_method_info;
 
-    /** @var \Tests\Models\RefundDr $dr */
+    /** @var array<string,mixed> $dr */
     public $dr;
 
     /** @var string $status */
