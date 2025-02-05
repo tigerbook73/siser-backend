@@ -20,7 +20,6 @@ class Invoice extends BaseInvoice
   public const STATUS_INIT            = 'init';
   public const STATUS_PENDING         = 'pending';
   public const STATUS_CANCELLED       = 'cancelled';
-  public const STATUS_PROCESSING      = 'processing';   // order.accepted or subscription.extended
   public const STATUS_FAILED          = 'failed';
   public const STATUS_COMPLETED       = 'completed';
   public const STATUS_REFUNDING       = 'refunding';
@@ -191,46 +190,6 @@ class Invoice extends BaseInvoice
     return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
 
-  public function fillFromSubscription(Subscription $subscription): self
-  {
-    $this->plan_info            = $subscription->plan_info;
-    $this->coupon_info          = $subscription->coupon_info;
-    $this->license_package_info = $subscription->license_package_info;
-    $this->items                = $subscription->items;
-
-    $this->period               = $subscription->current_period ?: 1;
-    $this->period_start_date    = $subscription->current_period_start_date;
-    $this->period_end_date      = $subscription->current_period_end_date;
-    $this->invoice_date         = now();
-
-    $this->subtotal             = $subscription->subtotal ?? $subscription->price;
-    $this->total_tax            = $subscription->total_tax ?? 0.00;
-    $this->total_amount         = $subscription->total_amount ?? $subscription->price;
-
-    $this->available_to_refund_amount = 0;
-
-    return $this;
-  }
-
-  public function fillFromSubscriptionNext(Subscription $subscription): self
-  {
-    $this->plan_info            = $subscription->next_invoice['plan_info'];
-    $this->coupon_info          = $subscription->next_invoice['coupon_info'];
-    $this->license_package_info = $subscription->next_invoice['license_package_info'];
-    $this->items                = $subscription->next_invoice['items'];
-
-    $this->period               = $subscription->next_invoice['current_period'];
-    $this->period_start_date    = $subscription->next_invoice['current_period_start_date'];
-    $this->period_end_date      = $subscription->next_invoice['current_period_end_date'];
-    $this->invoice_date         = $subscription->next_invoice_date;
-
-    $this->subtotal             = $subscription->next_invoice['subtotal'];
-    $this->total_tax            = $subscription->next_invoice['total_tax'];
-    $this->total_amount         = $subscription->next_invoice['total_amount'];
-
-    return $this;
-  }
-
   public function setDisputeStatus(string $dispute_status, Carbon $time = null)
   {
     //
@@ -271,11 +230,6 @@ class Invoice extends BaseInvoice
   public function isPending(): bool
   {
     return $this->status === self::STATUS_PENDING;
-  }
-
-  public function isProcessing(): bool
-  {
-    return $this->status === self::STATUS_PROCESSING;
   }
 
   public function isNewSubscriptionOrder(): bool

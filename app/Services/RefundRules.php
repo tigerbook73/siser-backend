@@ -11,13 +11,10 @@ class RefundRules
 {
   static public function invoiceRefundable(Invoice $invoice): RefundableResult
   {
-    // check 1: invoice must be paid and not fully refunded
+    // check 1: invoice must be completed and partially refunded
     if (
       $invoice->status != Invoice::STATUS_COMPLETED &&
-      $invoice->status != Invoice::STATUS_PROCESSING &&
-      $invoice->status != Invoice::STATUS_PARTLY_REFUNDED &&
-      $invoice->status != Invoice::STATUS_REFUND_FAILED &&
-      $invoice->status != Invoice::STATUS_REFUNDING
+      $invoice->status != Invoice::STATUS_PARTLY_REFUNDED
     ) {
       return (new RefundableResult())
         ->setRefundable(false)
@@ -39,13 +36,6 @@ class RefundRules
       return (new RefundableResult())
         ->setRefundable(false)
         ->setReason('invoice is in disputing or disputed');
-    }
-
-    // check 4: invoice must not be fully refunded (amount)
-    if ($invoice->available_to_refund_amount < 0.01) {
-      return (new RefundableResult())
-        ->setRefundable(false)
-        ->setReason('invoice is already fully refunded');
     }
 
     // result
@@ -97,7 +87,6 @@ class RefundRules
       ->where('period', $subscription->current_period) // current period
       ->whereIn('status', [
         Invoice::STATUS_COMPLETED,
-        Invoice::STATUS_PROCESSING,
         Invoice::STATUS_PARTLY_REFUNDED,
         Invoice::STATUS_REFUND_FAILED,
         Invoice::STATUS_REFUNDING,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Refund;
+use App\Services\Paddle\SubscriptionManagerPaddle;
 use App\Services\RefundRules;
 use Illuminate\Http\Request;
 
@@ -11,7 +12,7 @@ class RefundController extends SimpleController
 {
   protected string $modelClass = Refund::class;
 
-  public function __construct()
+  public function __construct(private SubscriptionManagerPaddle $manager)
   {
     parent::__construct();
   }
@@ -35,6 +36,9 @@ class RefundController extends SimpleController
     ];
   }
 
+  /**
+   * GET /account/refunds
+   */
   public function accountList(Request $request)
   {
     $this->validateUser();
@@ -55,6 +59,9 @@ class RefundController extends SimpleController
     return ['data' => $this->transformMultipleResources($refunds)];
   }
 
+  /**
+   * GET /account/refunds/{id}
+   */
   public function accountIndex(int $id)
   {
     $this->validateUser();
@@ -69,7 +76,9 @@ class RefundController extends SimpleController
   // GET /refunds/{id}
   // default implementation
 
-  // POST /refunds
+  /**
+   * POST /refunds
+   */
   public function create(Request $request)
   {
     $this->validateUser();
@@ -90,15 +99,15 @@ class RefundController extends SimpleController
     }
 
     // create refund, TODO:
-    // try {
-    //   $refund = $this->manager->createRefund(
-    //     $invoice,
-    //     $inputs['amount'],
-    //     $inputs['reason']
-    //   );
-    //   return  response()->json($this->transformSingleResource($refund));
-    // } catch (\Throwable $th) {
-    //   return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
-    // }
+    try {
+      $refund = $this->manager->adjustmentService->createRefundDirectly(
+        $invoice,
+        $inputs['amount'],
+        $inputs['reason']
+      );
+      return  response()->json($this->transformSingleResource($refund));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
   }
 }

@@ -22,48 +22,19 @@ use Paddle\SDK\Resources\Adjustments\Operations\Create\AdjustmentItem as CreateA
 class AdjustmentService extends PaddleEntityService
 {
   /**
-   * do not set customerData
-   *
-   * Adjustment can be created from Refund of Dashboard
-   *
-   * onAdjustmentCreate/Updated():
-   * 0. fetch transaction
-   * 0. find adjustment from transaction.adjustments
-   * 0. get invoice
-   * 0. get refund
-   *
-   * if !invoice throw exception
-   * if !refund create refund from adjustment
-   * else if refund update refund from adjustment
-   * if invoice update invoice from refund
-   *
-   * createRefundAdjustment($invoice, $amount, $reason)
-   * 1. fetch transaction
-   * 2. update invoice from transaction
-   * 3. if invoice is not completed/partly-refunded, throw exception
-   * 4. create adjustment
-   * 5. create refund from adjustment
-   *
-   * refreshRefund($refund)
-   * 1. fetch adjustment
-   * 2. updateRefund($refund, $adjustment)
-   *
-   * helper functions:
-   * createRefund($invoice, $adjustment)
-   * updateRefund($refund, $adjustment)
-   * createAdjustmentFromTransaction($transaction, ?$amount, ?$items[item_id, amount], $reason)
-   */
-
-  /**
-   * Create refund adjustment from invoice/transaction
+   * Create a refund directly from invoice/transaction
+   * - create adjustment
+   * - create refund from adjustment
+   * - update invoice from refund
+   * - return refund
    *
    * @param Invoice|PaddleTransaction $invoiceOrTransaction
    * @param float $amount
    * @param string $reason
    *
-   * @return PaddleAdjustment
+   * @return Refund
    */
-  public function createAdjustment(Invoice|PaddleTransaction $invoiceOrTransaction, float $amount, string $reason): PaddleAdjustment
+  public function createRefundDirectly(Invoice|PaddleTransaction $invoiceOrTransaction, float $amount, string $reason): Refund
   {
     $invoice = $invoiceOrTransaction instanceof Invoice ? $invoiceOrTransaction : PaddleMap::findInvoiceByPaddleId($invoiceOrTransaction->id);
     $transaction = $invoiceOrTransaction instanceof Invoice ?
@@ -93,7 +64,7 @@ class AdjustmentService extends PaddleEntityService
       $items[] = new CreateAdjustmentItem(
         itemId: $transactionItem->id,
         type: $type,
-        amount: $type == AdjustmentType::Full() ?
+        amount: $type->getValue() == AdjustmentType::Full() ?
           null :
           (string)round($lowestDenominationAmount * ($transactionItem->totals->total / $baseAmount), 0)  // TODO: not correct if there are more than 2 item
       );
@@ -101,7 +72,7 @@ class AdjustmentService extends PaddleEntityService
 
     $createAdjustment = new CreateAdjustment(
       action: Action::Refund(),
-      items: [],
+      items: $items,
       reason: $reason,
       transactionId: $transaction->id,
     );
@@ -112,7 +83,11 @@ class AdjustmentService extends PaddleEntityService
     $refund = $this->createRefund($invoice, $adjustment);
     $this->result->setRefund($refund);
 
-    return $adjustment;
+    // retrieve transaction and update invoice
+    $transaction = $this->paddleService->getTransaction($transaction->id);
+    $this->manager->transactionService->createOrUpdateInvoice($refund->subscription, $transaction);
+
+    return $refund;
   }
 
   /**
@@ -211,6 +186,15 @@ class AdjustmentService extends PaddleEntityService
    */
   public function createRefund(Invoice $invoice, PaddleAdjustment $adjustment): Refund
   {
+    // this is to solve the conflict of create from API and create from event
+    $refund = PaddleMap::findRefundByPaddleId($adjustment->id);
+    if ($refund) {
+      $this->result
+        ->setRefund($refund)
+        ->appendMessage("refund already exists for adjustment, update it.", location: __FUNCTION__);
+      return $this->updateRefund($refund, $adjustment);
+    }
+
     $refund = new Refund([
       'user_id'              => $invoice->user_id,
       'subscription_id'      => $invoice->subscription_id,

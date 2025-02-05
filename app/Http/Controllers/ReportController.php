@@ -82,7 +82,7 @@ class ReportController extends Controller
     $limit = $request->limit ?? 24;
     $limit = $limit > 24 ? 24 : $limit;
 
-    /** @var Carbon $first_date $last_date */
+    /** @var ?Carbon $first_date $last_date */
     $first_date = StatisticRecord::orderBy('date')->first()?->date;
     if (!$first_date) {
       // if no record
