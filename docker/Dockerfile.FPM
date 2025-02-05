@@ -5,8 +5,8 @@ ARG backend_cli
 #
 # frontend static files
 #
-FROM ${frontend_admin}  as frontend_admin
-FROM ${frontend_customer} as frontend_customer
+FROM ${frontend_admin} AS frontend_admin
+FROM ${frontend_customer} AS frontend_customer
 
 #
 # base image
@@ -31,7 +31,7 @@ COPY ./public/static/ ./public/admin/static/
 # copy frontend customer
 #
 COPY --from=frontend_customer /dist/public/ ./public/customer
-COPY --from=frontend_customer /dist/public/index.html ./resources/views/index-customer.blade.php 
+COPY --from=frontend_customer /dist/public/index.html ./resources/views/index-customer.blade.php
 COPY ./public/static/ ./public/customer/static/
 COPY ./public/.well-known/ ./public/customer/.well-known/
 
