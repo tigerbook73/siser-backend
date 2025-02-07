@@ -91,4 +91,12 @@ class CustomerService extends PaddleEntityService
     PaddleMap::createOrUpdate($customerId, BillingInfo::class, $billingInfo->id);
     return $billingInfo;
   }
+
+  public function getManagementLinks(BillingInfo $billingInfo): array
+  {
+    $session = $this->paddleService->getCustomerPortaSession($billingInfo->getMeta()->paddle->customer_id);
+    return [
+      'overview'  => $session->urls->general->overview,
+    ];
+  }
 }

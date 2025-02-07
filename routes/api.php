@@ -64,12 +64,16 @@ Route::domain($domainCustomer)->group(function () {
     Route::get('/account/full', [UserController::class, 'fullByAccount']);
     Route::get('/account/machines', [MachineController::class, 'listByAccount']);
 
+    // account paddle link
+    Route::post('/account/paddle-link', [BillingInfoController::class, 'accountGetPaddleLink']);
+
     // account subscription
     Route::get('/account/subscriptions', [SubscriptionController::class, 'accountList']);
     Route::get('/account/subscriptions/{id}', [SubscriptionController::class, 'accountIndex']);
-    // Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
+    Route::post('/account/subscriptions/{id}/cancel', [SubscriptionController::class, 'accountCancel']);
+    Route::post('/account/subscriptions/{id}/dont-cancel', [SubscriptionController::class, 'accountDontCancel']);
 
-    Route::get('/account/subscriptions/{id}/paddle-link', [SubscriptionController::class, 'accountGetPaddleLink']);
+    Route::post('/account/subscriptions/{id}/paddle-link', [SubscriptionController::class, 'accountGetPaddleLink']);
 
     // account billing info
     Route::get('/account/billing-info', [BillingInfoController::class, 'accountGet']);
@@ -203,7 +207,8 @@ Route::domain($domainAdmin)->group(function () {
     // subscription
     Route::get('/subscriptions', [SubscriptionController::class, 'list'])->middleware('access:subscription.list');
     Route::get('/subscriptions/{id}', [SubscriptionController::class, 'index'])->middleware('access:subscription.get');
-    // Route::post('/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel'])->middleware('access:subscription.cancel');
+    Route::post('/subscriptions/{id}/cancel', [SubscriptionController::class, 'cancel'])->middleware('access:subscription.cancel');
+    Route::post('/subscriptions/{id}/dont-cancel', [SubscriptionController::class, 'dontCancel'])->middleware('access:subscription.cancel');
     // Route::post('/subscriptions/{id}/stop', [SubscriptionController::class, 'stop'])->middleware('access:subscription.stop');
 
     // user

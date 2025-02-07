@@ -9,6 +9,7 @@ use Paddle\SDK\Entities\Address;
 use Paddle\SDK\Entities\Adjustment;
 use Paddle\SDK\Entities\Business;
 use Paddle\SDK\Entities\Customer;
+use Paddle\SDK\Entities\CustomerPortalSession;
 use Paddle\SDK\Entities\Discount;
 use Paddle\SDK\Entities\Product;
 use Paddle\SDK\Entities\Price;
@@ -25,6 +26,7 @@ use Paddle\SDK\Resources\Adjustments\Operations\CreateAdjustment;
 use Paddle\SDK\Resources\Adjustments\Operations\ListAdjustments;
 use Paddle\SDK\Resources\Businesses\Operations\CreateBusiness;
 use Paddle\SDK\Resources\Businesses\Operations\UpdateBusiness;
+use Paddle\SDK\Resources\CustomerPortalSessions\Operations\CreateCustomerPortalSession;
 use Paddle\SDK\Resources\Customers\Operations\CreateCustomer;
 use Paddle\SDK\Resources\Customers\Operations\ListCustomers;
 use Paddle\SDK\Resources\Customers\Operations\UpdateCustomer;
@@ -39,6 +41,7 @@ use Paddle\SDK\Resources\Products\Operations\ListProducts;
 use Paddle\SDK\Resources\Products\Operations\UpdateProduct;
 use Paddle\SDK\Resources\Subscriptions\Operations\CancelSubscription;
 use Paddle\SDK\Resources\Subscriptions\Operations\Get\Includes as SubscriptionIncludes;
+use Paddle\SDK\Resources\Subscriptions\Operations\UpdateSubscription;
 use Paddle\SDK\Resources\Transactions\Operations\List\Includes as TransactionIncludes;
 
 class PaddleService
@@ -238,6 +241,13 @@ class PaddleService
     );
   }
 
+  public function removeSubscriptionScheduledChange(string $id): Subscription
+  {
+    return $this->paddle->subscriptions->update($id, new UpdateSubscription(
+      scheduledChange: null,
+    ));
+  }
+
   /**
    * Transactions
    */
@@ -276,6 +286,17 @@ class PaddleService
     } {
       throw new Exception('Not found!', 404);
     }
+  }
+
+  /**
+   * customer portal
+   *
+   * @param string $customerId
+   * @param string[] $subscripitonIds
+   */
+  public function getCustomerPortaSession(string $customerId, array $subscripitonIds = []): CustomerPortalSession
+  {
+    return $this->paddle->customerPortalSessions->create($customerId, new CreateCustomerPortalSession($subscripitonIds));
   }
 
   /**

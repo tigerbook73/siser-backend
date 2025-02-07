@@ -9,10 +9,7 @@ namespace Tests\Models;
  */
 class PaddleLink {
 
-    /** @var string $cancel */
-    public $cancel = "";
-
-    /** @var string $update_payment_method */
-    public $update_payment_method = "";
+    /** @var string $overview */
+    public $overview = "";
 
 }

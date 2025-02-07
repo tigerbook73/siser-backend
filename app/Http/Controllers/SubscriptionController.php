@@ -10,9 +10,8 @@ class SubscriptionController extends SimpleController
 {
   protected string $modelClass = Subscription::class;
 
-  public function __construct(
-    public SubscriptionManagerPaddle $paddleManager
-  ) {
+  public function __construct(public SubscriptionManagerPaddle $manager)
+  {
     parent::__construct();
   }
 
@@ -45,7 +44,6 @@ class SubscriptionController extends SimpleController
     return $this->transformSingleResource($object);
   }
 
-
   /**
    * GET /users/{id}/subscriptions
    */
@@ -53,6 +51,42 @@ class SubscriptionController extends SimpleController
   {
     $request->merge(['user_id' => $user_id]);
     return parent::list($request);
+  }
+
+  /**
+   *  POST /account/subscriptions/{id}/cancel
+   */
+  public function accountCancel(Request $request, int $id)
+  {
+    $this->validateUser();
+
+    $inputs = $request->validate([
+      'immediate'     => ['required', 'bool'],
+    ]);
+
+    return $this->cancelSubscription($id, (bool)$inputs['immediate'], $this->user->id);
+  }
+
+  /**
+   *  POST /account/subscriptions/{id}/dont-cancel
+   */
+  public function accountDontCancel(int $id)
+  {
+    $this->validateUser();
+
+    return $this->dontCancelSubscription($id, $this->user->id);
+  }
+
+  /**
+   * POST /account/subscriptions/{id}/padddle-link
+   */
+  public function accountGetPaddleLink(int $id)
+  {
+    $this->validateUser();
+
+    /** @var Subscription $subscription */
+    $subscription = $this->baseQuery()->where('user_id', $this->user->id)->findOrFail($id);
+    return $this->manager->subscriptionService->getManagementLinks($subscription);
   }
 
   /**
@@ -66,45 +100,81 @@ class SubscriptionController extends SimpleController
   // default implementation
 
   /**
-   *  POST /subscriptions/{id}/cancel
+   * POST /subscriptions/{id}/cancel
    */
-  // public function accountCancel(Request $request, int $id)
-  // {
-  //   $this->validateUser();
+  public function cancel(Request $request, int $id)
+  {
+    $inputs = $request->validate([
+      'immediate'     => ['required', 'bool'],
+    ]);
 
-  //   $inputs = $request->validate([
-  //     'immediate'     => ['filled', 'bool'], // ignored for now
-  //   ]);
-
-  //   /** @var Subscription|null $activeSubscription */
-  //   $activeSubscription = $this->user->getActivePaidSubscription();
-  //   if (!$activeSubscription || $activeSubscription->id != $id) {
-  //     return response()->json(['message' => 'Subscription not found'], 404);
-  //   }
-
-  //   if ($activeSubscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
-  //     return response()->json(['message' => 'Subscription is already on cancelling'], 422);
-  //   }
-
-  //   // cancel subscription
-  //   try {
-  //     $subscription = $this->manager->cancelSubscription($activeSubscription, immediate: $inputs['immediate'] ?? false);
-  //     return  response()->json($this->transformSingleResource($subscription));
-  //   } catch (\Throwable $th) {
-  //     return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
-  //   }
-  // }
-
+    return $this->cancelSubscription($id, $inputs['immediate']);
+  }
 
   /**
-   * POST /account/subscriptions/{id}/padddle-link
+   * POST /subscriptions/{id}/dont-cancel
    */
-  public function accountGetPaddleLink(int $id)
+  public function dontCancel(int $id)
+  {
+    return $this->dontCancelSubscription($id);
+  }
+
+  /**
+   * common method for cancel subscription
+   */
+  public function cancelSubscription(int $subscriptionId, bool $immediate, int $userId = null)
   {
     $this->validateUser();
 
-    /** @var Subscription $subscription */
-    $subscription = $this->baseQuery()->where('user_id', $this->user->id)->findOrFail($id);
-    return $this->paddleManager->subscriptionService->getManagementLinks($subscription);
+    $subscription = Subscription::findById($subscriptionId);
+
+    // if userId shall be validated
+    if ($userId && $subscription->user_id != $userId) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    if (
+      $subscription->status != Subscription::STATUS_ACTIVE ||
+      $subscription->subscription_level < 2
+    ) {
+      return response()->json(['message' => 'Subscription is not active or not paid'], 422);
+    }
+
+    if ($subscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
+      return response()->json(['message' => 'Subscription is already on cancelling'], 422);
+    }
+
+    try {
+      $subscription = $this->manager->subscriptionService->cancelSubscription($subscription, $immediate);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
+  }
+
+  /**
+   * common method for dont cancel subscription
+   */
+  public function dontCancelSubscription(int $subscriptionId, int $userId = null)
+  {
+    $this->validateUser();
+
+    $subscription = Subscription::findById($subscriptionId);
+
+    // if userId shall be validated
+    if ($userId && $subscription->user_id != $userId) {
+      return response()->json(['message' => 'Subscription not found'], 404);
+    }
+
+    if ($subscription->sub_status != Subscription::SUB_STATUS_CANCELLING) {
+      return response()->json(['message' => 'Subscription is not on cancelling'], 422);
+    }
+
+    try {
+      $subscription = $this->manager->subscriptionService->dontCancelSubscription($subscription);
+      return  response()->json($this->transformSingleResource($subscription));
+    } catch (\Throwable $th) {
+      return response()->json(['message' => $th->getMessage()], $this->toHttpCode($th->getCode()));
+    }
   }
 }

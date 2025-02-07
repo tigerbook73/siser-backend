@@ -446,20 +446,40 @@ class SubscriptionService extends PaddleEntityService
 
   public function cancelSubscription(Subscription $subscription, bool $immediate): Subscription
   {
-    if ($subscription->isActive() && $subscription->isPaid()) {
-      throw new WebhookException('Subscription is active and paid, cannot cancel', 400);
+    if (!$subscription->isActive() || !$subscription->isPaid()) {
+      throw new WebhookException('Subscription is not active or not paid, cannot cancel', 400);
+    }
+
+    if ($subscription->sub_status === Subscription::SUB_STATUS_CANCELLING) {
+      throw new WebhookException('Subscription is already on cancelling', 400);
     }
 
     if (!$subscription->getMeta()->paddle->subscription_id) {
       throw new WebhookException('Subscription is not created from Paddle', 400);
     }
 
-
     /**
      * TODO: refund consideration
      */
     $paddleSubscription = $this->paddleService->cancelSubscription($subscription->getMeta()->paddle->subscription_id, $immediate);
     $this->result->appendMessage("paddle-subscription for subscription ({$subscription->id}) cancelled", location: __FUNCTION__);
+
+    $this->updateSubscription($subscription, $paddleSubscription);
+    return $subscription;
+  }
+
+  public function dontCancelSubscription(Subscription $subscription): Subscription
+  {
+    if ($subscription->sub_status !== Subscription::SUB_STATUS_CANCELLING) {
+      throw new WebhookException('Subscription is not on cancelling', 400);
+    }
+
+    if (!$subscription->getMeta()->paddle->subscription_id) {
+      throw new WebhookException('Subscription is not created from Paddle', 400);
+    }
+
+    $paddleSubscription = $this->paddleService->removeSubscriptionScheduledChange($subscription->getMeta()->paddle->subscription_id);
+    $this->result->appendMessage("paddle-subscription for subscription ({$subscription->id}) sheduled cancellation removed", location: __FUNCTION__);
 
     $this->updateSubscription($subscription, $paddleSubscription);
     return $subscription;

@@ -411,7 +411,7 @@ class Subscription extends BaseSubscription
 
   public function isPaid()
   {
-    return $this->subscription_level > 2;
+    return $this->subscription_level > 1;
   }
 
   /**

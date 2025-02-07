@@ -92,6 +92,12 @@ class BillingInfoController extends SimpleController
     return $this->transformSingleResource($billingInfo->unsetRelations());
   }
 
+  public function accountGetPaddleLink()
+  {
+    $this->validateUser();
+    return $this->manager->customerService->getManagementLinks($this->user->billing_info);
+  }
+
   public function userGet($id)
   {
     $this->validateUser();
