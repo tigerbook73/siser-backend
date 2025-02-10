@@ -145,7 +145,7 @@ class TransactionService extends PaddleEntityService
         $subscription->plan_info['interval'],
         $subscription->plan_info['interval_count'] ?? 1,
         $subscription->start_date,
-        $paddleTransaction->billingPeriod->endsAt
+        $paddleTransaction->billingPeriod->startsAt
       );
       $invoice->period_start_date = Carbon::parse($paddleTransaction->billingPeriod->startsAt);
       $invoice->period_end_date   = Carbon::parse($paddleTransaction->billingPeriod->endsAt);

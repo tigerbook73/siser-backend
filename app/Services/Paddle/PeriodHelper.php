@@ -18,11 +18,11 @@ class PeriodHelper
     $intervalCount = intval($intervalCount);
 
     if ($interval == 'day') {
-      $offset = $periodStartDate->startOfDay()->diffInDays($startDate->startOfDay()) % $intervalCount;
+      $offset = $periodStartDate->startOfDay()->diffInDays($startDate->startOfDay()) / $intervalCount;
     } elseif ($interval == 'month') {
-      $offset = $periodStartDate->startOfMonth()->diffInMonths($startDate->startOfMonth()) % $intervalCount;
+      $offset = $periodStartDate->startOfMonth()->diffInMonths($startDate->startOfMonth()) / $intervalCount;
     } elseif ($interval == 'year') {
-      $offset = $periodStartDate->startOfYear()->diffInYears($startDate->startOfYear()) % $intervalCount;
+      $offset = $periodStartDate->startOfYear()->diffInYears($startDate->startOfYear()) / $intervalCount;
     } else {
       throw new \Exception('Invalid interval');
     }
