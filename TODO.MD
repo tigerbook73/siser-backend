@@ -1,32 +1,68 @@
-Product Design:
+# License Package Feature
 
-Product
-+ one product -> multiple paddle product (interver based)
-+ product
-  + product->meta->paddle->product_id (monthly)
-  + product->meta->paddle->product_month_id
-  + product->meta->paddle->product_year_id
-  + product->meta->paddle->product_2day_id
+## Step1: refactor product/plan/coupon
 
-+ paddle product
-  + paddleProduct->customData->product_id
-  + paddleProduct->customData->interval {month, year, 2day}
+### Refactor Product, Plan, and Coupon Models
 
-Plan
-+ no changes
+   - one product -> multiple paddle product (interval-based).
+   - coupon -> product restriction (interval-based).
 
-CreatePaddleProduct
-+ create 3 paddle product from one product
+### Migration
 
-Coupon:
-+ restriction:
-  + month -> monty product
-  + year -> year product
-  + 2day -> 2day product
+  - recreate paddle products
+  - recreate paddle prices
+  - refresh coupons
 
-+ longterm
-  + no restriction
+  - archive all paddle products
+  - archive all paddle prices
 
-+ remove restriction
-  + to plans
-  +
+
+## Step2: manage license packages
+
+#### license package model
+
+| license quantity / range | tiered discount |
+| ------------------------ | --------------- |
+| 1-10                     | 0%              |
+| 11-20                    | 10%             |
+| 21-25                    | 20%             |
+| 30                       | 30%             |
+| 50                       | 40%             |
+| 100                      |                 |
+
+Valid quantity: 1-25, 30, 50, 100
+
+#### migration
+  - remove previous license package
+  - pre-create a new license package
+
+## Step3: manage paddle prices
+
+  - creating or updating paddle prices when plan / license-packages created and/or changes.
+  - to make thing simple:
+    - create new paddle prices
+    - archive old paddle prices
+
+### Step4: update subscription / invoice model
+
+  - support new attributes
+    - license number
+    - license package id
+  - update plan model?
+    - query all prices for a plan?
+
+### Step5: purchase license package - customer portal
+
+  - add license number on list product page
+  - add coupon on list product page
+
+### update subscription / invoice model
+
+  - support new attributes
+    - credit -- customer level
+  -
+
+### update subscription
+
+  - increase license number - charge immediately
+  - decrease license number - credit
