@@ -58,8 +58,17 @@ Valid quantity: 1-25, 30, 50, 100
 
 ## Step6: update subscription / invoice model
 
-  - support new attributes
-    - credit -- customer level
+  - subscription:
+    - new/update attributes
+      - credit -- customer level
+      - items -- new items
+      - prorated -- prorated amount ?
+  - invoice:
+    - new/update attributes
+      - credit -- customer level
+      - items -- new items
+      - prorated -- prorated amount ?
+    - 
   -
 
 ## Step7: update subscription
