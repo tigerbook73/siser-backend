@@ -13,6 +13,7 @@ use Paddle\SDK\Notifications\Events\AdjustmentUpdated;
 use Paddle\SDK\Notifications\Events\PaymentMethodDeleted;
 use Paddle\SDK\Notifications\Events\SubscriptionCreated;
 use Paddle\SDK\Notifications\Events\SubscriptionUpdated;
+use Paddle\SDK\Notifications\Events\TransactionCanceled;
 use Paddle\SDK\Notifications\Events\TransactionCompleted;
 use Paddle\SDK\Notifications\Events\TransactionPastDue;
 
@@ -67,6 +68,7 @@ class SubscriptionManagerPaddle
       // transaction events
       'transaction.completed'           => 'onTransactionCompleted',
       'transaction.past_due'            => 'onTransactionPastDue',
+      'transaction.canceled'            => 'onTransactionCancelled',
 
       // adjustment events
       'adjustment.created'              => 'onAdjustmentCreated',
@@ -203,6 +205,11 @@ class SubscriptionManagerPaddle
   public function onTransactionPastDue(TransactionPastDue $event)
   {
     $this->transactionService->onTransactionPastDue($event);
+  }
+
+  public function onTransactionCancelled(TransactionCanceled $event)
+  {
+    $this->transactionService->onTransactionCancelled($event);
   }
 
   /**

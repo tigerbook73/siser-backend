@@ -20,6 +20,7 @@ use Paddle\SDK\Entities\Shared\TransactionStatus;
 use Paddle\SDK\Entities\Transaction as PaddleTransaction;
 use Paddle\SDK\Notifications\Entities\Shared\TransactionOrigin as NotificationTransactionOrigin;
 use Paddle\SDK\Notifications\Entities\Transaction as NotificationPaddleTransaction;
+use Paddle\SDK\Notifications\Events\TransactionCanceled;
 use Paddle\SDK\Notifications\Events\TransactionCompleted;
 use Paddle\SDK\Notifications\Events\TransactionPastDue;
 
@@ -94,7 +95,9 @@ class TransactionService extends PaddleEntityService
     // find or create invoice
     $invoice = PaddleMap::findInvoiceByPaddleId($paddleTransaction->id);
     if ($invoice) {
-      $this->result->appendMessage("updating invoice for paddle transaction ({$paddleTransaction->id})", location: __FUNCTION__);
+      $this->result
+        ->setInvoice($invoice)
+        ->appendMessage("updating invoice for paddle transaction ({$paddleTransaction->id})", location: __FUNCTION__);
     } else {
       $invoice =  (new Invoice())->setStatus(Invoice::STATUS_INIT);
       $this->result->appendMessage("creating invoice for paddle transaction ({$paddleTransaction->id})", location: __FUNCTION__);
@@ -210,6 +213,9 @@ class TransactionService extends PaddleEntityService
       ->setMetaPaddleTransactionId($paddleTransaction->id)
       ->setMetaPaddleTimestamp($paddleTransaction->updatedAt->format('Y-m-d\TH:i:s\Z'));
     $invoice->save();
+    $this->result
+      ->setInvoice($invoice)
+      ->appendMessage("invoice ({$invoice->id}) saved", location: __FUNCTION__);
 
     PaddleMap::createOrUpdate($paddleTransaction->id, Invoice::class, $invoice->id);
 
@@ -285,7 +291,21 @@ class TransactionService extends PaddleEntityService
 
     $this->result
       ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
-      ->appendMessage("transaction completed event processed", location: __FUNCTION__);
+      ->appendMessage("transaction past-due event processed", location: __FUNCTION__);
+  }
+
+  public function onTransactionCancelled(TransactionCanceled $transactionCanceled)
+  {
+    $subscription = $this->validateTransaction($transactionCanceled->transaction);
+
+    $this->result->appendMessage("retrieving paddle transaction for {$transactionCanceled->transaction->id}", location: __FUNCTION__);
+    $paddleTransaction = $this->paddleService->getTransaction($transactionCanceled->transaction->id);
+
+    $this->createOrUpdateInvoice($subscription, $paddleTransaction);
+
+    $this->result
+      ->setResult(SubscriptionManagerResult::RESULT_PROCESSED)
+      ->appendMessage("transaction cancelled event processed", location: __FUNCTION__);
   }
 
   public function validateTransaction(PaddleTransaction|NotificationPaddleTransaction $paddleTransaction): Subscription
@@ -313,6 +333,12 @@ class TransactionService extends PaddleEntityService
 
   public function refreshInvoice(Invoice $invoice): Invoice
   {
+    // skip none-paddle transaction
+    if (!$invoice->getMeta()->paddle->transaction_id) {
+      $this->result->appendMessage("invoice ({$invoice->id}) does not have paddle transaction id", location: __FUNCTION__);
+      return $invoice;
+    }
+
     $paddleTransaction = $this->paddleService->getTransaction($invoice->getMeta()->paddle->transaction_id);
     return $this->createOrUpdateInvoice($invoice->subscription, $paddleTransaction);
   }
