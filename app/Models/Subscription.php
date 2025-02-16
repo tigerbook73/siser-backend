@@ -381,19 +381,6 @@ class Subscription extends BaseSubscription
     return self::buildPlanName($this->plan_info, $this->coupon_info);
   }
 
-  public function getNextInvoiceCollectionEndDate(): Carbon|null
-  {
-    /** @var SubscriptionPlan $subscriptionPlan */
-    $subscriptionPlan = SubscriptionPlan::findByTypeAndIterval(
-      SubscriptionPlan::TYPE_STANDARD,
-      $this->plan_info['interval'],
-      $this->plan_info['interval_count']
-    );
-
-    return $this->next_invoice_date?->addDays($subscriptionPlan->collection_period_days);
-  }
-
-
   /**
    * status related
    */

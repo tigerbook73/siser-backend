@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $discount_type
  * @property float $percentage_off
  * @property string $interval
+ * @property int $interval_size
  * @property int $interval_count
  * @property array $condition
  * @property Carbon $start_date
@@ -50,6 +51,7 @@ class Coupon extends Model
 
   protected $casts = [
     'percentage_off' => 'float',
+    'interval_size' => 'int',
     'interval_count' => 'int',
     'condition' => 'json',
     'start_date' => 'datetime',
@@ -67,6 +69,7 @@ class Coupon extends Model
     'discount_type',
     'percentage_off',
     'interval',
+    'interval_size',
     'interval_count',
     'condition',
     'start_date',

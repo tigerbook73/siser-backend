@@ -1,8 +1,8 @@
 <?php
 
+use App\Models\Product;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -13,7 +13,8 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::drop('critical_sections');
+    Product::whereNotIn('type', [Product::TYPE_BASIC, Product::TYPE_SUBSCRIPTION])
+      ->delete();
   }
 
   /**
@@ -21,7 +22,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

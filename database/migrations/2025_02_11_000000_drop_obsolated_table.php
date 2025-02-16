@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -14,11 +13,8 @@ return new class extends Migration
    */
   public function up()
   {
-    Schema::table('subscription_plans', function (Blueprint $table) {
-      $table->string('dr_plan_id')->nullable();
-    });
-
-    DB::table('subscription_plans')->update(['dr_plan_id' => DB::raw('name')]);
+    Schema::drop('license_plans');
+    Schema::drop('subscription_plans');
   }
 
   /**
@@ -26,7 +22,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

@@ -40,7 +40,6 @@ class SubscriptionNotificationTest
     $inst->updateUser();
     $inst->updateBillingInfo();
     $inst->updatePaymentMethod();
-    $inst->updateLicensePackage();
 
     return $inst;
   }
@@ -77,73 +76,6 @@ class SubscriptionNotificationTest
 
     $this->plan = $plan;
     $this->planInfo = $this->plan->info($this->country->code);
-    return $this;
-  }
-
-  public function updateCoupon(string $type = null)
-  {
-    if ($type == 'free-trial') {
-      $code = 'free3m-test';
-      $discount_type = Coupon::DISCOUNT_TYPE_FREE_TRIAL;
-      $interval = Coupon::INTERVAL_DAY;
-      $interval_count = 3;
-      $percentage_off = 100;
-      $name = 'LDS Pro 3-day free trial';
-    } else if ($type == 'percentage') {
-      $code = '15off0m-test';
-      $discount_type = Coupon::DISCOUNT_TYPE_PERCENTAGE;
-      $interval = $this->plan->interval;
-      $interval_count = 0;
-      $percentage_off = 15;
-      $name = '15% OFF';
-    } else if ($type == 'percentage-fixed-term') {
-      $code = '15off3m-test';
-      $discount_type = Coupon::DISCOUNT_TYPE_PERCENTAGE;
-      $interval = $this->plan->interval;
-      $interval_count = $this->plan->interval == Coupon::INTERVAL_MONTH ? 3 : 1;
-      $name = "15% OFF for $interval_count $interval";
-      $percentage_off = 15;
-    } else {
-      // ignore
-      return $this;
-    }
-
-    /** @var Coupon|null $coupon */
-    $coupon = Coupon::where('code', $code)->first();
-    $this->coupon                 = $coupon ?? new Coupon();
-    $this->coupon->code           = $code;
-    $this->coupon->coupon_event   = 'php-unit';
-    $this->coupon->type           = Coupon::TYPE_SHARED;
-    $this->coupon->discount_type  = $discount_type;
-    $this->coupon->name           = $name;
-    $this->coupon->interval       = $interval;
-    $this->coupon->interval_count = $interval_count;
-    $this->coupon->percentage_off = $percentage_off;
-    $this->coupon->start_date = now();
-    $this->coupon->end_date = Carbon::parse('2099-12-31');
-    $this->coupon->status = Coupon::STATUS_ACTIVE;
-    $this->coupon->save();
-
-    return $this;
-  }
-
-  public function updateLicensePackage()
-  {
-    $name = 'Test License';
-
-    $this->licensePackage = $this->licensePackage ??
-      LicensePackage::where('name', $name)->first() ??
-      LicensePackage::create([
-        'type' => LicensePackage::TYPE_STANDARD,
-        'name' => $name,
-        'price_table' => [
-          ['quantity' => 10, 'discount' => 10],
-          ['quantity' => 20, 'discount' => 20],
-          ['quantity' => 30, 'discount' => 30],
-        ],
-        'status' => LicensePackage::STATUS_ACTIVE,
-      ]);
-
     return $this;
   }
 
@@ -215,15 +147,12 @@ class SubscriptionNotificationTest
   public function createFakeSubscription(
     User $user,
     Plan $plan,
-    ?Coupon $coupon,
-    ?LicensePackage $licensePackage,
-    int $licenseQuantity
   ) {
     $user->getActiveSubscription()?->stop(Subscription::STATUS_STOPPED, 'test');
     $subscription = (new Subscription())
       ->initFill()
       ->fillBillingInfo($user->billing_info ?? BillingInfo::createDefault($user))
-      ->fillPlanAndCoupon($plan, $coupon, $licensePackage, 2);
+      ->fillPlanAndCoupon($plan, null, null, 2);
     $subscription->setStatus(Subscription::STATUS_ACTIVE);
     $subscription->save();
     $subscription->user->updateSubscriptionLevel();
@@ -236,7 +165,6 @@ class SubscriptionNotificationTest
     int|null $currentPeriod = null,
     string|null $status = null,
     string|null $subStatus = null,
-    int $licenseCount = 0
   ) {
     // default value
     $startDate = $startDate ?? now()->subDays(2);
@@ -244,10 +172,7 @@ class SubscriptionNotificationTest
     $this->subscription?->stop(Subscription::STATUS_STOPPED, "Test stop");
     $this->subscription = $this->createFakeSubscription(
       user: $this->user,
-      plan: $this->plan,
-      coupon: $this->coupon,
-      licensePackage: $licenseCount ? $this->licensePackage : null,
-      licenseQuantity: $licenseCount,
+      plan: $this->plan
     );
 
     $this->subscription->fillPaymentMethod($this->paymentMethod);

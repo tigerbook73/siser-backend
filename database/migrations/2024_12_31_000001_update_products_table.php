@@ -34,11 +34,6 @@ return new class extends Migration
           'name'  => 'Leonardo® Design Studio Pro',
           'type'  => Product::TYPE_SUBSCRIPTION,
         ],
-        [
-          'id'    => 3,
-          'name'  => 'License Package',
-          'type'  => Product::TYPE_LICENSE_PACKAGE,
-        ],
       ],
       'id',
     );

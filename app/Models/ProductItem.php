@@ -181,7 +181,7 @@ class ProductItem
     $items = [];
     if ($paddleResource instanceof TransactionDetails || $paddleResource instanceof TransactionDetailsPreview) {
       foreach ($paddleResource->lineItems as $lineItem) {
-        $productCustomData = ProductCustomData::from($lineItem->product->customData->data);
+        $productCustomData = ProductCustomData::from($lineItem->product->customData?->data);
         $items[] = self::buildItem(
           productType: $productCustomData->product_type,
           paddlePriceId: $lineItem->priceId,
@@ -194,7 +194,7 @@ class ProductItem
       }
     } else {
       foreach ($paddleResource->items as $subscriptionItem) {
-        $productCustomData = ProductCustomData::from($subscriptionItem->product->customData->data);
+        $productCustomData = ProductCustomData::from($subscriptionItem->product->customData?->data);
         $items[] = self::buildItem(
           productType: $productCustomData->product_type,
           paddlePriceId: $subscriptionItem->price->id,

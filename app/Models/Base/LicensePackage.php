@@ -6,10 +6,8 @@
 
 namespace App\Models\Base;
 
-use App\Models\LicensePlan;
 use App\Models\TraitModel;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,8 +21,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * 
- * @property Collection|LicensePlan[] $license_plans
  *
  * @package App\Models\Base
  */
@@ -44,9 +40,4 @@ class LicensePackage extends Model
     'price_table',
     'status'
   ];
-
-  public function license_plans()
-  {
-    return $this->hasMany(LicensePlan::class);
-  }
 }

@@ -21,15 +21,13 @@ use Paddle\SDK\Resources\Addresses\Operations\UpdateAddress;
 class AddressService extends PaddleEntityService
 {
   /**
+   * Prepare CreateAddress or UpdateAddress from billing information
+   *
    * @param $billingInfo BillingInfo
-   * @param $mode create|update
+   * @param $mode PaddleOperation
    */
-  public function prepareData(BillingInfo $billingInfo, $mode): CreateAddress|UpdateAddress
+  public function prepareData(BillingInfo $billingInfo, PaddleOperation $mode): CreateAddress|UpdateAddress
   {
-    if ($mode !== 'create' && $mode !== 'update') {
-      throw new \Exception('Invalid mode');
-    }
-
     // for US postal code must be 5 digits, trucate if more than 5
     $postcode = $billingInfo->address['postcode'];
     if ($billingInfo->address['country'] === 'US') {
@@ -48,7 +46,7 @@ class AddressService extends PaddleEntityService
         'billing_info_id' => $billingInfo->id,
       ])->toCustomData()
     ];
-    return $mode === 'create' ? new CreateAddress(...$data) : new UpdateAddress(...$data);
+    return $mode === PaddleOperation::CREATE ? new CreateAddress(...$data) : new UpdateAddress(...$data);
   }
 
   /**
@@ -65,7 +63,7 @@ class AddressService extends PaddleEntityService
       throw new \Exception('Country and postcode are required');
     }
 
-    $createAddress = $this->prepareData($billingInfo, 'create');
+    $createAddress = $this->prepareData($billingInfo, PaddleOperation::CREATE);
     $paddleaddress = $this->paddleService->createAddress(
       $billingInfo->getMeta()->paddle->customer_id,
       $createAddress
@@ -81,7 +79,7 @@ class AddressService extends PaddleEntityService
       throw new \Exception('Paddle customer not exist');
     }
 
-    $updateAddress = $this->prepareData($billingInfo, 'update');
+    $updateAddress = $this->prepareData($billingInfo, PaddleOperation::UPDATE);
     return $this->paddleService->updateAddress(
       $meta->paddle->customer_id,
       $meta->paddle->address_id,

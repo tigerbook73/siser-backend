@@ -10,6 +10,7 @@ use App\Services\Paddle\AddressService as AddressServiceStandard;
 use App\Services\Paddle\BusinessService as BusinessServiceStandard;
 use App\Services\Paddle\CustomerService as CustomerServiceStandard;
 use App\Services\Paddle\DiscountService as DiscountServiceStandard;
+use App\Services\Paddle\PaddleOperation;
 use App\Services\Paddle\PaddleService;
 use App\Services\Paddle\PaymentMethodService as PaymentMethodServiceStandard;
 use App\Services\Paddle\PriceService as PriceServiceStandard;
@@ -50,7 +51,7 @@ function serialize($data)
 
 class AddressService extends AddressServiceStandard
 {
-  public function fake(BillingInfo $billingInfo, $mode): Address
+  public function fake(BillingInfo $billingInfo, PaddleOperation $mode): Address
   {
     $data = json_decode(serialize($this->prepareData($billingInfo, $mode)), true);
     return Address::from(
@@ -67,14 +68,14 @@ class AddressService extends AddressServiceStandard
 
   public function createPaddleAddress(BillingInfo $billingInfo): Address
   {
-    $address = $this->fake($billingInfo, 'create');
+    $address = $this->fake($billingInfo, PaddleOperation::CREATE);
     $this->updateBillingInfo($billingInfo, $address);
     return $address;
   }
 
   public function updatePaddleAddress(BillingInfo $billingInfo): Address
   {
-    $address = $this->fake($billingInfo, 'update');
+    $address = $this->fake($billingInfo, PaddleOperation::UPDATE);
     $this->updateBillingInfo($billingInfo, $address);
     return $address;
   }
@@ -84,7 +85,7 @@ class BusinessService extends BusinessServiceStandard {}
 
 class CustomerService extends CustomerServiceStandard
 {
-  public function fake(BillingInfo $billingInfo, $mode): Customer
+  public function fake(BillingInfo $billingInfo, PaddleOperation $mode): Customer
   {
     $data = json_decode(serialize($this->prepareData($billingInfo, $mode)), true);
     return Customer::from(
@@ -106,14 +107,14 @@ class CustomerService extends CustomerServiceStandard
    */
   public function createPaddleCustomer(BillingInfo $billingInfo): Customer
   {
-    $customer = $this->fake($billingInfo, 'create');
+    $customer = $this->fake($billingInfo, PaddleOperation::CREATE);
     $this->updateBillingInfo($billingInfo, $customer);
     return $customer;
   }
 
   public function updatePaddleCustomer(BillingInfo $billingInfo): Customer
   {
-    $customer = $this->fake($billingInfo, 'update');
+    $customer = $this->fake($billingInfo, PaddleOperation::UPDATE);
     $this->updateBillingInfo($billingInfo, $customer);
     return $customer;
   }
@@ -127,20 +128,20 @@ class PriceService extends PriceServiceStandard
 {
   /**
    * @param Plan $plan
-   * @param string $mode - create|update
+   * @param PaddleOperation $mode
    */
-  public function fake(Plan $plan, string $mode): Price
+  public function fake(Plan $plan, PaddleOperation $mode): Price
   {
     // prepare product
     $product = $plan->product;
-    $product->setMetaPaddleProductId("pro_{$product->id}")->save();
+    $product->setMetaPaddleProductId("pro_{$product->id}", $plan->getProductInterval())->save();
 
     $price = json_decode(serialize($this->prepareData($plan, $mode)), true);
     return Price::from(
       [
         ...$price,
         'id' => "pri_{$plan->id}",
-        'product_id' => $product->getMeta()->paddle->product_id ?? "pro_{$product->id}",
+        'product_id' => $product->getMeta()->paddle->getProductId($plan->getProductInterval()) ?? "pro_{$product->id}",
         'status' => $price['status'] ?? Status::Active()->getValue(),
         'created_at' => $plan->created_at,
         'updated_at' => $plan->updated_at,
@@ -150,14 +151,14 @@ class PriceService extends PriceServiceStandard
 
   public function createPaddlePrice(Plan $plan): Price
   {
-    $paddlePrice = $this->fake($plan, 'create');
+    $paddlePrice = $this->fake($plan, PaddleOperation::CREATE);
     $this->updatePlan($plan, $paddlePrice);
     return $paddlePrice;
   }
 
   public function updatePaddlePrice(Plan $plan): Price
   {
-    $updatePrice = $this->fake($plan, 'update');
+    $updatePrice = $this->fake($plan, PaddleOperation::UPDATE);
     $this->updatePlan($plan, $updatePrice);
     return $updatePrice;
   }

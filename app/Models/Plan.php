@@ -38,14 +38,10 @@ class Plan extends BasePlan
     'status'              => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'price'               => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_0_1],
     'price_list'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_0],
-    'license_plan'        => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'meta'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
-
-  static protected $withAttrs = ['license_plan'];
-
 
   public function scopePublic($query)
   {
@@ -109,6 +105,11 @@ class Plan extends BasePlan
     return null;
   }
 
+  public function getProductInterval(): ProductInterval
+  {
+    return ProductInterval::from($this->interval_count . '_' . $this->interval);
+  }
+
   public function activate()
   {
     if ($this->status !== 'draft') {
@@ -143,14 +144,20 @@ class Plan extends BasePlan
   public function setMetaPaddleProductId(?string $paddleProductId): self
   {
     $meta = $this->getMeta();
-    $meta->paddle->product_id = $paddleProductId;
-    return $this->setMeta($meta);
+    if ($meta->paddle->product_id != $paddleProductId) {
+      $meta->paddle->product_id = $paddleProductId;
+      $this->setMeta($meta);
+    }
+    return $this;
   }
 
   public function setMetaPaddlePriceId(?string $paddlePriceId): self
   {
     $meta = $this->getMeta();
-    $meta->paddle->price_id = $paddlePriceId;
+    if ($meta->paddle->price_id != $paddlePriceId) {
+      $meta->paddle->price_id = $paddlePriceId;
+      $this->setMeta($meta);
+    }
     return $this->setMeta($meta);
   }
 }

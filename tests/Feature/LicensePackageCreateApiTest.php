@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\LicensePackage;
-use App\Models\LicensePlan;
-use PharIo\Manifest\License;
 
 class LicensePackageCreateApiTest extends LicensePackageTestCase
 {
@@ -15,7 +13,6 @@ class LicensePackageCreateApiTest extends LicensePackageTestCase
     parent::setUp();
 
     // remove existing data
-    LicensePlan::query()->delete();
     LicensePackage::query()->delete();
   }
 

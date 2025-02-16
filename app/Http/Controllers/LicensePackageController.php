@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\LicensePackage;
-use App\Models\LicensePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -93,7 +92,6 @@ class LicensePackageController extends SimpleController
     $licensePackage = new LicensePackage($inputs);
     $this->validateAndSave($licensePackage);
 
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
     return  response()->json($this->transformSingleResource($licensePackage), 201);
   }
 
@@ -111,7 +109,6 @@ class LicensePackageController extends SimpleController
     $licensePackage->forceFill($inputs);
     $this->validateAndSave($licensePackage);
 
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
     return $this->transformSingleResource($licensePackage->unsetRelations());
   }
 

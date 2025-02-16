@@ -15,8 +15,6 @@ class CouponInterval
      */
     const DAY = 'day';
 
-    const WEEK = 'week';
-
     const MONTH = 'month';
 
     const YEAR = 'year';
@@ -31,7 +29,6 @@ class CouponInterval
     {
         return [
             self::DAY,
-            self::WEEK,
             self::MONTH,
             self::YEAR,
             self::LONGTERM

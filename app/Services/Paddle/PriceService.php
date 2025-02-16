@@ -2,8 +2,6 @@
 
 namespace App\Services\Paddle;
 
-use App\Models\LicensePlan;
-use App\Models\LicensePlanDetail;
 use App\Models\Paddle\PriceCustomData;
 use App\Models\PaddleMap;
 use App\Models\Plan;
@@ -39,15 +37,13 @@ class PriceService extends PaddleEntityService
   }
 
   /**
+   * prepare CreatePrice or UpdatePrice from plan
+   *
    * @param Plan $plan
-   * @param string $mode - create|update
+   * @param PaddleOperation $mode
    */
-  public function prepareData(Plan $plan, string $mode): CreatePrice|UpdatePrice
+  public function prepareData(Plan $plan, PaddleOperation $mode): CreatePrice|UpdatePrice
   {
-    if ($mode !== 'create' && $mode !== 'update') {
-      throw new \Exception('Invalid mode');
-    }
-
     $customData = PriceCustomData::from([
       "product_name"      => $plan->product_name,
       "plan_id"           => $plan->id,
@@ -114,10 +110,10 @@ class PriceService extends PaddleEntityService
       }
     }
 
-    if ($mode == 'create') {
+    if ($mode === PaddleOperation::CREATE) {
       return new CreatePrice(
         description: $plan->description,
-        productId: $plan->product->getMeta()->paddle->product_id,
+        productId: $plan->product->getMeta()->paddle->getProductId($plan->getProductInterval()),
         unitPrice: $unitPrice,
         name: trim(str_replace($plan->product_name, '', $plan->name)),
         type: CatalogType::Standard(),
@@ -160,7 +156,7 @@ class PriceService extends PaddleEntityService
       throw new \Exception('Plan is not active');
     }
 
-    $createPrice = $this->prepareData($plan, 'create');
+    $createPrice = $this->prepareData($plan, PaddleOperation::CREATE);
     $paddlePrice = $this->paddleService->createPrice($createPrice);
     $this->updatePlan($plan, $paddlePrice);
     return $paddlePrice;
@@ -173,7 +169,7 @@ class PriceService extends PaddleEntityService
       throw new \Exception('Paddle price not exist');
     }
 
-    $updatePrice = $this->prepareData($plan, 'update');
+    $updatePrice = $this->prepareData($plan, PaddleOperation::UPDATE);
     return $this->paddleService->updatePrice($meta->paddle->price_id, $updatePrice);
   }
 
@@ -191,99 +187,5 @@ class PriceService extends PaddleEntityService
       ->save();
     PaddleMap::createOrUpdate($price->id, Plan::class, $plan->id);
     return $plan;
-  }
-
-  /**
-   * @param Price $subscriptionPrice
-   * @param LicensePlan $licensePlan
-   * @param int $quantity
-   * @param string $mode - create|update
-   * @return CreatePrice|UpdatePrice
-   */
-  public function preparePaddleLicensePrice(Price $subscriptionPrice, LicensePlan $licensePlan, int $quantity, string $mode): CreatePrice|UpdatePrice
-  {
-    $licensePlanDetail = $licensePlan->getDetail($quantity);
-
-    $customData = PriceCustomData::from([
-      "product_name"            => $licensePlan->product->name,
-      "license_plan_id"         => $licensePlan->id,
-      "license_plan_name"       => $licensePlanDetail->name,
-      "license_plan_timestamp"  => $licensePlan->updated_at->format('Y-m-d H:i:s'),
-      "quantity"                => $quantity,
-    ])->toCustomData();
-
-    $unitPrice = new Money(
-      currencyCode: $subscriptionPrice->unitPrice->currencyCode,
-      amount: (string)(int)((float)$subscriptionPrice->unitPrice->amount * $licensePlanDetail->price_rate / 100),
-    );
-
-    $unitPriceOverrides = [];
-    foreach ($subscriptionPrice->unitPriceOverrides as $subscriptionUnitPriceOverride) {
-      $unitPriceOverrides[] = new UnitPriceOverride(
-        countryCodes: $subscriptionUnitPriceOverride->countryCodes,
-        unitPrice: new Money(
-          currencyCode: $subscriptionUnitPriceOverride->unitPrice->currencyCode,
-          amount: (string)(int)((float)$subscriptionUnitPriceOverride->unitPrice->amount * $licensePlanDetail->price_rate / 100)
-        ),
-      );
-    }
-
-    if ($mode == 'create') {
-      return new CreatePrice(
-        description: $licensePlanDetail->name,
-        productId: $licensePlan->product->getMeta()->paddle->product_id,
-        unitPrice: $unitPrice,
-        name: $licensePlanDetail->name,
-        type: $subscriptionPrice->type,
-        unitPriceOverrides: $unitPriceOverrides,
-        taxMode: $subscriptionPrice->taxMode,
-        trialPeriod: null,
-        billingCycle: $subscriptionPrice->billingCycle,
-        quantity: $subscriptionPrice->quantity,
-        customData: $customData,
-      );
-    } else {
-      return new UpdatePrice(
-        description: $licensePlanDetail->name,
-        unitPrice: $unitPrice,
-        name: $licensePlanDetail->name,
-        type: $subscriptionPrice->type,
-        unitPriceOverrides: $unitPriceOverrides,
-        taxMode: $subscriptionPrice->taxMode,
-        trialPeriod: null,
-        billingCycle: $subscriptionPrice->billingCycle,
-        quantity: $subscriptionPrice->quantity,
-        customData: $customData,
-      );
-    }
-  }
-
-  public function createPaddleLicensePrice(Price $subscriptionPrice, LicensePlan $licensePlan, int $quantity): Price
-  {
-    $createPrice = $this->preparePaddleLicensePrice($subscriptionPrice, $licensePlan, $quantity, 'create');
-    $paddlePrice = $this->paddleService->createPrice($createPrice);
-    $this->updateLicensePlan($licensePlan, $paddlePrice, $quantity);
-    return $paddlePrice;
-  }
-
-  public function updatePaddleLicensePrice(Price $subscriptionPrice, LicensePlan $licensePlan, int $quantity): Price
-  {
-    $licensePlanDetail = $licensePlan->getDetail($quantity);
-    if (!$licensePlanDetail->paddle_price_id) {
-      throw new \Exception('Paddle price not exist');
-    }
-
-    $updatePrice = $this->preparePaddleLicensePrice($subscriptionPrice, $licensePlan, $quantity, 'update');
-    return $this->paddleService->updatePrice($licensePlanDetail->paddle_price_id, $updatePrice);
-  }
-
-  public function updateLicensePlan(LicensePlan $licensePlan, Price|EntitiesPrice $price, int $quantity): LicensePlan
-  {
-    $licensePlanDetail = LicensePlanDetail::from($licensePlan->details[$quantity - 1] ?? null);
-    $licensePlanDetail->paddle_price_id = $price->id;
-    $licensePlan->setDetail($licensePlanDetail)->save();
-
-    PaddleMap::createOrUpdate($price->id, LicensePlan::class, $licensePlan->id, $quantity);
-    return $licensePlan;
   }
 }

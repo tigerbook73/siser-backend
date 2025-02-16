@@ -8,8 +8,6 @@ class SubscriptionCustomData
 {
   public ?int $user_id;
   public ?int $plan_id;
-  // public ?int $license_plan_id;
-  // public ?int $license_quantity;
 
   static public function from(?array $data): self
   {

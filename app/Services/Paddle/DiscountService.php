@@ -5,8 +5,6 @@ namespace App\Services\Paddle;
 use App\Models\Coupon;
 use App\Models\Paddle\DiscountCustomData;
 use App\Models\PaddleMap;
-use App\Models\Plan;
-use App\Models\Product;
 use Paddle\SDK\Entities\Discount;
 use Paddle\SDK\Entities\Discount\DiscountStatus;
 use Paddle\SDK\Entities\Discount\DiscountType;
@@ -18,15 +16,13 @@ use Paddle\SDK\Resources\Discounts\Operations\UpdateDiscount;
 class DiscountService extends PaddleEntityService
 {
   /**
+   * prepare CreateDiscount or UpdateDiscount from coupon
+   *
    * @param Coupon $coupon
-   * @param string $mode create|update
+   * @param PaddleOperation $mode
    */
-  public function prepareData(Coupon $coupon, string $mode): CreateDiscount|UpdateDiscount
+  public function prepareData(Coupon $coupon, PaddleOperation $mode): CreateDiscount|UpdateDiscount
   {
-    if ($mode !== 'create' && $mode !== 'update') {
-      throw new \Exception('Invalid mode');
-    }
-
     $customData = DiscountCustomData::from([
       'coupon_id' => $coupon->id,
       'coupon_name' => $coupon->name,
@@ -41,23 +37,12 @@ class DiscountService extends PaddleEntityService
       null :
       $coupon->interval_count;
 
-    // if coupon's interval is longterm, suitable for all product, else suitable for same interval product
-    $restrictTo = null;
-    if ($coupon->interval !== Coupon::INTERVAL_LONGTERM) {
-      // all license package are allowd because they only work together with plans
-      $paddleProductIds = Product::where('type', Product::TYPE_LICENSE_PACKAGE)
-        ->get()
-        ->map(fn($product) => $product->getMeta()->paddle->product_id)
-        ->all();
-
-      // get all plans with same product name and interval
-      $paddlePriceIds = Plan::public()
-        ->where('product_name', $coupon->product_name)
-        ->where('interval', $coupon->interval)
-        ->get()
-        ->map(fn($plan) => $plan->getMeta()->paddle->price_id)
-        ->all();
-      $restrictTo = array_merge($paddleProductIds, $paddlePriceIds);
+    if ($coupon->interval == Coupon::INTERVAL_LONGTERM) {
+      $restrictTo = null;
+    } else {
+      $restrictTo = [
+        $coupon->product->getMeta()->paddle->getProductId($coupon->getProductInterval())
+      ];
     }
 
     /** only alphanumeric characters are allowed */
@@ -70,7 +55,7 @@ class DiscountService extends PaddleEntityService
      */
     $usageLimit = $coupon->type == Coupon::TYPE_ONCE_OFF ? 1 : null;
 
-    if ($mode == 'create') {
+    if ($mode === PaddleOperation::CREATE) {
       return new CreateDiscount(
         amount: (string)$percentageOff,
         description: $coupon->name,
@@ -114,7 +99,7 @@ class DiscountService extends PaddleEntityService
       throw new \Exception('Coupon is not active');
     }
 
-    $createDiscount = $this->prepareData($coupon, 'create');
+    $createDiscount = $this->prepareData($coupon, PaddleOperation::CREATE);
 
     try {
       $paddleDiscount = $this->paddleService->createDiscount($createDiscount);
@@ -147,7 +132,7 @@ class DiscountService extends PaddleEntityService
       throw new \Exception('Paddle discount not exist');
     }
 
-    $updateDiscount = $this->prepareData($coupon, 'update');
+    $updateDiscount = $this->prepareData($coupon, PaddleOperation::UPDATE);
     $paddleCoupon = $this->paddleService->updateDiscount($meta->paddle->discount_id, $updateDiscount);
     $this->updateCoupon($coupon, $paddleCoupon);
     return $paddleCoupon;

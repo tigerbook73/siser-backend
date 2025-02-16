@@ -10,7 +10,6 @@ class Product extends BaseProduct
 
   const TYPE_BASIC            = 'basic';
   const TYPE_SUBSCRIPTION     = 'subscription';
-  const TYPE_LICENSE_PACKAGE  = 'license-package';
 
   public function getMeta(): ProductMeta
   {
@@ -23,10 +22,28 @@ class Product extends BaseProduct
     return $this;
   }
 
-  public function setMetaPaddleProductId(?string $paddleProductId): self
+  public function setMetaPaddleProductId(?string $paddleProductId, ProductInterval $interval): self
   {
     $meta = $this->getMeta();
-    $meta->paddle->product_id = $paddleProductId;
-    return $this->setMeta($meta);
+    if ($meta->paddle->getProductId($interval) !== $paddleProductId) {
+      $meta->paddle->setProductId($interval, $paddleProductId);
+      return $this->setMeta($meta);
+    }
+    return $this;
+  }
+
+  public function setMetaPaddleProductMonthId(?string $paddleProductId): self
+  {
+    return $this->setMetaPaddleProductId($paddleProductId, ProductInterval::INTERVAL_1_MONTH);
+  }
+
+  public function setMetaPaddleProductYearId(?string $paddleProductId): self
+  {
+    return $this->setMetaPaddleProductId($paddleProductId, ProductInterval::INTERVAL_1_YEAR);
+  }
+
+  public function setMetaPaddleProduct2DayId(?string $paddleProductId): self
+  {
+    return $this->setMetaPaddleProductId($paddleProductId, ProductInterval::INTERVAL_2_DAY);
   }
 }

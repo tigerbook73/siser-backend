@@ -90,14 +90,6 @@ class PaddleMap extends BasePaddleMap
   }
 
   /**
-   * @param string $paddleId  Paddle ID for license price
-   */
-  static public function findLicensePlanByPaddleId(string $paddleId): ?LicensePlan
-  {
-    return self::findModelByPaddleId($paddleId, LicensePlan::class);
-  }
-
-  /**
    * @param string $paddleId  Paddle ID for product
    */
   static public function findProductByPaddleId(string $paddleId): ?Product

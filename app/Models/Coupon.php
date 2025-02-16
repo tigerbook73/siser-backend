@@ -10,7 +10,6 @@ class Coupon extends BaseCoupon
   const TYPE_ONCE_OFF             = 'once-off';
 
   const INTERVAL_DAY              = 'day';
-  const INTERVAL_WEEK             = 'week';
   const INTERVAL_MONTH            = 'month';
   const INTERVAL_YEAR             = 'year';
   const INTERVAL_LONGTERM         = 'longterm';
@@ -32,6 +31,7 @@ class Coupon extends BaseCoupon
     'discount_type'       => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'percentage_off'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'interval'            => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
+    'interval_size'       => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'interval_count'      => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'start_date'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
     'end_date'            => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_1_0, 'listable' => 0b0_1_1],
@@ -68,6 +68,11 @@ class Coupon extends BaseCoupon
     return $query->where('status', Coupon::STATUS_ACTIVE);
   }
 
+  public function getProductInterval(): ProductInterval
+  {
+    return ProductInterval::from($this->interval_size . '_' . $this->interval);
+  }
+
   public function info()
   {
     return [
@@ -80,45 +85,9 @@ class Coupon extends BaseCoupon
       'discount_type'   => $this->discount_type,
       'percentage_off'  => $this->percentage_off,
       'interval'        => $this->interval,
+      'interval_size'   => $this->interval_size,
       'interval_count'  => $this->interval_count,
     ];
-  }
-
-  /**
-   * set the usage of the coupon, including:
-   *  - subscription_id:  the latest subscription_id will be stored
-   *  - count:            the number of usage
-   * @param int $subscription_id
-   */
-  public function setUsage(int $subscription_id): self
-  {
-    if ($this->type === self::TYPE_ONCE_OFF) {
-      $this->status = self::STATUS_INACTIVE;
-    }
-
-    $usage = $this->usage ?? [];
-    $usage['subscription_id'] = $subscription_id;
-    $usage['count'] = ($usage['count'] ?? 0) + 1;
-    $usage['updated_at'] = now()->toString();
-    $this->usage = $usage;
-    return $this;
-  }
-
-  public function releaseUsage(int $subscription_id): self
-  {
-    if (!$usage = $this->usage) {
-      return $this;
-    }
-
-    if ($this->type === self::TYPE_ONCE_OFF && ($usage['subscription_id'] ?? null) === $subscription_id) {
-      $this->status = self::STATUS_ACTIVE;
-    }
-
-    $usage['subscription_id'] = null;
-    $usage['count'] = ($usage['count'] ?? 1) - 1;
-    $usage['updated_at'] = now()->toString();
-    $this->usage = $usage;
-    return $this;
   }
 
   public function getMeta(): CouponMeta
@@ -135,14 +104,20 @@ class Coupon extends BaseCoupon
   public function setMetaPaddleDiscountId(?string $paddleDiscountId): self
   {
     $meta = $this->getMeta();
-    $meta->paddle->discount_id = $paddleDiscountId;
+    if ($meta->paddle->discount_id != $paddleDiscountId) {
+      $meta->paddle->discount_id = $paddleDiscountId;
+      $this->setMeta($meta);
+    }
     return $this->setMeta($meta);
   }
 
   public function setMetaPaddleTimestamp(?string $paddleTimestamp): self
   {
     $meta = $this->getMeta();
-    $meta->paddle->paddle_timestamp = $paddleTimestamp;
+    if ($meta->paddle->paddle_timestamp != $paddleTimestamp) {
+      $meta->paddle->paddle_timestamp = $paddleTimestamp;
+      $this->setMeta($meta);
+    }
     return $this->setMeta($meta);
   }
 }

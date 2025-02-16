@@ -26,7 +26,7 @@ class SubscriptionService extends PaddleEntityService
   public function createSubscription(PaddleSubscription $paddleSubscription, PaddleTransaction $paddleTransaction): Subscription
   {
     $subscription = (new Subscription([
-      'user_id' => SubscriptionCustomData::from($paddleSubscription->customData->data)->user_id,
+      'user_id' => SubscriptionCustomData::from($paddleSubscription->customData?->data)->user_id,
     ]))->initFill();
 
     // if user already has active live subscription, throw exception
@@ -109,7 +109,7 @@ class SubscriptionService extends PaddleEntityService
     ?PaddleTransaction $paddleTransaction
   ): Subscription {
     // custom data
-    $subscriptionCustomerData = SubscriptionCustomData::from($paddleSubscription->customData->data);
+    $subscriptionCustomerData = SubscriptionCustomData::from($paddleSubscription->customData?->data);
 
     // user id
     $subscription->user_id      = $subscriptionCustomerData->user_id;

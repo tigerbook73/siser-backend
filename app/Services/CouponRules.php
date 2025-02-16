@@ -30,14 +30,11 @@ class CouponRules
       return ['applicable' => false, 'reason' => 'coupon product and plan product do not matched'];
     }
 
-    // for fixed term percentage off coupon, the interval shall be same with plan's interval and interval_count should be a multiple of the plan's interval_count
-    // coupont->interveal
-    if (
-      $coupon->discount_type == Coupon::DISCOUNT_TYPE_PERCENTAGE &&
-      $coupon->interval != Coupon::INTERVAL_LONGTERM &&
-      ($coupon->interval != $plan->interval || $coupon->interval_count % $plan->interval_count != 0)
-    ) {
-      return ['applicable' => false, 'reason' => 'coupon\'s interval and plan\'s interval do not matched'];
+    // for fixed term coupon, the interval and interval_count shall be same with plan's
+    if ($coupon->interval != Coupon::INTERVAL_LONGTERM) {
+      if ($coupon->interval != $plan->interval || $coupon->interval_size != $plan->interval_count) {
+        return ['applicable' => false, 'reason' => 'coupon\'s interval and plan\'s interval do not matched'];
+      }
     }
 
     // free-trial coupon can not be redeemed twice by the same user

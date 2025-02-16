@@ -5,11 +5,9 @@ namespace Database\Seeders;
 use App\Models\LicensePackage;
 use App\Models\BillingInfo;
 use App\Models\Coupon;
-use App\Models\LicensePlan;
 use App\Models\Machine;
 use App\Models\Plan;
 use App\Models\SoftwarePackage;
-use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -236,6 +234,7 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 33,
       'interval' => Coupon::INTERVAL_MONTH,
+      'interval_size' => 1,
       'interval_count' => 1,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
@@ -251,6 +250,7 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 23,
       'interval' => Coupon::INTERVAL_MONTH,
+      'interval_size' => 1,
       'interval_count' => 3,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
@@ -266,6 +266,7 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 23,
       'interval' => Coupon::INTERVAL_MONTH,
+      'interval_size' => 1,
       'interval_count' => 3,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
@@ -281,6 +282,7 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 9,
       'interval' => Coupon::INTERVAL_YEAR,
+      'interval_size' => 1,
       'interval_count' => 1,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
@@ -296,6 +298,7 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
       'percentage_off' => 13,
       'interval' => Coupon::INTERVAL_LONGTERM,
+      'interval_size' => 1,
       'interval_count' => 0,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
@@ -311,7 +314,8 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
       'percentage_off' => 100,
       'interval' => Coupon::INTERVAL_DAY,
-      'interval_count' => 2,
+      'interval_size' => 2,
+      'interval_count' => 1,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
       'status' => 'active',
@@ -326,37 +330,8 @@ class DatabaseSeeder extends Seeder
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
       'percentage_off' => 100,
       'interval' => Coupon::INTERVAL_DAY,
-      'interval_count' => 2,
-      'start_date' => '2023-01-01',
-      'end_date' => '2099-12-31',
-      'status' => 'active',
-    ]);
-
-    // free 3 day shared
-    Coupon::create([
-      'code' => 'FREE3DS',
-      'name' => 'Leonardo® Design Studio Pro 3-day Free Trial',
-      'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => $coupon_event,
-      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
-      'percentage_off' => 100,
-      'interval' => Coupon::INTERVAL_DAY,
-      'interval_count' => 3,
-      'start_date' => '2023-01-01',
-      'end_date' => '2099-12-31',
-      'status' => 'active',
-    ]);
-
-    // free 3 day shared
-    Coupon::create([
-      'code' => 'FREE3MS',
-      'name' => 'Leonardo® Design Studio Pro 3-month Free Trial',
-      'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => $coupon_event,
-      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
-      'percentage_off' => 100,
-      'interval' => Coupon::INTERVAL_MONTH,
-      'interval_count' => 3,
+      'interval_size' => 2,
+      'interval_count' => 1,
       'start_date' => '2023-01-01',
       'end_date' => '2099-12-31',
       'status' => 'active',
@@ -380,7 +355,5 @@ class DatabaseSeeder extends Seeder
       ],
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);
-
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
   }
 }

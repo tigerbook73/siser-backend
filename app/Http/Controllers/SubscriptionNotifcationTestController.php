@@ -16,30 +16,8 @@ class SubscriptionNotifcationTestController extends Controller
     string $type,
     string $country,
     string $plan,
-    string $coupon = null,
-    int $licenseCount = 0,
   ): SubscriptionNotificationTest|null {
     $mockup = SubscriptionNotificationTest::init($country, $plan);
-
-    // skip invalid free-trial scenario
-    if (
-      in_array($type, [
-        SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW,
-        SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_FAILED,
-      ])
-      && $coupon == 'free-trial'
-    ) {
-      return null;
-    }
-
-    // skip license scenario if license count is 0
-    if (str_starts_with($type, 'subscription.license.') && $licenseCount == 0) {
-      return null;
-    }
-
-    if ($coupon) {
-      $mockup->updateCoupon($coupon);
-    }
 
     switch ($type) {
       case SubscriptionNotification::NOTIF_WELCOME_BACK_FOR_RENEW:
@@ -48,7 +26,6 @@ class SubscriptionNotifcationTestController extends Controller
           status: Subscription::STATUS_STOPPED,
           subStatus: Subscription::SUB_STATUS_NORMAL,
           currentPeriod: 1,
-          licenseCount: $licenseCount
         );
         $mockup->subscription->end_date = now();
         $mockup->subscription->save();
@@ -70,7 +47,7 @@ class SubscriptionNotifcationTestController extends Controller
     return "Cleaned!";
   }
 
-  protected function validateNotificationRequest(Request $request, string $type)
+  protected function validateNotificationRequest(Request $request)
   {
     $country = strtoupper($request->country ?? 'US');
     if (Country::findByCode($country) === null) {
@@ -80,16 +57,9 @@ class SubscriptionNotifcationTestController extends Controller
     if (!in_array($plan, ['month', 'year'])) {
       throw new HttpException(400, 'Invalid Plan');
     }
-    $coupon = $request->coupon;
-    if ($coupon && !in_array($coupon, ['free-trial', 'percentage', 'percentage-fixed-term'])) {
-      throw new HttpException(400, 'Invalid coupon');
-    }
-    $licenseCount = $request->license_count ?? 0;
     return [
       'country'       => $country,
       'plan'          => $plan,
-      'coupon'        => $coupon,
-      'licenseCount'  => $licenseCount,
       'invoiceType'   => $request->invoice_type ?? Invoice::TYPE_NEW_SUBSCRIPTION,
       'immediate'     => ($request->immediate == 'true'),
     ];
@@ -97,13 +67,11 @@ class SubscriptionNotifcationTestController extends Controller
 
   public function sendMail(Request $request, string $type)
   {
-    $data = $this->validateNotificationRequest($request, $type);
+    $data = $this->validateNotificationRequest($request);
     $mockup = $this->prepare(
       $type,
       $data['country'],
       $data['plan'],
-      $data['coupon'],
-      $data['licenseCount'],
     );
     if (!$mockup) {
       return response("Team Siser ... Skipped!");
@@ -119,13 +87,11 @@ class SubscriptionNotifcationTestController extends Controller
 
   public function viewNotification(Request $request, string $type)
   {
-    $data = $this->validateNotificationRequest($request, $type);
+    $data = $this->validateNotificationRequest($request);
     $mockup = $this->prepare(
       $type,
       $data['country'],
       $data['plan'],
-      $data['coupon'],
-      $data['licenseCount'],
     );
     if (!$mockup) {
       return response("Team Siser ... Skipped!");
