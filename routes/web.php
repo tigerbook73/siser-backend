@@ -92,7 +92,11 @@ if ($testCode) {
 // health check
 //
 Route::get('/health-check', function () {
-  return response('OK');
+  return response()->json([
+    'status' => 'ok',
+    'date' => date('Y-m-d H:i:s'),
+    'ip' => request()->getClientIp(),
+  ]);
 });
 
 
