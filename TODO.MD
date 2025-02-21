@@ -1,8 +1,8 @@
 
 - [License Package Feature](#markdown-header-license-package-feature)
-  - [Step1: refactor product/plan/coupon](#markdown-header-step1-refactor-productplancoupon)
-    - [Refactor Product, Plan, and Coupon Models](#markdown-header-refactor-product-plan-and-coupon-models)
-    - [Migration](#markdown-header-migration)
+  - [Step1: refactor product/plan/coupon (DONE)](#markdown-header-step1-refactor-productplancoupon-done)
+    - [Refactor Product, Plan, and Coupon Models (DONE)](#markdown-header-refactor-product-plan-and-coupon-models-done)
+    - [Migration (DONE)](#markdown-header-migration-done)
   - [Step2: manage license packages](#markdown-header-step2-manage-license-packages)
   - [Step3: manage paddle prices](#markdown-header-step3-manage-paddle-prices)
     - [update plan model](#markdown-header-update-plan-model)
@@ -15,16 +15,16 @@
 
 # License Package Feature
 
-## Step1: refactor product/plan/coupon
+## Step1: refactor product/plan/coupon (DONE)
 
 refactor product/plan/coupon to optimize product-price-discount relationship.
 
-### Refactor Product, Plan, and Coupon Models
+### Refactor Product, Plan, and Coupon Models (DONE)
 
    - one product -> multiple paddle product (interval-based).
    - coupon -> product restriction (interval-based).
 
-### Migration
+### Migration (DONE)
 
   - recreate paddle products
   - recreate paddle prices
@@ -38,7 +38,7 @@ refactor product/plan/coupon to optimize product-price-discount relationship.
 
 refactor license package model to support tiered discount.
 
-#### license package model
+#### license package model (DONE)
 
 | license quantity / range | tiered discount |
 | ------------------------ | --------------- |
@@ -47,13 +47,16 @@ refactor license package model to support tiered discount.
 | 21-25                    | 20%             |
 | 30                       | 30%             |
 | 50                       | 40%             |
-| 100                      |                 |
 
-Valid quantity: 1-25, 30, 50, 100
+Valid quantity: 1-25, 30, 50
 
-#### migration
-  - remove previous license package
-  - pre-create a new license package
+#### migration (DONE)
+  - migrate previous license package
+
+#### refactor license package (DONE)
+  - create new license package
+  - update existing license package
+  - info()
 
 ## Step3: manage paddle prices
 

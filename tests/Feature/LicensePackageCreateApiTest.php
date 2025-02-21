@@ -25,8 +25,8 @@ class LicensePackageCreateApiTest extends LicensePackageTestCase
   {
     $this->hidden[] = 'price_table';
 
-    usort($this->modelCreate['price_table'], function ($a, $b) {
-      return $b['quantity'] - $a['quantity'];
+    usort($this->modelCreate['price_table']['price_steps'], function ($a, $b) {
+      return $b['from'] - $a['from'];
     });
     $this->createAssert();
   }
@@ -39,50 +39,52 @@ class LicensePackageCreateApiTest extends LicensePackageTestCase
 
   public function testLicensePackageCreateInvalidPriceTable()
   {
-    // count not set
-    $this->modelCreate['price_table'] = [
-      'discount' => 90,
+    // from/to not set
+    $this->modelCreate['price_table']['price_steps'] = [
+      ['discount' => 90],
     ];
     $this->createAssert(400);
 
-    // count too small
-    $this->modelCreate['price_table'] = [
-      'quantity' => 0,
-      'discount' => 90,
+    // invalid from/to
+    $this->modelCreate['price_table']['price_steps'] = [
+      ['from' => 0, 'to' => 10, 'discount' => 10],
     ];
     $this->createAssert(400);
 
     // count too large
-    $this->modelCreate['price_table'] = [
-      'quantity' => LicensePackage::MAX_COUNT + 1,
-      'discount' => 90,
+    $this->modelCreate['price_table']['price_steps'] = [
+      ['from' => 1, 'to' => LicensePackage::MAX_COUNT + 1, 'discount' => 90,]
     ];
     $this->createAssert(400);
 
     // discount not set
-    $this->modelCreate['price_table'] = [
-      'quantity' => 90,
+    $this->modelCreate['price_table']['price_steps'] = [
+      ['from' => 1, 'to' => 10],
     ];
     $this->createAssert(400);
 
     // discount too small
-    $this->modelCreate['price_table'] = [
-      'quantity' => 10,
-      'discount' => -1,
+    $this->modelCreate['price_table']['price_steps'] = [
+      ['from' => 1, 'to' => 10, 'discount' => -1],
     ];
     $this->createAssert(400);
 
     // discount too large
     $this->modelCreate['price_table'] = [
-      'quantity' => 10,
-      'discount' => 100,
+      'price_steps' => [
+        ['from' => 1, 'to' => 10, 'discount' => 100],
+      ],
+      'range' => [[1, 10]],
     ];
     $this->createAssert(400);
 
     // discount decrease
     $this->modelCreate['price_table'] = [
-      ['quantity' => 10, 'discount' => 90],
-      ['quantity' => 20, 'discount' => 80],
+      'price_steps' => [
+        ['quantity' => 10, 'discount' => 90],
+        ['quantity' => 20, 'discount' => 80],
+      ],
+      'range' => [[1, 30]],
     ];
     $this->createAssert(400);
   }

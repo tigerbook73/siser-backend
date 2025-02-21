@@ -26,10 +26,13 @@ class LicensePackageTestCase extends ApiTestCase
       'type'                    => LicensePackage::TYPE_STANDARD,
       'name'                    => 'test-create',
       'price_table'             => [
-        ['quantity' => 10, 'discount' => 10],
-        ['quantity' => 20, 'discount' => 20],
-        ['quantity' => 30, 'discount' => 30],
-        ['quantity' => LicensePackage::MAX_COUNT, 'discount' => 80],
+        'price_steps' => [
+          ['from' => 1, 'to'  => 10, 'discount' => 10],
+          ['from' => 11, 'to' => 20, 'discount' => 20],
+          ['from' => 21, 'to' => 30, 'discount' => 30],
+          ['from' => 31, 'to' => LicensePackage::MAX_COUNT, 'discount' => 80],
+        ],
+        'range'                  => [[1, 31]],
       ],
       'status'                  => LicensePackage::STATUS_ACTIVE,
     ];
@@ -37,11 +40,13 @@ class LicensePackageTestCase extends ApiTestCase
     $this->modelUpdate = [
       'name'                    => 'test-update',
       'price_table'             => [
-        ['quantity' => 10, 'discount' => 10],
-        ['quantity' => 20, 'discount' => 20],
-        ['quantity' => 30, 'discount' => 30],
-        ['quantity' => 40, 'discount' => 40],
-        ['quantity' => LicensePackage::MAX_COUNT, 'discount' => 80],
+        'price_steps' => [
+          ['from' => 1, 'to'  => 10, 'discount' => 10],
+          ['from' => 11, 'to' => 20, 'discount' => 20],
+          ['from' => 21, 'to' => 30, 'discount' => 30],
+          ['from' => 31, 'to' => LicensePackage::MAX_COUNT, 'discount' => 80],
+        ],
+        'range'                  => [[1, 31]],
       ],
       'status'                  => LicensePackage::STATUS_INACTIVE,
     ];
@@ -50,7 +55,10 @@ class LicensePackageTestCase extends ApiTestCase
       'type'                    => LicensePackage::TYPE_STANDARD,
       'name'                    => 'test-pre-create',
       'price_table'             => [
-        ['quantity' => 10, 'discount' => 10],
+        'price_steps' => [
+          ['from' => 1, 'to' => 10, 'discount' => 10],
+        ],
+        'range'                  => [[1, 10]],
       ],
       'status'                  => LicensePackage::STATUS_ACTIVE,
     ];

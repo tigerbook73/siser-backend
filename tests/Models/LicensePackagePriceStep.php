@@ -9,8 +9,11 @@ namespace Tests\Models;
  */
 class LicensePackagePriceStep {
 
-    /** @var int $quantity */
-    public $quantity = 0;
+    /** @var int $from */
+    public $from = 0;
+
+    /** @var int $to */
+    public $to = 0;
 
     /** @var float $discount */
     public $discount = 0;

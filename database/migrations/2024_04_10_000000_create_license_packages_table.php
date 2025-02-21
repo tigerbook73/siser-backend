@@ -17,7 +17,7 @@ return new class extends Migration
       $table->id();
       $table->string('type')->comment('see LicensePackage::TYPE_*');
       $table->string('name');
-      $table->json('price_table')->comment('see validatePriceTable()');
+      $table->json('price_table')->comment('see LicensePackagePriceTable');
       $table->string('status')->comment('see LicensePackage::STATUS_*');
       $table->timestamps();
     });
@@ -28,7 +28,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

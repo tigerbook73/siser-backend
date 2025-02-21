@@ -68,107 +68,38 @@ class LicensePackage extends BaseLicensePackage
     return $this;
   }
 
-  static public function refreshInfo(array $license_package_info, int $quantity): array
-  {
-    $priceRate = 0;
-    if ($quantity <= 0) {
-      $priceRate  = 0;
-      $quantity   = 0;
-    } else {
-      $priceRate = 0;
-      $lastQuantity = 0;
-      foreach ($license_package_info['price_table'] as $priceStep) {
-        if ($quantity <= $priceStep['quantity']) {
-          $priceRate += ($quantity - $lastQuantity) * (100 - $priceStep['discount']);
-          $lastQuantity = $quantity;
-          break;
-        }
-        $priceRate += ($priceStep['quantity'] - $lastQuantity) * (100 - $priceStep['discount']);
-        $lastQuantity = $priceStep['quantity'];
-      }
-      $quantity = $lastQuantity;
-    }
-
-    return [
-      'id'          => $license_package_info['id'],
-      'type'        => $license_package_info['type'],
-      'name'        => $license_package_info['name'],
-      'price_table' => $license_package_info['price_table'],
-      'quantity'    => $quantity,
-      'price_rate'  => $priceRate,
-    ];
-  }
-
   public function info(int $quantity): array
   {
-    $info = [
+    $priceTable = $this->getPriceTable();
+    $priceRate = $priceTable->getPriceRate($quantity);
+
+    return [
       'id'          => $this->id,
       'type'        => $this->type,
       'name'        => $this->name,
       'price_table' => $this->price_table,
       'quantity'    => $quantity,
-      'price_rate'  => 0,
+      'price_rate'  => $priceRate,
     ];
-
-    return self::refreshInfo($info, $quantity);
   }
 
-  public function getMaxQuantity(): int
+  static public function validatePriceTable(array $priceTable): ?array
   {
-    $priceTable = $this->price_table;
-    return $priceTable[count($priceTable) - 1]['quantity'];
-  }
-
-  static public function validatePriceTable(array $priceTable): array|null
-  {
-    /**
-     * structure of price:
-     * [
-     *  ['quantity' => 5,  'discount' => 10],
-     *  ['quantity' => 10, 'discount' => 20],
-     *  ['quantity' => (<=MAX_COUNT), 'discount' => 40]
-     * ]
-     *
-     * 1. sort the price array by count field
-     * 2. validate the price array
-     *  a. count > 0
-     *  b. discount >= 0 < 100
-     *  c. count > previous count
-     *  d. discount > previous discount
-     *  e. the last count should be less or equal than self::MAX_COUNT
-     */
-
-    //  default price step
-    if (count($priceTable) === 0) {
+    try {
+      return LicensePackagePriceTable::from($priceTable)->toArray();
+    } catch (\Exception $e) {
       return null;
     }
+  }
 
-    foreach ($priceTable as $index => $priceStep) {
-      if (!isset($priceStep['quantity']) || !isset($priceStep['discount'])) {
-        return null;
-      }
-    }
+  public function setPriceTable(LicensePackagePriceTable $priceTable): self
+  {
+    $this->price_table = $priceTable->toArray();
+    return $this;
+  }
 
-    // validate price
-    $sortedPriceTable = $priceTable;
-    usort($sortedPriceTable, function ($a, $b) {
-      return $a['quantity'] - $b['quantity'];
-    });
-    foreach ($sortedPriceTable as $index => $priceStep) {
-      if ($priceStep['quantity'] <= 0 || $priceStep['discount'] < 0 || $priceStep['discount'] >= 100) {
-        return null;
-      }
-      if ($index > 0 && $priceStep['quantity'] <= $sortedPriceTable[$index - 1]['quantity']) {
-        return null;
-      }
-      if ($index > 0 && $priceStep['discount'] < $sortedPriceTable[$index - 1]['discount']) {
-        return null;
-      }
-      if ($index === count($sortedPriceTable) - 1 && $priceStep['quantity'] > self::MAX_COUNT) {
-        return null;
-      }
-    }
-
-    return $sortedPriceTable;
+  public function getPriceTable(): LicensePackagePriceTable
+  {
+    return LicensePackagePriceTable::from($this->price_table);
   }
 }

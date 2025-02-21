@@ -36,6 +36,7 @@ Route::domain($domainCustomer)->group(function () use ($testCode) {
   // authentication
   if (config('app.env') === 'local') {
     Route::get('/auth/login', [AuthController::class, 'loginTest']);
+    Route::get('/auth/logout', [AuthController::class, 'logoutTest']);
   } else {
     Route::get('/auth/login', [AuthController::class, 'loginWeb']);
     Route::get('/auth/logout', [AuthController::class, 'logoutWeb']);

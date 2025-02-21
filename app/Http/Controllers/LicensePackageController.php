@@ -73,15 +73,6 @@ class LicensePackageController extends SimpleController
   // default implementation
 
   /**
-   * get /customer/license-packages
-   */
-  public function accountList(Request $request)
-  {
-    $request->merge(['status' => LicensePackage::STATUS_ACTIVE]);
-    return $this->list($request);
-  }
-
-  /**
    * post /license-packages
    */
   public function create(Request $request)
@@ -121,10 +112,6 @@ class LicensePackageController extends SimpleController
 
     /** @var LicensePackage $licensePackage */
     $licensePackage = $this->baseQuery()->findOrFail($id);
-    // TODO: subscription
-    // if ($licensePackage->subscriptions()->count() > 0) {
-    //   return response()->json(['message' => 'LicensePackage has been used, can not be deleted'], 400);
-    // }
     $licensePackage->delete();
   }
 }

@@ -166,4 +166,9 @@ class AuthController extends Controller
     ];
     return response()->view('user-login', $viewData, 200, ['Cache-Control' => 'no-store']);
   }
+
+  public function logoutTest()
+  {
+    return redirect(config('siser.sign_out_uri'), 302, ['Cache-Control' => 'no-store']);
+  }
 }

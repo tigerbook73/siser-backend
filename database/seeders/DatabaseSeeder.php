@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\LicensePackage;
 use App\Models\BillingInfo;
 use App\Models\Coupon;
+use App\Models\LicensePackagePriceTable;
 use App\Models\Machine;
 use App\Models\Plan;
 use App\Models\SoftwarePackage;
@@ -348,11 +349,13 @@ class DatabaseSeeder extends Seeder
       'id' => 1,
       'type' => LicensePackage::TYPE_STANDARD,
       'name' => 'Standard License',
-      'price_table' => [
-        ['quantity' => 5,  'discount' => 10],
-        ['quantity' => 10, 'discount' => 20],
-        ['quantity' => 15, 'discount' => 30],
-      ],
+      'price_table' => LicensePackagePriceTable::from([
+        'price_steps' => [
+          ['quantity' => 1,  'discount' => 10],
+          ['quantity' => 10, 'discount' => 20],
+        ],
+        'range' => [[1, 10], [15, 10]],
+      ]),
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);
   }

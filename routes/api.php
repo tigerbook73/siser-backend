@@ -115,9 +115,6 @@ Route::domain($domainCustomer)->group(function () {
     Route::get('/lds/lds-license', [LdsLicenseController::class, 'accountGet']);
     Route::post('/lds/reg-device', [LdsLicenseController::class, 'regDevice']);
     Route::post('/lds/unreg-device', [LdsLicenseController::class, 'unregDevice']);
-
-    // License Pckages
-    Route::get('/customer/license-packages', [LicensePackageController::class, 'accountlist']);
   });
 });
 
