@@ -29,9 +29,12 @@ class LicenseSharingTestHelper
       'type' => LicensePackage::TYPE_STANDARD,
       'name' => 'Standard License',
       'price_table' => [
-        ['quantity' => 1, 'discount' => 10],
-        ['quantity' => 2, 'discount' => 20],
-        ['quantity' => 5, 'discount' => 30],
+        'price_steps' => [
+          ['from' => 2, 'to' => 5, 'discount' => 10],
+          ['from' => 6, 'to' => 10, 'discount' => 20],
+          ['from' => 11, 'to' => 20, 'discount' => 30],
+        ],
+        'range' => [[2, 10], [15, 15], [20, 20]],
       ],
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);

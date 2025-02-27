@@ -160,4 +160,50 @@ class Plan extends BasePlan
     }
     return $this->setMeta($meta);
   }
+
+  public function setMetaPaddleLicensePrices(PlanMetaPaddleLicensePrices $licensePrices): self
+  {
+    $meta = $this->getMeta();
+    $meta->paddle->license_prices = $licensePrices;
+    return $this->setMeta($meta);
+  }
+
+  public function getMetaPaddleLicensePrices(): PlanMetaPaddleLicensePrices
+  {
+    return $this->getMeta()->paddle->license_prices;
+  }
+
+  public function getMetaPaddleLicensePriceId(int $quantity): ?string
+  {
+    return $this->getMetaPaddleLicensePrices()->getPriceId($quantity);
+  }
+
+  public function setMetaPaddleLicensePackageId(int $licensePackageId)
+  {
+    if ($this->getMetaPaddleLicensePrices()->license_package_id != $licensePackageId) {
+      $this->setMetaPaddleLicensePrices(
+        $this->getMetaPaddleLicensePrices()->setLicensePackageId($licensePackageId)
+      );
+    }
+    return $this;
+  }
+
+  public function setMetaPaddleLicensePriceId(int $quantity, string $priceId): self
+  {
+    if ($this->getMetaPaddleLicensePrices()->getPriceId($quantity) != $priceId) {
+      $this->setMetaPaddleLicensePrices(
+        $this->getMetaPaddleLicensePrices()->setPriceId($quantity, $priceId)
+      );
+    }
+    return $this;
+  }
+
+  public function getAllPriceIds(): array
+  {
+    $planMeta = $this->getMeta();
+    return array_filter([
+      $planMeta->paddle->price_id,
+      ...array_values($planMeta->paddle->license_prices->price_ids),
+    ]);
+  }
 }

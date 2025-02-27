@@ -11,36 +11,34 @@ use Illuminate\Contracts\Support\Arrayable;
  * This class represents a price table for a license package.
  *
  * @property LicensePackagePriceStep[] $price_steps tiered discount steps
- * @property array $range, [[1,10], [12,12], [15,15], [20,20], [30,30]]
+ * @property array $range, [[2,10], [12,12], [15,15], [20,20], [30,30]]
  * @property LicensePackagePriceRate[] $price_list
  *
  * Example data in array format:
  * ```
  * [
  *  'price_steps' => [
- *    ['from' => 1,   'to' => 5,  'discount' => 0,  'base_discount' => 0],
- *    ['from' => 6,   'to' => 10, 'discount' => 10, 'base_discount' => 0],
- *    ['from' => 11,  'to' => 20, 'discount' => 50, 'base_discount' => 50],
+ *    ['from' => 2,   'to' => 5,  'discount' => 10, 'base_discount' => 0],
+ *    ['from' => 6,   'to' => 10, 'discount' => 20, 'base_discount' => 40],
+ *    ['from' => 11,  'to' => 20, 'discount' => 30, 'base_discount' => 140],
  *  ],
- * 'range' => [[1, 10], [12, 12], [15, 15], [20, 20], [50, 50]],
+ * 'range' => [[2, 10], [12, 12], [15, 15], [20, 20]],
  * 'price_list' => [
  *    // step 1, price_rate = quantity * 100 - base_discount - discount * (quantity - from + 1)
- *    ['quantity' => 1,   'price_rate' => 100], // 1 * 100 - 0 - 0 * (1 - 1 + 1)
- *    ['quantity' => 2,   'price_rate' => 200], // 2 * 100 - 0 - 0 * (2 - 1 + 1)
- *    ['quantity' => 3,   'price_rate' => 300], // 3 * 100 - 0 - 0 * (3 - 1 + 1)
- *    ['quantity' => 4,   'price_rate' => 400], // 4 * 100 - 0 - 0 * (4 - 1 + 1)
- *    ['quantity' => 5,   'price_rate' => 500], // 5 * 100 - 0 - 0 * (5 - 1 + 1)
+ *    ['quantity' => 2,   'price_rate' => 190], // 2 * 100 - 0 - 10 * (2 - 2 + 1) = 190
+ *    ['quantity' => 3,   'price_rate' => 280], // 3 * 100 - 0 - 10 * (3 - 2 + 1) = 280
+ *    ['quantity' => 4,   'price_rate' => 370], // 4 * 100 - 0 - 10 * (4 - 2 + 1) = 370
+ *    ['quantity' => 5,   'price_rate' => 460], // 5 * 100 - 0 - 10 * (5 - 2 + 1) = 460
  *    // step 2
- *    ['quantity' => 6,   'price_rate' => 590], // 6 * 100 - 0 - 10 * (6 - 6 + 1)
- *    ['quantity' => 7,   'price_rate' => 680], // 7 * 100 - 0 - 10 * (7 - 6 + 1)
- *    ['quantity' => 8,   'price_rate' => 770], // 8 * 100 - 0 - 10 * (8 - 6 + 1)
- *    ['quantity' => 9,   'price_rate' => 860], // 9 * 100 - 0 - 10 * (9 - 6 + 1)
- *    ['quantity' => 10,  'price_rate' => 950], // 10 * 100 - 0 - 10 * (10 - 6 + 1)
+ *    ['quantity' => 6,   'price_rate' => 540], // 6 * 100 - 40 - 20 * (6 - 6 + 1) = 540
+ *    ['quantity' => 7,   'price_rate' => 620], // 7 * 100 - 40 - 20 * (7 - 6 + 1) = 620
+ *    ['quantity' => 8,   'price_rate' => 700], // 8 * 100 - 40 - 20 * (8 - 6 + 1) = 700
+ *    ['quantity' => 9,   'price_rate' => 780], // 9 * 100 - 40 - 20 * (9 - 6 + 1) = 780
+ *    ['quantity' => 10,  'price_rate' => 860], // 10 * 100 - 40 - 20 * (10 - 6 + 1) = 860
  *    // step 3
- *    ['quantity' => 12,  'price_rate' => 1050], // 12 * 100 - 50 - 50 * (12 - 11 + 1)
- *    ['quantity' => 15,  'price_rate' => 1200], // 15 * 100 - 50 - 50 * (15 - 11 + 1)
- *    ['quantity' => 20,  'price_rate' => 1500], // 20 * 100 - 50 - 50 * (20 - 11 + 1)
- *    ['quantity' => 50,  'price_rate' => 2500], // 50 * 100 - 50 - 50 * (50 - 11 + 1)
+ *    ['quantity' => 12,  'price_rate' => 1000], // 12 * 100 - 140 - 30 * (12 - 11 + 1) = 1000
+ *    ['quantity' => 15,  'price_rate' => 1210], // 15 * 100 - 140 - 30 * (15 - 11 + 1) = 1210
+ *    ['quantity' => 20,  'price_rate' => 1560], // 20 * 100 - 140 - 30 * (20 - 11 + 1) = 1560
  * ]
  * ```
  */
@@ -77,14 +75,14 @@ class LicensePackagePriceTable implements Arrayable
 
     // validate and update the price steps
     $previousStep = $priceSteps[0];
-    if ($previousStep->from !== 1) {
-      throw new Exception("First step must start from 1.");
+    if ($previousStep->from !== LicensePackage::MIN_QUANTITY) {
+      throw new Exception("First step must start from " . LicensePackage::MIN_QUANTITY . ".");
     }
     for ($i = 1; $i < count($priceSteps); $i++) {
       $step = $priceSteps[$i];
 
       // update or validate the from field
-      if ($step->from === 1) {
+      if ($step->from === LicensePackage::MIN_QUANTITY) {
         $step->from = $previousStep->to + 1;
       } else if ($step->from !== $previousStep->to + 1) {
         throw new Exception("Price steps must be continuous.");
@@ -119,8 +117,8 @@ class LicensePackagePriceTable implements Arrayable
       if (!is_array($unit) || count($unit) !== 2 || !is_int($unit[0]) || !is_int($unit[1])) {
         throw new Exception("Each range unit must be an array of two integers.");
       }
-      if ($unit[0] < 1 || $unit[0] > $unit[1] || $unit[1] > LicensePackage::MAX_COUNT) {
-        throw new Exception("Each range unit must be [from, to] where 1 <= from <= to <= MAX_COUNT.");
+      if ($unit[0] < LicensePackage::MIN_QUANTITY || $unit[0] > $unit[1] || $unit[1] > LicensePackage::MAX_QUANTITY) {
+        throw new Exception("Each range unit must be [from, to] where 2 <= from <= to <= " . LicensePackage::MAX_QUANTITY . ".");
       }
     }
 
@@ -149,8 +147,12 @@ class LicensePackagePriceTable implements Arrayable
           if ($quantity >= $step->from && $quantity <= $step->to) {
             $this->price_list[] = new LicensePackagePriceRate(
               $quantity,
-              $quantity * 100 - $step->base_discount - $step->discount * ($quantity - $step->from + 1)
+              $quantity * LicensePackage::RATE_FACTOR - $step->base_discount - $step->discount * ($quantity - $step->from + 1)
             );
+
+            if (count($this->price_list) >= LicensePackage::MAX_PRICE_COUNT) {
+              return;
+            }
             break;
           }
         }
@@ -165,8 +167,8 @@ class LicensePackagePriceTable implements Arrayable
       $step->validate();
 
       if ($index === 0) {
-        if ($step->from !== 1) {
-          throw new Exception("First step must start from 1.");
+        if ($step->from !== LicensePackage::MIN_QUANTITY) {
+          throw new Exception("First step must start from " . LicensePackage::MIN_QUANTITY . ".");
         }
         if ($step->base_discount !== 0) {
           throw new Exception("First step must have zero base discount.");
@@ -225,6 +227,6 @@ class LicensePackagePriceTable implements Arrayable
         return $priceRate->price_rate;
       }
     }
-    throw new Exception("Invalid quantity.");
+    throw new Exception("Invalid quantity: " . $quantity);
   }
 }

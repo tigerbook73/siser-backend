@@ -3,10 +3,11 @@
   - [Step1: refactor product/plan/coupon (DONE)](#markdown-header-step1-refactor-productplancoupon-done)
     - [Refactor Product, Plan, and Coupon Models (DONE)](#markdown-header-refactor-product-plan-and-coupon-models-done)
     - [Migration (DONE)](#markdown-header-migration-done)
-  - [Step2: manage license packages](#markdown-header-step2-manage-license-packages)
-  - [Step3: manage paddle prices](#markdown-header-step3-manage-paddle-prices)
-    - [update plan model](#markdown-header-update-plan-model)
-    - [manage plan model](#markdown-header-manage-plan-model)
+  - [Step2: manage license packages (DONE)](#markdown-header-step2-manage-license-packages-done)
+  - [Step3: manage paddle prices (DONE)](#markdown-header-step3-manage-paddle-prices-done)
+    - [update plan model (DONE)](#markdown-header-update-plan-model-done)
+    - [manage plan (DONE)](#markdown-header-manage-plan-done)
+    - [manage license package (DONE)](#markdown-header-manage-license-package-done)
   - [Step4: update subscription / invoice model to support license package](#markdown-header-step4-update-subscription-invoice-model-to-support-license-package)
   - [Step5: purchase license package - customer portal](#markdown-header-step5-purchase-license-package-customer-portal)
   - [Step6: update subscription / invoice model to support credit/items/prorate](#markdown-header-step6-update-subscription-invoice-model-to-support-credititemsprorate)
@@ -34,7 +35,7 @@ refactor product/plan/coupon to optimize product-price-discount relationship.
   - archive all paddle prices
 
 
-## Step2: manage license packages
+## Step2: manage license packages (DONE)
 
 refactor license package model to support tiered discount.
 
@@ -58,19 +59,28 @@ Valid quantity: 1-25, 30, 50
   - update existing license package
   - info()
 
-## Step3: manage paddle prices
+## Step3: manage paddle prices (DONE)
 
-creating or updating paddle prices when plan / license-packages created and/or changed.
-
-### update plan model
+### update plan model (DONE)
 
 update plan model to support list of paddle prices.
 
-### manage plan model
+- add quantity based prices to meta (DONE)
+- update price custom data (DONE)
+- update paddle:cmd sync-price (DONE)
+- update paddle:cmd sync-product (DONE)
 
-- to make thing simple:
-  - create new paddle prices
-  - archive old paddle prices
+### manage plan (DONE)
+
+  - sync paddle prices when creating plan (DONE)
+  - sync paddle prices when updating plan (DONE)
+  - sync paddle prices when deleting plan (DONE)
+
+### manage license package (DONE)
+
+  - sync paddle prices when creating license package (DONE)
+  - sync paddle prices when updating license package (DONE)
+  - sync paddle prices when deleting license package (DONE)
 
 ## Step4: update subscription / invoice model to support license package
 
@@ -79,6 +89,7 @@ update subscription and invoice model to support new attributes (license_number,
   - support new attributes
     - license number
     - license package id
+    - license package info
   - update plan model?
     - query all prices for a plan?
 

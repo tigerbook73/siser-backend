@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\BillingInfo;
 use App\Models\Coupon;
 use App\Models\Invoice;
+use App\Models\LicensePackage;
 use App\Models\Paddle\PriceCustomData;
 use App\Models\Paddle\ProductCustomData;
 use App\Models\Plan;
@@ -13,6 +14,7 @@ use App\Models\ProductInterval;
 use App\Models\Refund;
 use App\Models\Subscription;
 use App\Services\Paddle\SubscriptionManagerPaddle;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Collection;
 use Paddle\SDK\Entities\Discount\DiscountStatus;
@@ -202,10 +204,7 @@ class PaddleCommand extends Command
      * if product has no paddle id, create paddle product and update local product
      */
 
-    /** @var Collection<int, Product> $products */
-    $products = Product::whereIn('type', [
-      Product::TYPE_SUBSCRIPTION,
-    ])->get();
+    $products = Product::listProducts();
     $paddleProducts = $this->manager->paddleService->listProducts();
 
     foreach ($products as $product) {
@@ -227,7 +226,9 @@ class PaddleCommand extends Command
           if ($paddleProduct) {
             if (
               $force ||
-              $product->updated_at->gt(ProductCustomData::from($paddleProduct->customData?->data)->product_timestamp ?? "2000-01-01")
+              (Carbon::parse($product->updated_at)
+                ->subMinute()
+                ->gt(ProductCustomData::from($paddleProduct->customData?->data)->product_timestamp ?? "2000-01-01"))
             ) {
               $paddleProduct = $this->manager->productService->updatePaddleProduct(
                 $product,
@@ -257,11 +258,6 @@ class PaddleCommand extends Command
      */
     $paddleProducts = $this->manager->paddleService->listProducts();
     foreach ($paddleProducts as $paddleProduct) {
-      // keep test products
-      if ((ProductCustomData::from($paddleProduct->customData?->data)->product_name) == 'TEST') {
-        continue;
-      }
-
       // referenced by product
       if ($products->some(
         fn($product) => collect(ProductInterval::cases())->some(
@@ -291,10 +287,7 @@ class PaddleCommand extends Command
    */
   public function syncSubscriptionPrices(bool $force)
   {
-    $products = Product::whereIn('type', [
-      Product::TYPE_SUBSCRIPTION,
-    ])->get();
-
+    $products = Product::listProducts();
     foreach ($products as $product) {
       $this->syncSubscriptionPricesForProduct($product, $force);
     }
@@ -306,6 +299,7 @@ class PaddleCommand extends Command
    */
   public function syncSubscriptionPricesForProduct(Product $product, bool $force)
   {
+    /** @var Collection<int,Plan> $plans */
     $plans = $product->plans()->public()->get();
     $productIds = collect(ProductInterval::cases())
       ->map(fn($interval) => $product->getMeta()->paddle->getProductId($interval))
@@ -316,12 +310,17 @@ class PaddleCommand extends Command
     ));
 
     foreach ($plans as $plan) {
+      $planMeta  = $plan->getMeta();
+
+      /* synchronize plan's standard price */
       try {
-        $paddlePrice = $paddlePrices->first(fn($paddlePrice) => $plan->getMeta()->paddle->price_id === $paddlePrice->id);
+        $paddlePrice = $paddlePrices->first(fn($paddlePrice) => $planMeta->paddle->price_id === $paddlePrice->id);
         if ($paddlePrice) {
           if (
             $force ||
-            $plan->updated_at->gt(PriceCustomData::from($paddlePrice->customData?->data)->plan_timestamp ?? "2000-01-01")
+            (Carbon::parse($plan->updated_at)
+              ->subMinute()
+              ->gt(PriceCustomData::from($paddlePrice->customData?->data)->plan_timestamp ?? "2000-01-01"))
           ) {
             $paddlePrice = $this->manager->priceService->updatePaddlePrice($plan);
             $this->info("Paddle price \"{$paddlePrice->name}/{$paddlePrice->id}\" updated.");
@@ -329,15 +328,55 @@ class PaddleCommand extends Command
             $this->info("Paddle price \"{$paddlePrice->name}/{$paddlePrice->id}\" is up-to-date.");
           }
         } else {
-          if ($plan->status == Plan::STATUS_ACTIVE) {
-            $paddlePrice = $this->manager->priceService->createPaddlePrice($plan);
-            $this->info("Paddle price \"{$paddlePrice->name}/{$paddlePrice->id}\" created.");
-          } else {
-            // skipped inactive plan;
-          }
+          $paddlePrice = $this->manager->priceService->createPaddlePrice($plan);
+          $this->info("Paddle price \"{$paddlePrice->name}/{$paddlePrice->id}\" created.");
         }
       } catch (ApiError $e) {
         $this->warn("Failed to create/update paddle price for plan \"{$plan->name}\".");
+        $this->error("Message: {$e->getMessage()}, Field: " .
+          ($e->fieldErrors[0]->field ?? '') .
+          " : " .
+          ($e->fieldErrors[0]->error ?? ''));
+      }
+
+      /* synchronize plan's license prices */
+      $licensePackage = LicensePackage::findStandard();
+      try {
+        $currentQuantities = array_keys($planMeta->paddle->license_prices->price_ids);
+        $newQuantities = array_map(
+          fn($priceRate) => $priceRate->quantity,
+          $licensePackage?->getPriceTable()->price_list ?? []
+        );
+        $toRemoveQuantities = array_diff($currentQuantities, $newQuantities);
+
+        // archive removed license quantities
+        foreach ($toRemoveQuantities as $quantity) {
+          $this->info("Paddle license price for quantity \"{$plan->name}/{$quantity}/{$plan->getMetaPaddleLicensePriceId($quantity)}\" removed.");
+          $this->manager->priceService->removePaddleLicensePrices($plan, $quantity);
+        }
+
+        // update or create paddle license prices for new quantities
+        foreach ($newQuantities as $quantity) {
+          $paddleLicensePrice = $paddlePrices->first(fn($paddlePrice) => $planMeta->paddle->license_prices->getPriceId($quantity) === $paddlePrice->id);
+          if ($paddleLicensePrice) {
+            if (
+              $force ||
+              (Carbon::parse(max($plan->updated_at, $licensePackage->updated_at))
+                ->subMinute()
+                ->gt(PriceCustomData::from($paddleLicensePrice->customData?->data)->license_package_timestamp ?? "2000-01-01"))
+            ) {
+              $paddleLicensePrice = $this->manager->priceService->updatePaddleLicensePrice($plan, $licensePackage, $quantity);
+              $this->info("Paddle license price for quantity \"{$plan->name}/{$quantity}/{$paddleLicensePrice->id}\" updated.");
+            } else {
+              $this->info("Paddle license price for quantity \"{$plan->name}/{$quantity}/{$paddleLicensePrice->id}\" is up-to-date.");
+            }
+          } else {
+            $paddleLicensePrice = $this->manager->priceService->createPaddleLicensePrice($plan, $licensePackage, $quantity);
+            $this->info("Paddle license price for quantity \"{$plan->name}/{$quantity}/{$paddleLicensePrice->id}\" created.");
+          }
+        }
+      } catch (ApiError $e) {
+        $this->warn("Failed to create/update paddle license price for plan \"{$plan->name}\".");
         $this->error("Message: {$e->getMessage()}, Field: " .
           ($e->fieldErrors[0]->field ?? '') .
           " : " .
@@ -348,20 +387,13 @@ class PaddleCommand extends Command
     /**
      * archive paddle price that not exists in local products
      */
-    $productIds = collect(ProductInterval::cases())
-      ->map(fn($interval) => $product->getMeta()->paddle->getProductId($interval))
-      ->filter()
-      ->all();
-    $paddlePrices = $this->manager->paddleService->listPrices(new ListPrices(
-      productIds: $productIds,
-    ));
+    $paddlePrices = $this->manager->paddleService->listPrices(new ListPrices(productIds: $productIds));
     foreach ($paddlePrices as $paddlePrice) {
-      // keep test products
-      if ((PriceCustomData::from($paddlePrice->customData?->data)->product_name) == 'TEST') {
-        continue;
-      }
-
-      $plan = $plans->first(fn($plan) => $plan->getMeta()->paddle->price_id === $paddlePrice->id);
+      $plan = $plans->first(
+        fn($plan) => (
+          $plan->getMeta()->paddle->price_id === $paddlePrice->id ||
+          ($plan->getMeta()->paddle->license_prices->getPriceId(PriceCustomData::from($paddlePrice->customData?->data)->license_quantity) === $paddlePrice->id))
+      );
       if (!$plan) {
         $this->manager->paddleService->archivePrice($paddlePrice->id);
         $this->info("Paddle price \"{$paddlePrice->name}/{$paddlePrice->id}\" archived.");
@@ -385,7 +417,9 @@ class PaddleCommand extends Command
           if ($coupon->getMeta()->paddle->discount_id) {
             if (
               $force ||
-              $coupon->updated_at->subSeconds(3)->gt($coupon->getMeta()->paddle->paddle_timestamp ?? "2000-01-01")
+              (Carbon::parse($coupon->updated_at)
+                ->subMinute()
+                ->gt($coupon->getMeta()->paddle->paddle_timestamp ?? "2000-01-01"))
             ) {
               $paddleDiscount = $this->manager->discountService->updatePaddleDiscount($coupon);
               $this->info("Paddle coupon \"{$coupon->name}/{$paddleDiscount->id}\" for event \"{$coupon->coupon_event}\" updated");
@@ -399,7 +433,7 @@ class PaddleCommand extends Command
               $coupon->end_date->gt(now())
             ) {
               $paddleDiscount = $this->manager->discountService->createPaddleDiscount($coupon);
-              $this->info("Paddle coupon \"{$coupon->name}/{$paddleDiscount->id}\" for event \"{$coupon->coupon_event}\" created");
+              $this->info("Paddle coupon \"{$coupon->name}/{$paddleDiscount->id}\" for event \"{$coupon->coupon_event}\" created or updated.");
               $apiCall++;
               continue;
             } else {

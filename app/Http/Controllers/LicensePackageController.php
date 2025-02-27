@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SynchronizePaddlePrice;
 use App\Models\LicensePackage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,9 @@ class LicensePackageController extends SimpleController
     $licensePackage = new LicensePackage($inputs);
     $this->validateAndSave($licensePackage);
 
+    // synchronize all plans' paddle price
+    SynchronizePaddlePrice::dispatch();
+
     return  response()->json($this->transformSingleResource($licensePackage), 201);
   }
 
@@ -100,6 +104,9 @@ class LicensePackageController extends SimpleController
     $licensePackage->forceFill($inputs);
     $this->validateAndSave($licensePackage);
 
+    // synchronize all plans' paddle prices
+    SynchronizePaddlePrice::dispatch();
+
     return $this->transformSingleResource($licensePackage->unsetRelations());
   }
 
@@ -113,5 +120,8 @@ class LicensePackageController extends SimpleController
     /** @var LicensePackage $licensePackage */
     $licensePackage = $this->baseQuery()->findOrFail($id);
     $licensePackage->delete();
+
+    // synchronize all plans' paddle prices
+    SynchronizePaddlePrice::dispatch();
   }
 }

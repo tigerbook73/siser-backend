@@ -13,8 +13,8 @@ use Illuminate\Contracts\Support\Arrayable;
  *
  * This class is convertable from array to object and vice versa
  *
- * @property int $from
- * @property int $to
+ * @property int $from min: LicensePackage::MIN_QUANTITY (2)
+ * @property int $to max: LicensePackage::MAX_QUANTITY
  * @property float $discount  0-100
  * @property float $base_discount  // the total discount from the previous steps
  */
@@ -32,9 +32,9 @@ class LicensePackagePriceStep implements Arrayable
   public function validate()
   {
     if (
-      $this->from < 1 ||
+      $this->from < LicensePackage::MIN_QUANTITY ||
       $this->from > $this->to ||
-      $this->to > LicensePackage::MAX_COUNT ||
+      $this->to > LicensePackage::MAX_QUANTITY ||
       $this->discount < 0 ||
       $this->discount >= 100 ||
       $this->base_discount < 0
@@ -57,7 +57,7 @@ class LicensePackagePriceStep implements Arrayable
   {
     // backward compatibility for old price table
     if (isset($data['quantity'])) {
-      $data['from'] = 1;
+      $data['from'] = LicensePackage::MIN_QUANTITY;
       $data['to'] = (int)$data['quantity'];
     }
 

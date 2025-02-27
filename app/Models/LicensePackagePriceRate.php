@@ -11,7 +11,7 @@ use Illuminate\Contracts\Support\Arrayable;
  * This class represents a single valid price in a license package.
  *
  * @property int $quantity
- * @property float $discount  0-100
+ * @property float $price_rate  price rate for the quantity (price_rate / 100)
  */
 class LicensePackagePriceRate implements Arrayable
 {
@@ -29,7 +29,7 @@ class LicensePackagePriceRate implements Arrayable
   {
     if (
       $this->quantity < 1 ||
-      $this->quantity > LicensePackage::MAX_COUNT ||
+      $this->quantity > LicensePackage::MAX_QUANTITY ||
       $this->price_rate < 0
     ) {
       throw new Exception("Invalid price rate.");

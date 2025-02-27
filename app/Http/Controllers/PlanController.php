@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ArchivePaddlePrice;
+use App\Jobs\SynchronizePaddlePrice;
 use App\Models\Plan;
 use App\Models\ProductInterval;
 use App\Services\Paddle\SubscriptionManagerPaddle;
@@ -173,9 +175,9 @@ class PlanController extends SimpleController
     $plan->status = 'draft';
     $plan->save();
 
-    $this->manager->priceService->createPaddlePrice($plan);
+    SynchronizePaddlePrice::dispatch($plan->id);
 
-    return  response()->json($this->transformSingleResource($plan), 201);
+    return response()->json($this->transformSingleResource($plan), 201);
   }
 
   /**
@@ -217,7 +219,7 @@ class PlanController extends SimpleController
     $plan->save();
 
     if ($plan->wasChanged()) {
-      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
+      SynchronizePaddlePrice::dispatch($plan->id);
     }
 
     return $this->transformSingleResource($plan->unsetRelations());
@@ -240,6 +242,9 @@ class PlanController extends SimpleController
       return response()->json(['message' => 'Only draft plan can be deleted'], 400);
     }
 
+    // dispatch job to archive all paddle prices for this plan
+    ArchivePaddlePrice::dispatch($plan->getAllPriceIds());
+
     $plan->delete();
   }
 
@@ -258,10 +263,6 @@ class PlanController extends SimpleController
 
     $plan->status = 'active';
     $plan->save();
-
-    if ($plan->wasChanged()) {
-      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
-    }
 
     return $this->transformSingleResource($plan);
   }
@@ -285,10 +286,6 @@ class PlanController extends SimpleController
 
     $plan->status = 'inactive';
     $plan->save();
-
-    if ($plan->wasChanged()) {
-      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
-    }
 
     return $this->transformSingleResource($plan);
   }

@@ -27,12 +27,12 @@ class LicensePackageTestCase extends ApiTestCase
       'name'                    => 'test-create',
       'price_table'             => [
         'price_steps' => [
-          ['from' => 1, 'to'  => 10, 'discount' => 10],
+          ['from' => LicensePackage::MIN_QUANTITY, 'to'  => 10, 'discount' => 10],
           ['from' => 11, 'to' => 20, 'discount' => 20],
           ['from' => 21, 'to' => 30, 'discount' => 30],
-          ['from' => 31, 'to' => LicensePackage::MAX_COUNT, 'discount' => 80],
+          ['from' => 31, 'to' => LicensePackage::MAX_QUANTITY, 'discount' => 80],
         ],
-        'range'                  => [[1, 31]],
+        'range'                  => [[LicensePackage::MIN_QUANTITY, 30], [31, 31], [50, 50]],
       ],
       'status'                  => LicensePackage::STATUS_ACTIVE,
     ];
@@ -41,12 +41,12 @@ class LicensePackageTestCase extends ApiTestCase
       'name'                    => 'test-update',
       'price_table'             => [
         'price_steps' => [
-          ['from' => 1, 'to'  => 10, 'discount' => 10],
+          ['from' => LicensePackage::MIN_QUANTITY, 'to'  => 10, 'discount' => 10],
           ['from' => 11, 'to' => 20, 'discount' => 20],
           ['from' => 21, 'to' => 30, 'discount' => 30],
-          ['from' => 31, 'to' => LicensePackage::MAX_COUNT, 'discount' => 80],
+          ['from' => 31, 'to' => LicensePackage::MAX_QUANTITY, 'discount' => 80],
         ],
-        'range'                  => [[1, 31]],
+        'range'                  => [[LicensePackage::MIN_QUANTITY, 31]],
       ],
       'status'                  => LicensePackage::STATUS_INACTIVE,
     ];
@@ -56,9 +56,9 @@ class LicensePackageTestCase extends ApiTestCase
       'name'                    => 'test-pre-create',
       'price_table'             => [
         'price_steps' => [
-          ['from' => 1, 'to' => 10, 'discount' => 10],
+          ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10, 'discount' => 10],
         ],
-        'range'                  => [[1, 10]],
+        'range'                  => [[LicensePackage::MIN_QUANTITY, 10]],
       ],
       'status'                  => LicensePackage::STATUS_ACTIVE,
     ];

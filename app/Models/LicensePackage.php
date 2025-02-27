@@ -12,7 +12,15 @@ class LicensePackage extends BaseLicensePackage
   const STATUS_ACTIVE     = 'active';
   const STATUS_INACTIVE   = 'inactive';
 
-  const MAX_COUNT         = 300;
+  // price rate factor in price table
+  const RATE_FACTOR       = 100;
+
+  // the minimum and maximum quantity of licenses
+  const MIN_QUANTITY      = 2;
+  const MAX_QUANTITY      = 300;
+
+  // the max number of prices in the price table
+  const MAX_PRICE_COUNT   = 50;
 
   static protected $attributesOption = [
     'id'                  => ['filterable' => 1, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -23,6 +31,16 @@ class LicensePackage extends BaseLicensePackage
     'created_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
+
+  static public function findByType($type = self::TYPE_STANDARD): ?LicensePackage
+  {
+    return self::where('status',  self::STATUS_ACTIVE)->where('type', $type)->first();
+  }
+
+  static public function findStandard(): ?LicensePackage
+  {
+    return self::findByType(self::TYPE_STANDARD);
+  }
 
   public function isStandard(): bool
   {

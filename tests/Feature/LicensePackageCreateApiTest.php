@@ -47,45 +47,70 @@ class LicensePackageCreateApiTest extends LicensePackageTestCase
 
     // invalid from/to
     $this->modelCreate['price_table']['price_steps'] = [
-      ['from' => 0, 'to' => 10, 'discount' => 10],
+      ['from' => LicensePackage::MIN_QUANTITY - 1, 'to' => 10, 'discount' => 10],
     ];
     $this->createAssert(400);
 
     // count too large
     $this->modelCreate['price_table']['price_steps'] = [
-      ['from' => 1, 'to' => LicensePackage::MAX_COUNT + 1, 'discount' => 90,]
+      ['from' => LicensePackage::MIN_QUANTITY, 'to' => LicensePackage::MAX_QUANTITY + 1, 'discount' => 90,]
     ];
     $this->createAssert(400);
 
     // discount not set
     $this->modelCreate['price_table']['price_steps'] = [
-      ['from' => 1, 'to' => 10],
+      ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10],
     ];
     $this->createAssert(400);
 
     // discount too small
     $this->modelCreate['price_table']['price_steps'] = [
-      ['from' => 1, 'to' => 10, 'discount' => -1],
+      ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10, 'discount' => -1],
     ];
     $this->createAssert(400);
 
     // discount too large
     $this->modelCreate['price_table'] = [
       'price_steps' => [
-        ['from' => 1, 'to' => 10, 'discount' => 100],
+        ['from' => LicensePackage::MIN_QUANTITY, 'to' => 20, 'discount' => 90],
+        ['from' => 21, 'to' => 30, 'discount' => 80],
       ],
-      'range' => [[1, 10]],
+      'range' => [[LicensePackage::MIN_QUANTITY, 30]],
     ];
     $this->createAssert(400);
 
     // discount decrease
     $this->modelCreate['price_table'] = [
       'price_steps' => [
-        ['quantity' => 10, 'discount' => 90],
-        ['quantity' => 20, 'discount' => 80],
+        ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10, 'discount' => 90],
+        ['from' => 11, 'to' => 20, 'discount' => 80],
       ],
-      'range' => [[1, 30]],
+      'range' => [[LicensePackage::MIN_QUANTITY, 30]],
     ];
     $this->createAssert(400);
+
+    // range invalid start
+    $this->modelCreate['price_table'] = [
+      'price_steps' => [
+        ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10, 'discount' => 10],
+      ],
+      'range' => [[LicensePackage::MIN_QUANTITY - 1, 10]],
+    ];
+
+    // range invalid unit
+    $this->modelCreate['price_table'] = [
+      'price_steps' => [
+        ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10, 'discount' => 10],
+      ],
+      'range' => [[LicensePackage::MIN_QUANTITY, 10], [15, 10]],
+    ];
+
+    // range invalid overlap
+    $this->modelCreate['price_table'] = [
+      'price_steps' => [
+        ['from' => LicensePackage::MIN_QUANTITY, 'to' => 10, 'discount' => 10],
+      ],
+      'range' => [[LicensePackage::MIN_QUANTITY, 5], [6, 10]],
+    ];
   }
 }

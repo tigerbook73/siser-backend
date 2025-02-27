@@ -351,10 +351,11 @@ class DatabaseSeeder extends Seeder
       'name' => 'Standard License',
       'price_table' => LicensePackagePriceTable::from([
         'price_steps' => [
-          ['quantity' => 1,  'discount' => 10],
-          ['quantity' => 10, 'discount' => 20],
+          ['from' => LicensePackage::MIN_QUANTITY, 'to' => 5, 'discount' => 10],
+          ['from' => 6, 'to' => 10, 'discount' => 20],
+          ['from' => 11, 'to' => 20, 'discount' => 30],
         ],
-        'range' => [[1, 10], [15, 10]],
+        'range' => [[LicensePackage::MIN_QUANTITY, 5], [10, 10], [15, 15], [20, 20]],
       ]),
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);

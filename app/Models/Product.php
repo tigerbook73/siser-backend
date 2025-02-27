@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Product as BaseProduct;
+use Illuminate\Database\Eloquent\Collection;
 
 class Product extends BaseProduct
 {
@@ -45,5 +46,18 @@ class Product extends BaseProduct
   public function setMetaPaddleProduct2DayId(?string $paddleProductId): self
   {
     return $this->setMetaPaddleProductId($paddleProductId, ProductInterval::INTERVAL_2_DAY);
+  }
+
+  /**
+   * @param string[]|string $type
+   * @return Collection<int, Product>
+   */
+  static public function listProducts($type = self::TYPE_SUBSCRIPTION): Collection
+  {
+    if (!is_array($type)) {
+      return self::where('type', $type)->get();
+    } else {
+      return self::whereIn('type', $type)->get();
+    }
   }
 }
