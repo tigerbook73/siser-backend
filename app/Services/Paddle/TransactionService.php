@@ -240,10 +240,13 @@ class TransactionService extends PaddleEntityService
 
     $subscription = $this->validateTransaction($transactionCompleted->transaction);
 
-    $this->createOrUpdatePaymentMethod($subscription->user, $transactionCompleted->transaction);
+    $this->result->appendMessage("retrieving paddle transaction for {$transactionCompleted->transaction->id}", location: __FUNCTION__);
+    $paddleTransaction = $this->paddleService->getTransaction($transactionCompleted->transaction->id);
+
+    $this->createOrUpdatePaymentMethod($subscription->user, $paddleTransaction);
 
     // payment method change event only update payment method
-    if ($transactionCompleted->transaction->origin == NotificationTransactionOrigin::SubscriptionPaymentMethodChange()) {
+    if ($paddleTransaction->origin == TransactionOrigin::SubscriptionPaymentMethodChange()) {
       $this->updateSubscription($subscription);
 
       $this->result
@@ -252,8 +255,6 @@ class TransactionService extends PaddleEntityService
       return;
     }
 
-    $this->result->appendMessage("retrieving paddle transaction for {$transactionCompleted->transaction->id}", location: __FUNCTION__);
-    $paddleTransaction = $this->paddleService->getTransaction($transactionCompleted->transaction->id);
 
     $this->updateBillingInfo($subscription->user->billing_info, $paddleTransaction);
     $this->updateSubscription($subscription);
@@ -279,11 +280,11 @@ class TransactionService extends PaddleEntityService
 
     $subscription = $this->validateTransaction($transactionPastDue->transaction);
 
-    // update payment method and billing info
-    $this->createOrUpdatePaymentMethod($subscription->user, $transactionPastDue->transaction);
-
     $this->result->appendMessage("retrieving paddle transaction for {$transactionPastDue->transaction->id}", location: __FUNCTION__);
     $paddleTransaction = $this->paddleService->getTransaction($transactionPastDue->transaction->id);
+
+    // update payment method and billing info
+    $this->createOrUpdatePaymentMethod($subscription->user, $paddleTransaction);
 
     $this->updateBillingInfo($subscription->user->billing_info, $paddleTransaction);
     $this->updateSubscription($subscription);
