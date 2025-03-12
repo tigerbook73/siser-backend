@@ -297,6 +297,13 @@ class TransactionService extends PaddleEntityService
 
   public function onTransactionCancelled(TransactionCanceled $transactionCanceled)
   {
+    if ($transactionCanceled->transaction->origin->getValue() === TransactionOrigin::SubscriptionPaymentMethodChange()->getValue()) {
+      $this->result
+        ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)
+        ->appendMessage("skip subscription_payment_method_change transation.cancellation notification", location: __FUNCTION__);
+      return;
+    }
+
     $subscription = $this->validateTransaction($transactionCanceled->transaction);
 
     $this->result->appendMessage("retrieving paddle transaction for {$transactionCanceled->transaction->id}", location: __FUNCTION__);
