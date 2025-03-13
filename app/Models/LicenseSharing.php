@@ -86,7 +86,7 @@ class LicenseSharing extends BaseLicenseSharing
   /**
    * try to update from subscription
    *
-   * @param Subscription|null $subscription
+   * @param ?Subscription $subscription
    *  - If $subscription is null, use the current subscription (can be inactive).
    *  - Otherwise use the given subscription. The given subscription must be active, subscription_level > 1, and license_package is not null.
    */

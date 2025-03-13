@@ -17,7 +17,7 @@ class ProductItem
   // subscription item category
   public const ITEM_CATEGORY_PLAN             = 'plan';
 
-  static public function buildPlanName(array $plan_info, array|null $coupon_info): string
+  static public function buildPlanName(array $plan_info, ?array $coupon_info): string
   {
     // free trial
     if ($coupon_info && $coupon_info['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
@@ -33,7 +33,7 @@ class ProductItem
     return $plan_info['name'];
   }
 
-  static public function calcPlanPrice(array $plan_info, array|null $coupon_info): float
+  static public function calcPlanPrice(array $plan_info, ?array $coupon_info): float
   {
     $price = $plan_info['price']['price'];
 
@@ -48,7 +48,7 @@ class ProductItem
     return round($price * (100 - $coupon_info['percentage_off']) / 100, 2);
   }
 
-  static public function buildPlanItem(array $plan_info, array|null $coupon_info): array
+  static public function buildPlanItem(array $plan_info, ?array $coupon_info): array
   {
     $planPrice = self::calcPlanPrice($plan_info, $coupon_info);
     return [
@@ -117,7 +117,7 @@ class ProductItem
   /**
    * @param array[] $items
    */
-  static public function findItem(array $items, string $category): array|null
+  static public function findItem(array $items, string $category): ?array
   {
     foreach ($items as $item) {
       if ($item['category'] === $category) {
@@ -130,7 +130,7 @@ class ProductItem
   /**
    * @param array[] $items
    */
-  static public function findPlanItem(array $items): array|null
+  static public function findPlanItem(array $items): ?array
   {
     return self::findItem($items, self::ITEM_CATEGORY_PLAN);
   }

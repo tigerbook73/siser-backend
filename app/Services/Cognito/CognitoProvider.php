@@ -8,7 +8,7 @@ use Aws\Exception\AwsException;
 
 class CognitoProvider
 {
-  public CognitoIdentityProviderClient|null $cognitoClient = null;
+  public ?CognitoIdentityProviderClient $cognitoClient = null;
 
   public string $region;
   public string $userPoolId;

@@ -31,7 +31,7 @@ class SoftwarePackageLatest extends BaseSoftwarePackageLatest
 {
   static public function updateLatest(string $name, string $platform, string $version_type)
   {
-    /** @var SoftwarePackageLatest|null $latest */
+    /** @var ?SoftwarePackageLatest $latest */
     $latest = SoftwarePackageLatest::where([
       'name' => $name,
       'platform' => $platform,

@@ -81,7 +81,7 @@ class RefundRules
     }
 
     // find subscription invoice
-    /** @var Invoice|null $subscriptionInvoice */
+    /** @var ?Invoice $subscriptionInvoice */
     $subscriptionInvoice = $subscription->invoices()
       ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])   // subscription invoice
       ->where('period', $subscription->current_period) // current period

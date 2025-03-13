@@ -10,11 +10,10 @@ use Tests\Helper\LicenseSharingTestHelper;
 class LicenseSharingNotificationTest
 {
   public function __construct(
-    public LicenseSharingInvitation|null $invitation = null,
-    public Subscription|null $subscription = null,
-    public LicenseSharing|null $licenseSharing = null,
-  ) {
-  }
+    public ?LicenseSharingInvitation $invitation = null,
+    public ?Subscription $subscription = null,
+    public ?LicenseSharing $licenseSharing = null,
+  ) {}
 
   static public function init(): self
   {

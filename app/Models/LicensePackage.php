@@ -119,7 +119,7 @@ class LicensePackage extends BaseLicensePackage
     return $priceTable[count($priceTable) - 1]['quantity'];
   }
 
-  static public function validatePriceTable(array $priceTable): array|null
+  static public function validatePriceTable(array $priceTable): ?array
   {
     /**
      * structure of price:

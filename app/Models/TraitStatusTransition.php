@@ -22,7 +22,7 @@ trait TraitStatusTransition
     return $this->status;
   }
 
-  public function getStatusTimestamp(string $status): Carbon|null
+  public function getStatusTimestamp(string $status): ?Carbon
   {
     if (isset($this->status_transitions[$status])) {
       return Carbon::parse($this->status_transitions[$status]);

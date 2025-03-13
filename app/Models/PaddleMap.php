@@ -42,7 +42,7 @@ class PaddleMap extends BasePaddleMap
   /**
    * @param string $paddleId  Paddle ID for paddle resource
    * @param string|array<string> $modelClass  Class name(s) of model in our system
-   * @return mixed|null  Model in our system
+   * @return mixed Model in our system
    */
   static public function findModelByPaddleId(string $paddleId, string|array $modelClass)
   {

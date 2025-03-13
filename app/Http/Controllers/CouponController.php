@@ -205,7 +205,7 @@ class CouponController extends SimpleController
     /** @var Coupon $coupon */
     $coupon = $this->baseQuery()->where('code', $inputs['code'])->firstOrFail();
 
-    /** @var Plan|null $plan */
+    /** @var ?Plan $plan */
     $plan = isset($inputs['plan_id']) ? Plan::find($inputs['plan_id']) : null;
 
     $applyResult = CouponRules::couponApplicable($coupon, $plan, $this->user);

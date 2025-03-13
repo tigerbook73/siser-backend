@@ -52,7 +52,7 @@ class AuthController extends Controller
       return $this->getLoginRedirect();
     }
 
-    /** @var CognitoUser|null $cognitoUser */
+    /** @var ?CognitoUser $cognitoUser */
     $cognitoUser = app()->make(CognitoProvider::class)->getCognitoUser($accessToken);
     if (!$cognitoUser) {
       abort(400, 'access token is invalid');

@@ -9,13 +9,13 @@ use App\Models\Subscription;
 /**
  * @property array{
  *    result            : string,
- *    event_id?         : string|null,
- *    event_type?       : string|null,
- *    message?          : string|null,
- *    user_id?          : int|null,
- *    subscription_id?  : int|null,
- *    invoice_id?       : int|null,
- *    refund_id?        : int|null,
+ *    event_id          : ?string,
+ *    event_type        : ?string,
+ *    message           : ?string,
+ *    user_id           : ?int,
+ *    subscription_id   : ?int,
+ *    invoice_id        : ?int,
+ *    refund_id         : ?int,
  * } $data
  */
 class SubscriptionManagerResult

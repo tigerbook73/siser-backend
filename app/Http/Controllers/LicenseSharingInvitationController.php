@@ -183,7 +183,7 @@ class LicenseSharingInvitationController extends SimpleController
       return response()->json(['message' => 'Invitation already exists'], 400);
     }
 
-    /** @var User|null $guest */
+    /** @var ?User $guest */
     $guest = User::where('email', $inputs['guest_email'])->first();
     if (!$guest) {
       return response()->json(['message' => 'User not found.'], 400);

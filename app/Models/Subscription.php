@@ -123,13 +123,13 @@ class Subscription extends BaseSubscription
     return $this;
   }
 
-  public function findItem(string $category, bool $next = false): array|null
+  public function findItem(string $category, bool $next = false): ?array
   {
     $items = $next ? ($this->next_invoice['items'] ?? []) : $this->items;
     return ProductItem::findItem($items, $category);
   }
 
-  public function findPlanItem(bool $next = false): array|null
+  public function findPlanItem(bool $next = false): ?array
   {
     return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
@@ -277,7 +277,7 @@ class Subscription extends BaseSubscription
    * invoice related
    */
 
-  public function getCurrentPeriodInvoice(): Invoice|null
+  public function getCurrentPeriodInvoice(): ?Invoice
   {
     return $this->invoices()
       ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])
@@ -292,7 +292,7 @@ class Subscription extends BaseSubscription
       ->first();
   }
 
-  public function getRenewingInvoice(): Invoice|null
+  public function getRenewingInvoice(): ?Invoice
   {
     return $this->invoices()
       ->where('type', Invoice::TYPE_RENEW_SUBSCRIPTION)
@@ -345,7 +345,7 @@ class Subscription extends BaseSubscription
       $this->coupon_info['interval'] != Coupon::INTERVAL_LONGTERM;
   }
 
-  static public function buildPlanName(array $plan_info, array|null $coupon_info)
+  static public function buildPlanName(array $plan_info, ?array $coupon_info)
   {
     // free trial
     if ($coupon_info && $coupon_info['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
@@ -361,7 +361,7 @@ class Subscription extends BaseSubscription
     return $plan_info['name'];
   }
 
-  static public function calcPlanPrice(array $plan_info, array|null $coupon_info): float
+  static public function calcPlanPrice(array $plan_info, ?array $coupon_info): float
   {
     $price = $plan_info['price']['price'];
 
@@ -381,7 +381,7 @@ class Subscription extends BaseSubscription
     return self::buildPlanName($this->plan_info, $this->coupon_info);
   }
 
-  public function getNextInvoiceCollectionEndDate(): Carbon|null
+  public function getNextInvoiceCollectionEndDate(): ?Carbon
   {
     /** @var SubscriptionPlan $subscriptionPlan */
     $subscriptionPlan = SubscriptionPlan::findByTypeAndIterval(

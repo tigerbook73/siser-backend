@@ -18,7 +18,7 @@ class SubscriptionNotifcationTestController extends Controller
     string $plan,
     string $coupon = null,
     int $licenseCount = 0,
-  ): SubscriptionNotificationTest|null {
+  ): ?SubscriptionNotificationTest {
     $mockup = SubscriptionNotificationTest::init($country, $plan);
 
     // skip invalid free-trial scenario

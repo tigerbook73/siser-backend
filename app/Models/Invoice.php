@@ -159,7 +159,7 @@ class Invoice extends BaseInvoice
     return false;
   }
 
-  public function getActiveRefund(): Refund|null
+  public function getActiveRefund(): ?Refund
   {
     return $this->refunds()->where('status', Refund::STATUS_PENDING)->first();
   }
@@ -179,13 +179,13 @@ class Invoice extends BaseInvoice
     return $this;
   }
 
-  public function findItem(string $category, bool $next = false): array|null
+  public function findItem(string $category, bool $next = false): ?array
   {
     $items = $next ? ($this->next_invoice['items'] ?? []) : $this->items;
     return ProductItem::findItem($items, $category);
   }
 
-  public function findPlanItem(bool $next = false): array|null
+  public function findPlanItem(bool $next = false): ?array
   {
     return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
@@ -214,7 +214,7 @@ class Invoice extends BaseInvoice
     return $this->dispute_status;
   }
 
-  public function getDisputeStatusTimestamp(string $dispute_status): Carbon|null
+  public function getDisputeStatusTimestamp(string $dispute_status): ?Carbon
   {
     if (isset($this->dispute_status_transitions[$dispute_status])) {
       return Carbon::parse($this->dispute_status_transitions[$dispute_status]);

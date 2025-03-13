@@ -25,9 +25,9 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   ];
 
   public Subscription $subscription;
-  public Invoice|null $invoice;
-  public Refund|null $refund;
-  public string|null $credit_memo; // credit memo url
+  public ?Invoice $invoice;
+  public ?Refund $refund;
+  public ?string $credit_memo; // credit memo url
 
   public EmailHelper $helper;
 

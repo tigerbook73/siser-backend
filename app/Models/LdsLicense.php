@@ -11,8 +11,7 @@ class LdsResult
   public function __construct(
     public int $subscription_level = 0,
     public int $cutter_number = 0,
-  ) {
-  }
+  ) {}
 }
 
 class LdsLicense extends BaseLdsLicense
@@ -261,7 +260,7 @@ class LdsLicense extends BaseLdsLicense
     return isset($this->devices[$device_id]);
   }
 
-  public function getDevice(string $device_id): LdsDevice|null
+  public function getDevice(string $device_id): ?LdsDevice
   {
     $devices = $this->devices ?? [];
     if (isset($devices[$device_id])) {

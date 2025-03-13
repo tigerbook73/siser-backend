@@ -36,12 +36,12 @@ class SubscriptionPlan extends BaseSubscriptionPlan
   /**
    * @param string $type
    */
-  static public function buildPlanName(string $type, string $interval, int $interval_count, string $suffix = null)
+  static public function buildPlanName(string $type, string $interval, int $interval_count, ?string $suffix = null)
   {
     return $type . '-' . $interval_count . '-' . $interval . ($suffix ? '-' . $suffix : '');
   }
 
-  static public function findByTypeAndIterval(string|array $type, string $interval, int $interval_count, string $suffix = null): self|null
+  static public function findByTypeAndIterval(string|array $type, string $interval, int $interval_count, ?string $suffix = null): ?self
   {
     $types = (gettype($type) === 'string') ? [$type] : $type;
     $names = [];

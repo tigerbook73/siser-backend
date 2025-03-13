@@ -69,7 +69,7 @@ class EmailHelper
     return number_format((float)$price, 2);
   }
 
-  public function formatPaymentMethod(string $type, array|null $display_data)
+  public function formatPaymentMethod(string $type, ?array $display_data)
   {
     if ($type == 'creditCard' || $type == 'googlePay') {
       $text  = '<div>' . $this->trans('credit_card.brand', ['brand' => $display_data['brand']]) . '</div>';

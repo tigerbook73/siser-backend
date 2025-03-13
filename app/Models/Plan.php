@@ -53,7 +53,7 @@ class Plan extends BasePlan
       ->where('status', 'active');
   }
 
-  public function info(string $country): array|null
+  public function info(string $country): ?array
   {
     // special consideration for machine plan
     if ($this->id == config('siser.plan.default_machine_plan')) {
@@ -93,13 +93,13 @@ class Plan extends BasePlan
   }
 
   /**
-   * @return array|null [
+   * @return ?array [
    *    'country'   => string,
    *    'currency'  => string,
    *    'price'     => float
    * ]
    */
-  public function getPrice(string $country): array|null
+  public function getPrice(string $country): ?array
   {
     foreach ($this->price_list as $price) {
       if ($price['country'] === $country) {
