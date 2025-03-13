@@ -16,7 +16,7 @@ class SubscriptionNotifcationTestController extends Controller
     string $type,
     string $country,
     string $plan,
-    string $coupon = null,
+    ?string $coupon = null,
     int $licenseCount = 0,
   ): ?SubscriptionNotificationTest {
     $mockup = SubscriptionNotificationTest::init($country, $plan);

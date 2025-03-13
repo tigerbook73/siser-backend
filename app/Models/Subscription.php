@@ -155,7 +155,7 @@ class Subscription extends BaseSubscription
     return $this;
   }
 
-  public function fillPlanAndCoupon(Plan $plan, Coupon $coupon = null, LicensePackage $licensePackage = null, int $licenseQuantity = 0): self
+  public function fillPlanAndCoupon(Plan $plan, ?Coupon $coupon = null, ?LicensePackage $licensePackage = null, int $licenseQuantity = 0): self
   {
     $plan_info    = $plan->info($this->billing_info['address']['country']);
     $coupon_info  = $coupon?->info();
@@ -319,7 +319,7 @@ class Subscription extends BaseSubscription
     ];
   }
 
-  public function sendNotification(string $type, Invoice $invoice = null, array $context = [])
+  public function sendNotification(string $type, ?Invoice $invoice = null, array $context = [])
   {
     $context['subscription'] = $this;
     $context['invoice'] = $invoice;

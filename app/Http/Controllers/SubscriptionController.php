@@ -122,7 +122,7 @@ class SubscriptionController extends SimpleController
   /**
    * common method for cancel subscription
    */
-  public function cancelSubscription(int $subscriptionId, bool $immediate, int $userId = null)
+  public function cancelSubscription(int $subscriptionId, bool $immediate, ?int $userId = null)
   {
     $this->validateUser();
 
@@ -155,7 +155,7 @@ class SubscriptionController extends SimpleController
   /**
    * common method for dont cancel subscription
    */
-  public function dontCancelSubscription(int $subscriptionId, int $userId = null)
+  public function dontCancelSubscription(int $subscriptionId, ?int $userId = null)
   {
     $this->validateUser();
 

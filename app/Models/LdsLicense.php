@@ -78,7 +78,7 @@ class LdsLicense extends BaseLdsLicense
    * @param array $device_info ['user_code' => '...','device_id' => '...', 'device_name' => '...', ]
    * @throws LdsException
    */
-  public function registerDevice(array $device_info, string $client_ip = null): LdsResult
+  public function registerDevice(array $device_info, ?string $client_ip = null): LdsResult
   {
     $logContext = [
       'user_id' => $this->user_id,
@@ -104,7 +104,7 @@ class LdsLicense extends BaseLdsLicense
     return new LdsResult($this->subscription_level);
   }
 
-  public function unregisterDevice(string $device_id, string $client_ip = null): LdsResult
+  public function unregisterDevice(string $device_id, ?string $client_ip = null): LdsResult
   {
     $logContext = [
       'user_id' => $this->user_id,

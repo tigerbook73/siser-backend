@@ -37,7 +37,7 @@ class Refund extends BaseRefund
   /**
    * create a new Refund model (without saving to database) from Invoice
    */
-  static public function newFromInvoice(Invoice $invoice, float $amount, string $reason = null): Refund
+  static public function newFromInvoice(Invoice $invoice, float $amount, ?string $reason = null): Refund
   {
     if ($amount > $invoice->available_to_refund_amount) {
       throw new \Exception('Refund amount exceeds the available amount');

@@ -91,14 +91,14 @@ class Invoice extends BaseInvoice
     return $this;
   }
 
-  public function setStatus(string $status, Carbon $time = null): self
+  public function setStatus(string $status, ?Carbon $time = null): self
   {
     $this->traitSetStatus($status, $time);
     $this->sub_status = self::SUB_STATUS_NONE;
     return $this;
   }
 
-  public function setSubStatus(string $subStatus = self::SUB_STATUS_NONE, Carbon $time = null): self
+  public function setSubStatus(string $subStatus = self::SUB_STATUS_NONE, ?Carbon $time = null): self
   {
     $this->sub_status = $subStatus;
     if ($subStatus != self::SUB_STATUS_NONE) {
@@ -190,7 +190,7 @@ class Invoice extends BaseInvoice
     return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
 
-  public function setDisputeStatus(string $dispute_status, Carbon $time = null)
+  public function setDisputeStatus(string $dispute_status, ?Carbon $time = null)
   {
     //
     // DISPUTE_STATUS_DISPUTED is a final state. However we still record the transition time of other status.

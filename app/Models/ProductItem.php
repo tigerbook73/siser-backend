@@ -65,7 +65,7 @@ class ProductItem
   /**
    * @return array[]
    */
-  static public function buildItems(array $plan_info, array $coupon_info = null, array $license_package_info = null, float $tax_rate = null, array $prev_items = null): array
+  static public function buildItems(array $plan_info, ?array $coupon_info = null, ?array $license_package_info = null, ?float $tax_rate = null, ?array $prev_items = null): array
   {
     $items[] = self::buildPlanItem($plan_info, $coupon_info);
     if ($license_package_info) {
@@ -94,7 +94,7 @@ class ProductItem
   /**
    * @return array[]
    */
-  static public function rebuildItemsForTax(array $items, float $taxRate, array $prevItems = null,): array
+  static public function rebuildItemsForTax(array $items, float $taxRate, ?array $prevItems = null,): array
   {
     $updatedItems = [];
     foreach ($items as $index => $item) {
@@ -152,10 +152,10 @@ class ProductItem
     string $productType,
     string $paddlePriceId,
     int $quantity,
-    float $price = null,
-    float $discount = null,
-    float $tax = null,
-    float $amount = null
+    ?float $price = null,
+    ?float $discount = null,
+    ?float $tax = null,
+    ?float $amount = null
   ): array {
     if ($productType == Product::TYPE_SUBSCRIPTION) {
       $category = ProductItem::ITEM_CATEGORY_PLAN;

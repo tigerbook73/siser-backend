@@ -9,13 +9,13 @@ use App\Models\Subscription;
 /**
  * @property array{
  *    result            : string,
- *    event_id          : ?string,
- *    event_type        : ?string,
- *    message           : ?string,
- *    user_id           : ?int,
- *    subscription_id   : ?int,
- *    invoice_id        : ?int,
- *    refund_id         : ?int,
+ *    event_id?         : ?string,
+ *    event_type?       : ?string,
+ *    message?          : ?string,
+ *    user_id?          : ?int,
+ *    subscription_id?  : ?int,
+ *    invoice_id?       : ?int,
+ *    refund_id?        : ?int,
  * } $data
  */
 class SubscriptionManagerResult
@@ -74,7 +74,7 @@ class SubscriptionManagerResult
     return $this;
   }
 
-  public function setResult(string $result, string $message = null): self
+  public function setResult(string $result, ?string $message = null): self
   {
     $this->result = $result;
     $this->data[self::DATA_RESULT] = $result;

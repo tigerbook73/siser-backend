@@ -6,7 +6,7 @@ use Carbon\Carbon;
 
 trait TraitStatusTransition
 {
-  public function setStatus(string $status, Carbon $time = null)
+  public function setStatus(string $status, ?Carbon $time = null)
   {
     $this->status = $status;
 
