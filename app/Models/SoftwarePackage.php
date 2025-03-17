@@ -42,7 +42,7 @@ class SoftwarePackage extends BaseSoftwarePackage
 
   public function afterUpdate()
   {
-    /** @var SoftwarePackageLatest|null $prevLatest */
+    /** @var ?SoftwarePackageLatest $prevLatest */
     $prevLatest = $this->software_package_latest;
     if (
       $prevLatest &&

@@ -36,7 +36,9 @@ class AdjustmentService extends PaddleEntityService
    */
   public function createRefundDirectly(Invoice|PaddleTransaction $invoiceOrTransaction, float $amount, string $reason): Refund
   {
-    $invoice = $invoiceOrTransaction instanceof Invoice ? $invoiceOrTransaction : PaddleMap::findInvoiceByPaddleId($invoiceOrTransaction->id);
+    $invoice = $invoiceOrTransaction instanceof Invoice ?
+      $invoiceOrTransaction :
+      PaddleMap::findInvoice($invoiceOrTransaction->id);
     $transaction = $invoiceOrTransaction instanceof Invoice ?
       $this->paddleService->getTransaction($invoiceOrTransaction->getMeta()->paddle->transaction_id) :
       $invoiceOrTransaction;
@@ -140,7 +142,7 @@ class AdjustmentService extends PaddleEntityService
       throw new \Exception('Adjustment not found');
     }
 
-    $invoice = PaddleMap::findInvoiceByPaddleId($adjustment->transactionId);
+    $invoice = PaddleMap::findInvoice($adjustment->transactionId);
     if (!$invoice) {
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_FAILED, 'invoice-not-found')
@@ -149,7 +151,7 @@ class AdjustmentService extends PaddleEntityService
     }
     $this->result->setInvoice($invoice);
 
-    $refund = PaddleMap::findRefundByPaddleId($adjustment->id);
+    $refund = PaddleMap::findRefund($adjustment->id);
     if (!$refund) {
       $refund = $this->createRefund($invoice, $adjustment);
     } else {
@@ -187,7 +189,7 @@ class AdjustmentService extends PaddleEntityService
   public function createRefund(Invoice $invoice, PaddleAdjustment $adjustment): Refund
   {
     // this is to solve the conflict of create from API and create from event
-    $refund = PaddleMap::findRefundByPaddleId($adjustment->id);
+    $refund = PaddleMap::findRefund($adjustment->id);
     if ($refund) {
       $this->result
         ->setRefund($refund)
@@ -201,9 +203,8 @@ class AdjustmentService extends PaddleEntityService
       'invoice_id'           => $invoice->id,
       'currency'             => $invoice->currency,
       'item_type'            => Refund::ITEM_SUBSCRIPTION,
-      'items'                => $invoice->items,
-      'payment_method_info'  => $invoice->payment_method_info,
-      'dr_refund_id'         => $adjustment->id,
+      'items'                => [],
+      'payment_method_info'  => $invoice->getPaymentMethodInfo()->toArray(),
     ]);
     $refund->setMetaPaddleTransactionId($adjustment->transactionId)
       ->setMetaPaddleAdjustmentId($adjustment->id);

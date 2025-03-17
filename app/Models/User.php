@@ -115,7 +115,7 @@ class User extends UserWithTrait
       $user = User::where('cognito_id', $cognitoUser->id)->first();
     }
 
-    /** @var User|null $user */
+    /** @var ?User $user */
     if ($user) {
       $user->updateFromCognitoUser($cognitoUser);
     } else {
@@ -162,21 +162,21 @@ class User extends UserWithTrait
       ->count() <= 0);
   }
 
-  public function getDraftSubscriptionById(int $id): Subscription|null
+  public function getDraftSubscriptionById(int $id): ?Subscription
   {
     return $this->subscriptions()
       ->where('status', Subscription::STATUS_DRAFT)
       ->find($id);
   }
 
-  public function getActiveSubscription(): Subscription|null
+  public function getActiveSubscription(): ?Subscription
   {
     return $this->subscriptions()
       ->where('status', Subscription::STATUS_ACTIVE)
       ->first();
   }
 
-  public function getActivePaidSubscription(): Subscription|null
+  public function getActivePaidSubscription(): ?Subscription
   {
     return $this->subscriptions()
       ->where('status', Subscription::STATUS_ACTIVE)
@@ -184,7 +184,7 @@ class User extends UserWithTrait
       ->first();
   }
 
-  public function getActiveLiveSubscription(): Subscription|null
+  public function getActiveLiveSubscription(): ?Subscription
   {
     return $this->subscriptions()
       ->where('status', Subscription::STATUS_ACTIVE)
@@ -193,7 +193,7 @@ class User extends UserWithTrait
       ->first();
   }
 
-  public function getPendingSubscription(): Subscription|null
+  public function getPendingSubscription(): ?Subscription
   {
     return $this->subscriptions()
       ->where('status', Subscription::STATUS_PENDING)
@@ -244,14 +244,14 @@ class User extends UserWithTrait
     return $this;
   }
 
-  public function getActiveLicenseSharing(): LicenseSharing|null
+  public function getActiveLicenseSharing(): ?LicenseSharing
   {
     return $this->license_sharings()
       ->where('status', LicenseSharing::STATUS_ACTIVE)
       ->first();
   }
 
-  public function getActiveLicenseSharingInvitation(): LicenseSharingInvitation|null
+  public function getActiveLicenseSharingInvitation(): ?LicenseSharingInvitation
   {
     return $this->license_sharing_invitations_where_guest()
       ->where('status', LicenseSharingInvitation::STATUS_ACCEPTED)

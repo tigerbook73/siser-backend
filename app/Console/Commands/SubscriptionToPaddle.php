@@ -128,7 +128,7 @@ class SubscriptionToPaddle extends Command
           $subscription->end_date = max($subscription->current_period_end_date, now())->addDays(self::EXPIRE_DAYS);
           $subscription->sub_status = Subscription::SUB_STATUS_CANCELLING;
           $subscription->next_invoice_date = null;
-          $subscription->next_invoice = null;
+          $subscription->setNextInvoice(null);
           $subscription->save();
           printf('.');
         }

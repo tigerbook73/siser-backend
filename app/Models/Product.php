@@ -14,7 +14,7 @@ class Product extends BaseProduct
 
   public function getMeta(): ProductMeta
   {
-    return ProductMeta::from($this->meta);
+    return ProductMeta::from($this->meta ?? []);
   }
 
   public function setMeta(ProductMeta $meta): self

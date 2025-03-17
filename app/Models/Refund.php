@@ -33,35 +33,9 @@ class Refund extends BaseRefund
     'updated_at'          => ['filterable' => 0, 'searchable' => 0, 'lite' => 1, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
   ];
 
-
-  /**
-   * create a new Refund model (without saving to database) from Invoice
-   */
-  static public function newFromInvoice(Invoice $invoice, float $amount, string $reason = null): Refund
-  {
-    if ($amount > $invoice->available_to_refund_amount) {
-      throw new \Exception('Refund amount exceeds the available amount');
-    }
-
-    $items = [$invoice->findPlanItem()];
-
-    $refund = new self();
-    $refund->user_id              = $invoice->user_id;
-    $refund->subscription_id      = $invoice->subscription_id;
-    $refund->invoice_id           = $invoice->id;
-    $refund->currency             = $invoice->currency;
-    $refund->item_type            = Refund::ITEM_SUBSCRIPTION;  // obsolated
-    $refund->items                = $items;
-    $refund->amount               = $amount;
-    $refund->payment_method_info  = $invoice->payment_method_info;
-    $refund->reason               = $reason ?? "";
-    $refund->setStatus(self::STATUS_PENDING);
-    return $refund;
-  }
-
   public function getMeta(): RefundMeta
   {
-    return RefundMeta::from($this->meta);
+    return RefundMeta::from($this->meta ?? []);
   }
 
   public function setMeta(RefundMeta $meta): self

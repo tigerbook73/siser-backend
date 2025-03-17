@@ -78,13 +78,12 @@ class CustomerService extends PaddleEntityService
       $this->createPaddleCustomer($billingInfo);
   }
 
-  public function updateBillingInfo(BillingInfo $billingInfo, Customer|EntitiesCustomer|string $customer): BillingInfo
+  public function updateBillingInfo(BillingInfo $billingInfo, Customer $customer): BillingInfo
   {
-    $customerId = gettype($customer) === 'string' ? $customer : $customer->id;
-    $billingInfo->setMetaPaddleCustomerId($customerId)
+    $billingInfo->setMetaPaddleCustomerId($customer->id)
       ->save();
 
-    PaddleMap::createOrUpdate($customerId, BillingInfo::class, $billingInfo->id);
+    PaddleMap::createOrUpdate($customer->id, BillingInfo::class, $billingInfo->id, $customer->customData?->data);
     return $billingInfo;
   }
 

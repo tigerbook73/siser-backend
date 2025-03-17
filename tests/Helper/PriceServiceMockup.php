@@ -15,9 +15,9 @@ class PriceServiceMockup extends PriceService
    * @param Plan $plan
    * @param PaddleOperation $mode
    * @param ?LicensePackage $licensePackage
-   * @param int|null $quantity
+   * @param ?int $quantity
    */
-  public function fake(Plan $plan, PaddleOperation $mode, LicensePackage $licensePackage = null, int $quantity = null): Price
+  public function fake(Plan $plan, PaddleOperation $mode, ?LicensePackage $licensePackage = null, ?int $quantity = null): Price
   {
     // prepare product
     $product = $plan->product;

@@ -7,22 +7,23 @@ use Paddle\SDK\Entities\Shared\CustomData;
 
 class ProductCustomData
 {
-  public ?int $product_id;
-  public ?string $product_name;
-  public ?string $product_type;
-  public ?ProductInterval $product_interval;
-  public ?string $product_timestamp;
-
+  public function __construct(
+    public ?int $product_id,
+    public ?string $product_name,
+    public ?string $product_type,
+    public ?ProductInterval $product_interval,
+    public ?string $product_timestamp
+  ) {}
 
   static public function from(?array $data): self
   {
-    $obj = new self();
-    $obj->product_id        = $data['product_id'] ?? null;
-    $obj->product_name      = $data['product_name'] ?? null;
-    $obj->product_type      = $data['product_type'] ?? null;
-    $obj->product_interval  = ProductInterval::tryFrom($data['product_interval'] ?? "");
-    $obj->product_timestamp = $data['product_timestamp'] ?? null;
-    return $obj;
+    return new self(
+      product_id: $data['product_id'] ?? null,
+      product_name: $data['product_name'] ?? null,
+      product_type: $data['product_type'] ?? null,
+      product_interval: ProductInterval::tryFrom($data['product_interval'] ?? ""),
+      product_timestamp: $data['product_timestamp'] ?? null
+    );
   }
 
   public function toCustomData(): CustomData

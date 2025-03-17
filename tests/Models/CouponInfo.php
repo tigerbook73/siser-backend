@@ -36,6 +36,9 @@ class CouponInfo {
     /** @var string $interval */
     public $interval = "";
 
+    /** @var int $interval_size */
+    public $interval_size = 0;
+
     /** @var int $interval_count */
     public $interval_count = 0;
 

@@ -25,9 +25,9 @@ class SubscriptionNotification extends Notification implements ShouldQueue
   ];
 
   public Subscription $subscription;
-  public Invoice|null $invoice;
-  public Refund|null $refund;
-  public string|null $credit_memo; // credit memo url
+  public ?Invoice $invoice;
+  public ?Refund $refund;
+  public ?string $credit_memo; // credit memo url
 
   public EmailHelper $helper;
 
@@ -50,9 +50,9 @@ class SubscriptionNotification extends Notification implements ShouldQueue
     $this->credit_memo      = $context['credit_memo'] ?? null;
 
     $this->helper           = new EmailHelper(
-      locale: $this->subscription->billing_info['locale'],
+      locale: $this->subscription->getBillingInfo()->locale,
       timezone: $this->subscription->user->timezone,
-      country: $this->subscription->billing_info['address']['country'],
+      country: $this->subscription->getBillingInfo()->address->country,
       currency: $this->subscription->currency,
     );
   }

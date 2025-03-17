@@ -342,7 +342,7 @@ class PaddleCommand extends Command
       /* synchronize plan's license prices */
       $licensePackage = LicensePackage::findStandard();
       try {
-        $currentQuantities = array_keys($planMeta->paddle->license_prices->price_ids);
+        $currentQuantities = $planMeta->paddle->license_prices->getQuantities();
         $newQuantities = array_map(
           fn($priceRate) => $priceRate->quantity,
           $licensePackage?->getPriceTable()->price_list ?? []

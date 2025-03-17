@@ -26,17 +26,28 @@ class PaymentMethod extends BasePaymentMethod
     'updated_at'    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_0],
   ];
 
-  public function info()
+  public function info(): PaymentMethodInfo
   {
-    return [
-      'type'          => $this->type,
-      'display_data'  => $this->display_data,
-    ];
+    return new PaymentMethodInfo(
+      $this->type,
+      $this->getDisplayData()
+    );
+  }
+
+  public function getDisplayData(): PaymentMethodDisplayData
+  {
+    return PaymentMethodDisplayData::from($this->display_data ?? []);
+  }
+
+  public function setDisplayData(PaymentMethodDisplayData $displayData): self
+  {
+    $this->display_data = $displayData->toArray();
+    return $this;
   }
 
   public function getMeta(): PaymentMethodMeta
   {
-    return PaymentMethodMeta::from($this->meta);
+    return PaymentMethodMeta::from($this->meta ?? []);
   }
 
   public function setMeta(PaymentMethodMeta $meta): self

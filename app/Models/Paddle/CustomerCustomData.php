@@ -6,15 +6,17 @@ use Paddle\SDK\Entities\Shared\CustomData;
 
 class CustomerCustomData
 {
-  public ?int $user_id;
-  public ?int $billing_info_id;
+  public function __construct(
+    public ?int $user_id,
+    public ?int $billing_info_id
+  ) {}
 
   static public function from(?array $data): self
   {
-    $obj = new self();
-    $obj->user_id          = $data['user_id'] ?? null;
-    $obj->billing_info_id  = $data['billing_info_id'] ?? null;
-    return $obj;
+    return new self(
+      user_id: $data['user_id'] ?? null,
+      billing_info_id: $data['billing_info_id'] ?? null
+    );
   }
 
   public function toCustomData(): CustomData

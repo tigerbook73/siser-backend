@@ -15,7 +15,6 @@ use Paddle\SDK\Entities\Shared\CurrencyCode;
 use Paddle\SDK\Entities\Shared\Interval;
 use Paddle\SDK\Entities\Shared\Money;
 use Paddle\SDK\Entities\Shared\PriceQuantity;
-use Paddle\SDK\Entities\Shared\Status;
 use Paddle\SDK\Entities\Shared\TaxMode;
 use Paddle\SDK\Entities\Shared\TimePeriod;
 use Paddle\SDK\Entities\Shared\UnitPriceOverride;
@@ -42,19 +41,19 @@ class PriceService extends PaddleEntityService
    *
    * @param Plan $plan
    * @param PaddleOperation $mode
-   * @param LicensePackage|null $licensePackage
-   * @param int|null $quantity
+   * @param ?LicensePackage $licensePackage
+   * @param ?int $quantity
    */
   public function prepareData(Plan $plan, PaddleOperation $mode, ?LicensePackage $licensePackage = null, ?int $quantity = null): CreatePrice|UpdatePrice
   {
     $customData = PriceCustomData::from([
       "product_name"      => $plan->product_name,
       "plan_id"           => $plan->id,
-      "plan_name"         => $plan->name,
+      "plan_name"         => $plan->buildPlanName($quantity ?? 1),
       "plan_timestamp"    => $plan->updated_at->format('Y-m-d H:i:s'),
 
       "license_package_id"        => $licensePackage ? $licensePackage->id : null,
-      "license_quantity"          => $quantity,
+      "license_quantity"          => $quantity ?? 1,
       "license_package_timestamp" => $licensePackage ?
         max($plan->updated_at, $licensePackage->updated_at)->format('Y-m-d H:i:s') :
         null,
@@ -64,7 +63,7 @@ class PriceService extends PaddleEntityService
 
     $priceRate = 1;
     if ($licensePackage && $quantity > 1) {
-      $priceRate = $licensePackage->getPriceTable()->getPriceRate($quantity) / LicensePackage::RATE_FACTOR;
+      $priceRate = $licensePackage->getPriceTable()->getPriceRate($quantity)->price_rate / LicensePackage::RATE_FACTOR;
     }
 
     // get default price (US) (tax exclusive)
@@ -124,12 +123,19 @@ class PriceService extends PaddleEntityService
       }
     }
 
+    if ($licensePackage) {
+      $description = "{$quantity}-License";
+      $name = trim(str_replace($plan->product_name, '', $plan->name)) . " (Licenses x {$quantity})";
+    } else {
+      $description = 'Single-License';
+      $name = trim(str_replace($plan->product_name, '', $plan->name));
+    }
     if ($mode === PaddleOperation::CREATE) {
       return new CreatePrice(
-        description: $plan->description,
+        description: $description,
         productId: $plan->product->getMeta()->paddle->getProductId($plan->getProductInterval()),
         unitPrice: $unitPrice,
-        name: trim(str_replace($plan->product_name, '', $plan->name)),
+        name: $name,
         type: CatalogType::Standard(),
         unitPriceOverrides: $unitPriceOverrides,
         taxMode: TaxMode::External(),
@@ -143,9 +149,9 @@ class PriceService extends PaddleEntityService
       );
     } else {
       return new UpdatePrice(
-        description: $plan->description,
+        description: $description,
         unitPrice: $unitPrice,
-        name: trim(str_replace($plan->product_name, '', $plan->name)),
+        name: $name,
         type: CatalogType::Standard(),
         unitPriceOverrides: $unitPriceOverrides,
         taxMode: TaxMode::External(),
@@ -211,7 +217,7 @@ class PriceService extends PaddleEntityService
         ->setMetaPaddlePriceId($price->id)
         ->save();
     }
-    PaddleMap::createOrUpdate($price->id, Plan::class, $plan->id);
+    PaddleMap::createOrUpdate($price->id, Plan::class, $plan->id, $priceCustomerData);
     return $plan;
   }
 
@@ -300,7 +306,7 @@ class PriceService extends PaddleEntityService
     // create or update or archive license prices
     //
     $licensePackage = LicensePackage::findStandard();
-    $currentQuantities = array_keys($plan->getMeta()->paddle->license_prices->price_ids);
+    $currentQuantities = $plan->getMeta()->paddle->license_prices->getQuantities();
     $newQuantities = array_map(
       fn($priceRate) => $priceRate->quantity,
       $licensePackage?->getPriceTable()->price_list ?? []

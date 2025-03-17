@@ -16,9 +16,9 @@ enum ProductInterval: string
   static public function intervals(): array
   {
     return [
-      '2_day'    => ['unit' => 'day',   'count' => 1],
-      '1_month'  => ['unit' => 'month', 'count' => 2],
-      '1_year'   => ['unit' => 'year',  'count' => 1],
+      self::INTERVAL_2_DAY->value    => ['unit' => 'day',   'count' => 2, 'friendly_name' => '2-Day'],
+      self::INTERVAL_1_MONTH->value  => ['unit' => 'month', 'count' => 1, 'friendly_name' => 'Monthly'],
+      self::INTERVAL_1_YEAR->value   => ['unit' => 'year',  'count' => 1, 'friendly_name' => 'Annual'],
     ];
   }
 
@@ -49,5 +49,20 @@ enum ProductInterval: string
     // find the first interval with the same unit
     $interval = collect(self::intervals())->first(fn($interval) => $interval['unit'] === $unit);
     return $interval['count'] ?? 1;
+  }
+
+  public function getUnit(): string
+  {
+    return self::intervals()[$this->value]['unit'];
+  }
+
+  public function getCount(): int
+  {
+    return self::intervals()[$this->value]['count'];
+  }
+
+  public function getFriendlyName(): string
+  {
+    return self::intervals()[$this->value]['friendly_name'];
   }
 }

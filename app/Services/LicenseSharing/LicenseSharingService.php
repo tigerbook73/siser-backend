@@ -23,7 +23,7 @@ class LicenseSharingService
       throw new \Exception('Invalid subscription level');
     }
 
-    if (!$subscription->license_package_info || $subscription->license_package_info['quantity'] <= 0) {
+    if (!$subscription->hasLicensePackageInfo()) {
       throw new \Exception('Invalid license package info');
     }
 

@@ -198,7 +198,7 @@ class LicenseSharingTestHelper
     $subscription = $licenseSharing->subscription;
 
     // general
-    if ($licenseSharing->product_name !== $subscription->plan_info['product_name']) {
+    if ($licenseSharing->product_name !== $subscription->getPlanInfo()->product_name) {
       throw new \Exception('License sharing product name does not match with subscription');
     }
 
@@ -213,8 +213,8 @@ class LicenseSharingTestHelper
       }
 
       if (
-        !$subscription->license_package_info ||
-        $subscription->license_package_info['quantity'] !== $licenseSharing->total_count
+        !$subscription->hasLicensePackageInfo() ||
+        $subscription->getLicensePackageInfo()->price_rate->quantity !== $licenseSharing->total_count
       ) {
         throw new \Exception('License sharing total count does not match with subscription');
       }

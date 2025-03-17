@@ -27,7 +27,7 @@ class SubscriptionNextInvoice {
     /** @var \Tests\Models\LicensePackageInfo $license_package_info */
     public $license_package_info;
 
-    /** @var \Tests\Models\ProductItem[] $items */
+    /** @var \Tests\Models\InvoiceItem[] $items */
     public $items = [];
 
     /** @var float $price beautified price (beautified price)*/
@@ -47,5 +47,14 @@ class SubscriptionNextInvoice {
 
     /** @var float $total_amount */
     public $total_amount = 0;
+
+    /** @var float $credit */
+    public $credit = 0;
+
+    /** @var float $grand_total */
+    public $grand_total = 0;
+
+    /** @var float $credit_to_balance */
+    public $credit_to_balance = 0;
 
 }

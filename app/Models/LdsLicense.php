@@ -11,8 +11,7 @@ class LdsResult
   public function __construct(
     public int $subscription_level = 0,
     public int $cutter_number = 0,
-  ) {
-  }
+  ) {}
 }
 
 class LdsLicense extends BaseLdsLicense
@@ -79,7 +78,7 @@ class LdsLicense extends BaseLdsLicense
    * @param array $device_info ['user_code' => '...','device_id' => '...', 'device_name' => '...', ]
    * @throws LdsException
    */
-  public function registerDevice(array $device_info, string $client_ip = null): LdsResult
+  public function registerDevice(array $device_info, ?string $client_ip = null): LdsResult
   {
     $logContext = [
       'user_id' => $this->user_id,
@@ -105,7 +104,7 @@ class LdsLicense extends BaseLdsLicense
     return new LdsResult($this->subscription_level);
   }
 
-  public function unregisterDevice(string $device_id, string $client_ip = null): LdsResult
+  public function unregisterDevice(string $device_id, ?string $client_ip = null): LdsResult
   {
     $logContext = [
       'user_id' => $this->user_id,
@@ -261,7 +260,7 @@ class LdsLicense extends BaseLdsLicense
     return isset($this->devices[$device_id]);
   }
 
-  public function getDevice(string $device_id): LdsDevice|null
+  public function getDevice(string $device_id): ?LdsDevice
   {
     $devices = $this->devices ?? [];
     if (isset($devices[$device_id])) {

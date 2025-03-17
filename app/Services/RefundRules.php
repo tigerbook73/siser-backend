@@ -81,7 +81,7 @@ class RefundRules
     }
 
     // find subscription invoice
-    /** @var Invoice|null $subscriptionInvoice */
+    /** @var ?Invoice $subscriptionInvoice */
     $subscriptionInvoice = $subscription->invoices()
       ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])   // subscription invoice
       ->where('period', $subscription->current_period) // current period
@@ -129,7 +129,7 @@ class RefundRules
     if ($subscriptionInvoice) {
       if (
         $subscription->user->type !== User::TYPE_STAFF &&
-        self::isSubscriptionRefundedBefore($subscription->user, $subscription->plan_info['product_name'])
+        self::isSubscriptionRefundedBefore($subscription->user, $subscription->getPlanInfo()->product_name)
       ) {
         $subscriptionInvoice = null;
       }

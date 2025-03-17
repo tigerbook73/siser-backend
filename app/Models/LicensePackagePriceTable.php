@@ -105,7 +105,7 @@ class LicensePackagePriceTable implements Arrayable
    * Validate and normalize the range string to a standard format
    *
    * @param array $range
-   * @return array|null
+   * @return ?array
    */
   static public function parseRange(array $range): ?array
   {
@@ -210,7 +210,7 @@ class LicensePackagePriceTable implements Arrayable
       $lastStep = $data[count($data) - 1];
       $data = [
         'price_steps' => $data,
-        'range' => [[1, $lastStep['to'] ?? $lastStep['quantity']]],
+        'range' => [[LicensePackage::MIN_QUANTITY, $lastStep['to'] ?? $lastStep['quantity']]],
       ];
     }
 
@@ -220,11 +220,21 @@ class LicensePackagePriceTable implements Arrayable
     );
   }
 
-  public function getPriceRate(int $quantity): float
+  public function hasPriceRate(int $quantity): bool
   {
     foreach ($this->price_list as $priceRate) {
       if ($priceRate->quantity === $quantity) {
-        return $priceRate->price_rate;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public function getPriceRate(int $quantity): LicensePackagePriceRate
+  {
+    foreach ($this->price_list as $priceRate) {
+      if ($priceRate->quantity === $quantity) {
+        return $priceRate;
       }
     }
     throw new Exception("Invalid quantity: " . $quantity);

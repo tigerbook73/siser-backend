@@ -49,53 +49,49 @@ class Plan extends BasePlan
       ->where('status', 'active');
   }
 
-  public function info(string $country): array|null
+  public function info(string $country): ?PlanInfo
   {
     // special consideration for machine plan
     if ($this->id == config('siser.plan.default_machine_plan')) {
       $country = Country::findByCode($country) ?? Country::findByCode('US');
-      return [
-        'id'                 => $this->id,
-        'name'               => $this->name,
-        'product_name'       => $this->product_name,
-        'description'        => $this->description,
-        'interval'           => $this->interval,
-        'interval_count'     => $this->interval_count,
-        'price'              => [
-          'country'  => $country->code,
-          'currency' => $country->currency,
-          'price'    => 0,
-        ],
-        'subscription_level' => $this->subscription_level,
-        'url'                => $this->url,
-      ];
+      return new PlanInfo(
+        id: $this->id,
+        name: $this->name,
+        product_name: $this->product_name,
+        description: $this->description,
+        interval: $this->interval,
+        interval_count: $this->interval_count,
+        price: new PlanPrice($country->code, $country->currency, 0),
+        subscription_level: $this->subscription_level,
+        url: $this->url
+      );
     }
 
     if ($priceInCountry = $this->getPrice($country)) {
-      return [
-        'id'                 => $this->id,
-        'name'               => $this->name,
-        'product_name'       => $this->product_name,
-        'description'        => $this->description,
-        'interval'           => $this->interval,
-        'interval_count'     => $this->interval_count,
-        'price'              => $priceInCountry,
-        'subscription_level' => $this->subscription_level,
-        'url'                => $this->url,
-      ];
+      return new PlanInfo(
+        id: $this->id,
+        name: $this->name,
+        product_name: $this->product_name,
+        description: $this->description,
+        interval: $this->interval,
+        interval_count: $this->interval_count,
+        price: PlanPrice::from($priceInCountry),
+        subscription_level: $this->subscription_level,
+        url: $this->url
+      );
     }
 
     return null;
   }
 
   /**
-   * @return array|null [
+   * @return ?array [
    *    'country'   => string,
    *    'currency'  => string,
    *    'price'     => float
    * ]
    */
-  public function getPrice(string $country): array|null
+  public function getPrice(string $country): ?array
   {
     foreach ($this->price_list as $price) {
       if ($price['country'] === $country) {
@@ -107,7 +103,7 @@ class Plan extends BasePlan
 
   public function getProductInterval(): ProductInterval
   {
-    return ProductInterval::from($this->interval_count . '_' . $this->interval);
+    return ProductInterval::build($this->interval, $this->interval_count);
   }
 
   public function activate()
@@ -130,9 +126,19 @@ class Plan extends BasePlan
     $this->save();
   }
 
+  /**
+   * build plan name for display on UI
+   */
+  public function buildPlanName(int $licenseQuantity = 1): string
+  {
+    return $licenseQuantity <= 1
+      ? $this->name
+      : "{$this->name} (License x {$licenseQuantity})";
+  }
+
   public function getMeta(): PlanMeta
   {
-    return PlanMeta::from($this->meta);
+    return PlanMeta::from($this->meta ?? []);
   }
 
   public function setMeta(PlanMeta $meta): self
@@ -178,6 +184,11 @@ class Plan extends BasePlan
     return $this->getMetaPaddleLicensePrices()->getPriceId($quantity);
   }
 
+  public function getMetaPaddleLicensePackageId(): ?int
+  {
+    return $this->getMetaPaddleLicensePrices()->license_package_id;
+  }
+
   public function setMetaPaddleLicensePackageId(int $licensePackageId)
   {
     if ($this->getMetaPaddleLicensePrices()->license_package_id != $licensePackageId) {
@@ -198,12 +209,15 @@ class Plan extends BasePlan
     return $this;
   }
 
+  /**
+   * @return string[]
+   */
   public function getAllPriceIds(): array
   {
     $planMeta = $this->getMeta();
-    return array_filter([
-      $planMeta->paddle->price_id,
-      ...array_values($planMeta->paddle->license_prices->price_ids),
-    ]);
+    return array_filter(array_merge(
+      [$planMeta->paddle->price_id],
+      $planMeta->paddle->license_prices->getPriceIds()
+    ));
   }
 }

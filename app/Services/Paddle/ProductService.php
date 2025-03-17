@@ -33,19 +33,19 @@ class ProductService extends PaddleEntityService
 
     if ($mode === PaddleOperation::CREATE) {
       return new CreateProduct(
-        name: $product->name,
+        name: "{$product->name} ({$interval->getFriendlyName()})",
         taxCategory: new TaxCategory('standard'),
         type: new CatalogType('standard'),
-        description: $interval->value,
+        description: $interval->getFriendlyName(),
         customData: $customData,
         imageUrl: "https://cdn.leonardodesignstudio.com/images/software/leonardo-design-studio-logo.svg"
       );
     } else {
       return new UpdateProduct(
-        name: $product->name,
+        name: "{$product->name} ({$interval->getFriendlyName()})",
         taxCategory: new TaxCategory('standard'),
         type: new CatalogType('standard'),
-        description: $interval->value,
+        description: $interval->getFriendlyName(),
         customData: $customData,
         imageUrl: "https://cdn.leonardodesignstudio.com/images/software/leonardo-design-studio-logo.svg"
       );
@@ -125,7 +125,7 @@ class ProductService extends PaddleEntityService
     $interval = ProductCustomData::from($paddleProduct->customData?->data)->product_interval;
     $product->setMetaPaddleProductId($paddleProduct->id, $interval)
       ->save();
-    PaddleMap::createOrUpdate($paddleProduct->id, Product::class, $product->id, $interval);
+    PaddleMap::createOrUpdate($paddleProduct->id, Product::class, $product->id, $paddleProduct->customData?->data);
     return $product;
   }
 

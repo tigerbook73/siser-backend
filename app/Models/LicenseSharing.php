@@ -66,16 +66,16 @@ class LicenseSharing extends BaseLicenseSharing
     if ($subscription->subscription_level <= 1) {
       throw new \Exception('Invalid subscription level');
     }
-    if (is_null($subscription->license_package_info)) {
+    if (!$subscription->hasLicensePackageInfo()) {
       throw new \Exception('Invalid license package');
     }
 
     $licenseSharing = new LicenseSharing();
     $licenseSharing->user_id            = $subscription->user_id;
     $licenseSharing->subscription_id    = $subscription->id;
-    $licenseSharing->product_name       = $subscription->plan_info['product_name'];
+    $licenseSharing->product_name       = $subscription->getPlanInfo()->product_name;
     $licenseSharing->subscription_level = $subscription->subscription_level;
-    $licenseSharing->total_count        = $subscription->license_package_info['quantity'];
+    $licenseSharing->total_count        = $subscription->getLicensePackageInfo()?->price_rate->quantity ?? 0;
     $licenseSharing->free_count         = $licenseSharing->total_count;
     $licenseSharing->used_count         = 0;
     $licenseSharing->setStatus(self::STATUS_ACTIVE);
@@ -86,11 +86,11 @@ class LicenseSharing extends BaseLicenseSharing
   /**
    * try to update from subscription
    *
-   * @param Subscription|null $subscription
+   * @param ?Subscription $subscription
    *  - If $subscription is null, use the current subscription (can be inactive).
    *  - Otherwise use the given subscription. The given subscription must be active, subscription_level > 1, and license_package is not null.
    */
-  public function updateFromSubscripton(Subscription $subscription = null)
+  public function updateFromSubscripton(?Subscription $subscription = null)
   {
     if ($this->status === self::STATUS_VOID) {
       throw new \Exception('Invalid status');
@@ -103,7 +103,7 @@ class LicenseSharing extends BaseLicenseSharing
       if ($subscription->subscription_level <= 1) {
         throw new \Exception('Invalid subscription level');
       }
-      if (is_null($subscription->license_package_info)) {
+      if (!$subscription->hasLicensePackageInfo()) {
         throw new \Exception('Invalid license package');
       }
       if ($this->user_id !== $subscription->user_id) {
@@ -115,10 +115,11 @@ class LicenseSharing extends BaseLicenseSharing
     $usedCount = $this->active_license_sharing_invitations()->count();
 
     $this->subscription_id    = $subscription->id;
-    $this->product_name       = $subscription->plan_info['product_name'];
+    $this->product_name       = $subscription->getPlanInfo()->product_name;
     $this->subscription_level = $subscription->subscription_level;
-    $this->total_count        = ($subscription->status == Subscription::STATUS_ACTIVE && $subscription->license_package_info) ?
-      $subscription->license_package_info['quantity'] : 0;
+    $this->total_count        = ($subscription->status == Subscription::STATUS_ACTIVE) ?
+      ($subscription->getLicensePackageInfo()?->price_rate->quantity ?? 0) :
+      0;
     $this->used_count         = $usedCount;
     $this->free_count         = $this->total_count > $this->used_count ? $this->total_count - $this->used_count : 0;
 

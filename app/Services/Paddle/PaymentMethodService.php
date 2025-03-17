@@ -2,8 +2,10 @@
 
 namespace App\Services\Paddle;
 
+use App\Models\BillingInfo;
 use App\Models\PaddleMap;
 use App\Models\PaymentMethod;
+use App\Models\PaymentMethodDisplayData;
 use App\Models\User;
 use App\Services\SubscriptionManager\SubscriptionManagerResult;
 use Paddle\SDK\Entities\Shared\TransactionPaymentAttempt;
@@ -33,12 +35,12 @@ class PaymentMethodService extends PaddleEntityService
     $paymentMethod->dr    = [];
 
     $paddleCard = $paymentAttempt->methodDetails->card;
-    $paymentMethod->display_data = $paddleCard ? [
-      'brand'             => $paddleCard->type ?? "",
-      'last_four_digits'  => $paddleCard->last4 ?? "",
-      'expiration_year'   => $paddleCard->expiryYear,
-      'expiration_month'  => $paddleCard->expiryMonth,
-    ] : [];
+    $paymentMethod->setDisplayData(new PaymentMethodDisplayData(
+      brand: $paddleCard->type ?? "",
+      last_four_digits: $paddleCard->last4 ?? "",
+      expiration_year: $paddleCard->expiryYear,
+      expiration_month: $paddleCard->expiryMonth,
+    ));
     $paymentMethod->setMetaPaddlePaymentMethodId($paymentAttempt->paymentMethodId);
     $paymentMethod->save();
 
@@ -51,7 +53,7 @@ class PaymentMethodService extends PaddleEntityService
   {
     $paddlePaymentMethod = $paymentMethodDeleted->paymentMethod;
 
-    $billingInfo = PaddleMap::findBillingInfoByPaddleId($paddlePaymentMethod->customerId);
+    $billingInfo = PaddleMap::findBillingInfo($paddlePaymentMethod->customerId);
     if (!$billingInfo) {
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_SKIPPED)

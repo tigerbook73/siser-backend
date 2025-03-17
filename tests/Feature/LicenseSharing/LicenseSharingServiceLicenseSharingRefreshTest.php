@@ -21,24 +21,11 @@ class LicenseSharingServiceLicenseSharingRefreshTest extends LicenseSharingTestC
     $this->assertTrue(true);
   }
 
-  public function test_refresh_license_sharing_noinvitation_package_info_null()
+  public function test_refresh_license_sharing_no_invitation_package_info_null()
   {
     $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
 
-    $licenseSharing->subscription->license_package_info = null;
-    $licenseSharing->subscription->save();
-
-    $this->service->refreshLicenseSharing($licenseSharing);
-
-    LicenseSharingTestHelper::assertLicenseSharing($licenseSharing);
-    $this->assertTrue(true);
-  }
-
-  public function test_refresh_license_sharing_no_invitation_package_info_count_zero()
-  {
-    $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
-
-    $licenseSharing->subscription->license_package_info = ['quantity' => 0];
+    $licenseSharing->subscription->setLicensePackageInfo(null);
     $licenseSharing->subscription->save();
 
     $this->service->refreshLicenseSharing($licenseSharing);
@@ -51,9 +38,9 @@ class LicenseSharingServiceLicenseSharingRefreshTest extends LicenseSharingTestC
   {
     $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
 
-    $license_package_info = $licenseSharing->subscription->license_package_info;
-    $license_package_info['quantity']++;
-    $licenseSharing->subscription->license_package_info = $license_package_info;
+    $licensePackageInfo = $licenseSharing->subscription->getLicensePackageInfo();
+    $licensePackageInfo->price_rate->quantity++;
+    $licenseSharing->subscription->setLicensePackageInfo($licensePackageInfo);
     $licenseSharing->subscription->save();
 
     $this->service->refreshLicenseSharing($licenseSharing);
@@ -66,9 +53,9 @@ class LicenseSharingServiceLicenseSharingRefreshTest extends LicenseSharingTestC
   {
     $licenseSharing = LicenseSharingTestHelper::createFakeLicenseSharing();
 
-    $license_package_info = $licenseSharing->subscription->license_package_info;
-    $license_package_info['quantity']--;
-    $licenseSharing->subscription->license_package_info = $license_package_info;
+    $licensePackageInfo = $licenseSharing->subscription->getLicensePackageInfo();
+    $licensePackageInfo->price_rate->quantity--;
+    $licenseSharing->subscription->setLicensePackageInfo($licensePackageInfo);
     $licenseSharing->subscription->save();
 
     $this->service->refreshLicenseSharing($licenseSharing);

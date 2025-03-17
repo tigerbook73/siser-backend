@@ -29,13 +29,13 @@ class BillingInfo extends BaseBillingInfo
 
   public function beforeCreate()
   {
-    $this->language = Locale::defaultLanguage($this->address['country'], $this->language);
-    $this->locale = Locale::locale($this->language, $this->address['country']);
+    $this->language = Locale::defaultLanguage($this->address()->country, $this->language);
+    $this->locale = Locale::locale($this->language, $this->address()->country);
   }
 
   public function beforeUpdate()
   {
-    $this->locale = Locale::locale($this->language, $this->address['country']);
+    $this->locale = Locale::locale($this->language, $this->address()->country);
   }
 
   static public function createDefault(User $user): BillingInfo
@@ -58,21 +58,37 @@ class BillingInfo extends BaseBillingInfo
       ],
     ]);
     $billingInfo->language  = Locale::defaultLanguage($user->country_code ?? 'US', $user->language_code);
-    $billingInfo->locale    = Locale::locale($billingInfo->language ?? '', $billingInfo->address['country']);
+    $billingInfo->locale    = Locale::locale($billingInfo->language ?? '', $billingInfo->address()->country);
 
     $billingInfo->id = $user->id;
     $billingInfo->save();
     return $billingInfo;
   }
 
-  public function info()
+  public function info(): BillingInformation
   {
-    return $this->toResource('customer');
+    return new BillingInformation(
+      user_id: $this->user_id,
+      first_name: $this->first_name,
+      last_name: $this->last_name,
+      phone: $this->phone,
+      customer_type: $this->customer_type,
+      organization: $this->organization,
+      email: $this->email,
+      address: BillingAddress::from($this->address),
+      language: $this->language,
+      locale: $this->locale,
+    );
+  }
+
+  public function address(): BillingAddress
+  {
+    return BillingAddress::from($this->address);
   }
 
   public function getMeta(): BillingInfoMeta
   {
-    return BillingInfoMeta::from($this->meta);
+    return BillingInfoMeta::from($this->meta ?? []);
   }
 
   public function setMeta(BillingInfoMeta $meta): self

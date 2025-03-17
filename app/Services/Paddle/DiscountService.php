@@ -151,7 +151,7 @@ class DiscountService extends PaddleEntityService
       ->setMetaPaddleTimestamp($paddleDiscount->updatedAt->format('Y-m-d\TH:i:s\Z'))
       ->save();
 
-    PaddleMap::createOrUpdate($paddleDiscount->id, Coupon::class, $coupon->id);
+    PaddleMap::createOrUpdate($paddleDiscount->id, Coupon::class, $coupon->id, $paddleDiscount->customData?->data);
     return $coupon;
   }
 }

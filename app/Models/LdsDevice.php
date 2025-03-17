@@ -100,7 +100,7 @@ class LdsDevice
     return $this->container['latest_action'];
   }
 
-  public function setLatestAction(string $action, string $client_ip = null): self
+  public function setLatestAction(string $action, ?string $client_ip = null): self
   {
     $this->container['latest_action'] = [
       'action'    => $action,
@@ -126,7 +126,7 @@ class LdsDevice
     return $this;
   }
 
-  public function checkout(string $client_ip = null): self
+  public function checkout(?string $client_ip = null): self
   {
     $this->setStatus('offline')
       ->setExpiresAt(0)

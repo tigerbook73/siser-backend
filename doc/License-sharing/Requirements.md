@@ -79,7 +79,7 @@
 ### Seat
 
 - Seats are number of Lds software instances one license user can run simultaneously.
-- Seats are attached to licences.
+- Seats are attached to licenses.
 - For basic license, the number of seats is 3 * (number of owned cutters).
 - For build-in pro license, the number of seats is 3 or 3 * (number of owned cutters), whichever is greater.
 - For shared pro license, the number of seats is 3.

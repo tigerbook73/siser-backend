@@ -21,17 +21,7 @@ return new class extends Migration
 
       $table->dropColumn('processing_fee_info');
       $table->dropColumn('processing_fee');
-      $table->json('next_invoice')->nullable()->comment(json_encode(json_decode('{
-        "plan_info": {},
-        "coupon_info": {},
-        "price": 10.0,
-        "subtotal": 10.2,
-        "tax_rate": 0.1,
-        "total_tax": 1.02,
-        "total_amount": 11.22,
-        "current_period_start_date": "date-time",
-        "current_period_end_date": "date-time"
-      }')))->change();
+      $table->json('next_invoice')->nullable()->comment('see SubscriptionNextInvoice')->change();
     });
 
     /** @var User $user2test */
@@ -73,7 +63,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

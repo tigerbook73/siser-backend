@@ -24,7 +24,7 @@ class Refund {
     /** @var string $currency */
     public $currency = "";
 
-    /** @var \Tests\Models\ProductItem[] $items */
+    /** @var \Tests\Models\InvoiceItem[] $items */
     public $items = [];
 
     /** @var float $amount */

@@ -70,29 +70,29 @@ class Coupon extends BaseCoupon
 
   public function getProductInterval(): ProductInterval
   {
-    return ProductInterval::from($this->interval_size . '_' . $this->interval);
+    return ProductInterval::build($this->interval, $this->interval_size);
   }
 
-  public function info()
+  public function info(): CouponInfo
   {
-    return [
-      'id'              => $this->id,
-      'code'            => $this->code,
-      'name'            => $this->name,
-      'product_name'    => $this->product_name,
-      'type'            => $this->type,
-      'coupon_event'    => $this->coupon_event,
-      'discount_type'   => $this->discount_type,
-      'percentage_off'  => $this->percentage_off,
-      'interval'        => $this->interval,
-      'interval_size'   => $this->interval_size,
-      'interval_count'  => $this->interval_count,
-    ];
+    return new CouponInfo(
+      id: $this->id,
+      code: $this->code,
+      name: $this->name,
+      product_name: $this->product_name,
+      type: $this->type,
+      coupon_event: $this->coupon_event,
+      discount_type: $this->discount_type,
+      percentage_off: $this->percentage_off,
+      interval: $this->interval,
+      interval_size: $this->interval_size,
+      interval_count: $this->interval_count
+    );
   }
 
   public function getMeta(): CouponMeta
   {
-    return CouponMeta::from($this->meta);
+    return CouponMeta::from($this->meta ?? []);
   }
 
   public function setMeta(CouponMeta $meta): self

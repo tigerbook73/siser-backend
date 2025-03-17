@@ -22,7 +22,7 @@ return new class extends Migration
       $table->datetime('period_end_date');
       $table->string('currency');
       $table->json('plan_info')->comment('same as subscription.plan_info');
-      $table->json('coupon_info')->nullable()->comment('same as subscription.coupon_info');
+      $table->json('coupon_info')->nullable()->comment('see Coupon::info()');
       $table->json('processing_fee_info')->comment('same as subscription.processing_fee_info');
       $table->decimal('subtotal');
       $table->decimal('total_tax');
@@ -50,7 +50,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

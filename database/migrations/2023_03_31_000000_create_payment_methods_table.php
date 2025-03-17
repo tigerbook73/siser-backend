@@ -17,10 +17,7 @@ return new class extends Migration
       $table->id();
       $table->foreignId('user_id')->unique()->constrained();
       $table->string('type')->comment('[creditCard, PayPalBilling]');
-      $table->json('display_data')->nullable()->comment(json_encode(json_decode('{
-        "last_four_digits": "3119",
-        "brand": "Visa"
-      }')));
+      $table->json('display_data')->nullable()->comment('see PaymentMethodDisplayData');
       $table->json('dr')->comment(json_encode(json_decode('{
         "source_id": "dr_source_id"
       }')));
@@ -33,7 +30,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

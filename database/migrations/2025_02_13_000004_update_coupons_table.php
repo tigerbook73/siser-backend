@@ -33,9 +33,9 @@ return new class extends Migration
       ->chunkById(100, function ($subscriptions) {
         /** @var Subscription $subscription */
         foreach ($subscriptions as $subscription) {
-          $couponInfo = $subscription->coupon_info;
-          $couponInfo['interval_size'] = ($couponInfo['interval'] == Coupon::INTERVAL_DAY) ? 2 : 1;
-          $subscription->coupon_info = $couponInfo;
+          $couponInfo = $subscription->getCouponInfo();
+          $couponInfo->interval_size = ($couponInfo->interval == Coupon::INTERVAL_DAY) ? 2 : 1;
+          $subscription->setCouponInfo($couponInfo);
           $subscription->save();
         }
       });
@@ -46,9 +46,9 @@ return new class extends Migration
       ->chunkById(100, function ($invoices) {
         /** @var Invoice $invoice */
         foreach ($invoices as $invoice) {
-          $couponInfo = $invoice->coupon_info;
-          $couponInfo['interval_size'] = ($couponInfo['interval'] == Coupon::INTERVAL_DAY) ? 2 : 1;
-          $invoice->coupon_info = $couponInfo;
+          $couponInfo = $invoice->getCouponInfo();
+          $couponInfo->interval_size = ($couponInfo->interval == Coupon::INTERVAL_DAY) ? 2 : 1;
+          $invoice->setCouponInfo($couponInfo);
           $invoice->save();
         }
       });

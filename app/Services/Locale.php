@@ -115,7 +115,7 @@ class Locale
     return self::$countryLanguages[$country]['all'] ?? ['en'];
   }
 
-  static public function defaultLanguage(string $country, string $suggestedLanguage = null): string
+  static public function defaultLanguage(string $country, ?string $suggestedLanguage = null): string
   {
     if ($suggestedLanguage && in_array($suggestedLanguage, self::$countryLanguages[$country]['all'] ?? [])) {
       return $suggestedLanguage;

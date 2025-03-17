@@ -3,15 +3,26 @@
 namespace App\Models;
 
 use App\Models\Base\PaddleMap as BasePaddleMap;
+use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @template T of Model
+ * @property T $model
+ * @property mixed $meta
+ */
+class ModelWithMeta
+{
+  /**
+   * @param T $model
+   */
+  public function __construct(
+    public Model $model,
+    public mixed $meta
+  ) {}
+}
 
 class PaddleMap extends BasePaddleMap
 {
-  /**
-   * @param string $paddleId  Paddle ID for paddle resource
-   * @param string $model_class  Class name of model in our system
-   * @param int $model_id  ID of model in our system
-   */
   static public function createOrUpdate(string $paddleId, string $model_class, int $model_id, mixed $meta = null): self
   {
     return PaddleMap::updateOrCreate(
@@ -25,99 +36,144 @@ class PaddleMap extends BasePaddleMap
     );
   }
 
-  /**
-   * @param string $paddleId  Paddle ID for paddle resource
-   */
-  static public function findByPaddleId(string $paddleId): ?self
+  static public function findByPaddleId(string $paddleId, ?string $modelClass = null): ?self
   {
-    return self::where('paddle_id', $paddleId)->first();
-  }
-
-  static public function findMetaByPaddleId(string $paddleId): mixed
-  {
-    $paddleMap = self::findByPaddleId($paddleId);
-    return $paddleMap?->meta;
+    $model = self::where('paddle_id', $paddleId)->first();
+    if (
+      !$model ||
+      $modelClass && $model->model_class !== $modelClass
+    ) {
+      return null;
+    }
+    return $model;
   }
 
   /**
-   * @param string $paddleId  Paddle ID for paddle resource
-   * @param string|array<string> $modelClass  Class name(s) of model in our system
-   * @return mixed|null  Model in our system
+   * @template T of Model
+   * @param ?class-string<T> $modelClass
+   * @return ?T
    */
-  static public function findModelByPaddleId(string $paddleId, string|array $modelClass)
+  static public function findModel(string $paddleId, ?string $modelClass = null): ?Model
   {
-    $paddleMap = self::findByPaddleId($paddleId);
+    $paddleMap = self::findByPaddleId($paddleId, $modelClass);
+    return $paddleMap?->model_class::find($paddleMap->model_id);
+  }
+
+  /**
+   * @template T of Model
+   * @param class-string<T> $modelClass
+   */
+  static public function findModelWithMeta(string $paddleId, ?string $modelClass = null): ?ModelWithMeta
+  {
+    $paddleMap = self::findByPaddleId($paddleId, $modelClass);
     if (!$paddleMap) {
       return null;
     }
-    $modelClasses = is_array($modelClass) ? $modelClass : [$modelClass];
-    if (!in_array($paddleMap->model_class, $modelClasses)) {
-      return null;
-    }
-    return $paddleMap->model_class::find($paddleMap->model_id);
+    $model = $paddleMap->model_class::find($paddleMap->model_id);
+    return new ModelWithMeta($model, $paddleMap->meta);
+  }
+
+  static public function findBillingInfo(string $paddleId): ?BillingInfo
+  {
+    return self::findModel($paddleId, BillingInfo::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for customer, address or business
+   * @return ?ModelWithMeta<BillingInfo>
    */
-  static public function findBillingInfoByPaddleId(string $paddleId): ?BillingInfo
+  static public function findBillingInfoWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, BillingInfo::class);
+    return self::findModelWithMeta($paddleId, BillingInfo::class);
+  }
+
+  static public function findCoupon(string $paddleId): ?Coupon
+  {
+    return self::findModel($paddleId, Coupon::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for discount
+   * @return ?ModelWithMeta<Coupon>
    */
-  static public function findCouponByPaddleId(string $paddleId): ?Coupon
+  static public function findCouponWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, Coupon::class);
+    return self::findModelWithMeta($paddleId, Coupon::class);
+  }
+
+  static public function findPaymentMethod(string $paddleId): ?PaymentMethod
+  {
+    return self::findModel($paddleId, PaymentMethod::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for payment method
+   * @return ?ModelWithMeta<PaymentMethod>
    */
-  static public function findPaymentMethodByPaddleId(string $paddleId): ?PaymentMethod
+  static public function findPaymentMethodWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, PaymentMethod::class);
+    return self::findModelWithMeta($paddleId, PaymentMethod::class);
+  }
+
+  static public function findPlan(string $paddleId): ?Plan
+  {
+    return self::findModel($paddleId, Plan::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for price
+   * @return ?ModelWithMeta<Plan>
    */
-  static public function findPlanByPaddleId(string $paddleId): ?Plan
+  static public function findPlanWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, Plan::class);
+    return self::findModelWithMeta($paddleId, Plan::class);
+  }
+
+  static public function findProduct(string $paddleId): ?Product
+  {
+    return self::findModel($paddleId, Product::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for product
+   * @return ?ModelWithMeta<Product>
    */
-  static public function findProductByPaddleId(string $paddleId): ?Product
+  static public function findProductWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, Product::class);
+    return self::findModelWithMeta($paddleId, Product::class);
+  }
+
+  static public function findSubscription(string $paddleId): ?Subscription
+  {
+    return self::findModel($paddleId, Subscription::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for customer
+   * @return ?ModelWithMeta<Subscription>
    */
-  static public function findSubscriptionByPaddleId(string $paddleId): ?Subscription
+  static public function findSubscriptionWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, Subscription::class);
+    return self::findModelWithMeta($paddleId, Subscription::class);
+  }
+
+  static public function findInvoice(string $paddleId): ?Invoice
+  {
+    return self::findModel($paddleId, Invoice::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for customer
+   * @return ?ModelWithMeta<Invoice>
    */
-  static public function findInvoiceByPaddleId(string $paddleId): ?Invoice
+  static public function findInvoiceWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, Invoice::class);
+    return self::findModelWithMeta($paddleId, Invoice::class);
+  }
+
+  static public function findRefund(string $paddleId): ?Refund
+  {
+    return self::findModel($paddleId, Refund::class);
   }
 
   /**
-   * @param string $paddleId  Paddle ID for refund
+   * @return ?ModelWithMeta<Refund>
    */
-  static public function findRefundByPaddleId(string $paddleId): ?Refund
+  static public function findRefundWithMeta(string $paddleId): ?ModelWithMeta
   {
-    return self::findModelByPaddleId($paddleId, Refund::class);
+    return self::findModelWithMeta($paddleId, Refund::class);
   }
 }

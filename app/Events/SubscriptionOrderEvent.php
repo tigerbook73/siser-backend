@@ -17,10 +17,10 @@ class SubscriptionOrderEvent
 
   /**
    * Create a new event instance.
-   * 
+   *
    * @return void
    */
-  public function __construct(public $type, public Invoice $invoice, public Refund|null $refund = null)
+  public function __construct(public $type, public Invoice $invoice, public ?Refund $refund = null)
   {
     //
   }

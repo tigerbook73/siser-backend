@@ -2,11 +2,15 @@
 
 namespace App\Services\Paddle;
 
+use App\Models\Coupon;
+use App\Models\InvoiceItem;
+use App\Models\LicensePackage;
 use App\Models\Paddle\PriceCustomData;
 use App\Models\Paddle\SubscriptionCustomData;
 use App\Models\PaddleMap;
-use App\Models\ProductItem;
 use App\Models\Subscription;
+use App\Models\SubscriptionItem;
+use App\Models\SubscriptionNextInvoice;
 use App\Services\CurrencyHelper;
 use App\Services\SubscriptionManager\SubscriptionManagerResult;
 use App\Services\SubscriptionManager\WebhookException;
@@ -57,7 +61,7 @@ class SubscriptionService extends PaddleEntityService
     $this->result->appendMessage("refreshing license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
     $this->refreshLicenseSharing($subscription);
 
-    PaddleMap::createOrUpdate($paddleSubscription->id, Subscription::class, $subscription->id);
+    PaddleMap::createOrUpdate($paddleSubscription->id, Subscription::class, $subscription->id, $paddleSubscription->customData?->data);
 
     $this->result->appendMessage("subscription ({$subscription->id}) created successfully", location: __FUNCTION__);
     return $subscription;
@@ -74,7 +78,7 @@ class SubscriptionService extends PaddleEntityService
     $this->result->appendMessage("refreshing license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
     $this->refreshLicenseSharing($subscription);
 
-    PaddleMap::createOrUpdate($paddleSubscription->id, Subscription::class, $subscription->id);
+    PaddleMap::createOrUpdate($paddleSubscription->id, Subscription::class, $subscription->id, $paddleSubscription->customData?->data);
 
     $this->result->appendMessage("subscription ({$subscription->id}) updated successfully", location: __FUNCTION__);
     return $subscription;
@@ -88,8 +92,7 @@ class SubscriptionService extends PaddleEntityService
       $this->manager->licenseService->refreshLicenseSharing($licenseSharing);
     } else if (
       $subscription->getStatus() == Subscription::STATUS_ACTIVE &&
-      $subscription->license_package_info &&
-      $subscription->license_package_info['quantity'] > 0
+      $subscription->hasLicensePackageInfo()
     ) {
       $this->result->appendMessage("creating license sharing for subscription ({$subscription->id})", location: __FUNCTION__);
       $this->licenseService->createLicenseSharing($subscription);
@@ -114,43 +117,24 @@ class SubscriptionService extends PaddleEntityService
     // user id
     $subscription->user_id      = $subscriptionCustomerData->user_id;
 
-    // plan id
+    // plan id (never change)
     $subscription->plan_id      = $subscriptionCustomerData->plan_id;
-    foreach ($paddleSubscription->items as $subscriptionItem) {
-      $priceCustomData = PriceCustomData::from($subscriptionItem->price->customData?->data);
-      if ($priceCustomData->plan_id) {
-        $subscription->plan_id = $priceCustomData->plan_id;
-        break;
-      }
-    }
-
 
     // currency
     $subscription->currency     = $paddleSubscription->currencyCode->getValue();
 
     //
-    // amount
-    // 1. purchase subscription: use the amount from the recurring transaction
-    // 2. renewal subscription: use the amount from the recurring transaction
-    // 3. other cases: keep the current data: TODO: ...
+    // prices: always be the recurring prices without considering the discount (unless it is a permanent discount)
     //
     $recurringTransactionDetails = $paddleSubscription->recurringTransactionDetails;
     if ($recurringTransactionDetails) {
       // purchase subscription and renewal scenario
-      if (
-        !$subscription->id ||
-        ($paddleSubscription->nextBilledAt && $subscription->next_invoice_date &&
-          $subscription->next_invoice_date->lt(Carbon::parse($paddleSubscription->nextBilledAt)->floorSecond()))
-      ) {
-        $subscription->price        = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->subtotal);
-        $subscription->subtotal     = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->subtotal);
-        $subscription->discount     = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->discount);
-        $subscription->total_amount = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->total);
-        $subscription->total_tax    = CurrencyHelper::getDecimalPrice($subscription->currency, $recurringTransactionDetails->totals->tax);
-        $subscription->tax_rate     = (float)($recurringTransactionDetails->taxRatesUsed[0]->taxRate);
-      }
-    } else {
-      // keep current data
+      $subscription->price        = CurrencyHelper::getDecimalPrice($paddleSubscription->currencyCode->getValue(), $recurringTransactionDetails->totals->subtotal);
+      $subscription->subtotal     = CurrencyHelper::getDecimalPrice($paddleSubscription->currencyCode->getValue(), $recurringTransactionDetails->totals->subtotal);
+      $subscription->discount     = CurrencyHelper::getDecimalPrice($paddleSubscription->currencyCode->getValue(), $recurringTransactionDetails->totals->discount);
+      $subscription->total_amount = CurrencyHelper::getDecimalPrice($paddleSubscription->currencyCode->getValue(), $recurringTransactionDetails->totals->total);
+      $subscription->total_tax    = CurrencyHelper::getDecimalPrice($paddleSubscription->currencyCode->getValue(), $recurringTransactionDetails->totals->tax);
+      $subscription->tax_rate     = (float)($recurringTransactionDetails->taxRatesUsed[0]->taxRate);
     }
 
     // start & end data
@@ -178,8 +162,6 @@ class SubscriptionService extends PaddleEntityService
       // current period start & end date
       $subscription->current_period_start_date = Carbon::parse($paddleSubscription->currentBillingPeriod->startsAt);
       $subscription->current_period_end_date = Carbon::parse($paddleSubscription->currentBillingPeriod->endsAt);
-    } else {
-      // keep current data
     }
 
     // next invoice date & reminder date
@@ -198,7 +180,7 @@ class SubscriptionService extends PaddleEntityService
       if ($paddleTransaction->business) {
         $this->manager->businessService->updateBillingInfo($billingInfo, $paddleTransaction->business);
       }
-      $subscription->billing_info = $billingInfo->info();
+      $subscription->setBillingInfo($billingInfo->info());
     } else {
       // keep current data
     }
@@ -209,21 +191,36 @@ class SubscriptionService extends PaddleEntityService
         $subscription->user,
         $paddleTransaction->payments[0] // most recent payment
       );
-      $subscription->payment_method_info = $paymentMethod->info();
+      $subscription->setPaymentMethodInfo($paymentMethod->info());
     } else {
       // keep current data
     }
 
-    // plan info, TODO: plan may change later
-    $subscription->plan_info = $subscription->plan->info($subscription->user->billing_info->address['country']);
+    // plan info: license package is not considered, TODO: plan price change need to be considered
+    $subscription->setPlanInfo(
+      $subscription->plan->info($subscription->user->billing_info->address()->country)
+    );
+
+    // subscription level
     $subscription->subscription_level = $subscription->plan->subscription_level;
 
-    // license package info
-    $subscription->license_package_info = null;
+    // license package info: only set when subscription is created or license package number was changed
+    $priceCustomData = PriceCustomData::from($paddleSubscription->items[0]->price->customData?->data);
+    if (
+      !$subscription->exists() ||
+      ($subscription->getLicensePackageInfo()?->price_rate->quantity ?? PriceCustomData::DEFAULT_QUANTITY) != $priceCustomData->license_quantity
+    ) {
+      if ($priceCustomData->license_quantity < LicensePackage::MIN_QUANTITY) {
+        $subscription->setLicensePackageInfo(null);
+      } else {
+        $licensePackage = LicensePackage::findById($priceCustomData->license_package_id);
+        $subscription->setLicensePackageInfo($licensePackage->info($priceCustomData->license_quantity));
+      }
+    }
 
     // coupon info
     $coupon = ($paddleSubscription->discount?->startsAt) ?
-      PaddleMap::findCouponByPaddleId($paddleSubscription->discount->id) :
+      PaddleMap::findCoupon($paddleSubscription->discount->id) :
       null;
     if (
       $coupon &&
@@ -232,14 +229,14 @@ class SubscriptionService extends PaddleEntityService
         $paddleSubscription->discount->endsAt > Carbon::parse($paddleSubscription->currentBillingPeriod?->endsAt)->subSeconds(60))
     ) {
       $subscription->coupon_id   = $coupon->id;
-      $subscription->coupon_info = $coupon->info();
+      $subscription->setCouponInfo($coupon->info());
     } else {
       $subscription->coupon_id   = null;
-      $subscription->coupon_info = null;
+      $subscription->setCouponInfo(null);
     }
 
     // items
-    $subscription->items = ProductItem::buildItemsFromPaddleResource($paddleSubscription);
+    $subscription->setItems(SubscriptionItem::buildItems($paddleSubscription));
 
     // next_invoice
     $nextTransaction  = $paddleSubscription->nextTransaction;
@@ -257,38 +254,37 @@ class SubscriptionService extends PaddleEntityService
         $coupon->info() :
         null;
 
-      $subscription->next_invoice = [
-        'current_period'            => $subscription->current_period + 1,
-        'current_period_start_date' => Carbon::parse($billingPeriod->startsAt)->format('Y-m-d\TH:i:s\Z'),
-        'current_period_end_date'   => Carbon::parse($billingPeriod->endsAt)->format('Y-m-d\TH:i:s\Z'),
-        'plan_info'                 => $subscription->plan_info,
-        'coupon_info'               => $couponInfo,
-        'license_package_info'      => null,
-        'items'                     => ProductItem::buildItemsFromPaddleResource($nextTransaction->details),
-        'price'                     => CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
-        'subtotal'                  => CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
-        'discount'                  => CurrencyHelper::getDecimalPrice($currency, $totals->discount),
-        'tax_rate'                  => (float)$taxRate,
-        'total_tax'                 => CurrencyHelper::getDecimalPrice($currency, $totals->tax),
-        'total_amount'              => CurrencyHelper::getDecimalPrice($currency, $totals->total),
-      ];
+      $subscription->setNextInvoice(new SubscriptionNextInvoice(
+        current_period: $subscription->current_period + 1,
+        current_period_start_date: Carbon::parse($billingPeriod->startsAt),
+        current_period_end_date: Carbon::parse($billingPeriod->endsAt),
+        plan_info: $subscription->getPlanInfo(),
+        coupon_info: $couponInfo,
+        license_package_info: $subscription->getLicensePackageInfo(),
+        items: InvoiceItem::buildNextItemsForSubscription($paddleSubscription),
+        price: CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
+        subtotal: CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
+        discount: CurrencyHelper::getDecimalPrice($currency, $totals->discount),
+        tax_rate: (float)$taxRate,
+        total_tax: CurrencyHelper::getDecimalPrice($currency, $totals->tax),
+        total_amount: CurrencyHelper::getDecimalPrice($currency, $totals->total),
+        credit: CurrencyHelper::getDecimalPrice($currency, $totals->credit),
+        credit_to_balance: CurrencyHelper::getDecimalPrice($currency, $totals->creditToBalance),
+        grand_total: CurrencyHelper::getDecimalPrice($currency, $totals->grandTotal),
+      ));
     } else {
-      $subscription->next_invoice = null;
+      $subscription->setNextInvoice(null);
     }
 
-    // renewal info
-    $subscription->renewal_info = null;
-
     // other info
-    $subscription->dr = [];
-    $subscription->dr_subscription_id = null;
     $subscription->stop_reason = '';
-    $subscription->active_invoice_id = null;
+
+    // meta
     $subscription->setMetaPaddleSubscriptionId($paddleSubscription->id)
       ->setMetaPaddleCustomerId($paddleSubscription->customerId)
-      ->setMetaPaddleProductId($subscription->plan->getMeta()->paddle->product_id)
-      ->setMetaPaddlePriceId($subscription->plan->getMeta()->paddle->price_id)
-      ->setMetaPaddleDiscountId($subscription->coupon?->getMeta()->paddle->discount_id)
+      ->setMetaPaddleProductId($paddleSubscription->items[0]->product->id)
+      ->setMetaPaddlePriceId($paddleSubscription->items[0]->price->id)
+      ->setMetaPaddleDiscountId($paddleSubscription->discount?->id)
       ->setMetaPaddleTimestamp($paddleSubscription->updatedAt->format('Y-m-d\TH:i:s\Z'));
 
     // status
@@ -317,7 +313,7 @@ class SubscriptionService extends PaddleEntityService
   public function onSubscriptionCreated(SubscriptionCreated $subscriptionCreated): void
   {
     $paddleSubscriptionNotification = $subscriptionCreated->subscription;
-    $subscription = PaddleMap::findSubscriptionByPaddleId($paddleSubscriptionNotification->id);
+    $subscription = PaddleMap::findSubscription($paddleSubscriptionNotification->id);
     if ($subscription) {
       $this->result
         ->setResult(SubscriptionManagerResult::RESULT_SKIPPED, 'subscription already exists')
@@ -364,7 +360,7 @@ class SubscriptionService extends PaddleEntityService
     }
 
     // step 3: if subscription not exist, fails
-    $subscription = PaddleMap::findSubscriptionByPaddleId($paddleSubscriptionNotification->id);
+    $subscription = PaddleMap::findSubscription($paddleSubscriptionNotification->id);
     if (!$subscription) {
       $this->result->appendMessage("subscription not found for paddle Subscription {$paddleSubscriptionNotification->id}", location: __FUNCTION__);
       throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);

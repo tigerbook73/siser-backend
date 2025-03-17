@@ -29,17 +29,18 @@ class AddressService extends PaddleEntityService
   public function prepareData(BillingInfo $billingInfo, PaddleOperation $mode): CreateAddress|UpdateAddress
   {
     // for US postal code must be 5 digits, trucate if more than 5
-    $postcode = $billingInfo->address['postcode'];
-    if ($billingInfo->address['country'] === 'US') {
+    $address = $billingInfo->address();
+    $postcode = $address->postcode;
+    if ($address->country === 'US') {
       $postcode = substr($postcode, 0, 5);
     }
 
     $data = [
-      'countryCode' => CountryCode::from($billingInfo->address['country']),
-      'firstLine' => $billingInfo->address['line1'] ?? "",
-      'secondLine' => $billingInfo->address['line2'] ?? "",
-      'city' => $billingInfo->address['city'] ?? "",
-      'region' => $billingInfo->address['state'] ?? "",
+      'countryCode' => CountryCode::from($address->country),
+      'firstLine' => $address->line1 ?? "",
+      'secondLine' => $address->line2 ?? "",
+      'city' => $address->city ?? "",
+      'region' => $address->state ?? "",
       'postalCode' => $postcode,
       'customData' => AddressCustomData::from([
         'user_id' => $billingInfo->user_id,
@@ -59,7 +60,7 @@ class AddressService extends PaddleEntityService
       throw new \Exception('Paddle customer not exist');
     }
 
-    if (!$billingInfo->address['country'] || !$billingInfo->address['postcode']) {
+    if (!$billingInfo->address()->country || !$billingInfo->address()->postcode) {
       throw new \Exception('Country and postcode are required');
     }
 
@@ -96,18 +97,18 @@ class AddressService extends PaddleEntityService
 
   public function updateBillingInfo(BillingInfo $billingInfo, Address|EntitiesAddress $address): BillingInfo
   {
-    $billingAddress = $billingInfo->address;
-    $billingAddress['country']  = $address->countryCode->getValue();
-    $billingAddress['line1']    = $address->firstLine ?? '';
-    $billingAddress['line2']    = $address->secondLine ?? '';
-    $billingAddress['city']     = $address->city ?? '';
-    $billingAddress['state']    = $address->region ?? '';
-    $billingAddress['postcode'] = $address->postalCode ?? '';
-    $billingInfo->address = $billingAddress;
+    $billingAddress = $billingInfo->address();
+    $billingAddress->country  = $address->countryCode->getValue();
+    $billingAddress->line1    = $address->firstLine ?? '';
+    $billingAddress->line2    = $address->secondLine ?? '';
+    $billingAddress->city     = $address->city ?? '';
+    $billingAddress->state    = $address->region ?? '';
+    $billingAddress->postcode = $address->postalCode ?? '';
+    $billingInfo->address = $billingAddress->toArray();
     $billingInfo->setMetaPaddleAddressId($address->id);
     $billingInfo->save();
 
-    PaddleMap::createOrUpdate($address->id, BillingInfo::class, $billingInfo->id);
+    PaddleMap::createOrUpdate($address->id, BillingInfo::class, $billingInfo->id, $address->customData?->data);
     return $billingInfo;
   }
 }

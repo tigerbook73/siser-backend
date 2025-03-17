@@ -23,7 +23,7 @@ class FirstPromoterService
     ]);
   }
 
-  public function trackSale(string|int $userId, string|int $invoiceId, float $amount, string $currency, string $planType = null, string $couponCode = null)
+  public function trackSale(string|int $userId, string|int $invoiceId, float $amount, string $currency, ?string $planType = null, ?string $couponCode = null)
   {
     if (!$this->enabled) {
       return;

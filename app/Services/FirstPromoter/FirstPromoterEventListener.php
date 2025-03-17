@@ -28,8 +28,8 @@ class FirstPromoterEventListener implements ShouldQueue
           $event->invoice->id,
           $event->invoice->subtotal - $event->invoice->discount,
           $event->invoice->currency,
-          config('affiliate.first_promoter.plan_mapping')[$event->invoice->plan_info['interval']] ?? null,
-          $event->invoice->coupon_info['code'] ?? null,
+          config('affiliate.first_promoter.plan_mapping')[$event->invoice->getPlanInfo()->interval] ?? null,
+          $event->invoice->getCouponInfo()?->code,
         );
         break;
 

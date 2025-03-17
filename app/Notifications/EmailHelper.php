@@ -2,9 +2,6 @@
 
 namespace App\Notifications;
 
-use App\Models\Country;
-use App\Models\Invoice;
-use App\Models\Subscription;
 use Carbon\Carbon;
 
 class EmailHelper
@@ -41,43 +38,6 @@ class EmailHelper
   public function formatName(array $billing_info)
   {
     return $billing_info['first_name'] . ' ' . $billing_info['last_name'];
-  }
-
-  public function formatCountry(string $code)
-  {
-    return Country::findByCode($code)->name;
-  }
-
-  public function formatAddress(array $address)
-  {
-    $formattedAddress = '<div>' . $address['line1'] . '</div>';
-    if (isset($address['line2'])) {
-      $formattedAddress .= '<div>' . $address['line2'] . '</div>';
-    }
-    $formattedAddress .= '<div>' . $address['city'] . '</div>';
-    $formattedAddress .= '<div>' . $address['state'] . ' ' . $address['postcode'] . '</div>';
-    $formattedAddress .= '<div>' . $this->formatCountry($address['country']) . '</div>';
-
-    return $formattedAddress;
-  }
-
-  public function formatPrice(string|float $price)
-  {
-    // TODO: en_US, 'AUD' => 'A$'
-    // $fmt = numfmt_create($this->locale, NumberFormatter::CURRENCY);
-    // return numfmt_format_currency($fmt, (float)$price, $this->currency);
-    return number_format((float)$price, 2);
-  }
-
-  public function formatPaymentMethod(string $type, array|null $display_data)
-  {
-    if ($type == 'creditCard' || $type == 'googlePay') {
-      $text  = '<div>' . $this->trans('credit_card.brand', ['brand' => $display_data['brand']]) . '</div>';
-      $text .= '<div>' . $this->trans('credit_card.card_no', ['last_four_digits' => $display_data['last_four_digits']])  . '</div>';
-      $text .= '<div>' . $this->trans('credit_card.expire_at', ['month' => $display_data['expiration_month'], 'year' =>  $display_data['expiration_year']])  . '</div>';
-      return $text;
-    }
-    return '';
   }
 
   public function getCustomerPortalLink()

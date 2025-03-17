@@ -86,19 +86,16 @@ class LicensePackage extends BaseLicensePackage
     return $this;
   }
 
-  public function info(int $quantity): array
+  public function info(int $quantity): LicensePackageInfo
   {
-    $priceTable = $this->getPriceTable();
-    $priceRate = $priceTable->getPriceRate($quantity);
+    $priceRate = $this->getPriceTable()->getPriceRate($quantity);
 
-    return [
-      'id'          => $this->id,
-      'type'        => $this->type,
-      'name'        => $this->name,
-      'price_table' => $this->price_table,
-      'quantity'    => $quantity,
-      'price_rate'  => $priceRate,
-    ];
+    return new LicensePackageInfo(
+      $this->id,
+      $this->type,
+      $this->name,
+      $priceRate,
+    );
   }
 
   static public function validatePriceTable(array $priceTable): ?array

@@ -1,4 +1,9 @@
+# Today
 
++ add plan.meta to rest-api (DONE)
+
+
+- [Today](#markdown-header-today)
 - [License Package Feature](#markdown-header-license-package-feature)
   - [Step1: refactor product/plan/coupon (DONE)](#markdown-header-step1-refactor-productplancoupon-done)
     - [Refactor Product, Plan, and Coupon Models (DONE)](#markdown-header-refactor-product-plan-and-coupon-models-done)
@@ -13,6 +18,7 @@
   - [Step6: update subscription / invoice model to support credit/items/prorate](#markdown-header-step6-update-subscription-invoice-model-to-support-credititemsprorate)
   - [Step7: manage subscription increate/decrease license number](#markdown-header-step7-manage-subscription-increatedecrease-license-number)
   - [Step8: finalize admin portal to support license package](#markdown-header-step8-finalize-admin-portal-to-support-license-package)
+
 
 # License Package Feature
 
@@ -86,12 +92,22 @@ update plan model to support list of paddle prices.
 
 update subscription and invoice model to support new attributes (license_number, license_package_id).
 
-  - support new attributes
-    - license number
-    - license package id
-    - license package info
-  - update plan model?
-    - query all prices for a plan?
+1. subscription.license_pacakge_info (done)
+2. subscription.items (done)
+   + name => license x quantity
+3. subscription.next_invoice (add license_package info) (done)
+4. subscription.coupon_info (start date & end date)
+5. subscription.price/total/tax/...  this is recurring price (after discount if discount is not long term) (done)
+6. add subscription.last_invoice info (no task)
+7. add subscription.next_transaction info (done)
+8. invoice.license_package_info remove (invoice does not care about the license package)
+9.  invoice.items
+   + name => license x quantity
+   + amount (negative)
+   + credit
+   + prorata (...)
+
+
 
 ## Step5: purchase license package - customer portal
 

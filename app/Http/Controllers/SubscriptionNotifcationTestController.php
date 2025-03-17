@@ -16,7 +16,7 @@ class SubscriptionNotifcationTestController extends Controller
     string $type,
     string $country,
     string $plan,
-  ): SubscriptionNotificationTest|null {
+  ): ?SubscriptionNotificationTest {
     $mockup = SubscriptionNotificationTest::init($country, $plan);
 
     switch ($type) {

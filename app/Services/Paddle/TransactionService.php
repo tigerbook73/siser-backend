@@ -4,10 +4,13 @@ namespace App\Services\Paddle;
 
 use App\Events\SubscriptionOrderEvent;
 use App\Models\BillingInfo;
+use App\Models\Coupon;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\LicensePackage;
+use App\Models\Paddle\PriceCustomData;
 use App\Models\PaddleMap;
 use App\Models\PaymentMethod;
-use App\Models\ProductItem;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Services\CurrencyHelper;
@@ -76,8 +79,8 @@ class TransactionService extends PaddleEntityService
     $this->result->appendMessage("updating subscription's billing info and payment method", location: __FUNCTION__);
 
     $user = $subscription->user;
-    $subscription->payment_method_info = $user->payment_method->info();
-    $subscription->billing_info = $user->billing_info->info();
+    $subscription->setPaymentMethodInfo($user->payment_method->info());
+    $subscription->setBillingInfo($user->billing_info->info());
     $subscription->save();
     return $subscription;
   }
@@ -93,7 +96,7 @@ class TransactionService extends PaddleEntityService
   public function createOrUpdateInvoice(Subscription $subscription, PaddleTransaction $paddleTransaction): Invoice
   {
     // find or create invoice
-    $invoice = PaddleMap::findInvoiceByPaddleId($paddleTransaction->id);
+    $invoice = PaddleMap::findInvoice($paddleTransaction->id);
     if ($invoice) {
       $this->result
         ->setInvoice($invoice)
@@ -124,29 +127,37 @@ class TransactionService extends PaddleEntityService
     $invoice->currency = $paddleTransaction->currencyCode->getValue();
 
     // billing info: we assume it has been updated
-    $invoice->billing_info = $subscription->user->billing_info->info();
+    $invoice->setBillingInfo($subscription->user->billing_info->info());
 
     // payment method: we assume it has been updated
-    $invoice->payment_method_info = $subscription->user->payment_method->info();
+    $invoice->setPaymentMethodInfo($subscription->user->payment_method->info());
 
     // plan info, TODO: subscription may not be updated? maybe not important
-    $invoice->plan_info = $subscription->plan->info($invoice->billing_info['address']['country']);
+    $invoice->setPlanInfo($subscription->plan->info($invoice->getBillingInfo()->address->country));
 
     // coupon info
-    $coupon = $paddleTransaction->discount ? PaddleMap::findCouponByPaddleId($paddleTransaction->discount->id) : null;
-    $invoice->coupon_info = $coupon?->info();
+    $coupon = $paddleTransaction->discount ? PaddleMap::findCoupon($paddleTransaction->discount->id) : null;
+    $invoice->setCouponInfo($coupon?->info());
 
-    // license package info
-    $invoice->license_package_info = null;
+    // license package info: only set when invoice is created
+    if (!$invoice->exists()) {
+      $priceCustomData = PriceCustomData::from($paddleTransaction->items[0]->price->customData?->data);
+      if ($priceCustomData->license_quantity < LicensePackage::MIN_QUANTITY) {
+        $invoice->setLicensePackageInfo(null);
+      } else {
+        $licensePackage = LicensePackage::findById($priceCustomData->license_package_id);
+        $invoice->setLicensePackageInfo($licensePackage->info($priceCustomData->license_quantity));
+      }
+    }
 
     // items
-    $invoice->items = ProductItem::buildItemsFromPaddleResource($paddleTransaction->details);
+    $invoice->setItems(InvoiceItem::buildItems($paddleTransaction));
 
     // period
     if ($paddleTransaction->billingPeriod) {
       $invoice->period = PeriodHelper::calcCurrentPeriod(
-        $subscription->plan_info['interval'],
-        $subscription->plan_info['interval_count'] ?? 1,
+        $subscription->getPlanInfo()->interval,
+        $subscription->getPlanInfo()->interval_count ?? 1,
         $subscription->start_date,
         $paddleTransaction->billingPeriod->startsAt
       );
@@ -159,11 +170,14 @@ class TransactionService extends PaddleEntityService
     }
     $invoice->invoice_date = Carbon::parse($paddleTransaction->billedAt);
 
-    // check
-    $invoice->subtotal =      CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->subtotal);
-    $invoice->discount =      CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->discount);
-    $invoice->total_tax =     CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->tax);
-    $invoice->total_amount =  CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->total);
+    // prices
+    $invoice->subtotal          = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->subtotal);
+    $invoice->discount          = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->discount);
+    $invoice->total_tax         = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->tax);
+    $invoice->total_amount      = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->total);
+    $invoice->credit            = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->credit);
+    $invoice->grand_total       = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->grandTotal);
+    $invoice->credit_to_balance = CurrencyHelper::getDecimalPrice($invoice->currency, $paddleTransaction->details->totals->creditToBalance);
 
     // update refunded
     if ($paddleTransaction->adjustmentsTotals) {
@@ -217,7 +231,7 @@ class TransactionService extends PaddleEntityService
       ->setInvoice($invoice)
       ->appendMessage("invoice ({$invoice->id}) saved", location: __FUNCTION__);
 
-    PaddleMap::createOrUpdate($paddleTransaction->id, Invoice::class, $invoice->id);
+    PaddleMap::createOrUpdate($paddleTransaction->id, Invoice::class, $invoice->id, $paddleTransaction->customData?->data);
 
     $this->result->appendMessage("invoice ({$invoice->id}) created / updated successfully", location: __FUNCTION__);
     return $invoice;
@@ -324,7 +338,7 @@ class TransactionService extends PaddleEntityService
       throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);
     }
 
-    $subscription = PaddleMap::findSubscriptionByPaddleId($paddleSubscriptionId);
+    $subscription = PaddleMap::findSubscription($paddleSubscriptionId);
     if (!$subscription) {
       $this->result->appendMessage("subscription not found for paddle subscription ({$paddleSubscriptionId})", location: __FUNCTION__);
       throw new WebhookException('WebhookException at ' . __FUNCTION__ . ':' . __LINE__);

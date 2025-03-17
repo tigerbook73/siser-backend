@@ -50,7 +50,7 @@ class MachineController extends SimpleController
       "nickname"  => ['max:255'],
     ]);
 
-    /** @var Machine|null $machine */
+    /** @var ?Machine $machine */
     $machine = Machine::where([
       'serial_no' => $inputs['serial_no']
     ])->first();
@@ -87,7 +87,7 @@ class MachineController extends SimpleController
       ],
     ]);
 
-    /** @var Machine|null $machine */
+    /** @var ?Machine $machine */
     $machine = Machine::findOrFail($id);
     $machine->transfer($inputs['new_user_id']);
 
