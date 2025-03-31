@@ -1,4 +1,12 @@
 
+# publish new release
+
+1. publish
+2. validate & fix subscriptions and invoices
+3. refresh all subscriptions
+
+
+
 # License Package Feature
 
 ## publish purchase license package
