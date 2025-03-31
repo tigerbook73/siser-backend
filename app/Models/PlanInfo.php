@@ -19,14 +19,14 @@ class PlanInfo
   static function from(array $data): self
   {
     return new self(
-      id: $data['id'],
-      name: $data['name'],
-      product_name: $data['product_name'],
-      description: $data['description'],
-      interval: $data['interval'],
-      interval_count: $data['interval_count'],
-      price: PlanPrice::from($data['price']),
-      subscription_level: $data['subscription_level'],
+      id: $data['id'] ?? 0,
+      name: $data['name'] ?? '',
+      product_name: $data['product_name'] ?? '',
+      description: $data['description'] ?? '',
+      interval: $data['interval'] ?? '',
+      interval_count: $data['interval_count'] ?? 1,
+      price: isset($data['price']) ? PlanPrice::from($data['price']) : null,
+      subscription_level: $data['subscription_level'] ?? 1,
       url: $data['url'] ?? ''
     );
   }

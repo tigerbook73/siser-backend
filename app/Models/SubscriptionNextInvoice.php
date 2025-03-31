@@ -40,13 +40,13 @@ class SubscriptionNextInvoice
       items: array_map(fn($item) => InvoiceItem::from($item), $data['items']),
       price: (float)$data['price'],
       subtotal: (float)$data['subtotal'],
-      discount: (float)$data['discount'],
+      discount: (float)($data['discount'] ?? 0),
       tax_rate: (float)$data['tax_rate'],
       total_tax: (float)$data['total_tax'],
       total_amount: (float)$data['total_amount'],
-      credit: (float)$data['credit'],
-      grand_total: (float)$data['grand_total'],
-      credit_to_balance: (float)$data['credit_to_balance'],
+      credit: (float)($data['credit'] ?? 0),
+      grand_total: (float)($data['grand_total'] ?? 0),
+      credit_to_balance: (float)($data['credit_to_balance'] ?? 0),
     );
   }
 

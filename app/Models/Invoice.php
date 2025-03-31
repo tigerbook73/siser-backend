@@ -211,14 +211,14 @@ class Invoice extends BaseInvoice
   /**
    * payment method info
    */
-  public function getPaymentMethodInfo(): PaymentMethodInfo
+  public function getPaymentMethodInfo(): ?PaymentMethodInfo
   {
-    return PaymentMethodInfo::from($this->payment_method_info);
+    return $this->payment_method_info ? PaymentMethodInfo::from($this->payment_method_info) : null;
   }
 
-  public function setPaymentMethodInfo(PaymentMethodInfo $paymentMethodInfo): self
+  public function setPaymentMethodInfo(?PaymentMethodInfo $paymentMethodInfo): self
   {
-    $this->payment_method_info = $paymentMethodInfo->toArray();
+    $this->payment_method_info = $paymentMethodInfo?->toArray();
     return $this;
   }
 
