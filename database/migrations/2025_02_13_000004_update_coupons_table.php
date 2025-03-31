@@ -23,35 +23,9 @@ return new class extends Migration
     });
 
     // Update the existing data
-    DB::table('coupons')->where('interval', Coupon::INTERVAL_DAY)->update([
+    Coupon::where('interval', Coupon::INTERVAL_DAY)->update([
       'interval_size' => 2   // 2-day plan, hard-coded
     ]);
-
-    // update coupon_info for subscriptions
-    DB::table('subscriptions')
-      ->whereNotNull('coupon_info')
-      ->chunkById(100, function ($subscriptions) {
-        /** @var Subscription $subscription */
-        foreach ($subscriptions as $subscription) {
-          $couponInfo = $subscription->getCouponInfo();
-          $couponInfo->interval_size = ($couponInfo->interval == Coupon::INTERVAL_DAY) ? 2 : 1;
-          $subscription->setCouponInfo($couponInfo);
-          $subscription->save();
-        }
-      });
-
-    // update coupon_info for invoices
-    DB::table('invoices')
-      ->whereNotNull('coupon_info')
-      ->chunkById(100, function ($invoices) {
-        /** @var Invoice $invoice */
-        foreach ($invoices as $invoice) {
-          $couponInfo = $invoice->getCouponInfo();
-          $couponInfo->interval_size = ($couponInfo->interval == Coupon::INTERVAL_DAY) ? 2 : 1;
-          $invoice->setCouponInfo($couponInfo);
-          $invoice->save();
-        }
-      });
   }
 
   /**
