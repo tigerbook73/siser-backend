@@ -7,6 +7,7 @@ use App\Models\CouponEvent;
 use App\Models\Plan;
 use App\Models\ProductInterval;
 use App\Services\CouponRules;
+use App\Services\CouponValidateResultCode;
 use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -210,22 +211,43 @@ class CouponController extends SimpleController
     $this->validateUser();
 
     $inputs = $request->validate([
-      'code'    => ['required', 'string', Rule::exists('coupons', 'code')->where(fn($q) => $q->where('status', Coupon::STATUS_ACTIVE))],
-      'plan_id' => ['filled', 'numeric', Rule::exists('plans', 'id')->where(fn($q) => $q->where('status', Coupon::STATUS_ACTIVE)->where('subscription_level', '>', 1))],
-      'user_id' => ['filled', 'exists:users,id'],
+      'code'    => ['required', 'string'],
+      'plan_id' => ['required', 'numeric'],
+      'license_quantity' => ['filled', 'numeric'],
     ]);
 
-    /** @var Coupon $coupon */
-    $coupon = $this->baseQuery()->where('code', $inputs['code'])->firstOrFail();
+    // set default value for license quantity
+    $inputs['license_quantity'] = (int)($inputs['license_quantity'] ?? 1);
 
-    /** @var ?Plan $plan */
-    $plan = isset($inputs['plan_id']) ? Plan::find($inputs['plan_id']) : null;
-
-    $applyResult = CouponRules::couponApplicable($coupon, $plan, $this->user);
-    if ($applyResult['applicable']) {
-      return $coupon->info();
+    /** @var ?Coupon $coupon */
+    $coupon = $this->baseQuery()
+      ->where('code', $inputs['code'])
+      ->public()
+      ->first();
+    if (!$coupon) {
+      return response()->json([
+        'result_code' => CouponValidateResultCode::FAILED_INVALID_CODE,
+        'message' => 'Invalid coupon code',
+      ], 400);
     }
 
-    return response()->json(['message' => $applyResult['reason']], 400);
+    /** @var ?Plan $plan */
+    $plan = Plan::public()->findOrFail($inputs['plan_id']);
+    if (!$plan) {
+      return response()->json([
+        'result_code' => CouponValidateResultCode::FAILED_INVALID_PLAN,
+        'message' => 'Invalid plan ID',
+      ], 400);
+    }
+
+    $applyResult = CouponRules::couponApplicable($coupon, $plan, $inputs['license_quantity'], $this->user);
+    if (!$applyResult->applicable) {
+      return response()->json([
+        'result_code' => $applyResult->result_code,
+        'message' => $applyResult->result_text,
+      ], 400);
+    }
+
+    return response()->json($applyResult->coupon_info);
   }
 }

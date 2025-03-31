@@ -7,7 +7,6 @@ use App\Models\Base\LicensePackage as BaseLicensePackage;
 class LicensePackage extends BaseLicensePackage
 {
   const TYPE_STANDARD     = 'standard';
-  const TYPE_EDUCATION    = 'education';
 
   const STATUS_ACTIVE     = 'active';
   const STATUS_INACTIVE   = 'inactive';
@@ -47,20 +46,9 @@ class LicensePackage extends BaseLicensePackage
     return $this->type === self::TYPE_STANDARD;
   }
 
-  public function isEducation(): bool
-  {
-    return $this->type === self::TYPE_EDUCATION;
-  }
-
   public function setTypeStandard(): self
   {
     $this->type = self::TYPE_STANDARD;
-    return $this;
-  }
-
-  public function setTypeEducation(): self
-  {
-    $this->type = self::TYPE_EDUCATION;
     return $this;
   }
 

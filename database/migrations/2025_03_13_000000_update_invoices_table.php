@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -18,6 +19,12 @@ return new class extends Migration
       $table->decimal('grand_total')->default(0.0)->after('credit');
       $table->decimal('credit_to_balance')->default(0.0)->after('grand_total');
     });
+
+    DB::table('invoices')->update([
+      'credit' => 0.0,
+      'grand_total' => DB::raw('total_amount'),
+      'credit_to_balance' => 0.0,
+    ]);
   }
 
   /**

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Base\Coupon as BaseCoupon;
+use Illuminate\Support\Carbon;
 
 class Coupon extends BaseCoupon
 {
@@ -73,8 +74,41 @@ class Coupon extends BaseCoupon
     return ProductInterval::build($this->interval, $this->interval_size);
   }
 
-  public function info(): CouponInfo
+  public function isLongTerm(): bool
   {
+    return $this->interval === self::INTERVAL_LONGTERM && $this->interval_count === 0;
+  }
+
+  public function isFixedTerm(): bool
+  {
+    return !$this->isLongTerm();
+  }
+
+  public function isFreeTrial(): bool
+  {
+    return $this->discount_type == self::DISCOUNT_TYPE_FREE_TRIAL || $this->percentage_off == 100;
+  }
+
+  /**
+   * extract coupon info
+   * @param mixed $starts_at null if it is not for real application
+   * @param mixed $ends_at null if it is decided by coupon's interval and interval_count
+   */
+  public function info(mixed $starts_at, mixed $ends_at = null): CouponInfo
+  {
+    if ($starts_at) {
+      $starts_at = Carbon::parse($starts_at);
+      if ($this->isLongTerm()) {
+        $ends_at = null;
+      } else if ($ends_at) {
+        $ends_at = Carbon::parse($ends_at);
+      } else {
+        $ends_at = $starts_at->add($this->interval, $this->interval_size * $this->interval_count);
+      }
+    } else {
+      $ends_at = null;
+    }
+
     return new CouponInfo(
       id: $this->id,
       code: $this->code,
@@ -86,7 +120,10 @@ class Coupon extends BaseCoupon
       percentage_off: $this->percentage_off,
       interval: $this->interval,
       interval_size: $this->interval_size,
-      interval_count: $this->interval_count
+      interval_count: $this->interval_count,
+      starts_at: $starts_at,
+      ends_at: $ends_at,
+      meta: $this->getMeta(),
     );
   }
 

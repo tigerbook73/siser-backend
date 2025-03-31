@@ -24,16 +24,16 @@ use Paddle\SDK\Resources\Prices\Operations\UpdatePrice;
 
 class PriceService extends PaddleEntityService
 {
-  public function getProPriceForEuCountry($country, $period): int
+  /**
+   * get the standard price (tax exclusive) for EU countries
+   */
+  public function getProPriceForEuCountry($country, $period): float
   {
-    $total = ($period == Plan::INTERVAL_MONTH) ? 899 : 9700;
+    $euPrices = config('country.eu_prices');
+    $total = $euPrices[$period] ?? $euPrices[Plan::INTERVAL_YEAR];
     $taxRate = CountryHelper::getEUCountryTaxRate($country);
 
-    if ($taxRate == null) {
-      throw new \Exception("Tax rate not found for EU country: {$country}");
-    }
-
-    return (int)($total / (1 + $taxRate));
+    return $total / (1 + $taxRate);
   }
 
   /**
@@ -96,7 +96,7 @@ class PriceService extends PaddleEntityService
 
       $currency = CurrencyCode::from($price['currency']);
       $amount = ($price['currency'] === 'EUR' && CountryHelper::isEuCountry($price['country'])) ?
-        $this->getProPriceForEuCountry($price['country'], $plan->interval) :
+        (int)$this->getProPriceForEuCountry($price['country'], $plan->interval) * $priceRate * CurrencyHelper::getDecimalFactor($price['currency']) :
         (int)($price['price'] * $priceRate * CurrencyHelper::getDecimalFactor($price['currency']));
 
       /**

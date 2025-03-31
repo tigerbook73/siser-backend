@@ -4,6 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Invoice;
 use App\Models\Subscription;
+use App\Services\Paddle\SubscriptionManagerPaddle;
+use App\Services\Paddle\SubscriptionService;
+use App\Services\Paddle\TransactionService;
 use Illuminate\Console\Command;
 
 class TestCommand extends Command
@@ -104,5 +107,37 @@ class TestCommand extends Command
     $this->info('invoice validation completed');
 
     return self::SUCCESS;
+  }
+
+  /**
+   * refresh all subscriptions: shall be from from tinker only
+   */
+  public function refreshSubscriptions()
+  {
+    /** @var SubscriptionService $subscriptionService */
+    $subscriptionService = app(SubscriptionManagerPaddle::class)->subscriptionService;
+    Subscription::whereNotNull('meta->paddle->subscription_id')
+      ->chunkById(60, function ($subscriptions) use ($subscriptionService) {
+        /** @var \App\Models\Subscription[] $subscriptions */
+        foreach ($subscriptions as $subscription) {
+          $subscriptionService->refreshSubscription($subscription);
+        }
+      });
+  }
+
+  /**
+   * refresh all invoices: shall be from from tinker only
+   */
+  public function refreshInvoices()
+  {
+    /** @var TransactionService $transactionService */
+    $transactionService = app(SubscriptionManagerPaddle::class)->transactionService;
+    Invoice::whereNotNull('meta->paddle->transaction_id')
+      ->chunkById(60, function ($invoices) use ($transactionService) {
+        /** @var \App\Models\Invoice[] $invoices */
+        foreach ($invoices as $invoice) {
+          $transactionService->refreshInvoice($invoice);
+        }
+      });
   }
 }

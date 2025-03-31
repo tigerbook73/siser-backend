@@ -222,21 +222,21 @@ class SubscriptionService extends PaddleEntityService
     $coupon = ($paddleSubscription->discount?->startsAt) ?
       PaddleMap::findCoupon($paddleSubscription->discount->id) :
       null;
-    if (
-      $coupon &&
-      $paddleSubscription->discount->startsAt < Carbon::parse($paddleSubscription->currentBillingPeriod?->endsAt)->subSeconds(60) &&
-      (!$paddleSubscription->discount->endsAt ||
-        $paddleSubscription->discount->endsAt > Carbon::parse($paddleSubscription->currentBillingPeriod?->endsAt)->subSeconds(60))
-    ) {
-      $subscription->coupon_id   = $coupon->id;
-      $subscription->setCouponInfo($coupon->info());
+    if ($coupon) {
+      $subscription->coupon_id = $coupon->id;
+      $subscription->setCouponInfo($coupon->info(
+        $paddleSubscription->discount->startsAt,
+        $paddleSubscription->discount->endsAt
+      ));
     } else {
       $subscription->coupon_id   = null;
       $subscription->setCouponInfo(null);
     }
 
-    // items
-    $subscription->setItems(SubscriptionItem::buildItems($paddleSubscription));
+    // items: if recurring transaction details exist, keep current items
+    if ($recurringTransactionDetails) {
+      $subscription->setItems(SubscriptionItem::buildItems($paddleSubscription));
+    }
 
     // next_invoice
     $nextTransaction  = $paddleSubscription->nextTransaction;
@@ -245,21 +245,13 @@ class SubscriptionService extends PaddleEntityService
       $currency         = $nextTransaction->details->totals->currencyCode->getValue();
       $totals           = $nextTransaction->details->totals;
       $taxRate          = (float)($nextTransaction->details->taxRatesUsed[0]->taxRate);
-      $couponInfo       = (
-        $coupon &&
-        $paddleSubscription->discount->startsAt < Carbon::parse($billingPeriod->startsAt)->addSeconds(60) &&
-        (!$paddleSubscription->discount->endsAt ||
-          $paddleSubscription->discount->endsAt > Carbon::parse($billingPeriod->endsAt)->subSeconds(60))
-      ) ?
-        $coupon->info() :
-        null;
 
       $subscription->setNextInvoice(new SubscriptionNextInvoice(
         current_period: $subscription->current_period + 1,
         current_period_start_date: Carbon::parse($billingPeriod->startsAt),
         current_period_end_date: Carbon::parse($billingPeriod->endsAt),
         plan_info: $subscription->getPlanInfo(),
-        coupon_info: $couponInfo,
+        coupon_info: $subscription->getCouponInfo(),
         license_package_info: $subscription->getLicensePackageInfo(),
         items: InvoiceItem::buildNextItemsForSubscription($paddleSubscription),
         price: CurrencyHelper::getDecimalPrice($currency, $totals->subtotal),
@@ -432,7 +424,7 @@ class SubscriptionService extends PaddleEntityService
       throw new HttpException(400, 'Subscription is not active or not created from Paddle');
     }
 
-    $paddleSubscription = $this->paddleService->getSubscription($subscription->getMeta()->paddle->subscription_id);
+    $paddleSubscription = $this->paddleService->getSubscriptionWithIncludes($subscription->getMeta()->paddle->subscription_id);
 
     return [
       'update_payment_method' => $paddleSubscription->managementUrls->updatePaymentMethod,
@@ -483,7 +475,8 @@ class SubscriptionService extends PaddleEntityService
 
   public function refreshSubscription(Subscription $subscription): Subscription
   {
-    $paddleSubscription = $this->paddleService->getSubscription($subscription->getMeta()->paddle->subscription_id);
+    $paddleSubscription = $this->paddleService->getSubscriptionWithIncludes($subscription->getMeta()->paddle->subscription_id);
+    $this->result->appendMessage("refreshing subscription ({$subscription->id}) with paddle subscription ({$paddleSubscription->id})", location: __FUNCTION__);
     $this->updateSubscription($subscription, $paddleSubscription);
     return $subscription;
   }

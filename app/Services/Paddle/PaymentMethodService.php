@@ -36,10 +36,10 @@ class PaymentMethodService extends PaddleEntityService
 
     $paddleCard = $paymentAttempt->methodDetails->card;
     $paymentMethod->setDisplayData(new PaymentMethodDisplayData(
-      brand: $paddleCard->type ?? "",
-      last_four_digits: $paddleCard->last4 ?? "",
-      expiration_year: $paddleCard->expiryYear,
-      expiration_month: $paddleCard->expiryMonth,
+      brand: $paddleCard->type ?? null,
+      last_four_digits: $paddleCard->last4 ?? null,
+      expiration_year: $paddleCard->expiryYear ?? null,
+      expiration_month: $paddleCard->expiryMonth ?? null,
     ));
     $paymentMethod->setMetaPaddlePaymentMethodId($paymentAttempt->paymentMethodId);
     $paymentMethod->save();

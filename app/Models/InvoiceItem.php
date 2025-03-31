@@ -99,6 +99,9 @@ class InvoiceItem
         ),
       );
     }
+
+    // sort by quantity descending (keep the most outstanding items first)
+    usort($invoiceItems, fn($a, $b) => $b->quantity - $a->quantity);
     return $invoiceItems;
   }
 

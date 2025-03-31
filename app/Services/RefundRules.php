@@ -21,11 +21,11 @@ class RefundRules
         ->setReason("invoice in {$invoice->status} can not be refunded.");
     }
 
-    // check 2: invoice must not be free trial
-    if ($invoice->total_amount == 0) {
+    // check 2: paid amount must be greater than 0
+    if ($invoice->grand_total <= 0.005) {
       return (new RefundableResult())
         ->setRefundable(false)
-        ->setReason('invoice with total_amount = 0 can not be refunded');
+        ->setReason('invoice with paid amount = 0 can not be refunded');
     }
 
     // check 3: invoice must not be in dispute

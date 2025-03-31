@@ -24,7 +24,7 @@ class LicensePackageController extends SimpleController
   protected function getCreateRules(array $inputs = []): array
   {
     return [
-      'type'          => ['required', 'string', Rule::in([LicensePackage::TYPE_STANDARD, LicensePackage::TYPE_EDUCATION])],
+      'type'          => ['required', 'string', Rule::in([LicensePackage::TYPE_STANDARD])],
       'name'          => ['required', 'string', 'max:255'],
       'price_table'   => ['required', 'array'],
       'status'        => ['required', Rule::in([LicensePackage::STATUS_ACTIVE, LicensePackage::STATUS_INACTIVE])],

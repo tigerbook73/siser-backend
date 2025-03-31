@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Support\Carbon;
 
 class CouponInfo implements Arrayable
 {
@@ -18,6 +19,9 @@ class CouponInfo implements Arrayable
     public string $interval,
     public int $interval_size,
     public int $interval_count,
+    public ?Carbon $starts_at,
+    public ?Carbon $ends_at,
+    public CouponMeta $meta
   ) {}
 
   static public function from(array $data): CouponInfo
@@ -33,7 +37,10 @@ class CouponInfo implements Arrayable
       $data['percentage_off'] ?? 0.0,
       $data['interval'],
       $data['interval_size'] ?? 1,
-      $data['interval_count'] ?? 1
+      $data['interval_count'] ?? 1,
+      isset($data['starts_at']) ? Carbon::parse($data['starts_at']) : null,
+      isset($data['ends_at']) ? Carbon::parse($data['ends_at']) : null,
+      CouponMeta::from($data['meta'] ?? []),
     );
   }
 
@@ -51,6 +58,9 @@ class CouponInfo implements Arrayable
       'interval'        => $this->interval,
       'interval_size'   => $this->interval_size,
       'interval_count'  => $this->interval_count,
+      'starts_at'      => $this->starts_at ? $this->starts_at->format('Y-m-d\TH:i:s\Z') : null,
+      'ends_at'        => $this->ends_at ? $this->ends_at->format('Y-m-d\TH:i:s\Z') : null,
+      'meta'            => $this->meta->toArray(),
     ];
   }
 }

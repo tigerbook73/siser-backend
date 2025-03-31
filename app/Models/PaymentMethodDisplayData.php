@@ -25,19 +25,11 @@ class PaymentMethodDisplayData
 
   public function toArray(): array
   {
-    $data = [];
-    if ($this->brand) {
-      $data['brand'] = $this->brand;
-    }
-    if ($this->expiration_year) {
-      $data['expiration_year'] = $this->expiration_year;
-    }
-    if ($this->expiration_month) {
-      $data['expiration_month'] = $this->expiration_month;
-    }
-    if ($this->last_four_digits) {
-      $data['last_four_digits'] = $this->last_four_digits;
-    }
-    return $data;
+    return [
+      'brand' => $this->brand,
+      'expiration_year' => $this->expiration_year,
+      'expiration_month' => $this->expiration_month,
+      'last_four_digits' => $this->last_four_digits,
+    ];
   }
 }

@@ -68,27 +68,7 @@ class PaddleCommand extends Command
   {
     $subcmd = $this->argument('subcmd');
     if (!$subcmd || $subcmd == 'help') {
-      $this->info('Usage: php artisan paddle:cmd {subcmd} {option} {--force}');
-      $this->info('');
-      $this->info('subcmd:');
-      $this->info('  help:                display this information');
-      $this->info('  sync-customer:       sync customers to paddle');
-      $this->info('  sync-product:        sync products & plans to paddle');
-      $this->info('  sync-price:          sync prices to paddle');
-      $this->info('  sync-discount:       sync discounts to paddle');
-      $this->info('  sync-all:            sync all to paddle');
-      $this->info('  archive-all:         archive all');
-      $this->info('  enable-hook:         enable & update webbook');
-      $this->info('  refresh-model:       update model from paddle');
-      $this->info('  replay-notification: replay notification');
-      $this->info('');
-      $this->info('options:');
-      $this->info('  --subscription:      subscription id,  only for refresh-model subcmd');
-      $this->info('  --invoice:           invoice id,       only for refresh-model subcmd');
-      $this->info('  --refund:            refund id,        only for refresh-model subcmd');
-      $this->info('  --notification:      notification id,  only for replay-notification subcmd');
-      $this->info('  --force:             force update when running sync-* subcmds');
-      $this->info('');
+      $this->displayHelp();
 
       return self::SUCCESS;
     }
@@ -96,19 +76,19 @@ class PaddleCommand extends Command
     $force = $this->option('force');
 
     switch ($subcmd) {
-      case 'sync-customer':
+      case 'sync-customers':
         $this->syncCustomers(force: $force);
         return self::SUCCESS;
 
-      case 'sync-product':
+      case 'sync-products':
         $this->syncProducts(force: $force);
         return self::SUCCESS;
 
-      case 'sync-price':
+      case 'sync-prices':
         $this->syncPrices(force: $force);
         return self::SUCCESS;
 
-      case 'sync-discount':
+      case 'sync-discounts':
         $this->syncDiscounts(force: $force);
         return self::SUCCESS;
 
@@ -119,13 +99,19 @@ class PaddleCommand extends Command
         $this->syncDiscounts(force: $force);
         return self::SUCCESS;
 
+      case 'stop-all-subscriptions':
+        if (env('APP_TEST_CODE')) {
+          $this->stopAllSubscriptions();
+        }
+        return self::SUCCESS;
+
       case 'archive-all':
         if (env('APP_TEST_CODE')) {
           $this->archiveAllCustomers();
           $this->archiveAllProducts();
           $this->archiveAllPrices();
-          $this->archiveAllCoupon();
-          $this->stopAllSubscription();
+          $this->archiveAllDiscounts();
+          $this->stopAllSubscriptions();
         }
         return self::SUCCESS;
 
@@ -145,6 +131,32 @@ class PaddleCommand extends Command
         $this->error("Invalid subcmd: {$subcmd}");
         return self::FAILURE;
     }
+  }
+
+  public function displayHelp(): void
+  {
+    $this->info('Usage: php artisan paddle:cmd {subcmd} {option} {--force}');
+    $this->info('');
+    $this->info('subcmd:');
+    $this->info('  help:                    display this information');
+    $this->info('  sync-customers:          sync customers to paddle');
+    $this->info('  sync-products:           sync products & plans to paddle');
+    $this->info('  sync-prices:             sync prices to paddle');
+    $this->info('  sync-discounts:          sync discounts to paddle');
+    $this->info('  sync-all:                sync all to paddle');
+    $this->info('  stop-all-subscriptions:  stop all subscriptions');
+    $this->info('  archive-all:             archive all');
+    $this->info('  enable-hook:             enable & update webhook');
+    $this->info('  refresh-model:           update model from paddle, see options for possible models');
+    $this->info('  replay-notification:     replay notification');
+    $this->info('');
+    $this->info('options:');
+    $this->info('  --subscription:          subscription id,  only for refresh-model subcmd');
+    $this->info('  --invoice:               invoice id,       only for refresh-model subcmd');
+    $this->info('  --refund:                refund id,        only for refresh-model subcmd');
+    $this->info('  --notification:          notification id,  only for replay-notification subcmd');
+    $this->info('  --force:                 force update when running sync-* subcmds');
+    $this->info('');
   }
 
   /**
@@ -460,13 +472,13 @@ class PaddleCommand extends Command
     });
 
     // archive paddle discount that not exists in local coupons
-    $this->archiveOrphanedDiscount();
+    $this->archiveOrphanedDiscounts();
   }
 
   /**
    * archive paddle discount that not exists in local coupons
    */
-  public function archiveOrphanedDiscount()
+  public function archiveOrphanedDiscounts()
   {
     // archive paddle discount that not exists in local coupons
     foreach ($this->manager->paddleService->paddle->discounts->list() as $paddleDiscount) {
@@ -539,10 +551,10 @@ class PaddleCommand extends Command
     $this->info("All prices archived.");
   }
 
-  public function archiveAllCoupon()
+  public function archiveAllDiscounts()
   {
     $this->info("");
-    $this->info("Starting to archive all coupons...");
+    $this->info("Starting to archive all discounts...");
     $count = 0;
     foreach ($this->manager->paddleService->paddle->discounts->list() as $paddleDiscounts) {
       $this->manager->paddleService->paddle->discounts->update($paddleDiscounts->id, new UpdateDiscount(
@@ -554,10 +566,10 @@ class PaddleCommand extends Command
     if ($count !== 0) {
       printf("\n");
     }
-    $this->info("All coupons archived.");
+    $this->info("All discounts archived.");
   }
 
-  public function stopAllSubscription()
+  public function stopAllSubscriptions()
   {
     $this->info("");
     $this->info("Starting to stop all subscriptions...");

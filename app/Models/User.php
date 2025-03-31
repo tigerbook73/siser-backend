@@ -193,14 +193,6 @@ class User extends UserWithTrait
       ->first();
   }
 
-  public function getPendingSubscription(): ?Subscription
-  {
-    return $this->subscriptions()
-      ->where('status', Subscription::STATUS_PENDING)
-      ->where('subscription_level', '>', 1)
-      ->first();
-  }
-
   public function updateSubscriptionLevel()
   {
     // test code

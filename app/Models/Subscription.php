@@ -17,13 +17,11 @@ class Subscription extends BaseSubscription
   public const STATUS_ACTIVE                  = 'active';
   public const STATUS_DRAFT                   = 'draft';
   public const STATUS_FAILED                  = 'failed';
-  public const STATUS_PENDING                 = 'pending';
   public const STATUS_STOPPED                 = 'stopped';
 
   // sub_status (when status is 'active')
   public const SUB_STATUS_CANCELLING          = 'cancelling';     // to be cancelled at the end of current period
   public const SUB_STATUS_NORMAL              = 'normal';         // default sub status for all status
-  public const SUB_STATUS_ORDER_PENDING       = 'order_pending';  // for STATUS_PENDING
 
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -142,7 +140,7 @@ class Subscription extends BaseSubscription
   public function fillPlanAndCoupon(Plan $plan, ?Coupon $coupon = null, ?LicensePackage $licensePackage = null, int $licenseQuantity = 0, float $taxRate = 0.0): self
   {
     $planInfo     = $plan->info($this->getBillingInfo()->address->country);
-    $couponInfo   = $coupon?->info();
+    $couponInfo   = $coupon?->info($this->start_date);
     $licensePackageInfo = $licensePackage?->info($licenseQuantity);
 
     $this->plan_id              = $planInfo->id;

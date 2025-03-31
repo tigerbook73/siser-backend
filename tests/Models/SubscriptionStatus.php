@@ -18,8 +18,6 @@ class SubscriptionStatus
 
     const FAILED = 'failed';
 
-    const PENDING = 'pending';
-
     const STOPPED = 'stopped';
 
     /**
@@ -32,7 +30,6 @@ class SubscriptionStatus
             self::ACTIVE,
             self::DRAFT,
             self::FAILED,
-            self::PENDING,
             self::STOPPED
         ];
     }

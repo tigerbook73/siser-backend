@@ -226,14 +226,14 @@ class DatabaseSeeder extends Seeder
      */
     $coupon_event = 'DB Seeders';
 
-    // 33 off 1 month shared
+    // 10% off 1 month shared
     Coupon::create([
-      'code' => '33OFF1MS',
-      'name' => '33% off for 1 month',
+      'code' => '10OFF1MS',
+      'name' => '10% off for 1 month (shared)',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
-      'percentage_off' => 33,
+      'percentage_off' => 10,
       'interval' => Coupon::INTERVAL_MONTH,
       'interval_size' => 1,
       'interval_count' => 1,
@@ -242,30 +242,14 @@ class DatabaseSeeder extends Seeder
       'status' => 'active',
     ]);
 
-    // 23 off 3 month shared
+    // 30% off 3 month once off
     Coupon::create([
-      'code' => '23OFF3MS',
-      'name' => '23% off for 3 months',
-      'type' => Coupon::TYPE_SHARED,
-      'coupon_event' => $coupon_event,
-      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
-      'percentage_off' => 23,
-      'interval' => Coupon::INTERVAL_MONTH,
-      'interval_size' => 1,
-      'interval_count' => 3,
-      'start_date' => '2023-01-01',
-      'end_date' => '2099-12-31',
-      'status' => 'active',
-    ]);
-
-    // 23 off 3 month once off
-    Coupon::create([
-      'code' => '23OFF3MO',
-      'name' => '23% off for 3 months',
+      'code' => '30OFF3MO',
+      'name' => '30% off for 3 months (once off)',
       'type' => Coupon::TYPE_ONCE_OFF,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
-      'percentage_off' => 23,
+      'percentage_off' => 30,
       'interval' => Coupon::INTERVAL_MONTH,
       'interval_size' => 1,
       'interval_count' => 3,
@@ -274,14 +258,30 @@ class DatabaseSeeder extends Seeder
       'status' => 'active',
     ]);
 
-    // 9 off 1 year shared
+    // 2 month free-trial (shared)
     Coupon::create([
-      'code' => '9OFF1YS',
-      'name' => '9% off for 1 year',
+      'code' => 'FREE2MS',
+      'name' => '2-month Free Trial (shared)',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => $coupon_event,
+      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+      'percentage_off' => 100,
+      'interval' => Coupon::INTERVAL_MONTH,
+      'interval_size' => 1,
+      'interval_count' => 2,
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // 10% off 1 year (shared)
+    Coupon::create([
+      'code' => '10OFF1YS',
+      'name' => '10% off for 1 year (shared)',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
-      'percentage_off' => 9,
+      'percentage_off' => 10,
       'interval' => Coupon::INTERVAL_YEAR,
       'interval_size' => 1,
       'interval_count' => 1,
@@ -290,14 +290,30 @@ class DatabaseSeeder extends Seeder
       'status' => 'active',
     ]);
 
-    // 13 off longterm shared
+    // 1 year free-trial (shared)
     Coupon::create([
-      'code' => '13OFF',
-      'name' => '13% off',
+      'code' => 'FREE1YS',
+      'name' => '1-year Free Trial (shared)',
+      'type' => Coupon::TYPE_SHARED,
+      'coupon_event' => $coupon_event,
+      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
+      'percentage_off' => 100,
+      'interval' => Coupon::INTERVAL_YEAR,
+      'interval_size' => 1,
+      'interval_count' => 1,
+      'start_date' => '2023-01-01',
+      'end_date' => '2099-12-31',
+      'status' => 'active',
+    ]);
+
+    // 20% off longterm (shared)
+    Coupon::create([
+      'code' => '20OFFS',
+      'name' => '20% off for longterm (shared)',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
-      'percentage_off' => 13,
+      'percentage_off' => 20,
       'interval' => Coupon::INTERVAL_LONGTERM,
       'interval_size' => 1,
       'interval_count' => 0,
@@ -309,7 +325,7 @@ class DatabaseSeeder extends Seeder
     // free 2 day shared
     Coupon::create([
       'code' => 'FREE2DS',
-      'name' => 'Leonardo® Design Studio Pro 2-day Free Trial',
+      'name' => '2-day Free Trial',
       'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
       'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
@@ -322,14 +338,14 @@ class DatabaseSeeder extends Seeder
       'status' => 'active',
     ]);
 
-    // free 2 day once off
+    // 10 off 2 day (shared)
     Coupon::create([
-      'code' => 'FREE2DO',
-      'name' => 'Leonardo® Design Studio Pro 2-day Free Trial',
-      'type' => Coupon::TYPE_ONCE_OFF,
+      'code' => '10OFF2DS',
+      'name' => '10% off for 2-day (shared)',
+      'type' => Coupon::TYPE_SHARED,
       'coupon_event' => $coupon_event,
-      'discount_type' => Coupon::DISCOUNT_TYPE_FREE_TRIAL,
-      'percentage_off' => 100,
+      'discount_type' => Coupon::DISCOUNT_TYPE_PERCENTAGE,
+      'percentage_off' => 10,
       'interval' => Coupon::INTERVAL_DAY,
       'interval_size' => 2,
       'interval_count' => 1,
@@ -342,6 +358,13 @@ class DatabaseSeeder extends Seeder
       'serial_no'     => '0000-1111-2222-3333',
       'model'         => 'Siser Cutter XY',
       'nickname'      => '__test__',
+      'user_id'       => $customer->id,
+    ]);
+
+    Machine::create([
+      'serial_no'     => '0000-1111-2222-4444',
+      'model'         => 'Siser Cutter XY 2',
+      'nickname'      => '__test__2',
       'user_id'       => $customer->id,
     ]);
 

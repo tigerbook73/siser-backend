@@ -22,6 +22,8 @@ php $BASEDIR/../artisan db:seed
 
 php $BASEDIR/../artisan paddle:cmd sync-all
 
+php $BASEDIR/../artisan paddle:cmd stop-all-subscriptions
+
 rm -rf $BASEDIR/../storage/logs/laravel.log
 
 

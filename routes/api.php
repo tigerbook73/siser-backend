@@ -176,7 +176,6 @@ Route::domain($domainAdmin)->group(function () {
     Route::post('/design-plans/{id}/deactivate', [PlanController::class, 'deactivate'])->middleware('access:design-plan.update');
 
     // license package
-    Route::get('/license-packages', [LicensePackageController::class, 'list'])->middleware('access:license-package.list');
     Route::get('/license-packages/{id}', [LicensePackageController::class, 'index'])->middleware('access:license-package.get');
     Route::post('/license-packages', [LicensePackageController::class, 'create'])->middleware('access:license-package.create');
     Route::patch('/license-packages/{id}', [LicensePackageController::class, 'update'])->middleware('access:license-package.update');
@@ -251,6 +250,9 @@ Route::get('/countries/{code}', [CountryController::class, 'indexWithCode']);
 // public plans
 Route::get('/plans', [PlanController::class, 'listPlan']);
 Route::get('/plans/{id}', [PlanController::class, 'indexPlan']);
+
+// public license packages
+Route::get('/license-packages', [LicensePackageController::class, 'list']);
 
 // software packages
 Route::get('/software-packages', [SoftwarePackageController::class, 'list']);

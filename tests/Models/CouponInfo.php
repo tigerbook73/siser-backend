@@ -42,4 +42,13 @@ class CouponInfo {
     /** @var int $interval_count */
     public $interval_count = 0;
 
+    /** @var \DateTime $starts_at */
+    public $starts_at;
+
+    /** @var \DateTime $ends_at */
+    public $ends_at;
+
+    /** @var \Tests\Models\CouponMeta $meta */
+    public $meta;
+
 }

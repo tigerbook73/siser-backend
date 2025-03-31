@@ -137,7 +137,7 @@ class TransactionService extends PaddleEntityService
 
     // coupon info
     $coupon = $paddleTransaction->discount ? PaddleMap::findCoupon($paddleTransaction->discount->id) : null;
-    $invoice->setCouponInfo($coupon?->info());
+    $invoice->setCouponInfo($coupon?->info($invoice->period_start_date, $invoice->period_end_date));
 
     // license package info: only set when invoice is created
     if (!$invoice->exists()) {
@@ -188,7 +188,7 @@ class TransactionService extends PaddleEntityService
     } else {
       $invoice->total_refunded = 0;
     }
-    $invoice->available_to_refund_amount = $invoice->total_amount - $invoice->total_refunded;
+    $invoice->available_to_refund_amount = $invoice->grand_total - $invoice->total_refunded;
 
     $invoice->pdf_file = null;
     $invoice->credit_memos = null;
@@ -197,7 +197,7 @@ class TransactionService extends PaddleEntityService
 
 
     if ($paddleTransaction->status == TransactionStatus::Completed() || $paddleTransaction->status == TransactionStatus::Paid()) {
-      if ($invoice->total_amount > 0 && $invoice->total_amount - $invoice->total_refunded < 0.005) {
+      if ($invoice->grand_total > 0 && $invoice->grand_total - $invoice->total_refunded < 0.005) {
         $invoice->setStatus(Invoice::STATUS_REFUNDED);
       } else {
         if (
