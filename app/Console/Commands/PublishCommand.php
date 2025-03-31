@@ -109,22 +109,22 @@ class PublishCommand extends Command
     $this->info('');
     $this->info('validate subscription ...');
 
-    $progressBar = $this->output->createProgressBar(
-      Subscription::where('status', Subscription::STATUS_ACTIVE)
-        ->where('subscription_level', 2)
-        ->count()
-    );
-    $progressBar->start();
-    Subscription::where('status', Subscription::STATUS_ACTIVE)
+    $lastRecord = new LastRecord(__FUNCTION__, $this->force);
+    $query = Subscription::where('status', Subscription::STATUS_ACTIVE)
       ->where('subscription_level', 2)
-      ->chunkById(60, function ($subscriptions) use ($progressBar) {
-        /** @var \App\Models\Subscription[] $subscriptions */
-        foreach ($subscriptions as $subscription) {
-          // validate subscription
-          $this->validateSubscription($subscription);
-          $progressBar->advance();
-        }
-      });
+      ->where('id', '>', $lastRecord->getLast());
+
+    $progressBar = $this->output->createProgressBar($query->count());
+    $progressBar->start();
+    $query->chunkById(60, function ($subscriptions) use ($progressBar, $lastRecord) {
+      /** @var \App\Models\Subscription[] $subscriptions */
+      foreach ($subscriptions as $subscription) {
+        // validate subscription
+        $this->validateSubscription($subscription);
+        $lastRecord->setLast($subscription->id);
+        $progressBar->advance();
+      }
+    });
     $progressBar->finish();
 
     $this->info('');
@@ -174,13 +174,16 @@ class PublishCommand extends Command
     $this->info('');
     $this->info('validate invoices ...');
 
-    $progressBar = $this->output->createProgressBar(Invoice::count());
-    $progressBar->start();
-    Invoice::chunkById(60, function ($invoices) use ($progressBar) {
-      /** @var \App\Models\Invoice[] $invoices */
+    $lastRecord = new LastRecord(__FUNCTION__, $this->force);
+    $query = Invoice::where('id', '>', $lastRecord->getLast());
 
+    $progressBar = $this->output->createProgressBar($query->count());
+    $progressBar->start();
+    $query->chunkById(60, function ($invoices) use ($progressBar, $lastRecord) {
+      /** @var \App\Models\Invoice[] $invoices */
       foreach ($invoices as $invoice) {
         $this->validateInvoice($invoice);
+        $lastRecord->setLast($invoice->id);
         $progressBar->advance();
       }
     });
@@ -229,21 +232,22 @@ class PublishCommand extends Command
     $this->info('');
     $this->info("refresh all subscriptions ...\n");
 
-    $progressBar = $this->output->createProgressBar(
-      Subscription::whereNotNull('meta->paddle->subscription_id')
-        ->count()
-    );
+    $lastRecord = new LastRecord(__FUNCTION__, $this->force);
+    $query = Subscription::whereNotNull('meta->paddle->subscription_id')
+      ->where('id', '>', $lastRecord->getLast());
+
+    $progressBar = $this->output->createProgressBar($query->count());
     $progressBar->start();
-    Subscription::whereNotNull('meta->paddle->subscription_id')
-      ->chunkById(60, function ($subscriptions) use ($progressBar) {
-        /** @var \App\Models\Subscription[] $subscriptions */
-        foreach ($subscriptions as $subscription) {
-          if (!$this->dryRun) {
-            $this->manager->subscriptionService->refreshSubscription($subscription);
-          }
-          $progressBar->advance();
+    $query->chunkById(60, function ($subscriptions) use ($progressBar, $lastRecord) {
+      /** @var \App\Models\Subscription[] $subscriptions */
+      foreach ($subscriptions as $subscription) {
+        if (!$this->dryRun) {
+          $this->manager->subscriptionService->refreshSubscription($subscription);
         }
-      });
+        $lastRecord->setLast($subscription->id);
+        $progressBar->advance();
+      }
+    });
     $progressBar->finish();
 
     $this->info('');
@@ -258,24 +262,63 @@ class PublishCommand extends Command
     $this->info('');
     $this->info("refresh all invoices ...\n");
 
-    $progressBar = $this->output->createProgressBar(
-      Invoice::whereNotNull('meta->paddle->transaction_id')
-        ->count()
-    );
+    $lastRecord = new LastRecord(__FUNCTION__, $this->force);
+    $query = Invoice::whereNotNull('meta->paddle->transaction_id')
+      ->where('id', '>', $lastRecord->getLast());
+
+    $progressBar = $this->output->createProgressBar($query->count());
     $progressBar->start();
-    Invoice::whereNotNull('meta->paddle->transaction_id')
-      ->chunkById(60, function ($invoices) use ($progressBar) {
-        /** @var \App\Models\Invoice[] $invoices */
-        foreach ($invoices as $invoice) {
-          if (!$this->dryRun) {
-            $this->manager->transactionService->refreshInvoice($invoice);
-          }
-          $progressBar->advance();
+    $query->chunkById(60, function ($invoices) use ($progressBar, $lastRecord) {
+      /** @var \App\Models\Invoice[] $invoices */
+      foreach ($invoices as $invoice) {
+        if (!$this->dryRun) {
+          $this->manager->transactionService->refreshInvoice($invoice);
         }
-      });
+        $lastRecord->getLast();
+        $progressBar->advance();
+      }
+    });
     $progressBar->finish();
 
     $this->info('');
     $this->info('refresh invoices completed');
+  }
+}
+
+
+class LastRecord
+{
+  public function __construct(
+    public string $type,
+    bool $reset = false,
+    public $path = '/tmp/last_record/'
+  ) {
+    if ($reset) {
+      $this->setLast(0);
+    }
+  }
+
+  public function setLast(int $id): void
+  {
+    // open temp file /tmp/last_record/$type.tmp
+    // write id to file
+    $file = $this->path . $this->type . '.tmp';
+    if (!file_exists($file)) {
+      if (!is_dir($this->path))
+        mkdir(dirname($file), 0777, true);
+    }
+    file_put_contents($file, $id);
+  }
+
+  public function getLast(): int
+  {
+    // open temp file /tmp/last_record/$type.tmp
+    // read id from file
+    $file = $this->path . $this->type . '.tmp';
+    if (!file_exists($file)) {
+      return 0;
+    }
+    $id = file_get_contents($file);
+    return (int)$id ?: 0;
   }
 }
