@@ -15,6 +15,15 @@ class LicensePackageInfo implements Arrayable
 
   static public function from(array $data): LicensePackageInfo
   {
+    // backward compatibility
+    // if $data['quantity'] and $data['price_rate'] are set and $data['price_rate'] is numeric
+    if (isset($data['quantity']) && isset($data['price_rate']) && is_numeric($data['price_rate'])) {
+      $data['price_rate'] = [
+        'quantity' => $data['quantity'],
+        'price_rate' => $data['price_rate'],
+      ];
+    }
+
     return new LicensePackageInfo(
       $data['id'],
       $data['type'],
