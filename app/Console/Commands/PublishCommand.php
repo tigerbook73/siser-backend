@@ -7,6 +7,11 @@ use App\Models\Subscription;
 use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Console\Command;
 use App\Console\Commands\LastRecord;
+use App\Models\MigrationFunction;
+use App\Models\Paddle\PriceCustomData;
+use App\Models\Paddle\ProductCustomData;
+use App\Models\PaddleMap;
+use App\Models\Plan;
 
 class PublishCommand extends Command
 {
@@ -59,6 +64,10 @@ class PublishCommand extends Command
     }
 
     switch ($subcmd) {
+      case 'migrate':
+        $this->migrate();
+        break;
+
       case 'validate-subscriptions':
         $this->validateSubscriptions();
         break;
@@ -96,6 +105,15 @@ class PublishCommand extends Command
     $this->info('Options:');
     $this->info('  --dry-run                Do not save changes to the database');
     $this->info('  --force                  Force the command to run without confirmation');
+  }
+
+  public function migrate()
+  {
+    $this->info('');
+
+    $this->migrate2025_04_03();
+
+    $this->info('');
   }
 
 
@@ -283,5 +301,51 @@ class PublishCommand extends Command
 
     $this->info('');
     $this->info('refresh invoices completed');
+  }
+
+  /**
+   * update PaddleMap
+   */
+  public function updatePaddleMap(): void
+  {
+    /**
+     * for each paddle products, update the paddle map
+     */
+    foreach ($this->manager->paddleService->listProducts() as $product) {
+      $productCustomData = ProductCustomData::from($product->customData?->data);
+      if ($productCustomData->product_id) {
+        PaddleMap::createOrUpdate($product->id, Plan::class, $productCustomData->product_id, $productCustomData);
+      }
+    }
+
+    /**
+     * for each paddle prices, update the paddle map
+     */
+    foreach ($this->manager->paddleService->listPrices() as $price) {
+      $priceCustomData = PriceCustomData::from($price->customData?->data);
+      if ($priceCustomData->plan_id) {
+        PaddleMap::createOrUpdate($price->id, Plan::class, $priceCustomData->plan_id, $priceCustomData);
+      }
+    }
+  }
+
+  /**
+   * migrate 2020-04-03
+   */
+  public function migrate2025_04_03()
+  {
+    $migrateFunction = MigrationFunction::startFunction(__METHOD__);
+    if (!$migrateFunction) {
+      $this->info('migrate "' . __METHOD__ . '" already exists');
+      return;
+    }
+
+    $this->info('migrate "' . __METHOD__ . '" start ...');
+
+    $this->updatePaddleMap();
+
+    $this->info('migrate "' . __METHOD__ . '" done');
+
+    $migrateFunction->complete();
   }
 }

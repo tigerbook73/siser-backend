@@ -14,6 +14,9 @@ fi
 echo "do migration ..."
 php artisan migrate --force
 
+echo "do migration functions ..."
+php artisan publish:cmd migrate
+
 (
   echo "start queue service ..."
   while [ true ]; do
