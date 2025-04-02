@@ -275,7 +275,7 @@ class PublishCommand extends Command
         if (!$this->dryRun) {
           $this->manager->transactionService->refreshInvoice($invoice);
         }
-        $lastRecord->getLast();
+        $lastRecord->setLast($invoice->id);
         $progressBar->advance();
       }
     });
@@ -284,8 +284,4 @@ class PublishCommand extends Command
     $this->info('');
     $this->info('refresh invoices completed');
   }
-
-  /**
-   * refresh all products and prices with latest CustomData
-   */
 }
