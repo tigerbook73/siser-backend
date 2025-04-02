@@ -119,7 +119,13 @@ class InvoiceItem
       // because nextTransaction does not contain price data, we need to find the plan and license quantity
       $planWithMeta = PaddleMap::findPlanWithMeta($lineItem->priceId);
       $plan = $planWithMeta->model;
-      $priceCustomData = PriceCustomData::from($planWithMeta->meta);
+      $priceCustomData = PriceCustomData::from(
+        $planWithMeta->meta ?? [
+          // fallback to default values for backward compatibility with previous version of PaddleMap
+          'plan_name' => $plan->name,
+          'license_quantity' => 1
+        ]
+      );
 
       $invoiceItems[] = new self(
         name: $priceCustomData->plan_name,
