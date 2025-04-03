@@ -13,6 +13,7 @@ use App\Models\Paddle\ProductCustomData;
 use App\Models\PaddleMap;
 use App\Models\Plan;
 use App\Models\Product;
+use Paddle\SDK\Entities\Shared\Status;
 use Paddle\SDK\Resources\Prices\Operations\ListPrices;
 use Paddle\SDK\Resources\Products\Operations\ListProducts;
 
@@ -315,7 +316,12 @@ class PublishCommand extends Command
      * update products in the paddle map
      */
     $productIds = PaddleMap::where('model_class', Product::class)->get()->pluck('paddle_id')->toArray();
-    foreach ($this->manager->paddleService->paddle->products->list(new ListProducts(ids: $productIds)) as $product) {
+    foreach (
+      $this->manager->paddleService->paddle->products->list(new ListProducts(
+        ids: $productIds,
+        statuses: [Status::Active(), Status::Archived()]
+      )) as $product
+    ) {
       $productCustomData = ProductCustomData::from($product->customData?->data);
       if ($productCustomData->product_id) {
         PaddleMap::createOrUpdate($product->id, Product::class, $productCustomData->product_id, $productCustomData);
@@ -326,7 +332,12 @@ class PublishCommand extends Command
      * update prices in the paddle map
      */
     $priceIds = PaddleMap::where('model_class', Plan::class)->get()->pluck('paddle_id')->toArray();
-    foreach ($this->manager->paddleService->paddle->prices->list(new ListPrices(ids: $priceIds)) as $price) {
+    foreach (
+      $this->manager->paddleService->paddle->prices->list(new ListPrices(
+        ids: $priceIds,
+        statuses: [Status::Active(), Status::Archived()]
+      )) as $price
+    ) {
       $priceCustomData = PriceCustomData::from($price->customData?->data);
       if ($priceCustomData->plan_id) {
         PaddleMap::createOrUpdate($price->id, Plan::class, $priceCustomData->plan_id, $priceCustomData);
