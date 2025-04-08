@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "910e47ffc983f9ecff30e40c898cdf1e",
+    "content-hash": "ff290ff23dd54c464a4aedd9b2a19c9f",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -3663,16 +3663,16 @@
         },
         {
             "name": "paddlehq/paddle-php-sdk",
-            "version": "dev-main",
+            "version": "v1.9.1",
             "source": {
                 "type": "git",
-                "url": "https://github.com/futurecorporation/paddle-php-sdk.git",
-                "reference": "9d7d7ac7e0b46f60aa4bf1915f5e6d3369630c31"
+                "url": "https://github.com/PaddleHQ/paddle-php-sdk.git",
+                "reference": "c327b04d8b10499ca4eeb9b62b90c76be94e3ae9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/futurecorporation/paddle-php-sdk/zipball/9d7d7ac7e0b46f60aa4bf1915f5e6d3369630c31",
-                "reference": "9d7d7ac7e0b46f60aa4bf1915f5e6d3369630c31",
+                "url": "https://api.github.com/repos/PaddleHQ/paddle-php-sdk/zipball/c327b04d8b10499ca4eeb9b62b90c76be94e3ae9",
+                "reference": "c327b04d8b10499ca4eeb9b62b90c76be94e3ae9",
                 "shasum": ""
             },
             "require": {
@@ -3704,18 +3704,13 @@
                 "rector/rector": "^1.2",
                 "symfony/var-dumper": "^6.3"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-4": {
                     "Paddle\\SDK\\": "src"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Paddle\\SDK\\Tests\\": "tests"
-                }
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "Apache-2.0"
             ],
@@ -3733,9 +3728,10 @@
                 "sdk"
             ],
             "support": {
-                "source": "https://github.com/futurecorporation/paddle-php-sdk/tree/dev"
+                "issues": "https://github.com/PaddleHQ/paddle-php-sdk/issues",
+                "source": "https://github.com/PaddleHQ/paddle-php-sdk/tree/v1.9.1"
             },
-            "time": "2025-01-31T03:49:50+00:00"
+            "time": "2025-02-18T17:07:16+00:00"
         },
         {
             "name": "php-http/client-common",
@@ -11826,9 +11822,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "paddlehq/paddle-php-sdk": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

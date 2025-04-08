@@ -7,12 +7,6 @@
     "laravel"
   ],
   "license": "MIT",
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/futurecorporation/paddle-php-sdk.git"
-    }
-  ],
   "require": {
     "php": "^8.0.2",
     "aws/aws-sdk-php": "^3.224",
@@ -21,7 +15,7 @@
     "laravel/framework": "^9.11",
     "laravel/octane": "^1.5",
     "laravel/tinker": "^2.7",
-    "paddlehq/paddle-php-sdk": "*@dev",
+    "paddlehq/paddle-php-sdk": "^1.9",
     "php-open-source-saver/jwt-auth": "^1.4",
     "spiral/roadrunner": "^2.8.2"
   },
