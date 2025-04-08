@@ -4,7 +4,6 @@
   - [Setting](#markdown-header-setting)
 - [Backend](#markdown-header-backend)
   - [Install packages](#markdown-header-install-packages)
-  - [Configure host](#markdown-header-configure-host)
   - [Configure .env](#markdown-header-configure-env)
   - [Setup / create local DB](#markdown-header-setup-create-local-db)
   - [Setup developement mail server](#markdown-header-setup-developement-mail-server)
@@ -31,7 +30,6 @@ Please see .vscode/extensions.json for detailed information. The following are s
 
 + PHP Debug
 + PHP Intelephense
-+ Prettier - Code formatter
 + ...
 
 
@@ -43,14 +41,6 @@ Please see .vscode/extensions.json for detailed information. The following are s
 ### Install packages
 ```bash
 composer install
-```
-
-### Configure host
-```bash
-# add siser.test to /etc/hosts
-sudo echo "
-127.0.1.1   siser.test    # default host name for develop environment
-" >> /etc/hosts
 ```
 
 ### Configure .env
@@ -96,9 +86,15 @@ See Laravel Homestead or Sail document for help.
 See Laravel MailHog for help.
 
 ### Rebuild Database
+
 ```bash
 # run the follwoing command to rebuild database from scratch.
 ./bin/rebuild-data.sh
+```
+
+```bash
+# run the follwoing command to rebuild database (for both local and test environments) and generate Models (when you update the database schema)
+./bin/rebuild-model.sh
 ```
 
 ### Start development server
@@ -120,5 +116,6 @@ Please be familar with artisan command and artisan tinker. These tools will grea
 
 ### PHPUnit test
 ```bash
-php artisan test
+# run all tests. Before starting, ensure you have the necessary environment set up.
+php artisan test --stop-on-failure
 ```
