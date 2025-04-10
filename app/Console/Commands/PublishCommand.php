@@ -113,11 +113,18 @@ class PublishCommand extends Command
 
   public function migrate()
   {
-    $this->info('');
+    $this->info('Start data migration ...');
 
-    $this->migrate2025_04_03();
+    //
+    // each time you publish a new release, you shall prepare a specifiy migration function and execute here
+    // after publishing, you may need to remove the migration function
+    //
+    // see migrate2025_04_03() for example
+    //
+    // $this->migrate2025_04_03();
+    //
 
-    $this->info('');
+    $this->info('Data migration completed.');
   }
 
 
@@ -346,8 +353,9 @@ class PublishCommand extends Command
   }
 
   /**
-   * migrate 2020-04-03
+   * migrate template function
    */
+  /*
   public function migrate2025_04_03()
   {
     $migrateFunction = MigrationFunction::startFunction(__METHOD__);
@@ -358,10 +366,12 @@ class PublishCommand extends Command
 
     $this->info('migrate "' . __METHOD__ . '" start ...');
 
-    $this->updatePaddleMap();
+    // some real stuff
+    // ...
 
     $this->info('migrate "' . __METHOD__ . '" done');
 
     $migrateFunction->complete();
   }
+  */
 }
