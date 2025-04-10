@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SynchronizePaddlePrice;
 use App\Models\LicensePackage;
-use App\Models\LicensePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -24,7 +24,7 @@ class LicensePackageController extends SimpleController
   protected function getCreateRules(array $inputs = []): array
   {
     return [
-      'type'          => ['required', 'string', Rule::in([LicensePackage::TYPE_STANDARD, LicensePackage::TYPE_EDUCATION])],
+      'type'          => ['required', 'string', Rule::in([LicensePackage::TYPE_STANDARD])],
       'name'          => ['required', 'string', 'max:255'],
       'price_table'   => ['required', 'array'],
       'status'        => ['required', Rule::in([LicensePackage::STATUS_ACTIVE, LicensePackage::STATUS_INACTIVE])],
@@ -74,15 +74,6 @@ class LicensePackageController extends SimpleController
   // default implementation
 
   /**
-   * get /customer/license-packages
-   */
-  public function accountList(Request $request)
-  {
-    $request->merge(['status' => LicensePackage::STATUS_ACTIVE]);
-    return $this->list($request);
-  }
-
-  /**
    * post /license-packages
    */
   public function create(Request $request)
@@ -93,7 +84,9 @@ class LicensePackageController extends SimpleController
     $licensePackage = new LicensePackage($inputs);
     $this->validateAndSave($licensePackage);
 
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
+    // synchronize all plans' paddle price
+    SynchronizePaddlePrice::dispatch();
+
     return  response()->json($this->transformSingleResource($licensePackage), 201);
   }
 
@@ -111,7 +104,9 @@ class LicensePackageController extends SimpleController
     $licensePackage->forceFill($inputs);
     $this->validateAndSave($licensePackage);
 
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
+    // synchronize all plans' paddle prices
+    SynchronizePaddlePrice::dispatch();
+
     return $this->transformSingleResource($licensePackage->unsetRelations());
   }
 
@@ -124,10 +119,9 @@ class LicensePackageController extends SimpleController
 
     /** @var LicensePackage $licensePackage */
     $licensePackage = $this->baseQuery()->findOrFail($id);
-    // TODO: subscription
-    // if ($licensePackage->subscriptions()->count() > 0) {
-    //   return response()->json(['message' => 'LicensePackage has been used, can not be deleted'], 400);
-    // }
     $licensePackage->delete();
+
+    // synchronize all plans' paddle prices
+    SynchronizePaddlePrice::dispatch();
   }
 }

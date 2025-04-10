@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Plan;
+
 return [
   'supported_countries' => [
     'AX' => ['name' => 'Åland Islands', 'required_address_information' => []],
@@ -260,5 +262,10 @@ return [
     'SI' => ['name' => 'Slovenia', 'tax_rate' => 0.22],
     'ES' => ['name' => 'Spain', 'tax_rate' => 0.21],
     'SE' => ['name' => 'Sweden', 'tax_rate' => 0.25],
-  ]
+  ],
+  'eu_prices' => [
+    // EU's tax inclusive prices, this will override the prices configued in the plan
+    Plan::INTERVAL_MONTH => 8.99,
+    Plan::INTERVAL_YEAR => 97.00,
+  ],
 ];

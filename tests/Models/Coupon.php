@@ -36,6 +36,9 @@ class Coupon {
     /** @var string $interval */
     public $interval = "";
 
+    /** @var int $interval_size for coupon, interval_size is match with plan&#39;s interval_count, interval_count represents how many periods the coupon is valid for*/
+    public $interval_size = 0;
+
     /** @var int $interval_count For longterm interval, interval_count must be 0*/
     public $interval_count = 0;
 
@@ -51,7 +54,7 @@ class Coupon {
     /** @var \Tests\Models\CouponAllOfUsage $usage */
     public $usage;
 
-    /** @var array<string,mixed> $meta */
+    /** @var \Tests\Models\CouponMeta $meta */
     public $meta;
 
 }

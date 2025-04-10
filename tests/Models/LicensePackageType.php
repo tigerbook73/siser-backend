@@ -16,8 +16,6 @@ class LicensePackageType
 
     const STANDARD = 'standard';
 
-    const EDUCATION = 'education';
-
     /**
      * Gets allowable values of the enum
      * @return string[]
@@ -26,8 +24,7 @@ class LicensePackageType
     {
         return [
             self::SINGLE,
-            self::STANDARD,
-            self::EDUCATION
+            self::STANDARD
         ];
     }
 }

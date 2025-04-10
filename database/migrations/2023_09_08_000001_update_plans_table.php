@@ -19,7 +19,7 @@ return new class extends Migration
     Schema::table('plans', function (Blueprint $table) {
       $table->dropColumn('catagory');
 
-      $table->string('product_name')->default('Leonardo™ Design Studio Basic')->comment('See table "products"')->after('name');
+      $table->string('product_name')->default('Leonardo® Design Studio Basic')->comment('See table "products"')->after('name');
       $table->string('interval')->default(Plan::INTERVAL_MONTH)->comments('see Plan::INTERVAL_* constants')->after('product_name');
       $table->unsignedInteger('interval_count')->default(1)->after('interval');
 
@@ -29,18 +29,8 @@ return new class extends Migration
     // Update default machine plan
     Plan::where('subscription_level', '>', 1)
       ->update([
-        'product_name'  => 'Leonardo™ Design Studio Pro',
+        'product_name'  => 'Leonardo® Design Studio Pro',
       ]);
-
-    Subscription::where('status', Subscription::STATUS_ACTIVE)
-      ->where('subscription_level', '>', 1)
-      ->chunk(200, function ($subscriptions) {
-        /** @var Subscription[] $subscriptions */
-        foreach ($subscriptions as $subscription) {
-          $subscription->plan_info = $subscription->plan->info($subscription->billing_info['address']['country']);
-          $subscription->save();
-        }
-      });
   }
 
   /**
@@ -48,7 +38,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

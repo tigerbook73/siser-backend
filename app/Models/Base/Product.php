@@ -7,7 +7,6 @@
 namespace App\Models\Base;
 
 use App\Models\Coupon;
-use App\Models\LicensePlan;
 use App\Models\LicenseSharing;
 use App\Models\LicenseSharingInvitation;
 use App\Models\Plan;
@@ -28,7 +27,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $updated_at
  * 
  * @property Collection|Coupon[] $coupons
- * @property Collection|LicensePlan[] $license_plans
  * @property Collection|LicenseSharingInvitation[] $license_sharing_invitations
  * @property Collection|LicenseSharing[] $license_sharings
  * @property Collection|Plan[] $plans
@@ -54,11 +52,6 @@ class Product extends Model
   public function coupons()
   {
     return $this->hasMany(Coupon::class, 'product_name', 'name');
-  }
-
-  public function license_plans()
-  {
-    return $this->hasMany(LicensePlan::class, 'product_name', 'name');
   }
 
   public function license_sharing_invitations()

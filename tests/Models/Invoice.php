@@ -33,7 +33,7 @@ class Invoice {
     /** @var string $currency */
     public $currency = "";
 
-    /** @var \Tests\Models\BillingInfo $billing_info */
+    /** @var \Tests\Models\BillingInformation $billing_info */
     public $billing_info;
 
     /** @var \Tests\Models\PlanInfo $plan_info */
@@ -48,7 +48,7 @@ class Invoice {
     /** @var \Tests\Models\LicensePackageInfo $license_package_info */
     public $license_package_info;
 
-    /** @var \Tests\Models\ProductItem[] $items */
+    /** @var \Tests\Models\InvoiceItem[] $items */
     public $items = [];
 
     /** @var float $subtotal price*/
@@ -62,6 +62,15 @@ class Invoice {
 
     /** @var float $total_amount */
     public $total_amount = 0;
+
+    /** @var float $credit */
+    public $credit = 0;
+
+    /** @var float $grand_total */
+    public $grand_total = 0;
+
+    /** @var float $credit_to_balance */
+    public $credit_to_balance = 0;
 
     /** @var float $total_refunded */
     public $total_refunded = 0;

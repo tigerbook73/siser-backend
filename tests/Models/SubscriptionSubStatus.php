@@ -16,8 +16,6 @@ class SubscriptionSubStatus
 
     const NORMAL = 'normal';
 
-    const ORDER_PENDING = 'order_pending';
-
     /**
      * Gets allowable values of the enum
      * @return string[]
@@ -26,8 +24,7 @@ class SubscriptionSubStatus
     {
         return [
             self::CANCELLING,
-            self::NORMAL,
-            self::ORDER_PENDING
+            self::NORMAL
         ];
     }
 }

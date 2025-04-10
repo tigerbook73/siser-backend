@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ArchivePaddlePrice;
+use App\Jobs\SynchronizePaddlePrice;
 use App\Models\Plan;
+use App\Models\ProductInterval;
 use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Http\Request;
 
@@ -32,7 +35,8 @@ class PlanController extends SimpleController
     return [
       'name'                  => ['required', 'string', 'max:255'],
       'product_name'          => ['required', 'exists:products,name'],
-      'interval'              => ['required', 'in:month,year'],
+      'interval'              => ['required', 'in:day,month,year'],
+      'interval_count'        => ['required', 'integer', 'between:1,2'],
       'description'           => ['string', 'max:255'],
       'subscription_level'    => ['required', 'numeric', 'between:0,9'],
       'url'                   => ['string', 'max:255'],
@@ -48,7 +52,8 @@ class PlanController extends SimpleController
     return [
       'name'                  => ['filled', 'string', 'max:255'],
       'product_name'          => ['filled', 'exists:products,name'],
-      'interval'              => ['filled', 'in:month,year'],
+      'interval'              => ['filled', 'in:day,month,year'],
+      'interval_count'        => ['filled', 'integer', 'between:1,2'],
       'description'           => ['string', 'max:255'],
       'subscription_level'    => ['filled', 'numeric', 'between:0,9'],
       'url'                   => ['string', 'max:255'],
@@ -70,6 +75,7 @@ class PlanController extends SimpleController
     unset($rules['name']);
     unset($rules['product_name']);
     unset($rules['interval']);
+    unset($rules['interval_count']);
     unset($rules['subscription_level']);
     return $rules;
   }
@@ -161,18 +167,17 @@ class PlanController extends SimpleController
     $this->validateUser();
     $inputs = $this->validateCreate($request);
 
-    // TODO: validate duplicated country
-    // TODO: validate currency
+    if (!ProductInterval::exists($inputs['interval'], $inputs['interval_count'])) {
+      return response()->json(['message' => 'Invalid interval and/or interval_count'], 400);
+    }
 
     $plan = new Plan($inputs);
-    $plan->interval_count = 1;
     $plan->status = 'draft';
     $plan->save();
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
 
-    $this->manager->priceService->createPaddlePrice($plan);
+    SynchronizePaddlePrice::dispatch($plan->id);
 
-    return  response()->json($this->transformSingleResource($plan), 201);
+    return response()->json($this->transformSingleResource($plan), 201);
   }
 
   /**
@@ -207,12 +212,14 @@ class PlanController extends SimpleController
       $plan->$attr = $value;
     }
 
+    if (!ProductInterval::exists($plan->interval, $plan->interval_count)) {
+      return response()->json(['message' => 'Invalid interval and/or interval_count'], 400);
+    }
+
     $plan->save();
 
-    // LicensePlan::createOrRefreshAll(); // TODO: ...
-
     if ($plan->wasChanged()) {
-      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
+      SynchronizePaddlePrice::dispatch($plan->id);
     }
 
     return $this->transformSingleResource($plan->unsetRelations());
@@ -235,6 +242,9 @@ class PlanController extends SimpleController
       return response()->json(['message' => 'Only draft plan can be deleted'], 400);
     }
 
+    // dispatch job to archive all paddle prices for this plan
+    ArchivePaddlePrice::dispatch($plan->getAllPriceIds());
+
     $plan->delete();
   }
 
@@ -253,10 +263,6 @@ class PlanController extends SimpleController
 
     $plan->status = 'active';
     $plan->save();
-
-    if ($plan->wasChanged()) {
-      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
-    }
 
     return $this->transformSingleResource($plan);
   }
@@ -280,10 +286,6 @@ class PlanController extends SimpleController
 
     $plan->status = 'inactive';
     $plan->save();
-
-    if ($plan->wasChanged()) {
-      $this->manager->priceService->createOrUpdatePaddlePrice($plan);
-    }
 
     return $this->transformSingleResource($plan);
   }

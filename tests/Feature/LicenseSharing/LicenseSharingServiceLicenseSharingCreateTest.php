@@ -55,17 +55,7 @@ class LicenseSharingServiceLicenseSharingCreateTest extends LicenseSharingTestCa
   public function test_create_license_sharing_no_license_package_nok()
   {
     $subscription = LicenseSharingTestHelper::createFakeSubscription();
-    $subscription->license_package_info = null;
-    $subscription->save();
-
-    $this->expectException(\Exception::class);
-    $this->service->createLicenseSharing($subscription);
-  }
-
-  public function test_create_license_sharing_license_package_count_zero_nok()
-  {
-    $subscription = LicenseSharingTestHelper::createFakeSubscription();
-    $subscription->license_package_info = ['quantity' => 0];
+    $subscription->setLicensePackageInfo(null);
     $subscription->save();
 
     $this->expectException(\Exception::class);

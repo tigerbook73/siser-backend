@@ -6,17 +6,19 @@ use Paddle\SDK\Entities\Shared\CustomData;
 
 class DiscountCustomData
 {
-  public ?string $coupon_id;
-  public ?string $coupon_event;
-  public ?string $coupon_name;
+  public function __construct(
+    public ?string $coupon_id,
+    public ?string $coupon_event,
+    public ?string $coupon_name
+  ) {}
 
   static public function from(?array $data): self
   {
-    $obj = new self();
-    $obj->coupon_id     = $data['coupon_id'] ?? null;
-    $obj->coupon_event  = $data['coupon_event'] ?? null;
-    $obj->coupon_name   = $data['coupon_name'] ?? null;
-    return $obj;
+    return new self(
+      coupon_id: $data['coupon_id'] ?? null,
+      coupon_event: $data['coupon_event'] ?? null,
+      coupon_name: $data['coupon_name'] ?? null
+    );
   }
 
   public function toCustomData(): CustomData

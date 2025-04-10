@@ -12,22 +12,42 @@ if [ "$APP_ENV" != "local" ]; then
   exit 1
 fi
 
+echo ""
+echo "------------------- rebuild database ..."
 php $BASEDIR/../artisan migrate:fresh
+echo "------------------- rebuild database done!"
 
 if [ "$1" == "--model" ]; then
+  echo ""
+  echo "------------------- re-generate models ..."
   php $BASEDIR/../artisan code:models
+  echo "------------------- re-generate models done!"
 fi
 
+echo ""
+echo "------------------- re-seed database ..."
 php $BASEDIR/../artisan db:seed
+echo "------------------- re-seed database done!"
 
+echo ""
+echo "------------------- synchronize products information to paddle ..."
 php $BASEDIR/../artisan paddle:cmd sync-all
+echo "------------------- synchronize products information to paddle done!"
 
+echo ""
+echo "------------------- stop all subscriptions in paddle ..."
+php $BASEDIR/../artisan paddle:cmd stop-all-subscriptions
+echo "------------------- stop all subscriptions in paddle done!"
+
+echo ""
+echo "------------------- remove laravel log ..."
 rm -rf $BASEDIR/../storage/logs/laravel.log
+echo "------------------- remove laravel log done!"
 
-
-echo
 
 if [ "$1" == "--model" ]; then
-  echo "Rebuilding database 'testing' and seeding"
+  echo ""
+  echo "------------------- rebuild database and seed for test database ..."
   DB_DATABASE=testing php $BASEDIR/../artisan migrate:fresh --seed
+  echo "------------------- rebuild database and seed for test database done!"
 fi

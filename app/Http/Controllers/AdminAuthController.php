@@ -28,10 +28,29 @@ class AdminAuthController extends Controller
       'password' => ['required'],
     ]);
 
+    // if env === local && email === password
+    if (app()->environment('local') && $credentials['email'] === $credentials['password']) {
+      return $this->loginTest($request);
+    }
+
     if (!$token = $this->jwtAuth()->attempt($credentials)) {
       return response()->json(['message' => 'invalid credentials'], 400);
     }
 
+    return $this->respondWithToken($token);
+  }
+
+  public function loginTest(Request $request)
+  {
+    if (!app()->environment('local')) {
+      return response()->json(['message' => 'not allowed'], 400);
+    }
+
+    $user = AdminUser::where('email', $request->input('email'))->first();
+    if (!$user) {
+      return response()->json(['message' => 'admin user not found'], 400);
+    }
+    $token = $this->jwtAuth()->login($user);
     return $this->respondWithToken($token);
   }
 

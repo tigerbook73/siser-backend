@@ -17,13 +17,11 @@ class Subscription extends BaseSubscription
   public const STATUS_ACTIVE                  = 'active';
   public const STATUS_DRAFT                   = 'draft';
   public const STATUS_FAILED                  = 'failed';
-  public const STATUS_PENDING                 = 'pending';
   public const STATUS_STOPPED                 = 'stopped';
 
   // sub_status (when status is 'active')
   public const SUB_STATUS_CANCELLING          = 'cancelling';     // to be cancelled at the end of current period
   public const SUB_STATUS_NORMAL              = 'normal';         // default sub status for all status
-  public const SUB_STATUS_ORDER_PENDING       = 'order_pending';  // for STATUS_PENDING
 
   static protected $attributesOption = [
     'id'                        => ['filterable' => 1, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -69,22 +67,32 @@ class Subscription extends BaseSubscription
     /** @var Plan $plan */
     $plan = Plan::find(config('siser.plan.default_machine_plan'));
 
-    $billing_info = ($user->billing_info ?? BillingInfo::createDefault($user))->info();
-    $plan_info = $plan->info($billing_info['address']['country']);
+    $billingInfo = ($user->billing_info ?? BillingInfo::createDefault($user))->info();
+    $planInfo = $plan->info('US');
 
     $subscription = new Subscription(
       [
         'user_id'                   => $user->id,
         'plan_id'                   => $plan->id,
-        'billing_info'              => $billing_info,
-        'plan_info'                 => $plan_info,
-        'items'                     => ProductItem::buildItems($plan_info),
-        'currency'                  => $plan_info['price']['currency'],
-        'price'                     => 0.0,
-        'subtotal'                  => 0.0,
+        'billing_info'              => $billingInfo->toArray(),
+        'plan_info'                 => $planInfo->toArray(),
+        'items'                     => [
+          (new SubscriptionItem(
+            name: $planInfo->name,
+            currency: $planInfo->price->currency,
+            price: $planInfo->price->price,
+            discount: 0.0,
+            tax: 0.0,
+            amount: $planInfo->price->price,
+            quantity: 1,
+          ))->toArray()
+        ],
+        'currency'                  => $planInfo->price->currency,
+        'price'                     => $planInfo->price->price,
+        'subtotal'                  => $planInfo->price->price,
         'tax_rate'                  => 0.0,
         'total_tax'                 => 0.0,
-        'total_amount'              => 0.0,
+        'total_amount'              => $planInfo->price->price,
         'subscription_level'        => 1,
         'current_period'            => 1,
         'start_date'                => new Carbon(),
@@ -107,151 +115,57 @@ class Subscription extends BaseSubscription
     $this->current_period_end_date    = null;
     $this->next_invoice_date          = null;
     $this->next_reminder_date         = null;
-    $this->next_invoice               = null;
     $this->sub_status                 = Subscription::SUB_STATUS_NORMAL;
     $this->stop_reason                = '';
+    $this->setNextInvoice(null);
     $this->setStatus(Subscription::STATUS_DRAFT);
     return $this;
   }
 
+  /**
+   * TODO: for test only now, to be deleted
+   */
   public function fillBillingInfo(BillingInfo $billingInfo): self
   {
-    $country = Country::findByCode($billingInfo->address['country']);
+    $country = Country::findByCode($billingInfo->address()->country);
     $this->user_id      = $billingInfo->user_id;
-    $this->billing_info = $billingInfo->info();
     $this->currency     = $country->currency;
+    $this->setBillingInfo($billingInfo->info());
     return $this;
   }
 
-  public function findItem(string $category, bool $next = false): ?array
+  /**
+   * TODO: for test only now, to be deleted
+   */
+  public function fillPlanAndCoupon(Plan $plan, ?Coupon $coupon = null, ?LicensePackage $licensePackage = null, int $licenseQuantity = 0, float $taxRate = 0.0): self
   {
-    $items = $next ? ($this->next_invoice['items'] ?? []) : $this->items;
-    return ProductItem::findItem($items, $category);
-  }
+    $planInfo     = $plan->info($this->getBillingInfo()->address->country);
+    $couponInfo   = $coupon?->info($this->start_date);
+    $licensePackageInfo = $licensePackage?->info($licenseQuantity);
 
-  public function findPlanItem(bool $next = false): ?array
-  {
-    return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
-  }
+    $this->plan_id              = $planInfo->id;
+    $this->subscription_level   = $planInfo->subscription_level;
+    $this->coupon_id            = $couponInfo?->id;
+    $this->setPlanInfo($planInfo);
+    $this->setCouponInfo($couponInfo);
+    $this->setLicensePackageInfo($licensePackageInfo);
 
-  public function fillItemsAndPrice(array $items): self
-  {
-    $this->items        = $items;
-    $this->price        = ProductItem::calcTotal($items, 'price');
-    $this->subtotal     = $this->price;
-    $this->total_tax    = ProductItem::calcTotal($items, 'tax');
-    $this->total_amount = round($this->subtotal + $this->total_tax, 2);
-    return $this;
-  }
-
-  public function fillNextInvoiceItemsAndPrice(array &$next_invoice, array $items): self
-  {
-    $next_invoice['items']        = $items;
-    $next_invoice['price']        = ProductItem::calcTotal($items, 'price');
-    $next_invoice['subtotal']     = $next_invoice['price'];
-    $next_invoice['tax_rate']     = $this->tax_rate ?? 0;
-    $next_invoice['total_tax']    = ProductItem::calcTotal($items, 'tax');
-    $next_invoice['total_amount'] = round($next_invoice['subtotal'] + $next_invoice['total_tax'], 2);
-    return $this;
-  }
-
-  public function fillPlanAndCoupon(Plan $plan, ?Coupon $coupon = null, ?LicensePackage $licensePackage = null, int $licenseQuantity = 0): self
-  {
-    $plan_info    = $plan->info($this->billing_info['address']['country']);
-    $coupon_info  = $coupon?->info();
-    $license_package_info = $licensePackage?->info($licenseQuantity);
-
-    $this->plan_id              = $plan_info['id'];
-    $this->plan_info            = $plan_info;
-    $this->subscription_level   = $plan_info['subscription_level'];
-    $this->coupon_id            = $coupon_info['id'] ?? null;
-    $this->coupon_info          = $coupon_info;
-    $this->license_package_info = $license_package_info;
-
-    $this->fillItemsAndPrice(
-      ProductItem::buildItems($plan_info, $coupon_info, $license_package_info, $this->tax_rate, $this->items)
-    );
-    return $this;
-  }
-
-  public function fillPaymentMethod(PaymentMethod $paymentMethod): self
-  {
-    $this->payment_method_info = $paymentMethod->info();
-    return $this;
-  }
-
-  public function fillNextInvoice(): self
-  {
-    $next_invoice['current_period'] = ($this->current_period ?: 1) + 1;
-
-    // scenarios:
-    // 1. free-trial: remove coupon, keep plan
-    // 2. annual plan: to standard monthly plan, remove coupon
-    // 3. percentage monthly plan (short term): if coupon expire, remove coupon, keep plan
-    // 4. others, no change
-
-    // others
-    $next_invoice['plan_info'] = $this->plan_info;
-    $next_invoice['coupon_info'] = $this->coupon_info;
-    $next_invoice['license_package_info'] = $this->license_package_info;
-
-    if ($this->isFreeTrial()) {
-      $next_invoice['coupon_info'] = null;
-    } else if ($this->isFixedTermPercentage()) {
-      if ($next_invoice['current_period'] * $this->plan_info['interval_count'] > $this->coupon_info['interval_count']) {
-        $next_invoice['coupon_info'] = null;
-      }
-    }
-
-    // items & prices
-    $this->fillNextInvoiceItemsAndPrice(
-      $next_invoice,
-      ProductItem::buildItems(
-        $next_invoice['plan_info'],
-        $next_invoice['coupon_info'],
-        $next_invoice['license_package_info'],
-        $this->tax_rate,
-        $this->items
+    $this->setItems(
+      SubscriptionItem::buildItemsForTest(
+        $planInfo,
+        $couponInfo,
+        $licensePackageInfo,
+        taxRate: $taxRate
       )
     );
 
-    $next_invoice['current_period_start_date'] = $this->current_period_end_date->addSecond()->toDateTimeString();
-    $next_invoice['current_period_end_date'] = $this->current_period_end_date->add(
-      $next_invoice['plan_info']['interval'],
-      $next_invoice['plan_info']['interval_count']
-    )->toDateTimeString();
-
-    $this->next_invoice = [
-      'current_period'            => $next_invoice['current_period'],
-      'current_period_start_date' => $next_invoice['current_period_start_date'],
-      'current_period_end_date'   => $next_invoice['current_period_end_date'],
-      'plan_info'                 => $next_invoice['plan_info'],
-      'coupon_info'               => $next_invoice['coupon_info'],
-      'license_package_info'      => $next_invoice['license_package_info'],
-      'items'                     => $next_invoice['items'],
-      'price'                     => $next_invoice['price'],
-      'subtotal'                  => $next_invoice['subtotal'],
-      'tax_rate'                  => $next_invoice['tax_rate'],
-      'total_tax'                 => $next_invoice['total_tax'],
-      'total_amount'              => $next_invoice['total_amount'],
-    ];
+    // set prices based on items
+    $item = $this->getItems()[0];
+    $this->price = $item->price;
+    $this->subtotal = $item->price;
+    $this->total_tax = $item->tax;
+    $this->total_amount = $item->amount;
     return $this;
-  }
-
-  public function isNextPlanDifferent(): bool
-  {
-    if ($this->plan_info['id'] !== $this->next_invoice['plan_info']['id']) {
-      return true;
-    }
-
-    if (($this->coupon_info['id'] ?? null) !== ($this->next_invoice['coupon_info']['id'] ?? null)) {
-      return true;
-    }
-
-    if (($this->license_package_info['quantity'] ?? null) !== ($this->next_invoice['license_package_info']['quantity'] ?? null)) {
-      return true;
-    }
-    return false;
   }
 
   public function stop(string $status, string $stopReason = '')
@@ -261,7 +175,7 @@ class Subscription extends BaseSubscription
     $this->end_date = $this->start_date ? now() : null;
     $this->next_invoice_date = null;
     $this->next_reminder_date = null;
-    $this->next_invoice = null;
+    $this->setNextInvoice(null);
 
     $this->setStatus($status);
     $this->stop_reason = $stopReason;
@@ -274,39 +188,128 @@ class Subscription extends BaseSubscription
   }
 
   /**
-   * invoice related
+   * billing info
+   */
+  public function getBillingInfo(): BillingInformation
+  {
+    return BillingInformation::from($this->billing_info);
+  }
+
+  public function setBillingInfo(BillingInformation $billingInfo): self
+  {
+    $this->billing_info = $billingInfo->toArray();
+    return $this;
+  }
+
+  /**
+   * payment method info
+   */
+  public function getPaymentMethodInfo(): ?PaymentMethodInfo
+  {
+    return $this->payment_method_info ? PaymentMethodInfo::from($this->payment_method_info) : null;
+  }
+
+  public function setPaymentMethodInfo(?PaymentMethodInfo $paymentMethodInfo): self
+  {
+    $this->payment_method_info = $paymentMethodInfo?->toArray();
+    return $this;
+  }
+
+  /**
+   * plan info
+   */
+  public function getPlanInfo(): PlanInfo
+  {
+    return PlanInfo::from($this->plan_info);
+  }
+
+  public function setPlanInfo(PlanInfo $planInfo): self
+  {
+    $this->plan_info = $planInfo->toArray();
+    return $this;
+  }
+
+
+  /**
+   * license package info
+   */
+  public function hasLicensePackageInfo(): bool
+  {
+    return $this->license_package_info !== null;
+  }
+
+  public function getLicensePackageInfo(): ?LicensePackageInfo
+  {
+    return $this->license_package_info ? LicensePackageInfo::from($this->license_package_info) : null;
+  }
+
+  public function setLicensePackageInfo(?LicensePackageInfo $licensePackageInfo): self
+  {
+    $this->license_package_info = $licensePackageInfo?->toArray();
+    return $this;
+  }
+
+  /**
+   * items
    */
 
-  public function getCurrentPeriodInvoice(): ?Invoice
+  /**
+   * @return SubscriptionItem[]
+   */
+  public function getItems(): array
   {
-    return $this->invoices()
-      ->whereIn('type', [Invoice::TYPE_NEW_SUBSCRIPTION, Invoice::TYPE_RENEW_SUBSCRIPTION])
-      ->where('period', $this->current_period)
-      ->first();
+    return SubscriptionItem::itemsFrom($this->items);
   }
 
-  public function getNewSubscriptionInvoice(): Invoice
+  /**
+   * @param SubscriptionItem[] $items
+   * @return self
+   */
+  public function setItems(array $items): self
   {
-    return $this->invoices()
-      ->where('type', Invoice::TYPE_NEW_SUBSCRIPTION)
-      ->first();
+    $this->items = array_map(fn($item) => $item->toArray(), $items);
+    return $this;
   }
 
-  public function getRenewingInvoice(): ?Invoice
+  /**
+   * coupon
+   */
+
+  public function hasCouponInfo(): bool
   {
-    return $this->invoices()
-      ->where('type', Invoice::TYPE_RENEW_SUBSCRIPTION)
-      ->whereIn('status', [Invoice::STATUS_INIT, Invoice::STATUS_PENDING])
-      ->first();
+    return $this->coupon_info !== null;
   }
 
-  public function hasPendingInvoice(): bool
+  public function getCouponInfo(): ?CouponInfo
   {
-    return $this->invoices()
-      ->where('status', Invoice::STATUS_PENDING)
-      ->exists();
+    return $this->coupon_info ? CouponInfo::from($this->coupon_info) : null;
   }
 
+  public function setCouponInfo(?CouponInfo $couponInfo): self
+  {
+    $this->coupon_info = $couponInfo?->toArray();
+    return $this;
+  }
+
+  /**
+   * next invoice
+   */
+
+  public function hasNextInvoice(): bool
+  {
+    return $this->next_invoice !== null;
+  }
+
+  public function getNextInvoice(): ?SubscriptionNextInvoice
+  {
+    return $this->next_invoice ? SubscriptionNextInvoice::from($this->next_invoice) : null;
+  }
+
+  public function setNextInvoice(?SubscriptionNextInvoice $nextInvoice): self
+  {
+    $this->next_invoice = $nextInvoice?->toArray();
+    return $this;
+  }
 
   /**
    * notification related
@@ -314,8 +317,9 @@ class Subscription extends BaseSubscription
 
   public function routeNotificationForMail($notification)
   {
+    $billingInfo = $this->getBillingInfo();
     return [
-      $this->billing_info['email'] => $this->billing_info['first_name'] . ' ' . $this->billing_info['last_name']
+      $billingInfo->email => $billingInfo->first_name . ' ' . $billingInfo->last_name
     ];
   }
 
@@ -325,74 +329,29 @@ class Subscription extends BaseSubscription
     $context['invoice'] = $invoice;
     $this->notify(new SubscriptionNotification($type, $context));
 
-    Log::Info("NOTIF_LOG: {$type} sent to user: {$this->user_id}, email: {$this->billing_info['email']} for subscription: {$this->id}");
+    Log::Info("NOTIF_LOG: {$type} sent to user: {$this->user_id}, email: {$context['subscription']->getBillingInfo()->email} for subscription: {$this->id}");
   }
 
   public function isFreeTrial(): bool
   {
-    return ($this->coupon_info['discount_type'] ?? null) === Coupon::DISCOUNT_TYPE_FREE_TRIAL;
+    return $this->getCouponInfo()?->discount_type === Coupon::DISCOUNT_TYPE_FREE_TRIAL;
   }
 
   public function isPercentage(): bool
   {
-    return ($this->coupon_info['discount_type'] ?? null) === Coupon::DISCOUNT_TYPE_PERCENTAGE;
+    return $this->getCouponInfo()?->discount_type === Coupon::DISCOUNT_TYPE_PERCENTAGE;
   }
 
   public function isFixedTermPercentage(): bool
   {
-    return ($this->coupon_info['discount_type'] ?? null) === Coupon::DISCOUNT_TYPE_PERCENTAGE &&
-      $this->coupon_info['interval_count'] != 0 &&
-      $this->coupon_info['interval'] != Coupon::INTERVAL_LONGTERM;
-  }
-
-  static public function buildPlanName(array $plan_info, ?array $coupon_info)
-  {
-    // free trial
-    if ($coupon_info && $coupon_info['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
-      return $coupon_info['name'];
+    $couponInfo = $this->getCouponInfo();
+    if (!$couponInfo) {
+      return false;
     }
-
-    // percentage off
-    if ($coupon_info && $coupon_info['discount_type'] == Coupon::DISCOUNT_TYPE_PERCENTAGE) {
-      return "{$plan_info['name']} ({$coupon_info['name']})";
-    }
-
-    // standard plan
-    return $plan_info['name'];
+    return $couponInfo->discount_type === Coupon::DISCOUNT_TYPE_PERCENTAGE &&
+      $couponInfo->interval_count != 0 &&
+      $couponInfo->interval != Coupon::INTERVAL_LONGTERM;
   }
-
-  static public function calcPlanPrice(array $plan_info, ?array $coupon_info): float
-  {
-    $price = $plan_info['price']['price'];
-
-    if (!$coupon_info) {
-      return $price;
-    }
-
-    if ($coupon_info['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
-      return 0;
-    }
-
-    return round($price * (100 - $coupon_info['percentage_off']) / 100, 2);
-  }
-
-  public function getPlanName(): string
-  {
-    return self::buildPlanName($this->plan_info, $this->coupon_info);
-  }
-
-  public function getNextInvoiceCollectionEndDate(): ?Carbon
-  {
-    /** @var SubscriptionPlan $subscriptionPlan */
-    $subscriptionPlan = SubscriptionPlan::findByTypeAndIterval(
-      SubscriptionPlan::TYPE_STANDARD,
-      $this->plan_info['interval'],
-      $this->plan_info['interval_count']
-    );
-
-    return $this->next_invoice_date?->addDays($subscriptionPlan->collection_period_days);
-  }
-
 
   /**
    * status related
@@ -419,7 +378,7 @@ class Subscription extends BaseSubscription
    */
   public function getMeta(): SubscriptionMeta
   {
-    return SubscriptionMeta::from($this->meta);
+    return SubscriptionMeta::from($this->meta ?? []);
   }
 
   public function setMeta(SubscriptionMeta $meta): self

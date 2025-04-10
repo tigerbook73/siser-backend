@@ -54,7 +54,10 @@ class Invoice extends BaseInvoice
     'subtotal'                    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'discount'                    => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_tax'                   => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'credit'                      => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_amount'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'grand_total'                 => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
+    'credit_to_balance'           => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'total_refunded'              => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'available_to_refund_amount'  => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
     'invoice_date'                => ['filterable' => 0, 'searchable' => 0, 'lite' => 0, 'updatable' => 0b0_0_0, 'listable' => 0b0_1_1],
@@ -123,71 +126,9 @@ class Invoice extends BaseInvoice
       $this->status == self::STATUS_REFUNDING;
   }
 
-  public function addCreditMemo(string $fileId, string $url)
-  {
-    $creditMemos = $this->credit_memos ?? [];
-
-    $found = $this->findCreditMemoByFileId($fileId);
-    if ($found !== false) {
-      $creditMemos[$found] = [
-        'file_id'     => $fileId,
-        'url'         => $url,
-        'created_at'  => now(),
-      ];
-    } else {
-      $creditMemos[] = [
-        'file_id'     => $fileId,
-        'url'         => $url,
-        'created_at'  => now(),
-      ];
-    }
-    $this->credit_memos = $creditMemos;
-    return $this;
-  }
-
-  public function findCreditMemoByFileId(string $fileId): int|false
-  {
-    $creditMemos = $this->credit_memos ?? [];
-    $count = count($creditMemos);
-
-    for ($index = 0; $index < $count; $index++) {
-      if ($creditMemos[$index]['file_id'] ?? "" == $fileId) {
-        return $index;
-      }
-    }
-
-    return false;
-  }
-
   public function getActiveRefund(): ?Refund
   {
     return $this->refunds()->where('status', Refund::STATUS_PENDING)->first();
-  }
-
-  public function fillBasic(Subscription $subscription): self
-  {
-    // static part
-    $this->user_id                = $subscription->user_id;
-    $this->subscription_id        = $subscription->id;
-    $this->currency               = $subscription->currency;
-
-    $this->billing_info           = $subscription->billing_info;
-
-    // dynamic part
-    $this->payment_method_info    = $subscription->payment_method_info;
-
-    return $this;
-  }
-
-  public function findItem(string $category, bool $next = false): ?array
-  {
-    $items = $next ? ($this->next_invoice['items'] ?? []) : $this->items;
-    return ProductItem::findItem($items, $category);
-  }
-
-  public function findPlanItem(bool $next = false): ?array
-  {
-    return $this->findItem(ProductItem::ITEM_CATEGORY_PLAN, $next);
   }
 
   public function setDisputeStatus(string $dispute_status, ?Carbon $time = null)
@@ -252,12 +193,116 @@ class Invoice extends BaseInvoice
     return $this->type === self::TYPE_NEW_SUBSCRIPTION;
   }
 
+
+  /**
+   * billing information
+   */
+  public function getBillingInfo(): BillingInformation
+  {
+    return BillingInformation::from($this->billing_info);
+  }
+
+  public function setBillingInfo(BillingInformation $billingInfo): self
+  {
+    $this->billing_info = $billingInfo->toArray();
+    return $this;
+  }
+
+  /**
+   * payment method info
+   */
+  public function getPaymentMethodInfo(): ?PaymentMethodInfo
+  {
+    return $this->payment_method_info ? PaymentMethodInfo::from($this->payment_method_info) : null;
+  }
+
+  public function setPaymentMethodInfo(?PaymentMethodInfo $paymentMethodInfo): self
+  {
+    $this->payment_method_info = $paymentMethodInfo?->toArray();
+    return $this;
+  }
+
+  /**
+   * plan info
+   */
+  public function getPlanInfo(): PlanInfo
+  {
+    return PlanInfo::from($this->plan_info);
+  }
+
+  public function setPlanInfo(PlanInfo $planInfo): self
+  {
+    $this->plan_info = $planInfo->toArray();
+    return $this;
+  }
+
+  /**
+   * license package info
+   */
+  public function hasLicensePackageInfo(): bool
+  {
+    return $this->license_package_info !== null;
+  }
+
+  public function getLicensePackageInfo(): ?LicensePackageInfo
+  {
+    return $this->license_package_info ? LicensePackageInfo::from($this->license_package_info) : null;
+  }
+
+  public function setLicensePackageInfo(?LicensePackageInfo $licensePackageInfo): self
+  {
+    $this->license_package_info = $licensePackageInfo?->toArray();
+    return $this;
+  }
+
+  /**
+   * items
+   */
+
+  /**
+   * @return InvoiceItem[]
+   */
+  public function getItems(): array
+  {
+    return InvoiceItem::itemsFrom($this->items);
+  }
+
+  /**
+   * @param InvoiceItem[] $items
+   * @return self
+   */
+  public function setItems(array $items): self
+  {
+    $this->items = array_map(fn($item) => $item->toArray(), $items);
+    return $this;
+  }
+
+  /**
+   * coupon related
+   */
+
+  public function hasCouponInfo(): bool
+  {
+    return $this->coupon_info !== null;
+  }
+
+  public function getCouponInfo(): ?CouponInfo
+  {
+    return $this->coupon_info ? CouponInfo::from($this->coupon_info) : null;
+  }
+
+  public function setCouponInfo(?CouponInfo $couponInfo): self
+  {
+    $this->coupon_info = $couponInfo?->toArray();
+    return $this;
+  }
+
   /**
    * meta
    */
   public function getMeta(): InvoiceMeta
   {
-    return InvoiceMeta::from($this->meta);
+    return InvoiceMeta::from($this->meta ?? []);
   }
 
   public function setMeta(InvoiceMeta $meta): self

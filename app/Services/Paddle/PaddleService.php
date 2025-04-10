@@ -231,7 +231,7 @@ class PaddleService
 
   public function cancelSubscription(string $id, bool $immediate = false): Subscription
   {
-    return $this->paddle->subscriptions->cancel(
+    $this->paddle->subscriptions->cancel(
       $id,
       new CancelSubscription(
         $immediate ?
@@ -239,13 +239,15 @@ class PaddleService
           SubscriptionEffectiveFrom::NextBillingPeriod()
       )
     );
+    return $this->getSubscriptionWithIncludes($id);
   }
 
   public function removeSubscriptionScheduledChange(string $id): Subscription
   {
-    return $this->paddle->subscriptions->update($id, new UpdateSubscription(
+    $this->paddle->subscriptions->update($id, new UpdateSubscription(
       scheduledChange: null,
     ));
+    return $this->getSubscriptionWithIncludes($id);
   }
 
   /**

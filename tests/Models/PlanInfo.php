@@ -21,6 +21,9 @@ class PlanInfo {
     /** @var string $interval */
     public $interval = "";
 
+    /** @var int $interval_count */
+    public $interval_count = 0;
+
     /** @var string $description LDS Basic plan for machine owner*/
     public $description = "";
 
@@ -29,9 +32,6 @@ class PlanInfo {
 
     /** @var string $url */
     public $url = "";
-
-    /** @var int $interval_count */
-    public $interval_count = 0;
 
     /** @var \Tests\Models\Price $price */
     public $price;

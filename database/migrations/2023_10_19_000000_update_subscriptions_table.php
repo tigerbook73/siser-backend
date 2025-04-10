@@ -15,7 +15,7 @@ return new class extends Migration
   public function up()
   {
     Schema::table('subscriptions', function (Blueprint $table) {
-      $table->json('renewal_info')->nullable()->after('next_invoice')->comment('see SubscriptionRenewal::info()');
+      $table->json('renewal_info')->nullable()->after('next_invoice');
     });
   }
 
@@ -24,7 +24,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

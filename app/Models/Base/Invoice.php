@@ -36,6 +36,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $discount
  * @property float $total_tax
  * @property float $total_amount
+ * @property float $credit
+ * @property float $grand_total
+ * @property float $credit_to_balance
  * @property float $total_refunded
  * @property float $available_to_refund_amount
  * @property Carbon|null $invoice_date
@@ -83,6 +86,9 @@ class Invoice extends Model
     'discount' => 'float',
     'total_tax' => 'float',
     'total_amount' => 'float',
+    'credit' => 'float',
+    'grand_total' => 'float',
+    'credit_to_balance' => 'float',
     'total_refunded' => 'float',
     'available_to_refund_amount' => 'float',
     'invoice_date' => 'datetime',
@@ -113,6 +119,9 @@ class Invoice extends Model
     'discount',
     'total_tax',
     'total_amount',
+    'credit',
+    'grand_total',
+    'credit_to_balance',
     'total_refunded',
     'available_to_refund_amount',
     'invoice_date',

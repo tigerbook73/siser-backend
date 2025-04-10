@@ -15,10 +15,6 @@ return new class extends Migration
   public function up()
   {
     /**
-     * update the trade mark character from ™ -> ®
-     */
-
-    /**
      * update schema
      */
 
@@ -53,74 +49,6 @@ return new class extends Migration
       $table->dropForeign(['product_name']);
       $table->foreign('product_name')->references('name')->on('products')->onUpdate('cascade');
     });
-
-    /**
-     * products: name
-     */
-    DB::table('products')->update([
-      'name' => DB::raw("REPLACE(name, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    DB::table('plans')->update([
-      'name' => DB::raw("REPLACE(name, 'Leonardo™', 'Leonardo®')"),
-      'product_name' => DB::raw("REPLACE(product_name, 'Leonardo™', 'Leonardo®')"),
-      'description' => DB::raw("REPLACE(description, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * coupons: product_name
-     */
-    DB::table('coupons')->update([
-      'name' => DB::raw("REPLACE(name, 'Leonardo™', 'Leonardo®')"),
-      'product_name' => DB::raw("REPLACE(product_name, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * license_sharing: product_name
-     */
-    DB::table('license_sharings')->update([
-      'product_name' => DB::raw("REPLACE(product_name, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * license_sharing_invitations: product_name
-     */
-    DB::table('license_sharing_invitations')->update([
-      'product_name' => DB::raw("REPLACE(product_name, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * subscriptions: plan_info, items
-     */
-    DB::table('subscriptions')->update([
-      'plan_info' => DB::raw("REPLACE(plan_info, 'Leonardo™', 'Leonardo®')"),
-      'coupon_info' => DB::raw("REPLACE(coupon_info, 'Leonardo™', 'Leonardo®')"),
-      'items' => DB::raw("REPLACE(items, 'Leonardo™', 'Leonardo®')"),
-      'next_invoice' => DB::raw("REPLACE(next_invoice, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * subscriptions: plan_info, items
-     */
-    DB::table('invoices')->update([
-      'plan_info' => DB::raw("REPLACE(plan_info, 'Leonardo™', 'Leonardo®')"),
-      'coupon_info' => DB::raw("REPLACE(coupon_info, 'Leonardo™', 'Leonardo®')"),
-      'items' => DB::raw("REPLACE(items, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * subscription_logs: data
-     */
-    DB::table('subscription_logs')->update([
-      'data' => DB::raw("REPLACE(data, 'Leonardo™', 'Leonardo®')"),
-    ]);
-
-    /**
-     * dr_event_raw_records: data
-     */
-    DB::table('dr_event_raw_records')->update([
-      'data' => DB::raw("REPLACE(data, 'Leonardo™', 'Leonardo®')"),
-    ]);
   }
 
 

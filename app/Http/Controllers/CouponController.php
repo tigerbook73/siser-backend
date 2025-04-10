@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Coupon;
 use App\Models\CouponEvent;
 use App\Models\Plan;
+use App\Models\ProductInterval;
 use App\Services\CouponRules;
+use App\Services\CouponValidateResultCode;
 use App\Services\Paddle\SubscriptionManagerPaddle;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -44,7 +46,8 @@ class CouponController extends SimpleController
       'coupon_event'                    => ['required', 'string', 'max:255'],
       'discount_type'                   => ['required', 'string', Rule::in([Coupon::DISCOUNT_TYPE_FREE_TRIAL, Coupon::DISCOUNT_TYPE_PERCENTAGE])],
       'percentage_off'                  => ['required_if:discount_type,' . Coupon::DISCOUNT_TYPE_PERCENTAGE, 'decimal:0,2', 'between:0,100'],
-      'interval'                        => ['required', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
+      'interval'                        => ['required', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
+      'interval_size'                   => ['filled', 'integer', 'between:1,2'],
       'interval_count'                  => ['required', 'integer', 'between:0,12'],
       'condition'                       => ['nullable', 'array'], // for compatibility
       'start_date'                      => ['required', 'date'],
@@ -63,7 +66,8 @@ class CouponController extends SimpleController
       'coupon_event'                    => ['filled', 'string', 'max:255'],
       'discount_type'                   => ['filled', 'string', Rule::in([Coupon::DISCOUNT_TYPE_FREE_TRIAL, Coupon::DISCOUNT_TYPE_PERCENTAGE])],
       'percentage_off'                  => ['filled', 'decimal:0,2', 'between:0,100'],
-      'interval'                        => ['filled', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_WEEK, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
+      'interval'                        => ['filled', 'string', Rule::in([Coupon::INTERVAL_DAY, Coupon::INTERVAL_MONTH, Coupon::INTERVAL_YEAR, Coupon::INTERVAL_LONGTERM])],
+      'interval_size'                   => ['filled', 'integer', 'between:1,2'],
       'interval_count'                  => ['filled', 'integer', 'between:0,12'],
       'condition'                       => ['nullable', 'array'], // for compatibility
       'start_date'                      => ['filled', 'date'],
@@ -88,30 +92,33 @@ class CouponController extends SimpleController
       }
 
       // validate interval
-      if (
-        $inputs['interval'] != Coupon::INTERVAL_MONTH &&
-        $inputs['interval'] != Coupon::INTERVAL_YEAR &&
-        $inputs['interval'] != Coupon::INTERVAL_LONGTERM
-      ) {
-        abort(response()->json(['message' => 'interval must be month, year or longterm.'], 400));
+      if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM) {
+        if ($inputs['interval_size'] != 1) {
+          abort(response()->json(['message' => 'interval_size must be 1 for longterm coupon.'], 400));
+        }
+        if ($inputs['interval_count'] != 0) {
+          abort(response()->json(['message' => 'interval_count must be 0 for longterm coupon.'], 400));
+        }
+      } else {
+        if (!ProductInterval::exists($inputs['interval'], $inputs['interval_size'])) {
+          abort(response()->json(['message' => 'interval and/or interval_size are invalid.'], 400));
+        }
       }
+    } else {
+      // validate free-trial type
 
-      // validate interval count
-      if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM && $inputs['interval_count'] != 0) {
-        abort(response()->json(['message' => 'interval_count must be 0 for longterm coupon.'], 400));
-      }
-    }
-
-    // validate free-trial type
-    if ($inputs['discount_type'] == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
       // validate percentage off
       if ($inputs['percentage_off'] != 100) {
         abort(response()->json(['message' => 'percentage_off must be 100.'], 400));
       }
 
-      // validate interval and interval_count
-      if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM || $inputs['interval_count'] == 0) {
+      // validate interval
+      if ($inputs['interval'] == Coupon::INTERVAL_LONGTERM || $inputs['interval_size'] == 0) {
         abort(response()->json(['message' => 'free_trial can not be longterm.'], 400));
+      } else {
+        if (!ProductInterval::exists($inputs['interval'], $inputs['interval_size'])) {
+          abort(response()->json(['message' => 'interval and/or interval_count are invalid.'], 400));
+        }
       }
     }
   }
@@ -133,6 +140,10 @@ class CouponController extends SimpleController
   {
     $this->validateUser();
     $inputs = $this->validateCreate($request);
+    if (!isset($inputs['interval_size'])) {
+      $inputs['interval_size'] = ProductInterval::getDefaultIntervalCount($inputs['interval']);
+    }
+
     $this->validateMore($inputs);
 
     $coupon = new Coupon($inputs);
@@ -149,10 +160,13 @@ class CouponController extends SimpleController
   public function update(Request $request, int $id)
   {
     $this->validateUser();
+    $inputs = $this->validateUpdate($request, $id);
+    if (!isset($inputs['interval_size'])) {
+      $inputs['interval_size'] = ProductInterval::getDefaultIntervalCount($inputs['interval']);
+    }
 
     /** @var Coupon $coupon */
     $coupon = $this->baseQuery()->findOrFail($id);
-    $inputs = $this->validateUpdate($request, $id);
     $coupon->forceFill($inputs);
     $this->validateMore($coupon->toArray());
 
@@ -197,22 +211,43 @@ class CouponController extends SimpleController
     $this->validateUser();
 
     $inputs = $request->validate([
-      'code'    => ['required', 'string', Rule::exists('coupons', 'code')->where(fn($q) => $q->where('status', Coupon::STATUS_ACTIVE))],
-      'plan_id' => ['filled', 'numeric', Rule::exists('plans', 'id')->where(fn($q) => $q->where('status', Coupon::STATUS_ACTIVE)->where('subscription_level', '>', 1))],
-      'user_id' => ['filled', 'exists:users,id'],
+      'code'    => ['required', 'string'],
+      'plan_id' => ['required', 'numeric'],
+      'license_quantity' => ['filled', 'numeric'],
     ]);
 
-    /** @var Coupon $coupon */
-    $coupon = $this->baseQuery()->where('code', $inputs['code'])->firstOrFail();
+    // set default value for license quantity
+    $inputs['license_quantity'] = (int)($inputs['license_quantity'] ?? 1);
 
-    /** @var ?Plan $plan */
-    $plan = isset($inputs['plan_id']) ? Plan::find($inputs['plan_id']) : null;
-
-    $applyResult = CouponRules::couponApplicable($coupon, $plan, $this->user);
-    if ($applyResult['applicable']) {
-      return $coupon->info();
+    /** @var ?Coupon $coupon */
+    $coupon = $this->baseQuery()
+      ->where('code', $inputs['code'])
+      ->public()
+      ->first();
+    if (!$coupon) {
+      return response()->json([
+        'result_code' => CouponValidateResultCode::FAILED_INVALID_CODE,
+        'message' => 'Invalid coupon code',
+      ], 400);
     }
 
-    return response()->json(['message' => $applyResult['reason']], 400);
+    /** @var ?Plan $plan */
+    $plan = Plan::public()->findOrFail($inputs['plan_id']);
+    if (!$plan) {
+      return response()->json([
+        'result_code' => CouponValidateResultCode::FAILED_INVALID_PLAN,
+        'message' => 'Invalid plan ID',
+      ], 400);
+    }
+
+    $applyResult = CouponRules::couponApplicable($coupon, $plan, $inputs['license_quantity'], $this->user);
+    if (!$applyResult->applicable) {
+      return response()->json([
+        'result_code' => $applyResult->result_code,
+        'message' => $applyResult->result_text,
+      ], 400);
+    }
+
+    return response()->json($applyResult->coupon_info);
   }
 }

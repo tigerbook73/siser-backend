@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Subscription;
 use Tests\ApiTestCase;
-use Tests\Models\BillingInfo;
+use Tests\Models\BillingInformation;
 use Tests\Models\PlanInfo;
 use Tests\Models\Subscription as ModelsSubscription;
 
@@ -21,7 +21,7 @@ class SubscriptionTestCase extends ApiTestCase
     parent::setUp();
 
     $this->modelSchema = array_keys((array)new ModelsSubscription);
-    $this->modelSchema['billing_info'] = array_keys((array)new BillingInfo);
+    $this->modelSchema['billing_info'] = array_keys((array)new BillingInformation);
     $this->modelSchema['plan_info'] = array_keys((array)new PlanInfo);
     // $this->modelSchema['coupon_info'] = array_keys((array)new Coupon);
     unset($this->modelSchema[array_search('license_package_info', $this->modelSchema)]);

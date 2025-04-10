@@ -25,11 +25,11 @@ return new class extends Migration
       [
         [
           'id' => 1,
-          'name' => 'Leonardo™ Design Studio Basic'
+          'name' => 'Leonardo® Design Studio Basic'
         ],
         [
           'id' => 2,
-          'name' => 'Leonardo™ Design Studio Pro'
+          'name' => 'Leonardo® Design Studio Pro'
         ],
       ],
       'id',
@@ -41,7 +41,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

@@ -11,7 +11,7 @@ class TestCommand extends Command
    *
    * @var string
    */
-  protected $signature = 'cmd:test';
+  protected $signature = 'test:cmd';
 
   /**
    * The console command description.
@@ -32,6 +32,15 @@ class TestCommand extends Command
    */
   public function handle()
   {
+    /**
+     * only for local environment
+     */
+    if (!app()->environment('local')) {
+      $this->error('This command is only available in local environment');
+      return self::FAILURE;
+    }
+
+    $this->info('This is a test command');
     return self::SUCCESS;
   }
 }

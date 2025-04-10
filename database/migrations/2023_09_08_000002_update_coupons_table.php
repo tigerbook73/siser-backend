@@ -18,7 +18,7 @@ return new class extends Migration
       $table->renameColumn('period', 'interval_count');
 
       $table->string('name')->after('code');
-      $table->string('product_name')->default("Leonardo™ Design Studio Pro")->comment('See table "products"')->after('name');
+      $table->string('product_name')->default("Leonardo® Design Studio Pro")->comment('See table "products"')->after('name');
       $table->string('type')->comment('see Coupon::TYPE_* constants')->after('description');
       $table->string('coupon_event')->nullable()->after('type');
       $table->string('discount_type')->comment('see Coupon::TYPE_* constants')->after('coupon_event');
@@ -34,7 +34,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

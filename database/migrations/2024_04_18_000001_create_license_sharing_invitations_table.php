@@ -16,7 +16,7 @@ return new class extends Migration
     Schema::create('license_sharing_invitations', function (Blueprint $table) {
       $table->id();
       $table->foreignId('license_sharing_id')->constrained('license_sharings');
-      $table->string('product_name')->default('Leonardo™ Design Studio Pro');
+      $table->string('product_name')->default('Leonardo® Design Studio Pro');
       $table->unsignedInteger('subscription_level');
       $table->foreignId('owner_id')->constrained('users');
       $table->string('owner_name');
@@ -38,7 +38,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

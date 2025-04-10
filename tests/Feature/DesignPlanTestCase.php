@@ -26,6 +26,7 @@ class DesignPlanTestCase extends ApiTestCase
       'product_name' => 'Leonardo® Design Studio Pro',
       'description' => 'test plan',
       'interval' => Plan::INTERVAL_MONTH,
+      'interval_count' => 1,
       'subscription_level' => 2,
       'url' => '',
       'price_list' => [

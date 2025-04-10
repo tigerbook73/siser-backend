@@ -37,9 +37,9 @@ return new class extends Migration
       [
         [
           'id'                  => config('siser.plan.default_machine_plan'),
-          'name'                => 'Leonardo™ Design Studio Basic Plan (free)',
+          'name'                => 'Leonardo® Design Studio Basic Plan (free)',
           'catagory'            => 'machine',
-          'description'         => 'Leonardo™ Design Studio Basic Plan (free)',
+          'description'         => 'Leonardo® Design Studio Basic Plan (free)',
           'subscription_level'  => 1,
           'price_list'          => json_encode([
             [
@@ -60,9 +60,9 @@ return new class extends Migration
     DB::table('plans')->upsert(
       [
         [
-          'name'                => 'Leonardo™ Design Studio Pro Monthly Plan',
+          'name'                => 'Leonardo® Design Studio Pro Monthly Plan',
           'catagory'            => 'machine',
-          'description'         => 'Leonardo™ Design Studio Pro Monthly Plan',
+          'description'         => 'Leonardo® Design Studio Pro Monthly Plan',
           'subscription_level'  => 2,
           'price_list'          => json_encode([
             ['country' => 'AE', 'currency' => 'USD', 'price' => 8.99],
@@ -158,7 +158,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

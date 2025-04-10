@@ -35,8 +35,8 @@ class SubscriptionLog extends BaseSubscriptionLog
         'machine_count'         => $subscription->user->machine_count,
         'seat_count'            => $subscription->user->seat_count,
         'type'                  => $subscription->user->type,
-        'billing_email'         => $subscription->billing_info['email'],
-        'billing_country'       => $subscription->billing_info['address']['country'],
+        'billing_email'         => $subscription->getBillingInfo()->email,
+        'billing_country'       => $subscription->getBillingInfo()->address->country,
       ]
     ];
     $log->save();

@@ -8,14 +8,14 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\Trait\CognitoProviderMockup;
-use Tests\Trait\SubscriptionManagerPaddleMockup;
+use Tests\Trait\SubscriptionManagerPaddleTest;
 
 abstract class ApiTestCase extends TestCase
 {
   use DatabaseTransactions;
   use WithFaker;
   use CognitoProviderMockup;
-  use SubscriptionManagerPaddleMockup;
+  use SubscriptionManagerPaddleTest;
 
   /**
    * Indicates whether the default seeder should run before each test.

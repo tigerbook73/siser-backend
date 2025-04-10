@@ -25,8 +25,9 @@ return new class extends Migration
     /** @var BillingInfo[] $billing_infos */
     $billing_infos = BillingInfo::all();
     foreach ($billing_infos as $billing_info) {
-      $billing_info->language = Locale::defaultLanguage($billing_info->address['country']);
-      $billing_info->locale   = Locale::defaultLocale($billing_info->address['country']);
+      $billingInfo = $billing_info->info();
+      $billing_info->language = Locale::defaultLanguage($billingInfo->address->country);
+      $billing_info->locale   = Locale::defaultLocale($billingInfo->address->country);
       $billing_info->save();
     }
 
@@ -34,10 +35,10 @@ return new class extends Migration
     /** @var Subscription[] $subscriptions */
     $subscriptions = Subscription::whereNotNull('billing_info')->get();
     foreach ($subscriptions as $subscription) {
-      $billing_info = $subscription->billing_info;
-      $billing_info['language'] = Locale::defaultLanguage($billing_info['address']['country']);
-      $billing_info['locale']   = Locale::defaultLocale($billing_info['address']['country']);
-      $subscription->billing_info = $billing_info;
+      $billingInfo = $subscription->getBillingInfo();
+      $billingInfo->language = Locale::defaultLanguage($billingInfo->address->country);
+      $billingInfo->locale   = Locale::defaultLocale($billingInfo->address->country);
+      $subscription->setBillingInfo($billingInfo);
       $subscription->save();
     }
   }
@@ -47,7 +48,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

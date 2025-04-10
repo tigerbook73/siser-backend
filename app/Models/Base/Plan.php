@@ -6,7 +6,6 @@
 
 namespace App\Models\Base;
 
-use App\Models\LicensePlan;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Models\TraitModel;
@@ -33,7 +32,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property array|null $meta
  * 
  * @property Product $product
- * @property LicensePlan $license_plan
  * @property Collection|Subscription[] $subscriptions
  *
  * @package App\Models\Base
@@ -67,11 +65,6 @@ class Plan extends Model
   public function product()
   {
     return $this->belongsTo(Product::class, 'product_name', 'name');
-  }
-
-  public function license_plan()
-  {
-    return $this->hasOne(LicensePlan::class);
   }
 
   public function subscriptions()

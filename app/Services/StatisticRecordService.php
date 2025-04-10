@@ -71,7 +71,7 @@ class StatisticRecordService
               ->orderBy('period')
               ->get();
             for ($index = 1; $index < count($invoices); $index++) {
-              if ($index == 1 && ($invoices[0]->coupon_info['discount_type'] ?? null) == 'free_trial') {
+              if ($index == 1 && $invoices[0]->getCouponInfo()?->discount_type == 'free_trial') {
                 SubscriptionLog::logEvent(
                   SubscriptionLog::SUBSCRIPTION_CONVERTED,
                   $subscription,

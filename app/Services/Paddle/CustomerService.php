@@ -14,12 +14,8 @@ use Paddle\SDK\Resources\Customers\Operations\UpdateCustomer;
 
 class CustomerService extends PaddleEntityService
 {
-  public function prepareData(BillingInfo $billingInfo, $mode): CreateCustomer|UpdateCustomer
+  public function prepareData(BillingInfo $billingInfo, PaddleOperation $mode): CreateCustomer|UpdateCustomer
   {
-    if ($mode !== 'create' && $mode !== 'update') {
-      throw new \Exception('Invalid mode');
-    }
-
     $data = [
       'email' => $billingInfo->email,
       'name' => $billingInfo->first_name . ' ' . $billingInfo->last_name,
@@ -28,10 +24,10 @@ class CustomerService extends PaddleEntityService
         'billing_info_id' => $billingInfo->id,
       ])->toCustomData()
     ];
-    if ($mode === 'update') {
+    if ($mode === PaddleOperation::UPDATE) {
       $data['status'] = Status::Active();
     }
-    return $mode === 'create' ? new CreateCustomer(...$data) : new UpdateCustomer(...$data);
+    return $mode === PaddleOperation::CREATE ? new CreateCustomer(...$data) : new UpdateCustomer(...$data);
   }
 
   /**
@@ -40,7 +36,7 @@ class CustomerService extends PaddleEntityService
   public function createPaddleCustomer(BillingInfo $billingInfo): Customer
   {
     try {
-      $createCustomer = $this->prepareData($billingInfo, 'create');
+      $createCustomer = $this->prepareData($billingInfo, PaddleOperation::CREATE);
       $paddleCustomer = $this->paddleService->createCustomer($createCustomer);
       $this->updateBillingInfo($billingInfo, $paddleCustomer);
       return $paddleCustomer;
@@ -71,7 +67,7 @@ class CustomerService extends PaddleEntityService
       throw new \Exception('Paddle customer not exist');
     }
 
-    $updateCustomer = $this->prepareData($billingInfo, 'update');
+    $updateCustomer = $this->prepareData($billingInfo, PaddleOperation::UPDATE);
     return $this->paddleService->updateCustomer($meta->paddle->customer_id, $updateCustomer);
   }
 
@@ -82,13 +78,12 @@ class CustomerService extends PaddleEntityService
       $this->createPaddleCustomer($billingInfo);
   }
 
-  public function updateBillingInfo(BillingInfo $billingInfo, Customer|EntitiesCustomer|string $customer): BillingInfo
+  public function updateBillingInfo(BillingInfo $billingInfo, Customer $customer): BillingInfo
   {
-    $customerId = gettype($customer) === 'string' ? $customer : $customer->id;
-    $billingInfo->setMetaPaddleCustomerId($customerId)
+    $billingInfo->setMetaPaddleCustomerId($customer->id)
       ->save();
 
-    PaddleMap::createOrUpdate($customerId, BillingInfo::class, $billingInfo->id);
+    PaddleMap::createOrUpdate($customer->id, BillingInfo::class, $billingInfo->id, $customer->customData?->data);
     return $billingInfo;
   }
 

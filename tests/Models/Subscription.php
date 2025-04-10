@@ -18,7 +18,7 @@ class Subscription {
     /** @var int $coupon_id */
     public $coupon_id = 0;
 
-    /** @var \Tests\Models\BillingInfo $billing_info */
+    /** @var \Tests\Models\BillingInformation $billing_info */
     public $billing_info;
 
     /** @var \Tests\Models\PlanInfo $plan_info */
@@ -33,7 +33,7 @@ class Subscription {
     /** @var \Tests\Models\LicensePackageInfo $license_package_info */
     public $license_package_info;
 
-    /** @var \Tests\Models\ProductItem[] $items */
+    /** @var \Tests\Models\SubscriptionItem[] $items */
     public $items = [];
 
     /** @var string $currency */

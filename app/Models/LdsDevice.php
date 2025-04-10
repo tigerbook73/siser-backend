@@ -126,7 +126,7 @@ class LdsDevice
     return $this;
   }
 
-  public function checkout(string $client_ip = null): self
+  public function checkout(?string $client_ip = null): self
   {
     $this->setStatus('offline')
       ->setExpiresAt(0)

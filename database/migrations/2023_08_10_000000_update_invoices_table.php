@@ -17,7 +17,7 @@ return new class extends Migration
       $table->decimal('total_refunded')->default(0)->after('total_amount');
       $table->json('billing_info')->nullable()->after('currency')->comment('see BillingInfo::info()');
       $table->json('tax_id_info')->nullable()->after('billing_info')->comment('see TaxId::info()');
-      $table->json('credit_memos')->nullable()->after('pdf_file')->comment('see Invoice::addCreditMemo()');
+      $table->json('credit_memos')->nullable()->after('pdf_file')->comment('deprecated');
     });
   }
 
@@ -26,7 +26,5 @@ return new class extends Migration
    *
    * @return void
    */
-  public function down()
-  {
-  }
+  public function down() {}
 };

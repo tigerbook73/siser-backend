@@ -29,9 +29,12 @@ class LicenseSharingTestHelper
       'type' => LicensePackage::TYPE_STANDARD,
       'name' => 'Standard License',
       'price_table' => [
-        ['quantity' => 1, 'discount' => 10],
-        ['quantity' => 2, 'discount' => 20],
-        ['quantity' => 5, 'discount' => 30],
+        'price_steps' => [
+          ['from' => 2, 'to' => 5, 'discount' => 10],
+          ['from' => 6, 'to' => 10, 'discount' => 20],
+          ['from' => 11, 'to' => 20, 'discount' => 30],
+        ],
+        'range' => [[2, 10], [15, 15], [20, 20]],
       ],
       'status' => LicensePackage::STATUS_ACTIVE,
     ]);
@@ -195,7 +198,7 @@ class LicenseSharingTestHelper
     $subscription = $licenseSharing->subscription;
 
     // general
-    if ($licenseSharing->product_name !== $subscription->plan_info['product_name']) {
+    if ($licenseSharing->product_name !== $subscription->getPlanInfo()->product_name) {
       throw new \Exception('License sharing product name does not match with subscription');
     }
 
@@ -210,8 +213,8 @@ class LicenseSharingTestHelper
       }
 
       if (
-        !$subscription->license_package_info ||
-        $subscription->license_package_info['quantity'] !== $licenseSharing->total_count
+        !$subscription->hasLicensePackageInfo() ||
+        $subscription->getLicensePackageInfo()->price_rate->quantity !== $licenseSharing->total_count
       ) {
         throw new \Exception('License sharing total count does not match with subscription');
       }

@@ -3,57 +3,93 @@
 namespace App\Services;
 
 use App\Models\Coupon;
+use App\Models\Invoice;
 use App\Models\Plan;
 use App\Models\User;
 
 class CouponRules
 {
-  static public function couponApplicable(Coupon $coupon, Plan $plan, User $user): array
+  static public function couponApplicable(Coupon $coupon, Plan $plan, int $licenseQuantity, User $user): CouponValidateResult
   {
     // status
     if ($coupon->status != Coupon::STATUS_ACTIVE) {
-      return ['applicable' => false, 'reason' => 'coupon is not active'];
+      return new CouponValidateResult(
+        applicable: false,
+        result_code: CouponValidateResultCode::FAILED_NOT_APPLICABLE,
+        result_text: 'Coupon is not active',
+      );
     }
 
     // start date
     if (now() <= $coupon->start_date) {
-      return ['applicable' => false, 'reason' => 'coupon is not started yet'];
+      return new CouponValidateResult(
+        applicable: false,
+        result_code: CouponValidateResultCode::FAILED_NOT_APPLICABLE,
+        result_text: 'Coupon is not started yet',
+      );
     }
 
     // end date
     if (now() > $coupon->end_date) {
-      return ['applicable' => false, 'reason' => 'coupon is expired'];
+      return new CouponValidateResult(
+        applicable: false,
+        result_code: CouponValidateResultCode::FAILED_NOT_APPLICABLE,
+        result_text: 'Coupon is expired',
+      );
     }
 
     // same product
     if ($coupon->product_name != $plan->product_name) {
-      return ['applicable' => false, 'reason' => 'coupon product and plan product do not matched'];
+      return new CouponValidateResult(
+        applicable: false,
+        result_code: CouponValidateResultCode::FAILED_NOT_APPLICABLE,
+        result_text: 'Coupon is not applicable for this purchase',
+      );
     }
 
-    // for fixed term percentage off coupon, the interval shall be same with plan's interval and interval_count should be a multiple of the plan's interval_count
-    // coupont->interveal
-    if (
-      $coupon->discount_type == Coupon::DISCOUNT_TYPE_PERCENTAGE &&
-      $coupon->interval != Coupon::INTERVAL_LONGTERM &&
-      ($coupon->interval != $plan->interval || $coupon->interval_count % $plan->interval_count != 0)
-    ) {
-      return ['applicable' => false, 'reason' => 'coupon\'s interval and plan\'s interval do not matched'];
+    // coupon and plan's interval not matched
+    if ($coupon->interval != Coupon::INTERVAL_LONGTERM) {
+      if ($coupon->interval != $plan->interval || $coupon->interval_size != $plan->interval_count) {
+        return new CouponValidateResult(
+          applicable: false,
+          result_code: CouponValidateResultCode::FAILED_NOT_APPLICABLE,
+          result_text: 'Coupon\'s interval is not matched with plan\'s',
+        );
+      }
     }
 
-    // free-trial coupon can not be redeemed twice by the same user
     if ($coupon->discount_type == Coupon::DISCOUNT_TYPE_FREE_TRIAL) {
-      if ($user->subscriptions()
-        ->where('coupon_id', $coupon->id)
-        ->whereNotNull('start_date')
+      // free-trial coupon can not be redeemed for multi-license purchase
+      if ($licenseQuantity > 1) {
+        return new CouponValidateResult(
+          applicable: false,
+          result_code: CouponValidateResultCode::FAILED_FREE_TRIAL_NOT_ALLOWED,
+          result_text: 'Free-trial coupon is not applicable for multi-license purchase.',
+        );
+      }
+
+      // customer can not redeem free-trial coupon for a second time
+      if ($user->invoices()
+        ->where('status', Invoice::STATUS_COMPLETED)
+        ->where('coupon_info->discount_type', Coupon::DISCOUNT_TYPE_FREE_TRIAL)
         ->exists()
       ) {
-        return ['applicable' => false, 'reason' => 'free-trial coupon can not be redeemed twice by the same user'];
+        return new CouponValidateResult(
+          applicable: false,
+          result_code: CouponValidateResultCode::FAILED_FREE_TRIAL_MORE_THAN_ONCE,
+          result_text: 'Each customer is eligible for only one free trial.'
+        );
       }
     }
 
     // more rule here
     // ...
 
-    return ['applicable' => true, 'coupon' => $coupon->info()];
+    return new CouponValidateResult(
+      applicable: true,
+      result_code: CouponValidateResultCode::SUCCESS,
+      result_text: 'Success',
+      coupon_info: $coupon->info(null)
+    );
   }
 }

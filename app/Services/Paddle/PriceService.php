@@ -2,8 +2,7 @@
 
 namespace App\Services\Paddle;
 
-use App\Models\LicensePlan;
-use App\Models\LicensePlanDetail;
+use App\Models\LicensePackage;
 use App\Models\Paddle\PriceCustomData;
 use App\Models\PaddleMap;
 use App\Models\Plan;
@@ -16,7 +15,6 @@ use Paddle\SDK\Entities\Shared\CurrencyCode;
 use Paddle\SDK\Entities\Shared\Interval;
 use Paddle\SDK\Entities\Shared\Money;
 use Paddle\SDK\Entities\Shared\PriceQuantity;
-use Paddle\SDK\Entities\Shared\Status;
 use Paddle\SDK\Entities\Shared\TaxMode;
 use Paddle\SDK\Entities\Shared\TimePeriod;
 use Paddle\SDK\Entities\Shared\UnitPriceOverride;
@@ -26,43 +24,54 @@ use Paddle\SDK\Resources\Prices\Operations\UpdatePrice;
 
 class PriceService extends PaddleEntityService
 {
-  public function getProPriceForEuCountry($country, $period): int
+  /**
+   * get the standard price (tax exclusive) for EU countries
+   */
+  public function getProPriceForEuCountry($country, $period): float
   {
-    $total = ($period == Plan::INTERVAL_MONTH) ? 899 : 9700;
+    $euPrices = config('country.eu_prices');
+    $total = $euPrices[$period] ?? $euPrices[Plan::INTERVAL_YEAR];
     $taxRate = CountryHelper::getEUCountryTaxRate($country);
 
-    if ($taxRate == null) {
-      throw new \Exception("Tax rate not found for EU country: {$country}");
-    }
-
-    return (int)($total / (1 + $taxRate));
+    return $total / (1 + $taxRate);
   }
 
   /**
+   * prepare CreatePrice or UpdatePrice from plan
+   *
    * @param Plan $plan
-   * @param string $mode - create|update
+   * @param PaddleOperation $mode
+   * @param ?LicensePackage $licensePackage
+   * @param ?int $quantity
    */
-  public function prepareData(Plan $plan, string $mode): CreatePrice|UpdatePrice
+  public function prepareData(Plan $plan, PaddleOperation $mode, ?LicensePackage $licensePackage = null, ?int $quantity = null): CreatePrice|UpdatePrice
   {
-    if ($mode !== 'create' && $mode !== 'update') {
-      throw new \Exception('Invalid mode');
-    }
-
     $customData = PriceCustomData::from([
       "product_name"      => $plan->product_name,
       "plan_id"           => $plan->id,
-      "plan_name"         => $plan->name,
+      "plan_name"         => $plan->buildPlanName($quantity ?? 1),
       "plan_timestamp"    => $plan->updated_at->format('Y-m-d H:i:s'),
+
+      "license_package_id"        => $licensePackage ? $licensePackage->id : null,
+      "license_quantity"          => $quantity ?? 1,
+      "license_package_timestamp" => $licensePackage ?
+        max($plan->updated_at, $licensePackage->updated_at)->format('Y-m-d H:i:s') :
+        null,
     ])->toCustomData();
 
     $priceList = $plan->price_list;
+
+    $priceRate = 1;
+    if ($licensePackage && $quantity > 1) {
+      $priceRate = $licensePackage->getPriceTable()->getPriceRate($quantity)->price_rate / LicensePackage::RATE_FACTOR;
+    }
 
     // get default price (US) (tax exclusive)
     $usPrice = $plan->getPrice('US');
 
     $unitPrice = new Money(
       currencyCode: CurrencyCode::from($usPrice['currency']),
-      amount: (string)(int)($usPrice['price'] * CurrencyHelper::getDecimalFactor($usPrice['currency'])),
+      amount: (string)(int)($usPrice['price'] * $priceRate * CurrencyHelper::getDecimalFactor($usPrice['currency'])),
     );
 
     /**
@@ -87,11 +96,11 @@ class PriceService extends PaddleEntityService
 
       $currency = CurrencyCode::from($price['currency']);
       $amount = ($price['currency'] === 'EUR' && CountryHelper::isEuCountry($price['country'])) ?
-        $this->getProPriceForEuCountry($price['country'], $plan->interval) :
-        (int)($price['price'] * CurrencyHelper::getDecimalFactor($price['currency']));
+        (int)$this->getProPriceForEuCountry($price['country'], $plan->interval) * $priceRate * CurrencyHelper::getDecimalFactor($price['currency']) :
+        (int)($price['price'] * $priceRate * CurrencyHelper::getDecimalFactor($price['currency']));
 
       /**
-       * find the unit price override for the the same currency and amount
+       * find the unit price override for the same currency and amount
        */
       $unitPriceOverride = null;
       foreach ($unitPriceOverrides as $up) {
@@ -114,12 +123,19 @@ class PriceService extends PaddleEntityService
       }
     }
 
-    if ($mode == 'create') {
+    if ($licensePackage) {
+      $description = "{$quantity}-License";
+      $name = trim(str_replace($plan->product_name, '', $plan->name)) . " (Licenses x {$quantity})";
+    } else {
+      $description = 'Single-License';
+      $name = trim(str_replace($plan->product_name, '', $plan->name));
+    }
+    if ($mode === PaddleOperation::CREATE) {
       return new CreatePrice(
-        description: $plan->description,
-        productId: $plan->product->getMeta()->paddle->product_id,
+        description: $description,
+        productId: $plan->product->getMeta()->paddle->getProductId($plan->getProductInterval()),
         unitPrice: $unitPrice,
-        name: trim(str_replace($plan->product_name, '', $plan->name)),
+        name: $name,
         type: CatalogType::Standard(),
         unitPriceOverrides: $unitPriceOverrides,
         taxMode: TaxMode::External(),
@@ -133,9 +149,9 @@ class PriceService extends PaddleEntityService
       );
     } else {
       return new UpdatePrice(
-        description: $plan->description,
+        description: $description,
         unitPrice: $unitPrice,
-        name: trim(str_replace($plan->product_name, '', $plan->name)),
+        name: $name,
         type: CatalogType::Standard(),
         unitPriceOverrides: $unitPriceOverrides,
         taxMode: TaxMode::External(),
@@ -146,7 +162,6 @@ class PriceService extends PaddleEntityService
         ),
         quantity: new PriceQuantity(1, 1),
         customData: $customData,
-        status: $plan->status === Plan::STATUS_ACTIVE ? Status::Active() : Status::Archived(),
       );
     }
   }
@@ -156,13 +171,12 @@ class PriceService extends PaddleEntityService
    */
   public function createPaddlePrice(Plan $plan): Price
   {
-    if ($plan->status !== Plan::STATUS_ACTIVE) {
-      throw new \Exception('Plan is not active');
-    }
-
-    $createPrice = $this->prepareData($plan, 'create');
+    $createPrice = $this->prepareData($plan, PaddleOperation::CREATE);
     $paddlePrice = $this->paddleService->createPrice($createPrice);
+    $this->result->appendMessage("Paddle price for {$plan->name} created", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+
     $this->updatePlan($plan, $paddlePrice);
+    $this->result->appendMessage("Plan {$plan->name} updated with paddle price", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
     return $paddlePrice;
   }
 
@@ -173,8 +187,13 @@ class PriceService extends PaddleEntityService
       throw new \Exception('Paddle price not exist');
     }
 
-    $updatePrice = $this->prepareData($plan, 'update');
-    return $this->paddleService->updatePrice($meta->paddle->price_id, $updatePrice);
+    $updatePrice = $this->prepareData($plan, PaddleOperation::UPDATE);
+    $paddlePrice = $this->paddleService->updatePrice($meta->paddle->price_id, $updatePrice);
+    $this->result->appendMessage("Paddle price for {$plan->name} updated", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+
+    $this->updatePlan($plan, $paddlePrice);
+    $this->result->appendMessage("Plan {$plan->name} updated with paddle price", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+    return $paddlePrice;
   }
 
   public function createOrUpdatePaddlePrice(Plan $plan): Price
@@ -186,104 +205,137 @@ class PriceService extends PaddleEntityService
 
   public function updatePlan(Plan $plan, Price|EntitiesPrice $price): Plan
   {
-    $plan->setMetaPaddleProductId($price->productId)
-      ->setMetaPaddlePriceId($price->id)
-      ->save();
-    PaddleMap::createOrUpdate($price->id, Plan::class, $plan->id);
+    $priceCustomerData = PriceCustomData::from($price->customData?->data);
+    if ($priceCustomerData->license_quantity >= LicensePackage::MIN_QUANTITY) {
+      // license package price
+      $plan->setMetaPaddleLicensePackageId($priceCustomerData->license_package_id)
+        ->setMetaPaddleLicensePriceId($priceCustomerData->license_quantity, $price->id)
+        ->save();
+    } else {
+      // plan price
+      $plan->setMetaPaddleProductId($price->productId)
+        ->setMetaPaddlePriceId($price->id)
+        ->save();
+    }
+    PaddleMap::createOrUpdate($price->id, Plan::class, $plan->id, $priceCustomerData);
     return $plan;
   }
 
   /**
-   * @param Price $subscriptionPrice
-   * @param LicensePlan $licensePlan
-   * @param int $quantity
-   * @param string $mode - create|update
-   * @return CreatePrice|UpdatePrice
+   * license prices
    */
-  public function preparePaddleLicensePrice(Price $subscriptionPrice, LicensePlan $licensePlan, int $quantity, string $mode): CreatePrice|UpdatePrice
+
+  public function createPaddleLicensePrice(Plan $plan, LicensePackage $licensePackage, int $quantity): Price
   {
-    $licensePlanDetail = $licensePlan->getDetail($quantity);
-
-    $customData = PriceCustomData::from([
-      "product_name"            => $licensePlan->product->name,
-      "license_plan_id"         => $licensePlan->id,
-      "license_plan_name"       => $licensePlanDetail->name,
-      "license_plan_timestamp"  => $licensePlan->updated_at->format('Y-m-d H:i:s'),
-      "quantity"                => $quantity,
-    ])->toCustomData();
-
-    $unitPrice = new Money(
-      currencyCode: $subscriptionPrice->unitPrice->currencyCode,
-      amount: (string)(int)((float)$subscriptionPrice->unitPrice->amount * $licensePlanDetail->price_rate / 100),
-    );
-
-    $unitPriceOverrides = [];
-    foreach ($subscriptionPrice->unitPriceOverrides as $subscriptionUnitPriceOverride) {
-      $unitPriceOverrides[] = new UnitPriceOverride(
-        countryCodes: $subscriptionUnitPriceOverride->countryCodes,
-        unitPrice: new Money(
-          currencyCode: $subscriptionUnitPriceOverride->unitPrice->currencyCode,
-          amount: (string)(int)((float)$subscriptionUnitPriceOverride->unitPrice->amount * $licensePlanDetail->price_rate / 100)
-        ),
-      );
-    }
-
-    if ($mode == 'create') {
-      return new CreatePrice(
-        description: $licensePlanDetail->name,
-        productId: $licensePlan->product->getMeta()->paddle->product_id,
-        unitPrice: $unitPrice,
-        name: $licensePlanDetail->name,
-        type: $subscriptionPrice->type,
-        unitPriceOverrides: $unitPriceOverrides,
-        taxMode: $subscriptionPrice->taxMode,
-        trialPeriod: null,
-        billingCycle: $subscriptionPrice->billingCycle,
-        quantity: $subscriptionPrice->quantity,
-        customData: $customData,
-      );
-    } else {
-      return new UpdatePrice(
-        description: $licensePlanDetail->name,
-        unitPrice: $unitPrice,
-        name: $licensePlanDetail->name,
-        type: $subscriptionPrice->type,
-        unitPriceOverrides: $unitPriceOverrides,
-        taxMode: $subscriptionPrice->taxMode,
-        trialPeriod: null,
-        billingCycle: $subscriptionPrice->billingCycle,
-        quantity: $subscriptionPrice->quantity,
-        customData: $customData,
-      );
-    }
-  }
-
-  public function createPaddleLicensePrice(Price $subscriptionPrice, LicensePlan $licensePlan, int $quantity): Price
-  {
-    $createPrice = $this->preparePaddleLicensePrice($subscriptionPrice, $licensePlan, $quantity, 'create');
+    $createPrice = $this->prepareData($plan, PaddleOperation::CREATE, $licensePackage, $quantity);
     $paddlePrice = $this->paddleService->createPrice($createPrice);
-    $this->updateLicensePlan($licensePlan, $paddlePrice, $quantity);
+    $this->result->appendMessage("Paddle license price for {$plan->name}/{$quantity} created", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+
+    $this->updatePlan($plan, $paddlePrice);
+    $this->result->appendMessage("Plan {$plan->name} updated with paddle license price", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+
     return $paddlePrice;
   }
 
-  public function updatePaddleLicensePrice(Price $subscriptionPrice, LicensePlan $licensePlan, int $quantity): Price
+  public function updatePaddleLicensePrice(Plan $plan, LicensePackage $licensePackage, int $quantity): Price
   {
-    $licensePlanDetail = $licensePlan->getDetail($quantity);
-    if (!$licensePlanDetail->paddle_price_id) {
-      throw new \Exception('Paddle price not exist');
+    $meta = $plan->getMeta();
+    if (!$meta->paddle->license_prices->getPriceId($quantity)) {
+      throw new \Exception('Paddle license price not exist');
     }
 
-    $updatePrice = $this->preparePaddleLicensePrice($subscriptionPrice, $licensePlan, $quantity, 'update');
-    return $this->paddleService->updatePrice($licensePlanDetail->paddle_price_id, $updatePrice);
+    $updatePrice = $this->prepareData($plan, PaddleOperation::UPDATE, $licensePackage, $quantity);
+    $paddlePrice = $this->paddleService->updatePrice($meta->paddle->license_prices->getPriceId($quantity), $updatePrice);
+    $this->result->appendMessage("Paddle license price for {$plan->name}/{$quantity} updated", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+
+    $this->updatePlan($plan, $paddlePrice);
+    $this->result->appendMessage("Plan {$plan->name} updated with paddle license price", ['price_id' => $paddlePrice->id], location: __FUNCTION__);
+
+    return $paddlePrice;
   }
 
-  public function updateLicensePlan(LicensePlan $licensePlan, Price|EntitiesPrice $price, int $quantity): LicensePlan
+  public function createOrUpdatePaddleLicensePrice(Plan $plan, LicensePackage $licensePackage, int $quantity): Price
   {
-    $licensePlanDetail = LicensePlanDetail::from($licensePlan->details[$quantity - 1] ?? null);
-    $licensePlanDetail->paddle_price_id = $price->id;
-    $licensePlan->setDetail($licensePlanDetail)->save();
+    if ($plan->getMeta()->paddle->license_prices->getPriceId($quantity)) {
+      return $this->updatePaddleLicensePrice($plan, $licensePackage, $quantity);
+    } else {
+      return $this->createPaddleLicensePrice($plan, $licensePackage, $quantity);
+    }
+  }
 
-    PaddleMap::createOrUpdate($price->id, LicensePlan::class, $licensePlan->id, $quantity);
-    return $licensePlan;
+  /**
+   * Remove quantity(s) from meta->paddle->license_prices. Note: This does not remove the price from Paddle.
+   *
+   * @param Plan $plan
+   * @param int[]|int $quantities
+   * @return void
+   */
+  public function removePaddleLicensePrices(Plan $plan, array|int $quantities): void
+  {
+    if (!is_array($quantities)) {
+      $quantities = [$quantities];
+    }
+
+    $meta = $plan->getMeta();
+    foreach ($quantities as $quantity) {
+      $priceId = $meta->paddle->license_prices->getPriceId($quantity);
+      if ($priceId) {
+        $this->paddleService->archivePrice($priceId);
+      }
+    }
+    $meta->paddle->license_prices->removePriceIds($quantities);
+    $plan->setMeta($meta)->save();
+    $this->result->appendMessage("Paddle license prices for {$plan->name}/[" . implode(',', $quantities) . "] removed", location: __FUNCTION__);
+  }
+
+  /**
+   * Synchronize plan with corresponding Paddle and prices
+   *
+   * please note that this method may invoke many api requests and may take a long time to complete
+   *
+   * create, update or archive prices
+   *
+   * @param Plan $plan
+   */
+  public function syncPlan(Plan $plan): void
+  {
+    // update or create single license price
+    $this->createOrUpdatePaddlePrice($plan);
+
+    //
+    // create or update or archive license prices
+    //
+    $licensePackage = LicensePackage::findStandard();
+    $currentQuantities = $plan->getMeta()->paddle->license_prices->getQuantities();
+    $newQuantities = array_map(
+      fn($priceRate) => $priceRate->quantity,
+      $licensePackage?->getPriceTable()->price_list ?? []
+    );
+    $toRemoveQuantities = array_diff($currentQuantities, $newQuantities);
+
+    // remove prices for quantities that are not in the new price list
+    $this->removePaddleLicensePrices($plan, $toRemoveQuantities);
+
+    // create or update prices for new quantities
+    foreach ($newQuantities as $quantity) {
+      $this->createOrUpdatePaddleLicensePrice($plan, $licensePackage, $quantity);
+    }
+  }
+
+  /**
+   * Archive price(s)
+   *
+   * @param string[]|string $priceIds The IDs of the prices to archive
+   */
+  public function archivePrices(array|string $priceIds): void
+  {
+    if (!is_array($priceIds)) {
+      $priceIds = [$priceIds];
+    }
+
+    foreach ($priceIds as $priceId) {
+      $this->paddleService->archivePrice($priceId);
+    }
+    $this->result->appendMessage("Paddle prices [" . implode(',', $priceIds) . "] archived", location: __FUNCTION__);
   }
 }
