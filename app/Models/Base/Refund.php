@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $reason
  * @property array|null $payment_method_info
  * @property array|null $dr
- * @property string $dr_refund_id
+ * @property string|null $dr_refund_id
  * @property string $status
  * @property array|null $status_transitions
  * @property array|null $meta
